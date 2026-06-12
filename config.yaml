@@ -25,3 +25,60 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: agent-safety
+      description: Find paper about agent memory safety benchmark
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: agent memory safety
+          keyword_cn: 智能体内存安全
+          query: agent memory safety benchmark evaluation
+        - keyword: memory manipulation attack
+          keyword_cn: 内存操控攻击
+          query: manipulating agent memory for adversarial purposes
+        - keyword: agent memory injection
+          keyword_cn: 智能体内存注入
+          query: injection attacks on agent memory systems
+        - keyword: memory safety benchmark
+          keyword_cn: 内存安全基准
+          query: memory safety benchmark for AI agents
+        - keyword: agent safety benchmark
+          keyword_cn: 智能体安全基准
+          query: agent safety benchmark including memory issues
+        - keyword: memory security agents
+          keyword_cn: 智能体内存安全
+          query: memory security and safety in agent systems
+      intent_queries:
+        - query: Find research on security of agent memory in LLM benchmarks
+          query_cn: 寻找关于LLM基准中智能体内存安全的研究
+          enabled: true
+          source: manual
+          note: ''
+        - query: What are the existing benchmarks for evaluating memory safety in AI agents?
+          query_cn: 有哪些评估AI智能体内存安全的现有基准？
+          enabled: true
+          source: generated
+          note: ''
+        - query: Papers on agent memory safety benchmarks and evaluations
+          query_cn: 关于智能体内存安全基准与评估的论文
+          enabled: true
+          source: generated
+          note: ''
+      updated_at: '2026-06-12T15:23:23.864Z'
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
