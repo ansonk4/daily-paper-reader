@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-12T15:30:25.303133+00:00",
-  "updated_date": "20260603-20260612",
+  "generated_at": "2026-06-12T19:48:02.519700+00:00",
+  "updated_date": "20260612",
   "carryover_days": 9,
   "tag_states": {
     "agent-safety": {
-      "updated_date": "20260603-20260612",
+      "updated_date": "20260612",
       "carryover_days": 9,
       "items": []
     }
