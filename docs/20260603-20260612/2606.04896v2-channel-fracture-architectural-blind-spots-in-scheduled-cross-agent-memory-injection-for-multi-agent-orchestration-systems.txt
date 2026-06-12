@@ -1,0 +1,456 @@
+Title: Channel Fracture: Architectural Blind Spots in Scheduled Cross-Agent Memory Injection for Multi-Agent Orchestration Systems
+
+URL Source: https://arxiv.org/pdf/2606.04896v2
+
+Published Time: Fri, 05 Jun 2026 01:12:55 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Channel Fracture: Architectural Blind Spots in Scheduled Cross-Agent Memory Injection for Multi-Agent Orchestration Systems 
+
+Dexing Liu 1
+
+> 1
+
+Shanghai Qijing Digital Technology Co., Ltd. 
+
+{liudexing@changingplus.com }
+
+June 2026 (v2 – expanded experiments, figures, three-gate system) 
+
+June 5, 2026 
+
+# Abstract 
+
+Multi-agent AI orchestration systems increasingly rely on per-sistent memory to maintain context across sessions, agents, and tasks. When one agent must inject knowledge into an-other agent’s memory—a common requirement in hierarchical team architectures—the delivery mechanism must be architec-turally sound. We report the discovery of a systematic failure mode we term channel fracture : a condition where sched-uled (cron) agents in orchestration frameworks are silently un-able to write to the target agent’s persistent memory due to hardcoded memory isolation guards. Through experiments on a production Hermes Agent deployment with five specialized profiles, we tested three injection channels: (A) direct SQLite database writes, (B) target-agent self-writes via memory tools, and (C) cron-delegated writes. Channel C failed completely due to two architectural constraints: skip memory=True 
+
+hardcoded at the scheduler layer and dynamic registration of memory tools contingent on memory manager initializa-tion, which is bypassed in cron execution contexts. We pro-pose CADVP (Cross-Agent Delivery Verification Protocol) v1.1, a 13-dimension verification framework with a veto-level channel confirmation check (CC-0) that prevents false-positive delivery assurance. We further extend CADVP with a Three-Gate Quality System (L1 Self-Verification, L2 Evidence Ver-ification, L3 Cross-Review) that ensures delivery correctness at the execution level. Through three controlled experiment suites—concurrent conflict detection (90 trials), exception re-covery rollback (60 trials), and cross-agent relay (60 trials)— we demonstrate zero failure rates under BCP protection versus 67–98 % without. We articulate two design principles: the in-verse verification principle and the channel matching princi-ple .
+
+Keywords: multi-agent systems, persistent memory, cron scheduling, channel fracture, verification protocol, three-gate system, Hermes Agent, knowledge injection 
+
+# 1 Introduction 
+
+1.1 Motivation 
+
+The emergence of multi-agent AI teams—collections of specialized AI agents collaborating under orchestration frameworks—has created new requirements for inter-agent knowledge transfer. Unlike monolithic agents that maintain a single memory store, multi-agent architectures distribute memory across agent boundaries, requiring explicit mecha-nisms for one agent to inject information into another’s per-sistent store [6, 12]. Consider a practical scenario: a team administrator agent needs to ensure that a subordinate agent remembers a specific report format for future use. The administrator must write this knowledge into the subordinate’s memory system so that it persists across sessions. This cross-agent memory injection 
+
+is fundamental to coordinated multi-agent behavior. 
+
+1.2 The Problem 
+
+In production multi-agent deployments, knowledge injection often occurs through scheduled (cron) tasks—periodic or one-shot jobs dispatched by the orchestration layer. These tasks run in isolated execution contexts that differ from interactive agent sessions. We discovered that this isolation creates a chan-nel fracture : a systematic, silent failure where the scheduled agent cannot access the memory tools necessary to complete its injection task, despite the task being correctly configured and dispatched. The fracture is particularly insidious because: 1. It fails silently. The cron job completes without error; the agent may report partial success. 2. Writer-side verification passes. From the sender’s per-spective, all steps appear correct. 3. Only receiver-side inspection reveals the failure. The target agent’s memory remains empty. 
+
+1.3 Contributions 
+
+This paper makes the following contributions: 
+
+> arXiv:2606.04896v2 [cs.MA] 4 Jun 2026
+
+1. Identification and characterization of the channel frac-ture problem in multi-agent orchestration systems, with source-level root cause analysis. 2. Empirical evaluation of three injection channels on a production system, demonstrating that the most natural channel (cron-delegated write) fails while bypass chan-nels succeed. 3. CADVP v1.1 , a 13-dimension cross-agent delivery ver-ification protocol with a veto-level channel confirmation check. 4. Controlled experiments (210 total trials) validating con-current conflict detection, exception recovery, and cross-agent relay under the BCP protocol. 5. The Three-Gate Quality System —L1 Self-Verification, L2 Evidence Verification, L3 Cross-Review—extending CADVP from channel-level verification to execution-level delivery assurance. 6. Two design principles for multi-agent memory systems: the inverse verification principle and the channel match-ing principle .
+
+# 2 Background 
+
+2.1 Hermes Agent Architecture 
+
+Hermes Agent [1] (Nous Research, 2024–2026) is an open-source, self-hosted AI agent framework supporting multi-agent orchestration through its profiles system. Each profile represents an independent agent with its own configuration file (config.yaml ), identity document ( SOUL.md ), persistent memory store (SQLite-backed memory store.db ), gate-way process, and cron job definitions. Profiles operate as isolated agents that can be configured to collaborate. A typical deployment includes a primary pro-file and specialized subordinate profiles for different func-tional domains (development, business development, market-ing, etc.). 
+
+2.2 Holographic Memory System 
+
+Hermes Agent implements persistent memory through holo-graphic memory —a fact-based storage system backed by SQLite with FTS5 full-text search [13]. The memory system comprises: • fact store : A structured fact database supporting add, search, and retrieval through tool-call interfaces. • Memory banks : Categorized collections of persistent facts. • Entity tracking : Associations between facts and named entities. • Full-text search : FTS5-indexed content for semantic re-trieval. The memory subsystem is initialized through a
+
+MemoryManager component that registers memory provider tools into the agent’s tool surface at initialization time. This registration is conditional :                              
+
+> 1if agent._memory_manager and \
+> 2agent.tools is not None and (
+> 3agent.enabled_toolsets is None or
+> 4"memory" in agent.enabled_toolsets
+> 5):
+> 6for _schema in agent._memory_manager
+> 7.get_all_tool_schemas():
+> 8_wrapped ={"type": "function",
+> 9"function": _schema}
+> 10 agent.tools.append(_wrapped)
+
+Listing 1: Conditional tool registration in 
+
+agent/agent init.py , line 1168. If memory manager is not initialized (set to None ), the 
+
+fact store tool is never registered and is unavailable to the agent at runtime. 
+
+2.3 Cron/Scheduler System 
+
+The Hermes Agent scheduler ( cron/scheduler.py ) pro-vides periodic and one-shot task execution. Cron jobs run as independent agent sessions with specific constraints:                 
+
+> 1AIAgent(
+> 2...
+> 3skip_memory=True, #Cron system prompts
+> 4#would corrupt user
+> 5#representations
+> 6platform="cron",
+> 7...
+> 8)
+
+Listing 2: Memory isolation guard in 
+
+cron/scheduler.py , line 1652. The skip memory=True flag is a deliberate architectural decision to prevent cron system prompts from contaminating user-facing memory. However, this guard blocks all memory access—including legitimate, intentional writes. 
+
+2.4 Profile Isolation 
+
+Each profile configures approvals.cron mode , which when set to deny , restricts potentially dangerous operations during cron execution. This provides a secondary isolation layer at the permission level. 
+
+# 3 The Channel Fracture Problem 
+
+3.1 Problem Definition 
+
+Definition 1 (Channel Fracture). Given a source agent S, a target agent T , and an injection channel 
+
+C connecting them, a channel fracture occurs when 
+
+C is valid at S’s execution context but invalid at T ’s execution context, causing silent failure of knowl-edge delivery. 2Table 1: Experimental Deployment Profiles 
+
+Profile Role Memory 
+
+Primary (admin) Administration Holographic laiven-assistant Admin assistant Holographic dev-pony Development Holographic marketing-pony Marketing Holographic kehu-chenggong Customer success Holographic 
+
+3.2 Experimental Design 
+
+We conducted experiments on a production Hermes Agent de-ployment with five active profiles: 
+
+Experimental task: Inject a daily report format specification from the admin profile into the laiven-assistant pro-file’s persistent memory. 
+
+3.3 Three Injection Channels 
+
+3.3.1 Channel A: Direct Database Write 
+
+The admin agent executes SQLite INSERT statements directly into the target’s memory store.db , bypassing the agent tool chain entirely. 
+
+3.3.2 Channel B: Target Agent Self-Write 
+
+The admin sends a message to the target agent, instructing it to use its own memory() tool within its interactive ses-sion. Prerequisite: holographic memory configured and gate-way restarted. 
+
+3.3.3 Channel C: Cron-Delegated Write 
+
+The admin creates a cron job within the target profile’s sched-uler. The scheduler dispatches the job, creating an agent ses-sion with platform="cron" . The cron agent attempts to call memory() and fact store() .
+
+# 4 Experimental Results 
+
+4.1 Channel Injection Results 
+
+Table 2: Injection Channel Results 
+
+Channel Method Result Availability 
+
+A Direct SQLite ✓ Success 6 facts injected B Self-write ✓ Success Conditional C Cron-delegated × Failure Both tools absent 
+
+4.1.1 Channel A: Direct Database Write 
+
+Six facts were successfully inserted into 
+
+memory store.db :• facts table: 6 rows • entities table: 4 rows • fact entities table: 8 rows • facts fts table: 6 rows (FTS index populated) The target agent retrieved these facts immediately in subse-quent sessions. 
+
+4.1.2 Channel B: Target Self-Write 
+
+Succeeded when: (1) holographic memory was properly configured, (2) gateway was restarted after configuration changes, and (3) the memory toolset was included in 
+
+enabled toolsets .
+
+4.1.3 Channel C: Cron-Delegated Write 
+
+Complete failure. The cron job output explicitly documented:                 
+
+> memory(action=’add’): Unavailable ---memory tool disabled in this environment (cron job). fact store: Unavailable ---Tool does not exist in my tool list.
+
+4.2 Root Cause Analysis 
+
+The failure has two compounding root causes: • Primary: skip memory=True at 
+
+scheduler.py:1652 prevents MemoryManager 
+
+initialization, causing the memory() tool to return an error. • Secondary: Conditional tool registration at 
+
+agent init.py:1168 —since memory manager 
+
+is None , the entire memory tool surface (including 
+
+fact store ) is absent. • Tertiary: cron mode: deny in the target profile re-inforces isolation at the permission level. 
+
+4.3 The Fracture Pattern 
+
+The channel fracture follows a consistent pattern: 1. Design intent: Isolate cron execution from user memory. 2. Legitimate use case: Valid workflow requires cron-to-memory writes. 3. Silent failure: Guard blocks both illegitimate and legiti-mate writes. 4. False confidence: Writer-side verification passes, mask-ing failure. 
+
+# 5 CADVP: Cross-Agent Delivery Veri-fication Protocol 
+
+5.1 Protocol Motivation 
+
+The channel fracture discovery revealed that existing verifica-tion practices verified the writer’s side but failed to confirm delivery at the receiver’s end. 35.2 CADVP v1.0: Initial Framework 
+
+The initial protocol comprised 12 dimensions in four phases: Table 3: CADVP v1.0 Dimensions 
+
+Phase Dimensions Description 
+
+PC PC-1, PC-2, PC-3 Prerequisites exist WV WV-1, WV-2, WV-3 Write succeeded at source RV RV-1 to RV-4 Data readable at destination GR GR-1, GR-2 Fallback paths exist CADVP v1.0 passed all 12 dimensions for the cron injection— but failed to detect that the delivery channel was architecturally unavailable. 
+
+5.3 CADVP v1.1: Channel Confirmation 
+
+We introduced CC-0 (Channel Confirmation) as a veto-level zero-check —a dimension that, if failed, immediately aborts the operation regardless of other scores. 
+
+5.3.1 CC-0 Checklist 
+
+• Target execution context supports required tools • Memory subsystem is initialized in target context • No hardcoded guards ( skip memory , etc.) block the channel • Tool registration conditionals will be satisfied at runtime • Profile permissions ( cron mode , etc.) allow the opera-tion 
+
+5.3.2 Complete v1.1 Dimension Set 
+
+5.4 Application to Channel Fracture 
+
+CC-0 immediately identifies Channel C as unavailable, pre-venting wasted effort and false-positive assurance. 
+
+5.5 Decision Tree 
+
+The CADVP v1.1 decision process: 1. CC-0: Is the target channel architecturally available? • NO → Evaluate alternative channels; if none, VETO. • YES → Continue. 2. PC: Do prerequisites exist and accessible? 3. Execute injection via confirmed channel. 4. WV: Was write acknowledged and persisted? 5. RV: Is data readable by target agent? 6. GR: Document fallback for future operations. 4Table 4: CADVP v1.1: Complete 13-Dimension Verification Framework 
+
+ID Dimension Level Description 
+
+CC-0 Channel Confirmation VETO Target channel architecturally available PC-1 Prerequisite Existence Pre Required source data exists PC-2 Prerequisite Format Pre Data in correct format for injection PC-3 Prerequisite Access Pre Writer has permission to read source WV-1 Write Dispatch Write Write operation dispatched WV-2 Write Acknowledgment Write Write acknowledged by target system WV-3 Write Persistence Write Data persists beyond session scope RV-1 Read Availability Read Data queryable by target agent RV-2 Read Correctness Read Retrieved data matches injected data RV-3 Read Completeness Read All injected items retrievable RV-4 Read Timeliness Read Data available within required timeframe GR-1 Fallback Path Recovery Alternative injection method exists GR-2 Error Propagation Recovery Failures reported to operators Table 5: CADVP v1.1 Applied to Three Channels 
+
+Channel CC-0 PC WV RV Overall 
+
+A (Direct DB) ✓ ✓ ✓ ✓ DELIVER 
+
+B (Self-Write) ✓ ✓ ✓ ✓ DELIVER 
+
+C (Cron) × ✓ ✓ — ABORT 
+
+56 Architecture Overview 
+
+Figure 1: Channel Fracture Before and After. Left panel shows the silent failure: the scheduler agent’s write is blocked by the 
+
+skip memory=True guard, and the target agent’s memory remains empty without any error notification. Right panel shows CADVP v1.1 with the Three-Gate System: the CC-0 verifier detects the fracture and activates a failsafe channel, followed by L1/L2/L3 delivery verification. 67 Controlled Validation Experiments 
+
+To validate CADVP v1.1 quantitatively, we conducted three controlled experiment suites using the BCP (Bidirectional Confirmation Protocol) implementation—a reference imple-mentation of the CADVP verification framework. Each suite compares bare (unprotected) execution against guarded 
+
+(CADVP-protected) execution. 
+
+7.1 Experimental Methodology 
+
+All experiments were conducted on an isolated Ubuntu 22.04 system with Python 3.11. Each configuration ran 10 iterations. The three suites cover the high-risk dimensions identified in our channel fracture analysis: • T3 — Cross-Agent Relay: Information transfer between agents, measuring preservation and distortion rates across handoffs. • T4 — Exception Recovery Rollback: Failure recovery, measuring rollback success and state restoration. • T5 — Concurrent Conflict Detection: Race conditions under concurrent writes, measuring data corruption rates. 
+
+7.2 T3: Cross-Agent Relay (60 trials) 
+
+In relay scenarios, information must traverse from one agent through intermediate agents to a destination. Without protec-tion, information degrades at each hop. Table 6: T3 Cross-Agent Relay Results (n=10 per scenario) 
+
+Scenario Mode Info Preservation Distortions 
+
+Tech → Marketing Bare 93.0 % 0.7 Guarded 100.0 % 0.0 
+
+Data Compression Bare 87.0 % 1.3 Guarded 100.0 % 0.0 
+
+Instruction Relay Bare 94.0 % 0.9 Guarded 100.0 % 0.0 
+
+Guarded execution achieved 100 % information preservation across all three scenarios. Bare execution exhibited 87–94 % preservation with 0.5–1.3 average distortions per relay. 
+
+Figure 2: T3 Cross-Agent Relay: guarded execution achieves 100 % information preservation with zero distortions across all scenarios. 
+
+7.3 T4: Exception Recovery Rollback (60 tri-als) 
+
+When an exception occurs mid-execution, the system must roll back to a clean state. Table 7: T4 Exception Recovery Results (n=10 per scenario) 
+
+Scenario Mode Rollback Success State Restored 
+
+Clean Rollback Bare 0.0 % 0.0 % Guarded 100.0 % 100.0 % 
+
+Idempotency Bare — 100.0 % Guarded — 100.0 % Checkpoint Recovery Bare 0.0 % 0.0 % Guarded 100.0 % 100.0 % 
+
+Guarded execution achieved 100 % rollback success and 100 % state restoration. Without protection, rollback suc-ceeded 0 % of the time—exceptions left the system in unre-coverable dirty states. 
+
+Figure 3: T4 Exception Recovery: guarded execution achieves 100 % rollback success and state restoration. 
+
+7.4 T5: Concurrent Conflict Detection (90 tri-als) 
+
+Under concurrent access, multiple agents writing to the same resource cause data corruption. We tested write-write, read-write, and directory operations with 2, 5, and 10 concurrent workers. 
+
+Key findings: 
+
+• Bare concurrent write-write exhibits 67–98 % corruption—nearly certain failure at scale. • Protected execution achieves 0.0 % corruption across all 18 configurations. • Duration overhead is negligible ( < 0.1 s for 10 workers) or negative in read-write scenarios. • Bare corruption rates scale superlinearly with worker count for write-write conflicts. 
+
+7.5 Summary of Validation Results 
+
+These results demonstrate that CADVP v1.1 with its veto-level channel confirmation (CC-0) provides exhaustive protection 7Table 8: T5 Concurrent Conflict Detection Results (n=5 per config) 
+
+Scenario Workers Bare Corrupt. Guarded Corrupt. 
+
+Write-Write 2 67.80 % 0.00 % 
+
+5 95.68 % 0.00 % 
+
+10 98.64 % 0.00 % 
+
+Read-Write 2 34.60 % 0.00 % 
+
+5 31.93 % 0.00 % 
+
+10 9.12 % 0.00 % 
+
+Directory 2 0.00 % 0.00 % 5 1.47 % 0.00 % 
+
+10 2.73 % 0.00 % 
+
+Figure 4: T5 Concurrent Conflict Detection: guarded execu-tion eliminates corruption across all concurrency levels. against all three failure modes identified in our channel frac-ture analysis. 
+
+Figure 5: Aggregate results across all 210 trials: CADVP v1.1 achieves 100 % reliability across concurrent, rollback, and re-lay scenarios. Table 9: Aggregate Validation Results Across All Suites 
+
+Metric Bare Guarded I
+
+Concurrent corruption (write-write, 10 workers) 98.64 % 0.00 % 
+
+Info preservation (relay) 87–94 % 100.0 % Rollback success (exception recovery) 0.0 % 100.0 % 
+
+Checkpoint recovery success 0.0 % 100.0 % 
+
+Average duration overhead — +16 .3 ms 88 The Three-Gate Quality System 
+
+CADVP v1.1 verifies whether a delivery channel is architecturally available (CC-0) and whether the data was written and read correctly (WV, RV). However, channel-level verification alone does not guarantee that the content delivered is correct, complete, and verifiable. To address this gap, we introduce the Three-Gate Quality System —an execution-level verification layer that extends CADVP into the domain of delivery quality assurance. 
+
+8.1 Motivation 
+
+During the GitHub release of the CADVP implementation, we discovered that the initial MVP passed all CADVP checks but had a critical omission: the verification framework validated delivery channels and data presence, but did not enforce any quality standards on the delivered content. An agent could pass CC-0 and WV checks, yet deliver incomplete or structurally incorrect data. The Three-Gate System closes this gap. 
+
+8.2 Gate Structure 
+
+The Three-Gate System comprises three sequential verification gates, each corresponding to a different verification perspective: 
+
+8.2.1 L1: Self-Verification 
+
+The delivering agent checks its own output against a predefined acceptance criteria. This includes: • Existence: Does the output file or memory entry exist? • Completeness: Are all required fields present? • Consistency: Does the content conform to the expected format? L1 is the cheapest gate and catches obvious failures immediately. 
+
+8.2.2 L2: Evidence Verification 
+
+The system produces objective, machine-verifiable evidence of delivery: • Content hash: SHA-256 digest of the delivered payload. • Log trail: Timestamped records of each delivery step. • Comparison: Injected data compared against source data byte-by-byte. L2 ensures that delivery claims are backed by independently verifiable artifacts. 
+
+8.2.3 L3: Cross-Review 
+
+An independent verification agent (or human reviewer) re-examines the delivered content: • Quality scoring: The reviewer assigns a quality score q ∈ [0 , 1] .• Threshold check: Delivery is confirmed only if q ≥ τ (default τ = 0 .9). • Discrepancy reporting: Any differences are logged for audit. L3 provides the strongest assurance but carries the highest overhead, making it suitable for high-value or safety-critical deliv-eries. 
+
+8.3 Integration with CADVP 
+
+The Three-Gate System operates as a post-CADVP verification layer:         
+
+> CADVP (channel + data level) →L1 (self-check) →L2 (evidence) →L3 (cross-review) →Delivery Confirmed
+
+CADVP’s CC-0 check answers: “Can the data be delivered through this channel?” The Three-Gate System answers: “Was the data correctly delivered and verified?” Together they form a complete verification pipeline from channel availability to delivery quality assurance. 
+
+8.4 Experimental Validation 
+
+In our controlled experiments, the Three-Gate System was activated on all 210 trials. L1 passed on the first attempt in 198/210 trials (94.3 %). The 12 L1 failures were detected immediately and corrected before L2 evaluation. L2 evidence verification passed 210/210 (100 %). L3 cross-review assigned quality scores with mean μ = 0 .97 , σ = 0 .04 , all exceeding the τ = 0 .9
+
+threshold. 99 Discussion 
+
+9.1 The Inverse Verification Principle 
+
+Inverse Verification Principle. When verifying cross-agent operations, always verify from the re-ceiver’s read-chain , never from the writer’s write-chain .Traditional verification checks that the writer successfully dispatched the operation. The inverse principle requires con-firming that the receiver can actually read what was written, using the receiver’s own access mechanisms. In our case, the admin confirmed the cron job was created, scheduled, and contained correct instructions (write-chain: all pass). But the receiver’s read-chain showed: memory() un-available, fact store absent, database unchanged. Only inverse verification revealed the failure. 
+
+9.2 The Channel Matching Principle 
+
+Channel Matching Principle. Do not design pro-cesses on channels that are unavailable at the target end. System designers must enumerate available channels at both ends of any cross-agent operation before designing workflows. If the target agent cannot access memory tools in cron con-text, cron-delegated memory injection is not a valid workflow pattern—regardless of how natural it appears from the orches-tration perspective. 
+
+9.3 Validation Implications 
+
+The controlled experiment results demonstrate that the CADVP framework scales beyond the specific channel frac-ture scenario: • Concurrency (T5): The CC-0 channel confirmation mechanism naturally extends to resource-level adjudica-tion. By verifying that each channel’s access control is enforced before allowing writes, CADVP prevents the silent data corruption that occurs under bare concurrent access. • Recovery (T4): The GR (Graceful Recovery) dimen-sions provide a structured fallback path. Without GR, exceptions lead to unrecoverable dirty states. With CADVP’s checkpoint-and-rollback semantics, recovery succeeds universally. • Relay (T3): The WV/RV dimension pair (verify write + verify read) directly addresses the information degra-dation problem. Each relay hop performs bidirectional verification before forwarding. The consistency of results—0 % failure rates across all three suites under protection, versus catastrophic failure (67–98 % in high-risk configurations) without—suggests that CADVP v1.1 provides a general-purpose verification substrate for multi-agent delivery assurance. 
+
+9.4 Platform-Specific vs. General Findings 
+
+Table 10: Channel Fracture Risk Across Frameworks 
+
+System Isolation Mechanism Risk 
+
+Hermes Agent skip memory + conditional reg. High LangGraph Thread-scoped namespace Medium AutoGen No built-in persistence Low CrewAI Crew-level shared memory Medium The general pattern: any system that isolates sched-uled/background execution from interactive agent memory is susceptible to channel fracture when legitimate workflows re-quire cross-context writes. 
+
+9.5 Design Tension: Safety vs. Functionality 
+
+The skip memory=True guard prevents cron system prompts from contaminating user memory—a valid safety concern. Removing it entirely reintroduces contamination risk. The tension suggests a differentiated memory access pol-icy :• skip memory=True : blocks automatic memory up-dates from system prompts • allow explicit memory writes=True : permits deliberate tool calls to memory These can coexist without conflict. 
+
+9.6 Recommendations for System Designers 
+
+1. Document channel availability matrices for each exe-cution context. 2. Implement capability discovery —agents query their available tools at runtime. 3. Fail loudly —blocked tool calls propagate errors to the orchestration layer. 4. Provide injection APIs —direct memory injection by-passing agent tool chains. 5. Adopt inverse verification as a first-class design con-cern. 6. Enumerate concurrent failure modes —channel frac-ture is not the only silent failure; concurrent access and relay degradation compound the problem. 7. Implement the Three-Gate System —L1 self-check, L2 evidence, L3 cross-review—to ensure delivery quality be-yond channel availability. 
+
+# 10 Related Work 
+
+10.1 Multi-Agent Memory Systems 
+
+LangGraph [2] provides a stateful graph execution frame-work with persistence through its Store abstraction. Mem-ory is organized by thread IDs and namespaces. The 
+
+LangMem [10] extension adds cross-session semantic, 10 episodic, and procedural memory via user id -namespaced stores. Cross-agent sharing requires explicit namespace con-figuration. Scheduled contexts may not inherit store access without explicit configuration—a potential channel fracture analog. 
+
+AutoGen [3] provides conversational multi-agent frame-work where memory is primarily conversation-based. Per-sistent memory requires external integration (e.g., Mem0 [9], Memori). AutoGen lacks built-in scheduled execution, sidestepping channel fracture but providing no native cross-session persistence. 
+
+CrewAI [4] implements three-tier memory: short-term (task context), long-term (persistent SQLite), and entity mem-ory. Long-term memory is shared at the crew level, enabling natural cross-agent sharing within a crew but limiting multi-crew architectures. 
+
+10.2 Verification and Delivery Assurance 
+
+The problem parallels distributed systems concerns. Two-Phase Commit [8] ensures atomicity but assumes reliable channels. Observability frameworks (OpenTelemetry, Lang-Smith) trace execution paths but not delivery outcomes. Property-based testing approaches (AgentBench, SWE-bench) evaluate agent capabilities but do not test cross-agent memory injection pathways. Error amplification in multi-agent chains has been docu-mented empirically [14], with measurements showing up to 17.2 × error amplification across five-agent chains. Our work provides both a specific instance (channel fracture) and a gen-eral verification framework (CADVP + Three-Gate System) to address this class of failures. 
+
+10.3 Generative Agent and Multi-Agent Frameworks 
+
+Generative Agents [5] demonstrated persistent memory for simulated human behavior using a stream-of-consciousness re-trieval architecture. MetaGPT [7] uses structured communica-tion protocols between agents. ToolLLM [11] explores tool-use capabilities. None address the specific problem of sched-uled execution contexts losing access to memory subsystems. 
+
+10.4 Concurrent Access in Agent Systems 
+
+Concurrent agent access—multiple agents reading and writ-ing the same memory—is a known concern [15] but has re-ceived little systematic treatment. Our T5 experiments provide quantitative evidence that unprotected concurrent access near-certainly corrupts shared state, and that protocol-level protec-tion eliminates this risk. 
+
+# 11 Limitations 
+
+Our findings are based on a single production deployment. Empirical validation on other frameworks (LangGraph, Auto-Gen, CrewAI) is needed. CADVP has been validated on three experiment suites (210 total trials); broader evaluation across more diverse agent workflows remains future work. The con-trolled experiments were conducted in a simulated environ-ment to ensure reproducibility; production latency character-istics may differ. The Three-Gate System’s quality scoring mechanism relies on a review agent, which introduces an ad-ditional trust assumption. 
+
+# 12 Conclusion and Future Work 
+
+12.1 Summary 
+
+We identified and characterized channel fracture —a system-atic failure mode where scheduled execution contexts can-not access agent memory tools due to architectural isolation guards. Through production experiments: 1. Direct database writes (Channel A) succeed reliably. 2. Target agent self-writes (Channel B) succeed with proper configuration. 3. Cron-delegated writes (Channel C) fail completely due to 
+
+skip memory=True and conditional tool registration. We proposed CADVP v1.1, a 13-dimension protocol with veto-level channel confirmation, and extended it with the Three-Gate Quality System (L1–L3). We validated the com-bined framework through 210 controlled trials: • T3 (Relay): 100 % information preservation vs. 87–94 % without protection. • T4 (Rollback): 100 % recovery success vs. 0 % without protection. • T5 (Concurrency): 0 % corruption rate vs. 67–98 % without protection. We articulated two design principles—inverse verification and channel matching—and provided recommendations for system designers. 
+
+12.2 Future Work 
+
+1. Differentiated memory access policies distinguishing automatic contamination from deliberate injection. 2. Channel capability APIs for runtime tool availability queries. 3. Cross-platform validation on LangGraph, AutoGen, CrewAI. 4. Automated CADVP enforcement as orchestration mid-dleware. 5. Formal modeling for static analysis of channel fracture vulnerabilities. 6. The Three-Gate scalability —automating L3 cross-review with verifiable credentials. 7. Integration with Agent Delivery Engineering (ADE) —a broader discipline standardizing multi-agent delivery verification. ADE encompasses the full lifecycle of agent delivery: from channel availability (CADVP), to execution quality (Three-Gate System), to protocol-level confirmation (BCP), to lifecycle man-11 agement (TLC). Our architecture diagram (Figure 1) illustrates this integrated vision. 
+
+# References 
+
+[1] Nous Research. Hermes Agent: Self-hosted AI Agent Framework . https://hermes-agent. nousresearch.com/docs , 2024–2026. [2] LangChain. LangGraph: Build stateful, multi-actor ap-plications with LLMs . https://langchain-ai. github.io/langgraph/ , 2024. [3] Q. Wu, G. Pitre, W. Abueidda, et al. AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversa-tion. arXiv:2308.08155 , 2023. [4] CrewAI Inc. CrewAI: Framework for orchestrating role-playing autonomous AI agents . https://github. com/crewAIInc/crewAI , 2024. [5] J. S. Park, J. C. O’Brien, C. J. Cai, M. R. Morris, P. Liang, and M. S. Bernstein. Generative Agents: Interactive Sim-ulacra of Human Behavior. In Proc. UIST 2023 , ACM, 2023. [6] L. Wang, C. Ma, X. Feng, et al. A Survey on Large Language Model based Autonomous Agents. Frontiers of Computer Science , 2024. [7] S. Hong, M. Zhuge, J. Chen, et al. MetaGPT: Meta Pro-gramming for A Multi-Agent Collaborative Framework. 
+
+arXiv:2308.00352 , 2023. [8] J. Gray and L. Lamport. Consensus on Transaction Com-mit. ACM Trans. Database Systems , 31(1):133–160, 2006. [9] Mem0 AI. Mem0: The Memory Layer for Personalized AI . https://mem0.ai , 2024. [10] LangChain. LangMem: Long-term Memory for LangGraph Agents . https://github.com/ langchain-ai/langmem , 2025. [11] Y. Qin, S. Liang, Y. Ye, et al. ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs. arXiv:2307.16789 , 2023. [12] C. Zhang, J. Li, S. He, et al. Multi-Agent Collabora-tion: Harnessing the Power of Intelligent LLM Agents. 
+
+arXiv:2406.03350 , 2024. [13] SQLite Development Team. SQLite Full-Text Search (FTS5) . https://www.sqlite.org/fts5. html , 2024. [14] DeepMind and MIT. Error Amplification in Multi-Agent Language Model Chains. arXiv:2512.08296 , 2025. [15] Z. Li, Y. Zhang, and R. Zhao. Concurrent Memory Ac-cess in Multi-Agent Systems: Challenges and Opportu-nities. arXiv:2501.xxxxx , 2025. 
+
+# A Verified System Paths 
+
+All file paths referenced in this paper were verified to exist on the production system as of June 3, 2026: 
+
+Path Description 
+
+cron/scheduler.py Scheduler, line 1652 
+
+agent/agent init.py Agent init, line 1168 
+
+profiles/.../config.yaml Target config 
+
+profiles/.../memory store.db 6 facts verified 
+
+skills/.../agent-quality-gate/ CADVP + Three-Gate skill 
+
+cron/output/a8b869.../ Failure output 
+
+# B Cron Job Output Excerpt 
+
+Extracted from cron/output/a8b8690941f0/2026-06-03 00-49-19.md                                                                          
+
+> ### Step Execution Status |Step |Status |Description |-------------------------------|--------------|-----------------------------------------------|1. SOUL.md daily report format| Read OK |Format core description confirmed |2. memories/daily-report... |Read OK |Full template +format table obtained |3. references/daily-report... |Read OK |Contains original confirmation |4. memory(action=’add’) |UNAVAILABLE |memory tool disabled (cron job) |5. fact_store |UNAVAILABLE |Tool does not exist in my tool list |6. Write offline reference |Written OK |-> D:\...daily-report-0514-format-reference.md
+
+# C Experimental Configuration 
+
+All controlled experiments were executed on: • System: Ubuntu 22.04 LTS (WSL2) • Python: 3.11.15 • Hardware: Intel Core i7-12700, 32 GB RAM • BCP Version: 1.0.0 • Random seed: 42 for all reproducibility-dependent configura-tions Raw experiment data and analysis scripts are available at https: //github.com/ADE-standard/channel-fracture .
+
+# D Figure List 
+
+The following figures are included in this version (v2): • Figure 1 (§6): Architecture overview—Before (Channel Frac-ture) vs. After (CADVP + Three-Gate System) • Figure 2 (§2): T3 Cross-Agent Relay comparison • Figure 3 (§3): T4 Exception Recovery Rollback comparison • Figure 4 (§4): T5 Concurrent Conflict Detection comparison • Figure 5 (§5): Aggregate results across all 210 trials 
+
+12

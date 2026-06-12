@@ -1,0 +1,978 @@
+Title: H2HMem: A Multimodal Memory Benchmark for Agents in Human-Human Interactions
+
+URL Source: https://arxiv.org/pdf/2606.09461v1
+
+Published Time: Tue, 09 Jun 2026 02:16:34 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+# H2HM EM : A M ULTIMODAL MEMORY BENCHMARK FOR 
+
+# AGENTS IN HUMAN –H UMAN INTERACTIONS 
+
+Shiping Zhu 
+
+Jilin University 
+
+zhusp9923@mails.jlu.edu.cn 
+
+Yibo Yang †
+
+Shanghai Jiao Tong University 
+
+yibo.yang93@gmail.com 
+
+Zhengyang Wang 
+
+Jilin University 
+
+zhengyangw9923@mails.jlu.edu.cn 
+
+Tiancheng Shen 
+
+University of California at Merced 
+
+stc199506@gmail.com 
+
+Dandan Guo †
+
+Jilin University 
+
+gdd_xidian@126.com 
+
+Ming-Hsuan Yang 
+
+University of California at Merced 
+
+minghsuanyang@gmail.com 
+
+June 9, 2026 
+
+§ Code õ Dataset  Leaderboard A Project Page 
+
+ABSTRACT 
+
+Large language model agents are increasingly deployed in human–human interaction settings, such as meeting assistants and clinical documentation systems, where they must observe conversations and retain information for downstream queries. Unlike traditional human–assistant settings, these environments are inherently multimodal, involve complex discourse phenomena such as anaphora and deixis, and contain asynchronous or conflicting information from multiple participants. However, existing memory benchmarks largely focus on single-user, text-only interactions, failing to capture these challenges. To address this gap, we introduce H2HMem , a Human-to-Human Multimodal Memory Benchmark for evaluating memory capabilities in complex human–human interactions. H2HMem includes both dyadic and multi-party conversations with multimodal information streams, and evaluates agents along three dimensions: memory recall, reasoning, and application. Experiments with advanced agents reveal substantial limitations in constructing, retaining, and utilizing memories across modalities, participants, and sessions, highlighting substantial room for improvement in next-generation LLM agents. 
+
+1 Introduction 
+
+Large language model (LLM) agents, such as ChatGPT [ 5] and DeepSeek [ 6], have advanced substantially, with memory mechanisms improving coherence in extended multi-turn human–assistant dialogues [ 9]. Beyond this paradigm, however, a new class of applications is emerging, as illustrated in Figure 1: LLM agents as observers in human–human interactions . In these settings, agents passively capture critical conversational information for subsequent querying. This capability underpins growing real-world applications, including clinical documentation systems that generate patient-centered notes from clinician–patient dialogues [ 21 , 20 , 2], AI-powered medical board meeting assistants processing multimodal inputs [ 30 ], and general meeting summarization systems [ 22 ]. To operate effectively, such agents must track information distributed across multiple participants, maintain context over extended interactions, and integrate signals across modalities [3]. Robust multimodal memory is therefore essential. These emerging deployment environments introduce three fundamental challenges. First, human–human conversations are inherently multimodal, naturally interleaving text with visual content such as shared photographs and screen captures [ 43 , 44 ]. Second, natural language exhibits complex phenomena—such as anaphora and discourse deixis—that require agents to resolve references against an evolving conversational memory rather than retrieve isolated facts [ 45 ]. 
+
+> †
+
+denotes the corresponding author. 
+
+> arXiv:2606.09461v1 [cs.CL] 8 Jun 2026
+
+A PREPRINT - J UNE 9, 2026 Human-Human Interaction 
+
+(agent as an observer) 
+
+1 Human-Human Conversation  
+
+> Humans communicate and share images.
+> Alice
+> Bob
+> Carol
+> Wow, it is
+> so cute. Sorry, I’m
+> afraid of dogs.
+
+2 Agent(Observing & Recording) 
+
+> The agent observes the conversation and builds
+> memory.
+> Visual information
+> (shared in dialogue)
+> Multimodal Memory
+> Alice has a pet.
+> Carol is afraid of dogs.
+> Bob thinks the dog is cute.
+
+. . .
+
+3 Memory-based QA    
+
+> After ten days, agent answers questions using
+> multimodal memory. No, She doesn’t.
+> She is afraid of
+> dogs.
+> Look, this is my
+> pet, little.
+> Does Carol like
+> this picture?
+
+Ten days 
+
+later 
+
+Human-Assistant Interaction 
+
+(agent as a participant)  
+
+> Who is the 44th
+> President of the
+> United States? Barack Obama.
+
+Human-Assistant Interaction 
+
+(agent as a participant) 
+
+1 Human-Assistant Conversation 
+
+> Human communicates with assistant.
+
+2 Agent(Responding & Recording) 
+
+3 Later Conversation          
+
+> The agent participates the conversation and builds memory.
+> Memory
+> David
+> I’m allergic to penicillin.
+> What antibiotics are
+> safe for me?
+> You should avoid
+> penicillin and consider
+> alternatives like
+> azithromycin.
+> • David is allergic to
+> penicillin.
+> • Suggested alternatives:
+> azithromycin
+> I have an infection
+> now. What should
+> I take?
+> Since you’re allergic to
+> penicillin, avoid it and
+> consider alternatives.
+> Ten days
+> later
+
+1
+
+2
+
+3
+
+Figure 1: Comparison between Human–Assistant Interaction and Human–Human Interaction. Third, these interactions often involve multiple participants (dyadic or multi-party) who jointly shape the dialogue, contributing information asynchronously and at times presenting conflicting perspectives [ 13 , 14 ]. Systematically evaluating memory mechanisms under these conditions is therefore essential. Existing memory benchmarks, however, fail to capture these complexities. Most are designed for single-user, text-only human–assistant interactions [ 12 , 69 , 24 , 11 ]. Although recent efforts have begun exploring human–human conversations, they remain limited in scope: LoCoMo [ 27 ] incorporates vision but is restricted to dyadic interactions and lacks a comprehensive memory evaluation framework, whereas others [ 28 ] support multi-party settings but remain exclusively text-based. Consequently, no existing benchmark adequately captures the full spectrum of human–human interactions—spanning both dyadic and multi-party settings—while enabling multimodal memory evaluation. A comparison between existing benchmarks and ours is presented in Table 1. To address this gap, we introduce H2HMem , a Human-to-Human Multimodal Memory Benchmark . Since directly collecting real-world multimodal conversations raises substantial privacy concerns that are difficult to fully mitigate through de-identification [ 64 , 65 ], we develop a human-in-the-loop generation pipeline. By guiding LLM agents to iteratively generate dialogues, this pipeline avoids privacy risks while producing realistic multimodal, multi-session, and multi-participant interactions. We design evaluation tasks along three functional dimensions of memory that reflect the complexities of natural communication: (1) Memory Recall , which measures retrieval of multimodal facts and resolution of evolving knowledge across sessions, including Unimodal Precise Recall (UPR), Cross-modal Related Retrieval (CRR), and Knowledge Resolution (KR); (2) Memory Reasoning , which evaluates higher-level inference through Multimodal Causal Reasoning (MCR), Reference & Evolution Tracking (RET), and Temporal Reasoning (TR); and (3) Memory Application , which assesses the ability to use memory in dynamic settings through Test-Time Learning (TTL), Conflict Detection (CD), and Answer Refusal (AR). Together, these dimensions provide a comprehensive framework that moves beyond simple recall to systematically evaluate memory in complex human–human interactions. We summarize our contributions as follows: • We introduce H2HMem, a benchmark for evaluating multimodal memory in realistic human–human observer scenarios, covering both dyadic and multi-party interactions. • We construct a large-scale multimodal, multi-session dataset through a privacy-preserving human-in-the-loop pipeline that captures the evolving nature of real-world communication. • We propose a comprehensive evaluation taxonomy spanning recall, reasoning, and application, revealing key limitations of current MLLMs in cross-modal memory alignment and structured reasoning. 2A PREPRINT - J UNE 9, 2026 Table 1: Comparison of dialogue benchmarks. ✓: fully covered; ✗: not covered; ✓✗: partially covered. A. Round and A. Img. denote the average number of rounds and images per session, respectively, and MM-Info. indicates whether multimodal information is included.                                                                                                               
+
+> Benchmark Interaction Type Conversational Characteristics Recall Reasoning Application A. Round A. Img. MM-Info. UPR CRR KR MCR RET TR TTL CD AR LongMemEval [12] Human–assistant 5.19 –✗✓✗✗✓✓✗✗✓✗✗✓
+> PersonaMem [23] Human–assistant 15–30 –✗✓✗✗✓✗✗✓✗✗✗
+> Mem-Gallery [26] Human–assistant 16.51 4.18 ✓✓✓✗✓✗✗✓✓✓✓
+> MemoryAgentBench [24] Human–assistant 9.55 –✗✓✗✗✗✗✗✓✗✓✓✗
+> LoCoMo [27] Dyadic 10.81 3.35 ✓✓✗✗✗✗✓✗✗✓
+> MSC [29] Dyadic 8.16 –✗✓✗✗✗✗✗✗✗✗✗
+> EverMemBench [28] Multi-party 28.0 –✗✓✗✗✗✓✗✗✓✗✗✗
+> H2HMem Dyadic, Multi-party 22.91 4.21 ✓✓✓✓✓✓✓✓✓✓
+
+2 Related Work 
+
+Agents in human–human Interactions. Recent work has begun to study LLM-based agents in human–human interaction settings, where the agent acts as an observer over continuous conversational streams [ 22 ]. Unlike traditional human–assistant scenarios, these settings require persistent interpretation of evolving human–human interactions and maintaining coherence over long temporal horizons [ 18 , 7]. As agents are deployed in increasingly rich environments, multimodal inputs—including speech, text, and documents—are incorporated [ 30 ], significantly increasing the com-plexity of information flow. Commercial systems such as Zoom AI Companion [31 ] already reflect this trend, integrating multimodal meeting content for downstream querying. These characteristics jointly impose strong requirements on an agent’s ability to track, integrate, and retain information over time, making memory a central capability in such settings. 
+
+Memory Mechanisms for LLM Agents. Existing memory methods for LLM agents mainly fall into three paradigms. One line of work extends the context window by directly incorporating long interaction histories into the model input [ 46 ,47 , 48 ]. Although simple, this approach incurs high computational cost, suffers from long-context degradation [ 49 ], and lacks cross-session persistence. Another line of work adopts retrieval-augmented generation, maintaining an external memory store for history retrieval [ 50 , 51 , 53 ]. While scalable and persistent, such methods mainly support factual recall and struggle with episodic dependencies and causal structures [ 52 ]. A third direction introduces specialized memory modules with explicit operations such as writing, indexing, summarization, and forgetting [ 54 , 55 ]. Despite these advances, existing methods are primarily developed and evaluated in human–assistant settings, leaving their effectiveness in multimodal human–human interactions unclear. 
+
+Memory Benchmarks. To evaluate memory capabilities, a range of benchmarks have been proposed. In human– assistant settings, P ERSONA MEM [23 ] studies preference following and user profiling, L ONG MEM EVAL [12 ] focuses on long-term memory in multi-turn dialogue, M EM -G ALLERY [26 ] extends to multimodal interactions, and M EMO -
+
+> RY
+
+AGENT BENCH [24 ] evaluates memory in dialogue streams. Moving toward human–human settings, MSC [ 29 ] and LOCOMO [27 ] consider conversational memory, but both are restricted to dyadic interactions. E VER MEM BENCH [28 ]extends to multi-party dialogue, yet leaves multimodal aspects underexplored. Related work has also considered observer-style agents: M EM BENCH [69 ] studies passive observation with one-sided inputs, and M3-B ENCH [70 ]introduces video-based QA over human interactions, but is constrained by limited temporal scope. Overall, no existing benchmark jointly captures multimodality, dyadic & multi-party interaction, and long-horizon memory in human–human settings within an integrated evaluation framework. Table 1 highlights these gaps and situates our proposed H2HMem. 
+
+3 H2HMem 
+
+3.1 Problem Formulation 
+
+We study multi-session, multimodal question answering grounded in human–human interactions. An interaction, denoted as a dialogue S, is represented as a sequence of T sessions, S = ( s1, . . . , s T ). Each session st, associated with timestamp τt, corresponds to a single-day conversation, typically centered around a specific topic (e.g., movie, pet, or health). 3A PREPRINT - J UNE 9, 2026 Describe the development process of the 
+
+> Human
+> Director
+> LLM
+> Scriptwriter
+
+…
+
+Scenario Generation 
+
+topics 
+
+> Human
+> Director
+> remove
+> Web
+> Search
+
+Image Collection & Human Refinement 
+
+> Web Search
+> Text to image
+> Manual editing
+> filter
+
+Align pictures with outlines 
+
+Image Caption & Dialogue Generation 
+
+> LLM
+> Scriptwriter
+
+Multi-session Scenarios 
+
+…
+
+Participant Profile Generation 
+
+> Human
+> Director
+> LLM
+> Scriptwriter
+
+Schema  
+
+> Name
+> Background
+> Age
+> Occupation
+> Speaking style
+> Hobby
+
+…  
+
+> Name: B
+> Backgro
+> und:...
+> Name: A Name: B
+> Name: C Name: D
+
+Multi-party Dyadic 
+
+…
+
+> Human
+> Director
+
+image caption 
+
+… …
+
+> Refine
+> outlines
+
+…
+
+… 
+
+> image
+> keywords
+> image keywords
+> A long bridge spans the
+> vast sea area, connecting
+> the two cities…
+> The towering mountains
+> reverberate with the
+> morning mist. ..
+
+…
+
+> Name: A
+> Backgro
+> und:...
+
+Profiles 
+
+Profiles Profiles 
+
+> outlines
+
+…
+
+A: Img1 . Look, I went to Hong Kong 
+
+yesterday. It’s so amazing. 
+
+B:It loos so cool. I never see so long 
+
+and broad bridge. 
+
+A:ImgN . I went to Mount Huangshan 
+
+yesterday. 
+
+B:Wow, Is the mist true? 
+
+C:It looks like a fairyland. 
+
+D:I have also been to Mount Huangshan 
+
+before.  
+
+> img1
+> 1
+> imgN
+> N
+> 1N
+
+Dialogue s
+
+Dialogues 
+
+> LLM
+> Scriptwriter
+
+Image Captions 
+
+Question-Answer Paris Construction 
+
+> Human
+> Director
+
+Memory 
+
+Recall 
+
+Memory 
+
+Reasoning 
+
+Memory 
+
+Application 
+
+Category Q&A Refine    
+
+> Q:What’s the A’s
+> occupation?
+> A:Docotr.
+> Q:Why did B refuse to
+> trave to Lundon?
+> A:He is poor at English.
+> Q:C hates apple. Is
+> it right?
+> A:Yes, it is.
+> Wrong ,A is
+> a teacher.
+> Right
+> Right
+> Describe the development
+> process of the dialogue
+> Describe the characteristics
+> of the human
+
+…
+
+…
+
+Figure 2: Dataset construction pipeline of our H2HMem. (1) generating dyadic and multi-party participant profiles from structured schemas; (2) creating multi-session scenarios with topic-specific outlines and image keywords; (3) collecting and refining images to align visual evidence with scenario outlines; (4) prompting an LLM scriptwriter with profiles, outlines, and image captions to generate dialogues; and (5) constructing and human-verifying question–answer pairs across memory recall, reasoning, and application. A session is defined as st = ( ut, 1, . . . , u t,n t ), where nt is the number of chronologically ordered utterances. Each utterance is a multimodal tuple ut,i = ( pt,i , x t,i , v t,i ), where pt,i ∈ P denotes the speaker, xt,i is the textual content, and vt,i is an optional image. The participant set P determines the interaction type: the dialogue is dyadic if |P| = 2 
+
+and multi-party if |P| ≥ 3. An utterance is valid if xt,i ̸ = ∅ or vt,i ̸ = ∅.We formalize memory as follows. A storage function maps each utterance ut,i to a memory unit m. After processing all sessions, the memory state is 
+
+MT = {m1, . . . , m N }, N =
+
+TX
+
+k=1 
+
+nk.
+
+Given a query q, the system retrieves a subset R = retrieve( q, MT ) and produces the final answer a = LLM( R, q ).Table 2: Statistics of the H2HMem dataset. “Conv. Data” denotes conversation data. “Eval. Data” denotes evaluation data. “Avg. sessions/dialogue” denotes the average number of sessions per dialogue. “Avg. rounds/session” denotes the average number of dialogue rounds per session. “Avg. participants/dialogue” denotes the average number of participants per dialogue. 
+
+H2HMem Aspect Dyadic Multi-party Sum 
+
+Conv. Data Dialogues 20 5 25 Sessions 284 25 309 Dialogue Rounds 5,316 1,762 7,078 Included Images 951 349 1,300 Avg. participants/dialogue 2.0 5.2 2.64 Avg. sessions/dialogue 14.2 5.0 12.4 Avg. rounds/session 18.7 70.5 22.9 Eva. Data QA Pairs 2,046 190 2,236 Included Images 596 22 618 
+
+4A PREPRINT - J UNE 9, 2026 
+
+3.2 Dataset Construction Pipeline 
+
+We construct the dataset modeling human–human interactions under an online conversational setting, including dyadic and multi-party interactions. The overall statistics of H2HMem benchmark are presented in Table 2. More detailed conversation data statistics is shown in Appendix A.1. Both dialogue types follow the same pipeline with minor parameter differences. We adopt a human-in-the-loop paradigm: humans act as directors, ensuring scenario consistency, visual grounding, and quality control; LLMs serve as scriptwriters, generating dialogues, scenarios, and QA pairs. An overview of our pipeline is shown in Figure 2. Cross-modal 
+
+> Related
+> Retrieval (CRR)
+> 383
+> （17.1% ）
+> Unimodal
+> Precise Recall (UPR)
+> 345
+> （15.4% ）
+> Multimodal Casual
+> Reasoning (MCR)
+> 353
+> （15.8% ）
+> Reference &
+> Evolution
+> Tracking (RET)
+> 335
+> （15.0% ）
+> Knowledge
+> Resolution(KR)
+> 44
+> （2.0% ）
+> Conflict
+> Detection (CD)
+> 246
+> （11.0% ）
+> Test-Time
+> Learning (TTL)
+> 214
+> （9.6% ）
+> Temporal
+> Reasoning (TR)
+> 45
+> （2.0% ）
+> Answer
+> Refusal (AR)
+> 271
+> （12.1% ）
+> Memory
+> Recall
+> 728 (32.5%)
+> Memory
+> Reasoning
+> 733 (32.8%)
+> Memory
+> Application
+> 731 (32.7%)
+> Total:
+> 2,236
+> QA Pairs
+
+（a）
+
+Memory Recall 
+
+> Unimodal Precise
+> Reall (UPR):
+> Retrieve precise fact from a
+> single modality (text or image) .
+> Cross-modal Related Retrieval
+> (CRR):
+> Align text with correponding
+> image content.
+> Knowledge Resolution (KR):
+> Resolve confiction or
+> updated information acorss
+> sessions.
+
+Memory Reasoning 
+
+> Multimodal Causal
+> Reasoning (MCR):
+> Infer causal relationship
+> between text and image.
+> Refrence & Evolution
+> Tracking (RET):
+> Resolve anaphora/deixis
+> and track entity evolution.
+> Temporal Reasoning (TR):
+> Order events
+> chronologically across
+> sessions.
+
+Memory Application    
+
+> Test-Time Learning (TTL):
+> Use memory in new
+> scenarios.
+> Conflict Detection (CD):
+> Binary decison on
+> statement consistency
+> with memory.
+> Answer Refusal (AR):
+> Refuse to answer when
+> information is missing or
+> ambigous.
+> Q："What city did Alice say she wanted to visit in
+> Session 2?“
+> A：Beijing.
+> Q：How much did Bob’s hotel in London cost?
+> A：Bob's payment bill shows that the cost is $180
+> per night.
+> Q："What is Alice's occupation in session 11? “
+> A：Alice is a student before session 8. She is a
+> doctor in session 11.
+> Q："Bob is allergic to mangoes. Does this
+> contradict the conversation? “
+> A：Yes. Alice is allergic to mangoes.
+> Q：“What sport doer Bob hate “
+> A：Not Mentioned.
+> Q："Why did Bob change his travel dates?“
+> A：The picture Alice shared showed the flight
+> was canceled.
+> Q：" What does “that place” refer to in Session
+> 4, Utterance 7?“
+> A：Louvre.
+> Q：" Did Alice share her itinerary before or
+> after Bob booked flights?“
+> A：Before.
+> Q : According to the conversation, what is an
+> important measure to protect stray cats?
+> A : Based on the experience, TNR is an
+> important measure.
+
+（b）
+
+Figure 3: Figure (a) shows the total number and distribution of questions; Figure (b) provides definition and an example for each question type. 
+
+Online Conversational Setting. We focus on online conversational environments, where interactions occur via temporally ordered messages, allowing asynchronous participation, as in social media or messaging platforms [ 34 , 35 ]. This setting offers three key advantages: strong ecological validity, structured information flow, and support for diverse topics and participants yielding richer conversational dynamics [36, 37]. 
+
+Stage 1: Participant Profile Generation. We first define a structured schema for participant profiles, inspired by schema-guided dialogue modeling and structured persona-based datasets [ 38 , 39 ]. These profiles include attributes such as personality, background and communication style. Conditioned on this schema, we employ DeepSeek-V3 [ 6 ] to generate structured participant profiles. An example of profiles is presented in Appendix A.2. 
+
+Stage 2: Scenario Construction. We summarize eleven common conversational topics and, given participant profiles, prompt the LLM to sample topics. For each topic, the LLM generates multiple session-level outlines, each describing a session’s local events. These sessions are temporally ordered, forming a coherent multi-session scenario 
+
+S = ( s1, . . . , s T ). The LLM also generates image retrieval keywords to facilitate visual content collection in the subsequent stage. An example of outlines is presented in Appendix A.3. 
+
+Stage 3: Image Collection and Human Refinement. We retrieve images through online search, supplementing retrieval with text-to-image generation [ 40 , 41 ] and manual creation/editing based on the image keywords. Then we filter and refine pictures to align images with outlines, modifying the outlines when necessary. These images become the visual content vt,i in each utterance. More details are presented in Appendix A.4.1. 
+
+Stage 4: Image Captioning and Dialogue Generation. Dialogues are generated using DeepSeek-V3 [ 6], conditioned on participant profiles, session outlines, and images. Since DeepSeek-V3 [ 6] cannot process images directly, we generate detailed captions via GPT-4o [ 42 ]. The agent generates dialogues and refers to images using numeric identifiers. We denote each utterance as ut,i = ( pt,i , x t,i , v t,i ), where xt,i denotes the textual content and vt,i denotes the corresponding image obtained by replacing the numeric reference in xt,i with the actual image. 
+
+Stage 5: Question-Answer Pairs Construction. Based on the generated dialogues S = ( s1, . . . , s T ), we use DeepSeek-V3 [ 6] to generate a diverse set of questions q targeting different memory capabilities (recall, reasoning, application). During generation, any visual information in the dialogues is still replaced with captions. The generated question-answer pairs are further refined by human annotators to ensure clarity, correctness, and appropriate difficulty. More details on the refinement are presented in Appendix A.4.2. 5A PREPRINT - J UNE 9, 2026 Table 3: LLM-Judge performance with GPT-4.1-Nano [ 59 ]. D = Dyadic, M = Multi-party, and D&M denotes the weighted average, weighted by the number of questions. * indicates the higher value between D and M. Bold numbers in the D&M column denote the best overall performance. Light blue shading highlights D&M cells. Additional results on other backbone models are reported in Appendix D.1.                                                                                                                                                                                                   
+
+> Category Method Dataset Memory Recall Memory Reasoning Memory Application Overall UPR CRR KR MCR RET TR TTL CD AR Text-based Full (Text) D0.2747 *0.2378 0.4779 *0.2422 *0.2855 *0.3929 *0.3623 0.3009 *0.8456 *0.3496 *
+> M0.2155 0.3800 *0.2500 0.1413 0.2386 0.2000 0.3646 *0.1146 0.7188 0.3052 D&M 0.2694 0.2471 0.4520 0.2351 0.2821 0.3715 0.3626 0.2820 0.8339 0.3464 NaiveRAG D0.5093 0.4445 0.4896 *0.3081 0.3269 0.5000 0.5428 0.3618 *0.8467 *0.4667 M0.6048 *0.5104 *0.2500 0.3500 *0.4239 *0.5000 0.6400 *0.1250 0.8000 0.4933 *
+> D&M 0.5181 0.4489 0.4563 0.3111 0.3340 0.5000 0.5542 0.3377 0.8424 0.4569 A-Mem [54] D0.6648 0.6070 0.5286 *0.4220 0.4515 0.4306 *0.5908 0.4014 *0.9356 0.5707 M0.6694 *0.6700 *0.4000 0.4600 *0.5312 *0.3500 0.7083 *0.2400 1.0000 *0.5984 *
+> D&M 0.6652 0.6111 0.5140 0.4247 0.4572 0.4216 0.6045 0.3850 0.9415 0.5757
+> Multi-modal Full (MM) D0.3427 *0.3181 *0.5161 *0.3289 *0.3344 *0.3167 0.4681 *0.3073 *0.8107 0.4027 *
+> M0.2903 0.2800 0.4500 0.2708 0.2826 0.3500 *0.4583 0.1739 0.8152 *0.3648 D&M 0.3380 0.3156 0.5086 0.3248 0.3307 0.3204 0.4670 0.2938 0.8111 0.3988 MuRAG [56] D0.6312 0.5216 0.5096 0.4407 *0.4442 0.3833 *0.6052 0.3939 *0.9002 0.5496 M0.6694 *0.6900 *0.6500 *0.3100 0.4762 *0.2000 0.7000 *0.2400 1.0000 *0.5757 *
+> D&M 0.6346 0.5326 0.5255 0.4315 0.4465 0.3629 0.6162 0.3782 0.9094 0.5527 NGM [57] D0.5119 *0.4506 *0.4872 *0.3576 0.3998 0.4562 *0.5635 0.4509 *0.9072 0.4946 M0.5081 0.3700 0.4500 0.4300 *0.4271 *0.4000 0.7000 *0.2400 1.0000 *0.5172 *
+> D&M 0.5116 0.4454 0.4830 0.3627 0.4017 0.4500 0.5794 0.4295 0.9157 0.5049
+
+3.3 Task Design 
+
+To systematically evaluate these capabilities, we design a hierarchical taxonomy of nine task types, organized into three categories. Figure 3 shows example questions for all task types. 
+
+Memory Recall. This category evaluates whether models can retrieve explicitly presented multimodal information. (1) 
+
+Unimodal Precise Recall (UPR) : Given a query q, the model retrieves information from a single modality xt,i or vt,i .(2) Cross-modal Related Retrieval (CRR) : The model retrieves aligned content across modalities, i.e., mapping text 
+
+xt,i to image vt,i or vice versa. (3) Knowledge Resolution (KR) : Given multi-session dialogues S = ( s1, . . . , s T )
+
+with updated information across sessions, the model retrieves the currently correct information from memory MT .
+
+Memory Reasoning. This category evaluates reasoning over multimodal information across time and participants. (1) 
+
+Temporal Reasoning (TR) : The model orders events across sessions using timestamps τt and utterance positions. (2) 
+
+Multimodal Causal Reasoning (MCR) : The model infers causal relations between textual content xt,i and visual content vt′,j across sessions and speakers. (3) Reference & Evolution Tracking (RET) : The model resolves references and tracks entity evolution across sessions st and speakers pt,i .
+
+Memory Application. This category evaluates how models apply and update memory during inference. (1) Test-Time Learning (TTL) : The model adapts to new scenarios at inference time by using memory MT . (2) Conflict Detection (CD) : The model detects whether a new statement contradicts MT . (3) Answer Refusal (AR) : The model refuses to answer when information is absent from MT or cannot be inferred. 
+
+4 Experiment 
+
+4.1 Experimental Setup Backbone and Memory Method. We conduct a comprehensive evaluation of both text-based and multimodal memory methods. Specifically, text-based methods include Full Memory (Text), NaiveRAG, and A-Mem [ 54 ], while multimodal memory methods include Full Memory (Multimodal), MuRAG [ 56 ], and NGM [ 57 ]. More detailed explanations of memory methods is shown in Appendix B. All methods are evaluated using multimodal large language models (MLLMs) as the Backbone, including the Qwen2.5-VL family (3B and 7B instruct variants) [ 58 ] and GPT-4.1-Nano [ 59 ]. For methods that require retrieval, we adopt a dense retriever with a default top-K = 5 . To enable a fair comparison between text-based and multimodal memory systems, we augment textual memory methods with high-quality image captions generated by GPT-4o [42]. More implement details can be found in Appendix C.1. 6A PREPRINT - J UNE 9, 2026 Table 4: Weighted average (D&M) performance of different methods across all categories. Metrics: P=Precision, R=Recall, F1=F1-score, B=BLEU-1. Results are from GPT-4.1-nano [ 59 ] with top-5 retrieval. Bold values indicate the best performance among the six methods within each metric column for the given category. Additional results on other backbone models are reported in Appendix D.2.                                                                                                                                                                                                                                                               
+
+> Category Method Metrics Memory Recall Memory Reasoning Memory Application Overall UPR CRR KR MCR RET TR TTL CD AR Text-based Full (Text) P0.1412 0.1074 0.3290 0.1197 0.1317 0.4469 0.1184 0.0650 0.8279 0.2394 R0.2111 0.2212 0.3120 0.1950 0.2239 0.4802 0.2260 0.0521 0.8255 0.2637 F1 0.1479 0.1277 0.3071 0.1346 0.1470 0.3997 0.1381 0.0550 0.8215 0.2391 B0.1153 0.0965 0.2461 0.1069 0.1083 0.2830 0.1086 0.0489 0.8172 0.2299 NaiveRAG P0.3136 0.2264 0.3249 0.1330 0.1364 0.6112 0.1917 0.2378 0.8412 0.3082
+> R0.3605 0.2967 0.2429 0.1843 0.1682 0.3773 0.3138 0.2158 0.8353 0.3042 F1 0.3041 0.2383 0.2601 0.1420 0.1299 0.4386 0.2119 0.2194 0.8330 0.2999
+> B0.2575 0.2045 0.1656 0.1145 0.0954 0.2577 0.1754 0.2112 0.8309 0.2841
+> A-Mem [54] P0.1384 0.0942 0.3296 0.0958 0.1103 0.2258 0.0767 0.1036 0.8834 0.2206 R0.4544 0.4390 0.3988 0.3712 0.3657 0.6550 0.4325 0.0869 0.8979 0.4215
+> F1 0.1887 0.1410 0.3483 0.1380 0.1549 0.2895 0.1251 0.0887 0.8748 0.2364 B0.1257 0.0828 0.2903 0.0847 0.1020 0.2006 0.0795 0.0027 0.8690 0.2120 Multi-modal Full (MM) P0.1244 0.0865 0.3053 0.1045 0.1071 0.3612 0.0968 0.1298 0.7850 0.2225 R0.2787 0.2558 0.3557 0.2498 0.2671 0.4891 0.2991 0.1180 0.7906 0.3034 F1 0.1458 0.1154 0.3148 0.1343 0.1372 0.3395 0.1275 0.1175 0.7854 0.2259 B0.1069 0.0793 0.2575 0.0953 0.0955 0.2408 0.0843 0.1114 0.7795 0.2137 MuRAG [56] P0.1747 0.0994 0.3513 0.1152 0.1299 0.3984 0.1142 0.1101 0.8856 0.2601 R0.4063 0.3120 0.3581 0.2923 0.3194 0.5559 0.3672 0.1067 0.8898 0.3443 F1 0.2179 0.1349 0.3451 0.1472 0.1661 0.3657 0.1541 0.0999 0.8749 0.2738 B0.1529 0.0861 0.2928 0.1049 0.1150 0.2280 0.0951 0.0118 0.8702 0.2453 NGM [57] P0.2416 0.1412 0.4053 0.1498 0.1662 0.6711 0.1844 0.0780 0.8933 0.2858 R0.3471 0.2964 0.3110 0.2500 0.2692 0.5189 0.3552 0.0681 0.8862 0.3243 F1 0.2537 0.1710 0.3438 0.1709 0.1853 0.5255 0.2157 0.0712 0.8804 0.2804 B0.1737 0.1196 0.2660 0.1292 0.1393 0.3287 0.1457 0.0000 0.8747 0.2629
+
+Evaluation Metrics. To systematically assess agent performance, we adopt an LLM-as-Judge approach as our primary evaluation metric. Specifically, we employ GPT-4o-mini as a zero-shot evaluator to score each model response against the ground truth. We validated this approach by measuring agreement with human judgments on a 200-sample subset, achieving Cohen’s κ = 0 .84 which indicates near-perfect agreement [ 73 ]. As a complement, we also report traditional lexical metrics, including precision, recall, F1 score, and BLEU-1. The details can be found in Appendix C.3. 
+
+4.2 Experimental Results 
+
+Table 3 and Table 4 report the overall performance evaluated by LLM-as-Judge and lexical metrics, respectively. Overall performance remains low, with the best weighted average LLM-as-Judge score reaching only 0.5757 (A-Mem [ 54 ]). Combining semantic correctness and lexical fidelity, we identify four major bottlenecks in current memory systems. 
+
+(1) Cross-modal alignment remains challenging. A consistent gap exists between Unimodal Precise Recall (UPR) and Cross-modal Related Retrieval (CRR). For example, MuRAG [ 56 ] drops from 0.6346 to 0.5326 in LLM-as-Judge scores, with a similar lexical gap (recall: 0.4063 vs. 0.3120). (2) Weak distractor filtering despite successful retrieval. 
+
+A large recall–precision gap is observed across methods; for instance, A-Mem [ 54 ] achieves 0.4215 recall but only 0.2206 precision, indicating difficulty filtering noisy multiple participants’ information while agents can successfully retrieve relevant history. (3) Limited causal reasoning and adaptation to human referential conventions. Reasoning tasks, especially Multimodal Causal Reasoning (MCR) and Reference & Evolution Tracking (RET), consistently show the lowest scores. Moreover, the near-zero BLEU-1 scores in these tasks (Table 4) indicate that models rarely reproduce the precise factual phrasing needed to connect distributed evidence, particularly under human preferences for implicit reference. (4) Poor robustness to conflicting information. Conflict Detection (CD) remains particularly difficult, with near-zero lexical precision and recall (e.g., A-Mem CD recall: 0.0869), highlighting the inability to resolve contradictions in human–human interactions. 
+
+Impact of Interaction Structure: Dyadic vs. Multi-party. To understand how interaction structure affects agent memory, we compare performance across dyadic and multi-party settings (Table 3). Dyadic dialogues span longer time horizons with more sessions (avg. 14.2 sessions), whereas multi-party dialogues contain denser interactions within fewer sessions (avg. 70.5 rounds/session and 5.0 sessions). This difference leads to complementary performance patterns. Consistency-oriented tasks such as Knowledge Resolution (KR) and Conflict Detection (CD) are substantially harder in 7A PREPRINT - J UNE 9, 2026 ×
+
+. . . . . .   
+
+> You're right, emotional support is important too.
+> Here's a recipe for red bean rice cake soup , and the
+> cat-shaped rice cakes are really cute—maybe they'll
+> bring you a bit of joy. I've sent the picture to you.
+> It looks nice. And I think tomato and egg noodles are
+> also great for a quick energy boost. Here is a picture of
+> the recipe—it's simple to make and uses easily
+> accessible ingredients. Sending it to you for reference.
+> Shen
+> Qingyan
+> Lu
+> Zhixing
+
+. . . . . . 
+
+Q In the recipe that Lu Zhixing shared with Shen Qingyan, what 
+
+> ingredients are included in the ingredient list?
+
+✖ ✔ ～The ingredients       
+
+> included in the recipe
+> are corn silk, red dates,
+> carrots, and rice.
+> Tomato, noodles, eggs,
+> scallions, and garlic.
+> The recipe is tomato
+> and egg noodles recipe.
+> It may include tomatoes,
+> eggs, and noodles.
+> Full (MM) MuRAG NGM
+> ✖✔～Wrong Right Partially conver
+> ×
+
+. . . . . . 
+
+. . . . . . 
+
+✖      
+
+> Full (MM) MuRAG NGM
+> ✖✔～Wrong Right Partially conver
+
+A Tomato, noodles, eggs, scallions, and garlic. 
+
+Q What conclusion did Lin Chang'an draw based on the memu Zhou 
+
+> pingfang shared?
+
+A The price seems appropriate.   
+
+> This is their menu . Look, they have classic dishes
+> like boiled fish and mapo tofu.
+> Oh, Sichuan cuisine? Its price seems reasonable . How's the
+> atmosphere in the restaurant? I don't really like places that
+> are too noisy or chaotic.
+> Zhou
+> Pingfan
+> Lin
+> Chang'an
+> Zhou Pingfang is
+> interested in sports
+> or casual footwear
+
+✖ ✖ 
+
+> The restaurant has a
+> good environment with
+> private rooms and a
+> quiet atmosphere.
+> The memu have classic
+> dishes like boiled fish
+> and mapo tofu.
+
+(a) (b) 
+
+Figure 4: Case studies of multimodal conversational reasoning. (a) Identifying ingredients in Lu Zhixing’s recipe. (b) Inferring Lin Chang’an’s conclusion based on a shared menu. multi-party settings due to contradictory signals from multiple speakers. For example, NaiveRAG’s KR score drops from 0.4896 in dyadic to 0.2500 in multi-party dialogues. In contrast, tasks benefiting from concentrated contextual evidence, such as Cross-modal Related Retrieval (CRR) and Test-Time Learning (TTL), achieve comparable or higher performance in multi-party settings. Moreover, experiments with larger backbones (Qwen2.5-VL-7B-Instruct [ 58 ], detailed in Appendix D.1) show that parameter scaling alone does not eliminate this gap, indicating that current memory mechanisms remain insufficiently robust to diverse interaction structures. Table 5: Efficiency comparison across methods. Storage is measured per session (s/sess), while retrieval and generation are measured per query (s/q). 
+
+Method Storage (s/sess) ↓ Retrieval (s/q) ↓ Answer (s/q) ↓
+
+Full (Text) 0.0015 0.1566 17.99 NaiveRAG 0.6946 1.3710 10.06 A-Mem [54] 351.08 0.0248 4.57 Full (MM) 0.0009 0.3597 26.09 MuRAG [56] 9.861 1.4674 12.64 NGM [57] 6.529 0.7734 4.33 
+
+Efficiency Trade-offs. Beyond accuracy, tracking multimodal human–human interactions imposes substantial computa-tional burdens. Table 5 reveals a clear trade-off between storage and inference latency. Full-memory methods introduce minimal storage overhead but suffer from severe inference latency, especially with multimodal inputs (17.99 s/q for Full (Text) vs. 26.09 s/q for Full (MM)). In contrast, agentic memory systems such as A-Mem [ 54 ] reduce inference latency but incur high memory construction costs (351.08 s/session). These results highlight the need for lightweight memory compression paradigms for multimodal observer agents. Additional retriever analysis is provided in Appendix D.3. 
+
+4.3 In-depth Analysis and Case Study In-depth Analysis. To move beyond aggregated metrics, we manually analyze 100 failed cross-modal and reasoning instances from three multimodal memory methods, categorizing them into four archetypes (Table 6). The errors are highly concentrated in two major failure modes. Modal misalignment accounts for 44%–46% of cases, showing that current systems struggle to ground textual content in visual evidence. Speaker-related errors account for 32%–35%, highlighting difficulties in maintaining correct participant attribution and resolving human referential expressions in human–human interactions. 
+
+Case study. Two representative cases (Figure 4) illustrate how dominant failure modes manifest in practice. Case (a) focuses on ingredient identification from Lu Zhixing’s recipe, requiring fine-grained visual grounding and correct speaker–image alignment; NGM [ 57 ] exhibits modal misalignment by ignoring the image, while Full (MM) fails by misattributing the recipe image to the wrong speaker. Case (b) infers Lin Chang’an’s conclusion drawn from a shared menu, which hinges on causal reasoning; NGM [ 57 ] misattributing the conclusion to the wrong speaker, MuRAG [ 56 ]8A PREPRINT - J UNE 9, 2026 Table 6: Distribution of error types for representative multimodal methods. Error archetypes are defined as follows: 
+
+Modal Misalignment : failing to align text with image; Speaker-related Errors : wrong person attribution or failing to follow human referential preference; Temporal Confusion : using outdated information or reversing event order; Other / Hallucination : remaining failure cases not covered by the above categories.               
+
+> Error Archetype Full (MM) MuRAG
+> [56]
+> NGM
+> [57] Modal Misalignment 48% 44% 46% Speaker-related Errors 37% 35% 32% Temporal Confusion 15% 16% 9% Other / Hallucination 5% 5% 6%
+
+fails to align visual evidence with the textual conclusion, mistakenly presenting follow-up results instead.. Full (MM) is distracted by other visual information, causing it to provide a completely irrelevant conclusion. 
+
+5 Conclusion 
+
+We introduce H2HMem, a benchmark for evaluating multimodal memory in LLM agents within human–human interactions, providing a unified framework for assessing memory recall, reasoning, and application. Experiments show that current methods can retrieve relevant information but remain weak at integrating it. They can recall fragments — images, facts, statements — but fail to align visual evidence with text, attribute information to the correct speaker across sessions, or resolve contradictions from multiple sources. These failures persist across dyadic and multi-party settings, revealing that in multimodal human–human interactions, remembering fragments is not enough; agents must reconstruct multimodal coherent memory from distributed human communications. 
+
+References 
+
+[1] Tuochao Chen, Nicholas Batchelder, Alisa Liu, Noah Smith, and Shyamnath Gollakota. LlamaPIE: Proactive in-ear conversation assistants. arXiv preprint arXiv:2505.04066 , 2025. [2] Mahshad Razaghi, Abdelrahman Hafez, Juan M. Farina, Isabel G. Scalia, Milagros Pereyra, Fatmaelzahraa E. Abdelfattah, Hesham Sheashaa, Kamal Awad, Steven J. Lester, Chadi Ayoub, and Reza Arsanjani. Transforming clinical documentation with ambient artificial intelligence (AI) scribes: a narrative review of technology, impact, and implementation. Cardiovascular Diagnosis and Therapy , 16(1), 2026. [3] Andrew Zhu and Chris Callison-Burch. Overhearing LLM agents: A survey, taxonomy, and roadmap. arXiv preprint arXiv:2509.16325 , 2025. [4] Herbert H. Clark and Edward F. Schaefer. Contributing to discourse. Cognitive Science , 13(2):259–294, 1989. [5] OpenAI. ChatGPT: Optimizing language models for dialogue. Technical report, OpenAI, 2023. [6] DeepSeek-AI. DeepSeek-V3 technical report. Technical report, DeepSeek-AI, 2024. [7] Rishi Vanukuru, Payod Panda, Xinyue Chen, Ava Elizabeth Scott, Lev Tankelevitch, and Sean Rintel. Designing interfaces that support temporal work across meetings with generative AI. In Proceedings of the 2025 ACM Designing Interactive Systems Conference , pages 3600–3620, 2025. [8] Wazeer Deen Zulfikar, Samantha Chan, and Pattie Maes. Memoro: Using large language models to realize a concise interface for real-time memory augmentation. In Proceedings of the CHI Conference on Human Factors in Computing Systems , pages 1–18, 2024. [9] Pengfei Du. Memory for autonomous LLM agents: Mechanisms, evaluation, and emerging frontiers. arXiv preprint arXiv:2603.07670 , 2026. [10] Shengyue Guan, Jindong Wang, Jiang Bian, Bin Zhu, Jian-guang Lou, and Haoyi Xiong. Evaluating LLM-based agents for multi-turn conversations: A survey. arXiv preprint arXiv:2503.22458 , 2026. [11] Ye Shen, Dun Pei, Yiqiu Guo, Junying Wang, Yijin Guo, Zicheng Zhang, Qi Jia, Jun Zhou, and Guangtao Zhai. EvolMem: A cognitive-driven benchmark for multi-session dialogue memory. arXiv preprint arXiv:2601.03543 ,2026. [12] Di Wu, Hongwei Wang, Wenhao Yu, Yuwei Zhang, Kai-Wei Chang, and Dong Yu. LongMemEval: Benchmarking chat assistants on long-term interactive memory. arXiv preprint arXiv:2410.10813 , 2025. 9A PREPRINT - J UNE 9, 2026 [13] Giulio Antonio Abbo, Maria Jose Pinto-Bernal, Martijn Catrycke, and Tony Belpaeme. Fast multi-party open-ended conversation with a social robot. arXiv preprint arXiv:2503.15496 , 2025. [14] Zihan Liu, Parisa Rabbani, Veda Duddu, Kyle Fan, Madison Lee, and Yun Huang. The social gaze of LLMs: A literature review of multimodal approaches to human behavior understanding. arXiv preprint arXiv:2510.23947 ,2025. [15] Bandhav Veluri, Benjamin N Peloquin, Bokai Yu, Hongyu Gong, and Shyamnath Gollakota. Beyond turn-based interfaces: Synchronous LLMs as full-duplex dialogue agents. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , pages 21390–21402, 2024. [16] Caixin Kang, Yifei Huang, Liangyang Ouyang, Mingfang Zhang, and Yoichi Sato. Can MLLMs read the room? A multimodal benchmark for verifying truthfulness in multi-party social interactions. CoRR , abs/2510.27195, 2025. [17] Fanqi Kong, Weiqin Zu, Xinyu Chen, Yaodong Yang, Song-Chun Zhu, and Xue Feng. SIV-Bench: A video benchmark for social interaction understanding and reasoning. arXiv preprint arXiv:2506.05425 , 2025. [18] Tuochao Chen, Nicholas Scott Batchelder, Alisa Liu, Noah A. Smith, and Shyamnath Gollakota. LlamaPIE: Proactive in-ear conversation assistants. In Findings of the Association for Computational Linguistics: ACL 2025 ,pages 13801–13824, 2025. [19] Wazeer Deen Zulfikar, Samantha Chan, and Pattie Maes. Memoro: Using large language models to realize a concise interface for real-time memory augmentation. In Proceedings of the 2024 CHI Conference on Human Factors in Computing Systems , Article 450, pages 1–18, 2024. [20] Samridhi Vaid, Mike Weldon, Jesse Dunn, Sacha Davis, Kevin Lonergan, Henry Li, Jeffrey Franc, Mohamed Abdalla, Daniel C. Baumgart, Jake Hayward, and J Ross Mitchell. Berta: an open-source, modular tool for AI-enabled clinical documentation. arXiv preprint arXiv:2603.23513 , 2026. [21] Anjanava Biswas and Wrick Talukdar. Intelligent clinical documentation: Harnessing generative AI for patient-centric clinical note generation. International Journal of Innovative Science and Research Technology (IJISRT) ,pages 994–1008, 2024. [22] Sumit Asthana, Sagi Hilleli, Pengcheng He, and Aaron Halfaker. Summaries, highlights, and action items: Design, implementation and evaluation of an LLM-powered meeting recap system. Proceedings of the ACM on Human-Computer Interaction , 9(2):1–29, 2025. [23] Bowen Jiang, Zhuoqun Hao, Young-Min Cho, Bryan Li, Yuan Yuan, Sihao Chen, Lyle Ungar, Camillo J. Taylor, and Dan Roth. Know me, respond to me: Benchmarking LLMs for dynamic user profiling and personalized responses at scale. arXiv preprint arXiv:2504.14225 , 2025. [24] Yuanzhe Hu, Yu Wang, and Julian McAuley. Evaluating memory in LLM agents via incremental multi-turn interactions. In The Fourteenth International Conference on Learning Representations , 2026. [25] Weizhi Zhang, Xiaokai Wei, Wei-Chieh Huang, Zheng Hui, Chen Wang, Michelle Gong, and Philip S. Yu. MemoryCD: Benchmarking long-context user memory of LLM agents for lifelong cross-domain personalization. In ICLR 2026 Workshop on Lifelong Agents: Learning, Aligning, Evolving , 2026. [26] Yuanchen Bei, Tianxin Wei, Xuying Ning, Yanjun Zhao, Zhining Liu, Xiao Lin, Yada Zhu, Hendrik Hamann, Jingrui He, and Hanghang Tong. Mem-Gallery: Benchmarking multimodal long-term conversational memory for MLLM agents. arXiv preprint arXiv:2601.03515 , 2026. [27] Adyasha Maharana, Dong-Ho Lee, S. Tulyakov, Mohit Bansal, Francesco Barbieri, and Yuwei Fang. Evaluating very long-term conversational memory of LLM agents. arXiv preprint arXiv:2402.17753 , 2024. [28] Chuanrui Hu, Tong Li, Xingze Gao, Hongda Chen, Yi Bai, Dannong Xu, Tianwei Lin, Xiaohong Li, Yunyun Han, Jian Pei, and Yafeng Deng. Evaluating long-horizon memory for multi-party collaborative dialogues. arXiv preprint arXiv:2602.01313 , 2026. [29] Jing Xu, Arthur Szlam, and Jason Weston. Beyond goldfish memory: Long-term open-domain conversation. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 5180–5197, 2022. [30] J. Karthick, S.S. Subithra, S. Suruthilaya, and A. Eswari. AI-powered multimodal assistant for medical board meetings. In 2025 10th International Conference on Smart Structures and Systems (ICSSS) , pages 1–6, 2025. [31] Zoom Video Communications. Zoom AI companion. https://www.zoom.com/en/products/ ai-assistant/ , 2026. [32] Stanislaw Antol, Aishwarya Agrawal, Jiasen Lu, Margaret Mitchell, Dhruv Batra, C. Lawrence Zitnick, and Devi Parikh. Vqa: Visual question answering. In Proceedings of the IEEE international conference on computer vision ,pages 2425–2433, 2015. 10 A PREPRINT - J UNE 9, 2026 [33] Rufai Yusuf Zakari, Jim Wilson Owusu, Hailin Wang, Ke Qin, Zaharaddeen Karami Lawal, and Yuezhou Dong. Vqa and visual reasoning: An overview of recent datasets, methods and challenges. arXiv preprint arXiv:2212.13296 , 2022. [34] Andrew Reece, Gus Cooney, Peter Bull, Christine Chung, Bryn Dawson, Casey Fitzpatrick, Tamara Glazer, Dean Knox, Alex Liebscher, and Sebastian Marin. The CANDOR corpus: Insights from a large multimodal dataset of naturalistic conversation. Science advances , 9(13):eadf3197, 2023. [35] Yinhe Zheng, Guanyi Chen, Xin Liu, and Jian Sun. MMChat: Multi-modal chat dataset on social media. In 
+
+Proceedings of the Thirteenth Language Resources and Evaluation Conference , pages 5778–5786, 2022. [36] Xiaoyang Wang, Chen Li, Jianqiao Zhao, and Dong Yu. Naturalconv: A chinese dialogue dataset towards multi-turn topic-driven conversation. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 35, pages 14006–14014, 2021. [37] Meng-Chen Lee and Zhigang Deng. Multi-TPC: A multimodal dataset for three-party conversations with speech, motion, and gaze. Scientific Data , 2026. [38] Abhinav Rastogi, Xiaoxue Zang, Srinivas Sunkara, Raghav Gupta, and Pranav Khaitan. Towards scalable multi-domain conversational agents: The schema-guided dialogue dataset. In Proceedings of the AAAI conference on artificial intelligence , volume 34, pages 8689–8696, 2020. [39] Yinhe Zheng, Guanyi Chen, Minlie Huang, Song Liu, and Xuan Zhu. Personalized dialogue generation with diversified traits. arXiv preprint arXiv:1901.09672 , 2019. [40] Aditya Ramesh, Prafulla Dhariwal, Alex Nichol, Casey Chu, and Mark Chen. Hierarchical text-conditional image generation with CLIP latents. arXiv preprint arXiv:2204.06125 , 2022. [41] Chitwan Saharia, William Chan, Saurabh Saxena, Lala Li, Jay Whang, Emily Denton, Seyed Kamyar Seyed Ghasemipour, Burcu Karagol Ayan, S. Sara Mahdavi, Rapha Gontijo Lopes, Tim Salimans, Jonathan Ho, David J Fleet, and Mohammad Norouzi. Photorealistic text-to-image diffusion models with deep language understanding. 
+
+arXiv preprint arXiv:2205.11487 , 2022. [42] OpenAI, Aaron Hurst, et al. GPT-4o system card. arXiv preprint arXiv:2410.21276 , 2024. [43] Young-Jun Lee, Byungsoo Ko, Han-Gyu Kim, Jonghwan Hyeon, and Ho-Jin Choi. DialogCC: An automated pipeline for creating high-quality multi-modal dialogue dataset. In Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers) , pages 1938–1963, 2024. [44] Peiming Guo, Sinuo Liu, Yanzhao Zhang, Dingkun Long, Pengjun Xie, Meishan Zhang, and Min Zhang. An end-to-end model for photo-sharing multi-modal dialogue generation. In 2025 IEEE International Conference on Multimedia and Expo (ICME) , pages 1–7, 2024. [45] Damrin Kim, Seongsik Park, Mirae Han, and Harksoo Kim. Pipeline coreference resolution model for anaphoric identity in dialogues. In CODI , 2022. [46] Nikita Kitaev, Lukasz Kaiser, and Anselm Levskaya. Reformer: The efficient transformer. In International Conference on Learning Representations , 2020. [47] Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. Roformer: Enhanced transformer with rotary position embedding. Neurocomputing , 568:127063, 2024. [48] Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, and Christopher Ré. FlashAttention: Fast and memory-efficient exact attention with IO-awareness. In Proceedings of the 36th International Conference on Neural Information Processing Systems , Article 1189, pages 1–16, 2022. [49] Shouyuan Chen, Sherman Wong, Liangjian Chen, and Yuandong Tian. Extending context window of large language models via positional interpolation. arXiv preprint arXiv:2306.15595 , 2023. [50] Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, et al. Retrieval-augmented generation for knowledge-intensive nlp tasks. Advances in neural information processing systems , 33:9459–9474, 2020. [51] Weizhi Wang, Li Dong, Hao Cheng, Xiaodong Liu, Xifeng Yan, Jianfeng Gao, and Furu Wei. Augmenting language models with long-term memory. Advances in Neural Information Processing Systems , 36:74530–74543, 2023. [52] Shreyas Rajesh, Pavan Holur, Chenda Duan, David Chong, and Vwani Roychowdhury. Beyond fact retrieval: Episodic memory for rag with generative semantic workspaces. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 40, pages 32782–32790, 2026. 11 A PREPRINT - J UNE 9, 2026 [53] Weijia Shi, Sewon Min, Michihiro Yasunaga, Minjoon Seo, Richard James, Mike Lewis, Luke Zettlemoyer, and Wen-tau Yih. Replug: Retrieval-augmented black-box language models. In Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers) , pages 8371–8384, 2024. [54] Wujiang Xu, Zujie Liang, Kai Mei, Hang Gao, Juntao Tan, and Yongfeng Zhang. A-Mem: Agentic memory for LLM agents. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2026. [55] Jiazheng Kang, Mingming Ji, Zhe Zhao, and Ting Bai. Memory OS of AI agent. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , pages 25961–25970, 2025. [56] Wenhu Chen, Hexiang Hu, Xi Chen, Pat Verga, and William Cohen. MuRAG: Multimodal retrieval-augmented generator for open question answering over images and text. In Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing , pages 5558–5570, 2022. [57] Matthew Fisher. Neural graph memory: A structured approach to long-term memory in multimodal agents. 2025. [58] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, et al. Qwen2.5-VL technical report. arXiv preprint arXiv:2502.13923 , 2025. [59] OpenAI, Josh Achiam, et al. GPT-4 technical report. arXiv preprint arXiv:2303.08774 , 2024. [60] Tianyi Zhang and David Traum. Rethinking evaluation in retrieval-augmented personalized dialogue: A cognitive and linguistic perspective. arXiv preprint arXiv:2603.14217 , 2026. [61] Renato Miyaji, Renato Moulin, Samuel Monção, and Leonardo Machado. Evaluating RAG-based QA systems: A comparative analysis of LLM as a judge, traditional metrics, and human alignment. In Anais do XVI Simpósio Brasileiro de Tecnologia da Informação e da Linguagem Humana , pages 247–258, 2025. [62] Cerón-López Marco-Tulio, Peña-Aguilar Juanmanuel, Macías-Trejo Luis-Guadalupe, Pantojaamaro Luis-Fernando, and Bautista-Luis Laura. Evaluating large language models (LLMs): Comparison metrics and their impact on generated text quality. TPM: Testing, Psychometrics, Methodology in Applied Psychology , 32, 2025. [63] Aashiq Muhamed. CCRS: A zero-shot LLM-as-a-judge framework for comprehensive RAG evaluation. arXiv preprint arXiv:2506.20128 , 2025. [64] Olya Hakobyan, Paul-Julius Hillmann, Florian Martin, Erwin Böttinger, and Hanna Drimalla. Development and evaluation of Dona, a privacy-preserving donation platform for messaging data from WhatsApp, Facebook, and Instagram. Behavior Research Methods , 57(3):94, 2025. [65] Thomas McCarthy-Howe. The vCon - conversation data container - overview. Internet-Draft draft-ietf-vcon-overview-01, Internet Engineering Task Force, 2026. [66] Anil Rahate, Rahee Walambe, Sheela Ramanna, and Ketan Kotecha. Multimodal co-learning: Challenges, applications with datasets, recent advances and future directions. Information Fusion , 81:203–239, 2022. [67] Natasha Butt, Varun Chandrasekaran, Neel Joshi, Besmira Nushi, and Vidhisha Balachandran. BenchAgents: Automated benchmark creation with agent interaction. In ICLR 2025 Workshop on Navigating and Addressing Data Problems for Foundation Models , 2025. [68] Yifan Zhu, Changsoo Jung, Kenneth Lai, Videep Venkatesha, Mariah Bradford, Jack Fitzgerald, Huma Jamil, Carine Graff, Sai Kiran Ganesh Kumar, Bruce Draper, Nathaniel Blanchard, James Pustejovsky, and Nikhil Krishnaswamy. Multimodal common ground annotation for partial information collaborative problem solving. In 
+
+Proceedings of the 21st Joint ACL - ISO Workshop on Interoperable Semantic Annotation (ISA-21) , pages 85–91, 2025. [69] Haoran Tan, Zeyu Zhang, Chen Ma, Xu Chen, Quanyu Dai, and Zhenhua Dong. MemBench: Towards more comprehensive evaluation on the memory of LLM-based agents. In Findings of the Association for Computational Linguistics: ACL 2025 , pages 19336–19352, 2025. [70] Lin Long, Yichen He, Wentao Ye, Yiyuan Pan, Yuan Lin, Hang Li, Junbo Zhao, and Wei Li. Seeing, listening, remembering, and reasoning: A multimodal agent with long-term memory. arXiv preprint arXiv:2508.09736 ,2025. [71] Nils Reimers and Iryna Gurevych. Sentence-BERT: Sentence embeddings using Siamese BERT-networks. In Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP) , pages 3982–3992, 2019. [72] Xin Zhang, Yanzhao Zhang, Wen Xie, Mingxin Li, Ziqi Dai, Dingkun Long, Pengjun Xie, Meishan Zhang, Wenjie Li, and Min Zhang. GME: Improving universal multimodal retrieval by multimodal LLMs. arXiv preprint arXiv:2412.16855 , 2025. [73] J Richard Landis and Gary G Koch. The measurement of observer agreement for categorical data. Biometrics ,pages 159–174, 1977. 12 A PREPRINT - J UNE 9, 2026 
+
+A Dataset Details 
+
+We provide more detailed dialogue statistics and additional details on key components of our data construction pipeline that are not fully elaborated in the main paper. 
+
+A.1 Conversation Data Statistics 
+
+Table 7 provides per-dialogue statistics for the 20 dyadic and 5 multi-party conversations in H2HMem. Dyadic dialogues contain 11–16 sessions per conversation (median 15) and 214–314 rounds, accompanied by 35–61 images. Multi-party dialogues are designed with fewer sessions (5 each) but much denser rounds (331–363 per dialogue) and a higher image count (69–70 per dialogue), reflecting the “intensive single-session” characteristic discussed in the main paper. The topic coverage is also broader in dyadic settings (4–7 topics per dialogue, covering food, health, pet, shopping, travel, news, movie, entertainment, sport, and annual_summary) compared to multi-party dialogues (3–4 topics, with shopping present in all five). The time span for a single conversation is limited to one year. This detailed breakdown confirms the structural and topical diversity of our dataset, which is essential for evaluating memory under realistic human–human interaction conditions. All dialogues and question-answer pairs are in English. 
+
+A.2 Persona Schema 
+
+In the main paper, we mention that participant profiles follow a structured schema. Table 8 presents the complete schema and a concrete example from our dataset. For dyadic dialogues, we generate two participant profiles per dialogue. For multi-party dialogues, we generate four to six participant profiles per dialogue. 
+
+A.3 Outline Generation 
+
+The main paper describes that we generate session-level outlines to guide dialogue generation. Table 9 shows a complete outline example. For dyadic dialogues, we prompt the language model to sample 4–6 topics, and for each topic, generate 3–4 session-level outlines, ensuring a total of no fewer than 10 outlines per dialogue. For multi-party dialogues, we prompt the model to sample 3–4 topics, with 1–2 session-level outlines per topic, keeping the total number of outlines no more than 5 per dialogue. 
+
+A.4 Human Annotation Protocol 
+
+The main paper mentions two rounds of human verification. Below we detail the specific criteria, annotator training, and quality control procedures. Six undergraduate annotators participated, all native speakers of the dialogue language and familiar with multimodal data annotation. 
+
+A.4.1 Image Refinement 
+
+For each dialogue, the pipeline automatically retrieved or generated candidate images based on textual triggers. Six undergraduate annotators then reviewed every image together with its surrounding conversation. They focused on three aspects. First, the visual content had to match the triggering utterance exactly — for example, if a participant said “Look at this X-ray”, the image had to actually show an X -ray, not a generic medical illustration. Second, the image quality needed to be sufficient for captioning and human interpretation: a resolution of at least 224×224 pixels, and no heavy blur, compression artifacts, or abstract drawings. Third, the image had to be topically appropriate and free of offensive or misleading content; in dyadic or multi -party settings, it also had to be plausible given the conversation topic (e.g., a vacation photo for travel discussions, a budget chart for a meeting). When an image failed any of these checks, annotators could replace it with a manually retrieved alternative from a stock photo library, edit the image (e.g., cropping or annotating), or — as a last resort — request a complete re -generation of the corresponding dialogue segment. The entire process of image refinement took approximately 80 person-hours. 
+
+A.4.2 QA Validation 
+
+The same annotators then examined each automatically generated question–answer pair. They checked whether the answer could be uniquely derived from the dialogue history and its images — if two different dates were mentioned without resolution, the pair was discarded or rewritten. They also ensured that the question itself was unambiguous, containing no vague references like “What about that thing?” that the context could not resolve; special attention was paid to anaphora and deixis. Finally, each QA pair was assigned to one of the nine task types (UPR, CRR, KR, MCR, RET, TR, TTL, CD, AR), and the annotators judged whether the required reasoning indeed matched the intended 13 A PREPRINT - J UNE 9, 2026 Table 7: Statistics of dyadic and multi-party conversations in the H2HMem dataset. 
+
+Dyadic Conversations Dialogue Sessions Rounds Images #Topics Topics 
+
+1 11 215 35 5 food, health, news, pet, shopping, sport 2 11 215 36 4 food, health, movie, pet, shopping 3 15 253 54 5 annual_summary, entertain, food, news, pet, shopping 4 15 280 61 6 entertain, food, health, movie, pet, shopping, travel 5 14 263 49 7 annual_summary, entertain, food, health, movie, news, pet, shopping 6 11 214 37 4 food, health, pet, sport, travel 7 12 221 41 4 food, health, pet, shopping, travel 8 14 254 51 6 annual_summary, food, health, movie, pet, shopping, travel 9 16 314 58 6 annual_summary, entertain, food, health, news, pet, shopping 10 16 293 44 7 annual_summary, entertain, food, health, movie, news, pet, shopping 11 13 245 36 6 annual_summary, entertain, food, health, news, pet, shopping 12 16 278 46 6 annual_summary, entertain, health, movie, news, pet, shopping 13 15 290 53 5 annual_summary, entertain, food, health, pet, shopping 14 16 297 55 6 annual_summary, entertain, health, news, pet, shopping 15 15 275 54 4 food, health, pet, shopping, sport 16 15 286 49 4 food, health, movie, pet, shopping 17 15 273 44 4 entertain, health, news, pet 18 16 310 48 4 food, health, pet, shopping, sport 19 16 308 53 4 food, health, movie, pet, shopping 20 12 232 47 5 annual_summary, food, entertain, health, pet, sport 
+
+Multi-party Conversations Dialogue Sessions Rounds Images #Topics Topics 
+
+1 5 358 70 3 food, pet, shopping 2 5 352 70 3 sport, shopping, health 3 5 358 69 4 movie, entertain, shopping, travel 4 5 331 70 3 shopping, food, entertain 5 5 363 70 3 travel, shopping, work 
+
+Table 8: Complete participant profile schema and example. 
+
+Field Description Example 
+
+name Full name Zhao Xiaotang age Age 26 gender Gender Female profession Job role Social work organization project specialist / community volun-teer title Position Project Supervisor specialty Areas of expertise Community building, vulnerable group assistance, resource net-working, public welfare project management personality_traits Character traits Warm-hearted, practical and down-to-earth, strong organiza-tional skills, slightly prone to over-worrying core_values Core values Mutual assistance and sharing, community belonging, pragma-tism, human warmth fears Anxieties or concerns Fear of community indifference, worry about resource waste, fatigue from excessive sense of responsibility motivations Intrinsic drivers Build mutual aid networks, improve community environment, help those in need, facilitate resource flow background Life background From an ordinary working-class family, grew up in a company dormitory community with a strong sense of collective belonging education Educational back-ground B.A. in Social Work, East China Normal University relationships Social connections Single, lives with parents, a "well-known figure" in the commu-nity, feeds three stray cats in the neighborhood 
+
+14 A PREPRINT - J UNE 9, 2026 Table 9: Example session outline. 
+
+Field Description Content 
+
+session_title Brief title of the ses-sion DIY Implementation and Neutering Plan Emergence theme High-level topic cat-egory Pets - Stray Cat TNR Project sequence_number Order of this session in the scenario 2timeline_date In-story date 2024-03-15 timeline_remark Temporal relation-ship to previous session One week later, cat shelter completed core_anchor Key event or image trigger that drives the session Zhao Xiaotang sends a photo of the finished foam box cat shelter (already placed, with mother cat and kittens inside) and thanks Li Yifan for his "ingenious design." She also expresses concern: "This solves the immediate crisis, but the mother cat will go into heat again soon. This can’t go on indefinitely." scenario_flow Step-by-step descrip-tion of how the dia-logue should unfold Li Yifan agrees and explains that TNR (Trap-Neuter-Return) is the most humane long-term solution internationally. He begins research-ing whether local animal protection organizations or pet hospitals offer discounted spay/neuter programs for strays, and creates a com-parison table of costs, appointment procedures, and post-operative care. Zhao Xiaotang starts posting initiatives in the community group to see if neighbors are willing to share neutering costs or provide temporary post-surgery housing. end_state How the session con-cludes The immediate crisis resolved, shifting focus toward a fundamental solution, beginning community mobilization and resource research. character_states How each partici-pant’s role or mind-set evolves during the session Zhao Xiaotang: Transitioning from hands-on rescue to systematic solution thinking, activating community organizing capabilities. Li Yifan: Shifting from technical support to solution research and cost analysis, providing decision-making basis. key_constraints Specific guidelines for dialogue gener-ation (e.g., what to avoid or emphasize) The cat shelter photo should not be praised for "looking good," but rather describe practical effects such as "the inside of the foam box is lined with aluminum insulation, with ventilation holes on top" and "the mother cat has been willing to take the kittens inside." 
+
+difficulty level (recall, reasoning, or application). Mismatched pairs were sent back for re - assignment or re -generation. The validation process took approximately 40 person - hours. Each pair was refined independently by two annotators, with cross-checking to catch individual errors. 
+
+A.4.3 Inter-Annotator Agreement 
+
+To ensure consistency, we measured Fleiss’ κ for each round on a subset of 10% of the data. For image refinement, the agreement was κ = 0 .83 (substantial); for QA validation, κ = 0 .79 (substantial). Disagreements were resolved through discussion led by a senior researcher, who made the final decision when consensus could not be reached. 
+
+A.4.4 Time and Effort 
+
+The entire annotation process took approximately 120 person - hours: 80 hours for image refinement (including manual replacements) and 40 hours for QA validation. Each round was performed independently by two annotators, with cross-checking to catch individual errors. 
+
+A.4.5 Recruitment and Payment 
+
+Six undergraduate annotators were recruited from the authors’ institution. They were compensated with a small stipend of $1 per hour, which is commensurate with local student wages. 15 A PREPRINT - J UNE 9, 2026 
+
+A.4.6 Consent 
+
+All annotators provided informed consent prior to participation. They were informed that the data would be used solely for academic research purposes. 
+
+B Baseline Models 
+
+Memory Evaluating Prompt Template 
+
+You are a memory evaluating system. {instruction} IMPORTANT: 1. Provide only the answer without any reasoning process. Give the answer directly in English. 2. Keep your answer within 100 words. Short and concise answers are acceptable. 3. Answer in English. This is a strict requirement. Do not answer in any other language. {context_section} {context_note} Question: {question} {format_requirement} Examples: Question: What is the cat’s name? Correct answer: Almond Incorrect answer example (DO NOT answer like this): We need answer: cat name is Almond because... 
+
+Figure 5: Memory evaluating prompt template. We evaluate six baseline methods, categorized as text-based or multimodal. 
+
+B.1 Text-based Methods (with Image Captions) 
+
+For text-based memory methods, raw images are converted into image captions using GPT-4o [ 42 ] before being stored in memory. 
+
+Full Memory (Text). It includes all session transcripts and image captions in textual form as part of the context, and truncates the input according to the context token limit. No retrieval or compression is applied. 
+
+NaiveRAG. It splits the conversation history into chunks. Each chunk is encoded into a semantic vector. At query time, it retrieves the top-K = 5 most relevant chunks based on vector similarity and concatenates them with the query. 
+
+A-Mem [ 54 ]. It constructs structured memory episodes during preprocessing, where each episode summarizes a coherent discourse unit (e.g., 5–10 dialogue turns). New memories autonomously establish links to related past memories. At inference time, it retrieves relevant episodes and performs memory consolidation to support long-term reasoning. 
+
+B.2 Multimodal Methods 
+
+For multimodal memory methods, raw images are stored and retrieved directly without conversion to text. 
+
+Full Memory (Multimodal). It includes all multimodal memory information (interleaved text and raw images) as context, estimates the token consumption of images using predefined token costs, and truncates the input according to the context token limit. 
+
+MuRAG [ 56 ]. It uses a dense multimodal retriever that encodes both queries and memory entries into a shared embedding space using a joint vision-language encoder. At inference time, it performs maximum inner product search over an external memory to retrieve the top-K = 5 most relevant multimodal passages, which are then used to augment generation. 
+
+NGM [ 57 ]. It proposes Neural Generative Memory, which maintains a compressed latent representation of the conversation history. Memory is updated incrementally as new dialogue turns arrive, enabling efficient long-term memorization without explicit retrieval at each step. For methods without publicly available implementation code, we re-implement them based on the methodological descriptions provided in the original papers. 16 A PREPRINT - J UNE 9, 2026 
+
+C Benchmark Evaluation Details 
+
+C.1 Implementation details 
+
+All experiments use a unified evaluation framework. Key implementation details are as follows. 
+
+Backbone MLLMs : We evaluate three vision-language models via their official APIs: Qwen2.5-VL-3B-Instruct, Qwen2.5-VL-7B-Instruct [58], and GPT-4.1-Nano [59]. For each API call, we set the temperature to 0.1. 
+
+Retriever : Different embedding models are used for text - only and multimodal retrieval. For text - based methods, we adopt all-MiniLM-L6-v2 [ 71 ] as the dense retriever. For multimodal methods, we use Alibaba-NLP/gme-Qwen2-VL-7B-Instruct [72], which jointly encodes text and images. All retrievals are performed with a default top-K = 5 .
+
+Image Processing. Our benchmark involves two types of images: (1) in-conversation images stored as part of the agent’s memory, and (2) in-question images provided within the query during evaluation. For in-conversation images, storage format varies by memory method: text-based methods use GPT-4o [ 42 ] to generate image captions (limited to 256 tokens), replacing original images with textual descriptions stored alongside dialogue transcripts, while multimodal methods resize images to 224 × 224 pixels and store them directly as visual tensors. During evaluation, text-based methods retrieve and reason over text-only memory entries (where images have been replaced by captions), whereas multimodal methods retrieve and utilize the original images alongside their associated text. For in-question images, all methods process them uniformly: images are resized to 224 × 224 pixels and fed directly to the MLLM backbone together with the textual prompt. 
+
+Computing Resources : All experiments were conducted on a server with four NVIDIA A10 GPUs (24GB memory each). The total computational budget across all experiments is approximately 250–300 A10 GPU hours .
+
+License and Terms of Use. The embedding models (all-MiniLM-L6-v2 [ 71 ], Alibaba-NLP/gme-Qwen2-VL-7B-Instruct [ 72 ]) are downloaded from HuggingFace and used under their respective open-source licenses (Apache 2.0 and MIT). The Qwen2.5-VL series models (3B and 7B) [ 58 ] are accessed via Alibaba Cloud’s DashScope API and used in compliance with their terms of service. The GPT series models (GPT-4o [ 42 ], GPT-4.1-Nano [ 59 ], GPT-4o-mini) are accessed via OpenAI’s API and used in compliance with OpenAI’s terms of service. The H2HMem dataset is released under a CC BY 4.0 license for research purposes only. 
+
+C.2 Evaluation Prompt Template 
+
+All models receive a unified prompt template to ensure fair comparison. The template (Figure 5) instructs the model to answer based solely on the provided conversation history (text and images) and to output the answer concisely. The temperature is fixed at 0.3 for all generations. 
+
+C.3 Evaluation Metrics 
+
+We evaluate all baseline methods from two perspectives: answer correctness and semantic alignment. All metrics are computed at the instance level and then averaged over the entire QA set. 
+
+C.3.1 LLM-as-Judge 
+
+Following prior work [ 60 ], we employ GPT-4o-mini as a zero-shot evaluator. The judge prompt (provided in Figure 6) asks the model to rate each response based on semantic equivalence to the ground truth, ignoring surface-level phrasing differences. To ensure the reliability of our primary evaluation metric, we validated the LLM-as-Judge approach against human judgments. A subset of 200 test instances was randomly sampled and independently annotated by two human evaluators. We measured the agreement between GPT-4o-mini’s judgments and the human annotations using Cohen’s κ, achieving a score of κ = 0 .84 .
+
+C.3.2 Lexical Metrics 
+
+For tasks with deterministic ground-truth answers, we adopt four lexical overlap metrics. 
+
+Precision (P) measures the proportion of tokens in the predicted answer Ap that appear in the reference answer Ar . Let 
+
+Tp and Tr denote the multisets of tokens in Ap and Ar , respectively. Precision is defined as: 
+
+P = |Tp ∩ Tr ||Tp|
+
+17 A PREPRINT - J UNE 9, 2026 
+
+Judgment Prompt Template 
+
+You are an impartial judge evaluating the memory capabilities of an AI assistant with the question-answering task. Your task is to compare the Assistant’s Answer against the Ground Truth and assign a score of 0, 0.25, 0.5, 0.75, or 1. 
+
+Scoring Rubric: Score 0 (Incorrect / Miss): 
+
+• The answer contradicts the Ground Truth. • For Yes/No questions: The answer has the wrong polarity (e.g., says “Yes” when Ground Truth is “No”). • For Open-ended questions: The answer provides factually wrong information or hallucinations. • The assistant fails to provide the required information. 
+
+Score 0.25 (Poor / Tangential): 
+
+• The answer touches on the topic but misses the core entity or key value required. • The answer contains a mix of minor correct details and significant hallucinations or wrong associations. • The answer is excessively vague to the point of being useless (e.g., answering “a dog” instead of “a golden retriever”). 
+
+Score 0.5 (Partial / Vague): 
+
+• The answer is technically correct, but lacks confidence or is incomplete. • The answer captures the main entity or concept correctly but misses a part of the required supporting details. • For Yes/No questions: The polarity is correct, but the reasoning is flawed (if any), or the assistant is uncertain (e.g., “I think it might be Yes”). • For Open-ended questions: The answer is too general or misses key adjectives/details present in the Ground Truth. 
+
+Score 0.75 (Good / Minor Imperfection): 
+
+• The answer is largely accurate and captures the core information confidently. • It misses only minor details (e.g., specific adjectives or secondary details) that do not alter the main truth. • The answer contains all the correct information but includes unnecessary “fluff” or slight conversational filler that reduces precision. 
+
+Score 1 (Correct / Exact): 
+
+• The answer is accurate, precise, and confident. • For Yes/No questions: The polarity matches the Ground Truth perfectly. • For Open-ended questions: The answer contains all the core information and necessary details required by the Ground Truth without hallucinations. 
+
+Input Data: 
+
+Question: {{question}} Ground Truth: {{ground_truth}} Assistant Answer: {{model_output}} 
+
+Output Format: 
+
+Output strictly in the following JSON format: 
+
+{"score": <0, 0.25, 0.5, 0.75, or 1>, "reasoning": "<short explanation>"} 
+
+Figure 6: Judgment prompt template for memory evaluation. 18 A PREPRINT - J UNE 9, 2026 
+
+Recall (R) measures the proportion of tokens in the reference answer Ar that are captured by the predicted answer Ap:
+
+R = |Tp ∩ Tr ||Tr |
+
+F1 Score is the harmonic mean of precision and recall: 
+
+F 1 = 2 · P · RP + R
+
+BLEU-1 measures unigram-level precision between the predicted answer Ap and the reference answer Ar . Let count Ap (w) denote the number of occurrences of unigram w in Ap, and count Ar (w) denote its occurrences in Ar . The clipped count c(w) is defined as: 
+
+c(w) = min  count Ap (w), count Ar (w)
+
+BLEU-1 is then computed as: BLEU-1 =
+
+P 
+
+> w∈Ap
+
+c(w)
+
+P 
+
+> w∈Ap
+
+count Ap (w)
+
+D Additional Experimental Results 
+
+D.1 LLM-Judge Evaluation on Additional Backbones 
+
+Table 10: LLM-Judge performance of various methods on dyadic and multi-party conversations using Qwen2.5-3B-VL-Instruct [ 58 ]. D = Dyadic, M = Multi-party, D&M = Weighted average. * marks the higher value between D and M for the same method and metric. Bold numbers in D&M rows indicate the highest value among all methods for LLM-Judge performance on the weighted average dataset. Light blue background highlights the D&M data cells.                                                                                                                                                                                                   
+
+> Category Method Dataset Memory Recall Memory Reasoning Memory Application Overall UPR CRR KR MCR RET TR TTL CD AR Text-based Full (Text) D0.2369 *0.2043 *0.3929 *0.2338 *0.2171 0.3846 *0.3463 0.2489 *0.9479 0.3284 M0.3145 0.2600 0.3500 0.2000 0.3542 *0.3000 0.3900 *0.1200 0.9783 *0.3630 *
+> D&M 0.2439 0.2080 0.3880 0.2314 0.2269 0.3752 0.3514 0.2358 0.9507 0.3313 NaiveRAG D0.5185 0.4207 0.4392 0.2855 0.3189 0.3500 0.5241 0.3341 *0.8957 *0.4667 M0.6048 *0.6700 *0.4500 *0.3300 *0.4130 *0.4500 *0.5900 *0.2000 0.8229 0.5173 *
+> D&M 0.5263 0.4370 0.4404 0.2887 0.3257 0.3611 0.5318 0.3204 0.8890 0.4607 A-Mem [54] D0.6786 *0.5453 0.4872 *0.3735 0.3349 0.4125 *0.6053 0.3664 *0.9258 0.5273 M0.6774 0.6500 *0.3000 0.3200 0.3854 *0.4000 0.6300 *0.2400 1.0000 *0.5465 *
+> D&M 0.6785 0.5521 0.4659 0.3697 0.3385 0.4111 0.6082 0.3536 0.9326 0.5292
+> Multi-modal Full (MM) D0.3493 *0.2783 *0.5128 *0.2384 *0.2913 0.3654 0.4535 0.2283 *0.9516 *0.3829 *
+> M0.3250 0.2188 0.3500 0.2188 0.4062 *0.4000 *0.5300 *0.0600 0.9375 0.3817 D&M 0.3471 0.2744 0.4943 0.2370 0.2995 0.3692 0.4624 0.2112 0.9503 0.3827 MuRAG [56] D0.6115 0.5348 0.4539 *0.3927 0.3604 0.4062 *0.5865 0.3608 *0.9128 0.5236 M0.6210 *0.6500 *0.4500 0.4600 *0.4062 *0.2000 0.6300 *0.1600 1.0000 *0.5489 *
+> D&M 0.6124 0.5423 0.4535 0.3974 0.3637 0.3833 0.5916 0.3405 0.9208 0.5257 NGM [57] D0.4738 0.4351 *0.5128 *0.3182 0.3213 0.3250 *0.5548 0.4206 *0.9645 0.4671 M0.4758 *0.4200 0.4000 0.3100 0.3750 *0.3000 0.7300 *0.1200 1.0000 *0.4802 *
+> D&M 0.4740 0.4341 0.5000 0.3176 0.3251 0.3222 0.5752 0.3902 0.9678 0.4682
+
+In the main paper, we report LLM-Judge results using GPT-4.1-Nano [ 59 ]. Here, we extend the evaluation to two additional vision-language backbones: Qwen2.5-VL-3B-Instruct and Qwen2.5-VL-7B-Instruct [ 58 ]. Table 10 and Table 11 present the results. We highlight three key observations that directly reflect the unique characteristics of our multimodal human–human interaction benchmark: 
+
+(i) Overall performance is consistently low across backbones. Across three backbones, the absolute scores of all methods remain below 0.6 (on a 0–1 scale), with the best overall weighted average reaching only 0.5757 (A-Mem [ 54 ]on GPT-4.1-Nano [ 59 ]). Even with strong memory mechanisms, models struggle to exceed this ceiling. This uniformly limited performance underscores the fundamental difficulty of our benchmark: agents must integrate information 19 A PREPRINT - J UNE 9, 2026 Table 11: LLM-Judge performance of various methods on dyadic and multi-party conversations using Qwen2.5-VL-7B-Instruct [ 58 ]. D = Dyadic, M = Multi-party, D&M = Weighted average. * marks the higher value between D and M for the same method and metric. Bold numbers in D&M rows indicate the highest value among all methods for LLM-Judge performance on the weighted average dataset. Light blue background highlights the D&M data cells.                                                                                                                                                                                                   
+
+> Category Method Dataset Memory Recall Memory Reasoning Memory Application Overall UPR CRR KR MCR RET TR TTL CD AR Text-based Full (Text) D0.2667 *0.2352 0.3716 *0.2389 *0.2632 *0.4392 *0.3878 0.2661 *0.8817 0.3480 *
+> M0.1897 0.3646 *0.2500 0.1800 0.2500 0.2000 0.3900 *0.1562 0.9457 *0.3388 D&M 0.2630 0.2408 0.3650 0.2356 0.2625 0.4227 0.3880 0.2589 0.8861 0.3474 NaiveRAG D0.4918 0.4096 0.5312 *0.1870 0.2795 0.2143 0.5156 0.2066 *0.8643 0.4127 M0.5104 *0.3889 0.1000 0.2083 *0.1719 0.2500 *0.6806 *0.1389 0.9444 *0.4232 *
+> D&M 0.4937 0.4067 0.4741 0.1891 0.2685 0.2183 0.5372 0.1990 0.8733 0.4135 A-Mem [54] D0.6330 0.5524 0.5577 *0.4126 0.3955 0.5000 *0.6144 0.3909 *0.8860 0.5429 M0.6048 0.6700 *0.3500 0.5100 *0.4167 *0.4000 0.5833 0.0800 0.8854 0.5279 D&M 0.6306 0.5585 0.5405 0.4201 0.3977 0.4914 0.6113 0.3656 0.8860 0.5415
+> Multi-modal Full (MM) D0.3681 *0.2514 *0.5203 *0.2640 *0.2782 0.3875 *0.3889 0.1714 *0.7820 0.3512 *
+> M0.3190 0.2083 0.4500 0.2292 0.2727 *0.3500 0.3854 0.1042 0.8478 *0.3389 D&M 0.3651 0.2488 0.5148 0.2617 0.2779 0.3844 0.3884 0.1660 0.7880 0.3503 MuRAG [56] D0.5924 0.5271 0.5705 *0.3843 0.3640 0.4437 *0.5726 0.3553 *0.7998 0.5053 M0.5645 0.6700 *0.4500 0.4700 *0.3750 *0.2000 0.6400 *0.1250 1.0000 *0.5361 *
+> D&M 0.5899 0.5356 0.5579 0.3904 0.3652 0.4220 0.5818 0.3342 0.8196 0.5079 NGM [57] D0.4976 0.4630 *0.4936 *0.3182 0.3798 *0.4000 *0.6000 0.3779 *0.8721 0.4782 M0.4758 0.4200 0.4000 0.3100 0.3750 0.3000 0.7300 *0.1200 1.0000 *0.4802 *
+> D&M 0.4956 0.4591 0.4864 0.3174 0.3794 0.3927 0.6160 0.3567 0.8847 0.4783
+
+scattered across multiple participants, modalities (text and images), and sessions – a far cry from traditional single -turn or dyadic QA. 
+
+(ii) Limited benefits from model scaling for cross-modal and multi-party reasoning. Increasing parameter count from 3B to 7B yields only moderate gains, and tasks central to our benchmark — Cross-modal Related Retrieval (CRR), Multimodal Causal Reasoning (MCR), and Conflict Detection (CD) — show minimal improvement. This suggests that larger models alone cannot resolve the inherent difficulties of aligning information across participants and modalities, or of tracking evolving references across multiple sessions. 
+
+(iii) Persistent bottlenecks in reasoning over multimodal, human–human memory. Across all backbones and methods, tasks that require structured reasoning over distributed evidence — especially Multimodal Causal Reasoning (MCR), Reference & Evolution Tracking (RET), and Conflict Detection (CD) in multi -party dialogues — remain far below recall -oriented tasks. This gap confirms that current models lack robust mechanisms for maintaining coherent memory across time, speakers, and modalities, which is the central challenge posed by our human–human interaction benchmark. These results reinforce that current systems struggle with organizing and utilizing fragmented memory, especially under the multimodal, human–human interaction captured by our benchmark. The consistency of these findings across different backbone models demonstrates that the challenges identified—cross-source alignment, structured reasoning over distributed evidence, and robustness to incomplete retrieval—are fundamental rather than artifacts of a particular model choice. Importantly, the persistence of these limitations across both proprietary and open-source backbones highlights the necessity of benchmarking conversational memory in realistic human–human interaction settings, moving beyond simplified dyadic, single-modality evaluations. 
+
+D.2 Lexical-Level Evaluation on Additional Backbones 
+
+Tables 12 and 13 report additional lexical-level results on Qwen2.5-VL-3B-Instruct and Qwen2.5-VL-7B-Instruct [ 58 ], complementing the main findings presented in the paper using GPT-4.1-Nano [59]. 
+
+Findings are consistent across backbone models. Overall, the trends observed in the main paper remain stable across both smaller and larger Qwen backbones. In particular, lexical metrics remain uniformly low (generally below 0.4), reinforcing the conclusion that our benchmark poses a fundamentally challenging setting where exact lexical overlap is difficult due to distributed, multi-session, and multimodal information sources. This consistency suggests that the difficulty is not tied to a specific backbone, but is intrinsic to the task. 20 A PREPRINT - J UNE 9, 2026 Table 12: Weighted average (D&M) performance of different methods (Qwen2.5-3B-VL-Instruct [ 58 ], top-5 retrieval) across categories. Metrics: P=Precision, R=Recall, F1=F1-score, B=BLEU-1. Bold values indicate the best performance among the six methods within each metric column for the given category. 
+
+Category Method Metrics Memory Recall Memory Reasoning Memory Application Overall UPR CRR KR MCR RET TR TTL CD AR Text-based Full (Text) P 0.1274 0.0830 0.3095 0.0950 0.1486 0.3775 0.1334 0.0448 0.9433 0.2293 R 0.2236 0.1922 0.2966 0.2074 0.1788 0.4185 0.1977 0.0360 0.9361 0.2548 F1 0.1428 0.1008 0.2862 0.1113 0.1348 0.3187 0.1337 0.0372 0.9344 0.2295 B 0.1049 0.0736 0.2159 0.0807 0.0887 0.2038 0.1096 0.0340 0.9322 0.2206 NaiveRAG P 0.2148 0.1686 0.4127 0.1164 0.1550 0.4592 0.1693 0.1932 0.8733 0.2992 
+
+R 0.3776 0.3079 0.3066 0.1959 0.2368 0.4288 0.3582 0.1694 0.8670 0.2957 F1 0.2390 0.1888 0.3383 0.1283 0.1649 0.3596 0.1960 0.1734 0.8662 0.2894 
+
+B 0.1888 0.1474 0.2330 0.0976 0.1220 0.2003 0.1481 0.1663 0.8640 0.2743 
+
+A-Mem [54] P 0.1599 0.1120 0.3608 0.1027 0.1342 0.2264 0.1071 0.0987 0.8959 0.2051 R 0.4590 0.4143 0.4391 0.3279 0.3326 0.4899 0.4297 0.0710 0.9120 0.4160 
+
+F1 0.2134 0.1622 0.3832 0.1412 0.1694 0.2698 0.1568 0.0733 0.8915 0.2257 B 0.1496 0.1000 0.3241 0.0931 0.1195 0.1915 0.1026 0.0016 0.8848 0.2038 Multi-modal Full (MM) P 0.1681 0.0891 0.3617 0.1077 0.1481 0.5761 0.1261 0.0492 0.9390 0.2196 R 0.2329 0.1516 0.3822 0.1610 0.2295 0.4177 0.2593 0.0434 0.9323 0.2967 F1 0.1703 0.0979 0.3540 0.1160 0.1493 0.4057 0.1346 0.0427 0.9303 0.2194 B 0.1394 0.0774 0.2809 0.0929 0.1042 0.2239 0.0972 0.0418 0.9286 0.2086 MuRAG [56] P 0.1959 0.1272 0.3653 0.1365 0.1449 0.3337 0.1425 0.0729 0.9323 0.2424 R 0.4253 0.3320 0.3862 0.2932 0.3220 0.5310 0.3537 0.0539 0.9241 0.3371 
+
+F1 0.2349 0.1661 0.3653 0.1693 0.1749 0.3426 0.1735 0.0556 0.9219 0.2666 B 0.1528 0.1109 0.3081 0.1229 0.1252 0.2357 0.1061 0.0000 0.9149 0.2369 NGM [57] P 0.3179 0.1627 0.3839 0.1579 0.1805 0.5122 0.2573 0.0490 0.9365 0.2866 
+
+R 0.3763 0.2830 0.3196 0.2575 0.2556 0.4434 0.3672 0.0366 0.9311 0.3244 F1 0.3107 0.1845 0.3345 0.1736 0.1867 0.4068 0.2738 0.0369 0.9284 0.2792 
+
+B 0.2011 0.1213 0.2489 0.1267 0.1310 0.2473 0.1768 0.0000 0.9249 0.2607 
+
+Table 13: Weighted average (D&M) performance of different methods (Qwen2.5-7B-VL-Instruct [ 58 ], top-5 retrieval) across categories. Metrics: P=Precision, R=Recall, F1=F1-score, B=BLEU-1. Bold values indicate the best performance among the six methods within each metric column for the given category. 
+
+Category Method Metrics Memory Recall Memory Reasoning Memory Application Overall UPR CRR KR MCR RET TR TTL CD AR Text-based Full (Text) P 0.0784 0.0599 0.1913 0.0712 0.0764 0.3516 0.0826 0.0528 0.8654 0.1745 R 0.2014 0.2270 0.3362 0.2186 0.2332 0.4880 0.2409 0.0393 0.8574 0.2871 F1 0.0984 0.0822 0.2358 0.0945 0.1014 0.3273 0.1023 0.0410 0.8575 0.1888 B 0.0699 0.0529 0.1988 0.0668 0.0724 0.2279 0.0709 0.0372 0.8535 0.1641 NaiveRAG P 0.2876 0.1741 0.2779 0.0837 0.1283 0.1629 0.1536 0.0716 0.8571 0.2560 R 0.2999 0.1952 0.1328 0.0868 0.1151 0.2654 0.2208 0.0599 0.8515 0.2819 F1 0.2624 0.1663 0.1666 0.0731 0.0990 0.1288 0.1629 0.0607 0.8500 0.2569 B 0.2177 0.1325 0.0605 0.0533 0.0558 0.0752 0.1298 0.0573 0.8476 0.2415 A-Mem [54] P 0.0739 0.0500 0.1962 0.0627 0.0624 0.0943 0.0506 0.0545 0.5624 0.1894 R 0.4381 0.4206 0.3834 0.3074 0.3397 0.5892 0.3428 0.0427 0.8198 0.4107 
+
+F1 0.1185 0.0822 0.2519 0.0939 0.0982 0.1465 0.0826 0.0425 0.5707 0.1943 B 0.0972 0.0385 0.2024 0.0586 0.0680 0.0955 0.0569 0.0010 0.5555 0.1702 Multi-modal Full (MM) P 0.0971 0.0470 0.1770 0.0494 0.0524 0.2606 0.0477 0.0535 0.7640 0.2047 R 0.2361 0.1862 0.3422 0.1761 0.2606 0.5056 0.2412 0.0411 0.7578 0.2936 F1 0.1171 0.0633 0.2244 0.0683 0.0763 0.2210 0.0677 0.0426 0.7546 0.2070 B 0.0894 0.0420 0.1810 0.0474 0.0529 0.1208 0.0430 0.0394 0.7431 0.1935 MuRAG [56] P 0.1247 0.0716 0.2083 0.0929 0.0745 0.1945 0.0756 0.0554 0.7862 0.2286 R 0.3999 0.3402 0.3413 0.2774 0.3070 0.5959 0.3282 0.0468 0.8220 0.3330 F1 0.1692 0.1032 0.2518 0.1241 0.1069 0.2249 0.1046 0.0483 0.7805 0.2354 B 0.1279 0.0607 0.2055 0.0872 0.0781 0.1524 0.0617 0.0020 0.7664 0.2089 NGM [57] P 0.1925 0.0884 0.2652 0.1070 0.0981 0.4642 0.1246 0.0605 0.8435 0.2732 
+
+R 0.3505 0.2925 0.3155 0.2393 0.2755 0.5359 0.3089 0.0487 0.8461 0.3213 F1 0.2185 0.1149 0.2784 0.1372 0.1262 0.4224 0.1588 0.0497 0.8391 0.2678 
+
+B 0.1478 0.0760 0.2223 0.0978 0.0989 0.2751 0.1001 0.0000 0.8276 0.2427 
+
+21 A PREPRINT - J UNE 9, 2026 
+
+External memory consistently improves recall. Across both Qwen models, methods with external memory (e.g., NaiveRAG, MuRAG [ 56 ], A-Mem [ 54 ], NGM [ 57 ]) substantially outperform full-context baselines in recall, mirroring the behavior observed with GPT-4.1-Nano [ 59 ]. For example, A-Mem [ 54 ] achieves the highest recall across most settings (e.g., 0.4160 on Qwen2.5-VL-3B-Instruct [ 58 ] and 0.4107 on Qwen2.5-VL-3B-Instruct [ 58 ]), indicating that structured memory access is critical for recovering dispersed information. However, precision remains low across all methods, confirming that retrieved evidence often contains noise. 
+
+Cross-modal retrieval remains a bottleneck. The gap between unimodal recall (UPR) and cross-modal retrieval (CRR) persists across both Qwen backbones. Even multimodal retrieval methods such as MuRAG [ 56 ] and NGM [ 57 ] fail to close this gap, highlighting the continued difficulty of aligning textual queries with visual content in human–human interaction settings. 
+
+Reasoning-intensive tasks show extremely low lexical overlap. Tasks such as MCR, RET, and especially CD continue to exhibit near-zero BLEU-1 scores across both models. This further confirms that lexical metrics are poorly suited for evaluating open-ended reasoning and decision-making tasks, and that models struggle to produce lexically aligned outputs even when reasoning is partially correct. 
+
+Model scaling provides limited gains. Comparing Qwen2.5-VL-3B-Instruct and Qwen2.5-VL-7B-Instruct [ 58 ], improvements from scaling are modest and inconsistent. While the 7B model shows slight gains in some recall metrics, it does not fundamentally change the performance landscape. This observation aligns with the main paper: increasing model capacity alone is insufficient to address challenges in memory retrieval, cross-modal grounding, and multi-session reasoning. 
+
+D.3 Retriever Analysis 
+
+Table 14 reports the performance under different top-K retrieval settings. We observe that increasing K generally improves performance for most methods, suggesting that retrieving more candidate memories helps alleviate missing relevant information. However, the gain is not monotonic. For example, A-Mem [ 54 ] and NGM [ 57 ] both achieve their best performance at K = 15 , after which performance slightly declines. This indicates that introducing excessive retrieved content may introduce noise and negatively affect downstream reasoning. Different methods also exhibit varying sensitivity to K. NaiveRAG shows a relatively steady improvement as K increases, implying that its simple retrieval-and-generate pipeline primarily benefits from increased recall. In contrast, MuRAG [ 56 ] reaches its peak at 
+
+K = 10 and then degrades, suggesting that multimodal retrieval may be more susceptible to noise accumulation when irrelevant information is introduced. Overall, these results highlight a trade-off between recall and noise: while larger 
+
+K improves coverage, it may also harm performance due to irrelevant or redundant information. This underscores the importance of effective retrieval filtering and ranking strategies, rather than simply increasing the number of retrieved candidates. Table 14: Performance under different top-K settings. The best result in each row is highlighted in bold.                     
+
+> Method top-5 top-10 top-15 top-20 NaiveRAG 0.4569 0.5023 0.5401 0.5449
+> A-Mem [54] 0.5757 0.6277 0.6428 0.6380 MuRAG [56] 0.5527 0.5902 0.5665 0.5726 NGM [57] 0.5049 0.6253 0.6277 0.6213
+
+E Potential Risks 
+
+The main risks of this work include potential misuse of the benchmark for surveillance applications and overgener-alization of results beyond English and synthetic data. The H2HMem dataset is released under a CC BY license to encourage broad use and reproducibility, but we urge researchers to deploy the benchmark only for benign applications such as meeting assistants and clinical documentation systems. 22

@@ -1,0 +1,267 @@
+Title: Layer-Isolated Evaluation: Gating the Deterministic Scaffold of a Production LLM Agent with a No-LLM, Regression-Locked Test Harness
+
+URL Source: https://arxiv.org/pdf/2606.11686v1
+
+Published Time: Thu, 11 Jun 2026 00:34:26 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Layer-Isolated Evaluation: Gating the Deterministic Scaffold of a Production LLM Agent with a No-LLM, Regression-Locked Test Harness 
+
+Sawyer Zhang ∗ Alexander Wang Sophie Lei 
+
+Lumivate (Lumi) 
+
+June 8, 2026 
+
+Abstract 
+
+End-to-end task-success is the dominant way to evaluate LLM agents, but a single aggregate number tells you whether an agent regressed, not where . We present layer-isolated evaluation :a single deployed ordering agent is decomposed into a fixed taxonomy of architectural layers— ontology pre-resolution, intent signals, routing, decomposition, escalation, safety, memory, and cross-cutting envelope/defense—each exercised by its own assertion slice that runs in a deterministic, no-LLM “pure” mode . The full pure suite (238 baseline cases across 23 slices; 225 cases run in 2.39 s, ≈ 10 ms/case) executes in CI on every change against a locked per-slice baseline. We validate the method by controlled regression injection : degrading one layer at a time across seven non-safety layers. The effect we did not design in is masking —the aggregate pass-rate barely moves ( −1.7 to −5.9 pp for six local regressions), small enough to vanish into dashboard noise, while the matching slice craters ( −25 to −91 pp). That a layer’s own slice reacts to a fault in that layer is partly by construction (each slice is written to assert that layer); the non-obvious, measured results are (i) the aggregate masking and (ii) that the damage stays 
+
+off the other slices —the injected layer’s slice is the single worst-hit in 5 of 7 cases and top-3 in 
+
+7 of 7 (mean rank 1.29 of 19), with a near-flat off-diagonal. The localization replicates on a second, structurally different tenant (Starbucks SG): all seven matching slices crater and the local-vs-foundational signature holds, so the result is not a single-catalog artifact. We position the method as a concrete, deterministic instantiation of the component-level evaluation that evaluation-driven agent operations (Xia et al., 2024) prescribes but leaves unimplemented, with CheckList (Ribeiro et al., 2020) as its methodological ancestor; it is the deterministic mirror image of whole-workflow stochastic mutation testing (Bhardwaj, 2026). We do not claim to invent component-level evaluation; our contribution is (a) a fully decomposed, sub-second, no-LLM per-layer harness for a production agent, (b) a coverage-honesty test-adequacy criterion that refuses to score an unexercised layer, and (c) the regression-injection demonstration that per-slice baseline-locked gates localize regressions an aggregate metric masks. 
+
+# 1 Introduction 
+
+Agent benchmarks score end-to-end task success (Liu et al., 2024; Yao et al., 2024; Zhou et al., 2024; Jimenez et al., 2024; Mialon et al., 2023). This is the right outer metric but a poor development 
+
+> ∗
+
+Corresponding author: sawyer.zhang@lumivate.io ; ORCID 0009-0001-7736-1774 
+
+1
+
+> arXiv:2606.11686v1 [cs.CL] 10 Jun 2026
+
+signal: when the number drops, it does not say which of the agent’s many sub-systems—intent resolution, planning, escalation, the safety validator—broke, and the change needed to find out (re-running a live, stochastic, minutes-per-episode agent and bisecting) is slow and noisy. A growing line of work argues that outcome-only leaderboards hide where agents fail (Mazaheri and Mazaheri, 2026; Mohammadi et al., 2025) and decomposes one capability at a time (e.g. planning (Sun et al., 2026)); a process-model paper (Xia et al., 2024) prescribes pinned regression baselines and fault-localizing offline evaluation of intermediate artifacts. What has been missing is a concrete, fully decomposed, runnable instantiation for a real deployed agent, and an empirical demonstration that it localizes faults an aggregate metric would miss. We provide both. Our agent—a per-tenant, multi-turn food-and-beverage ordering agent—is decomposed into a fixed taxonomy of architectural layers, each with an assertion slice that runs in a deterministic pure mode with no LLM call, so the full suite runs in seconds and gates every pull request against a locked per-slice baseline. We then inject controlled single-layer regressions and show the central result: aggregate pass-rate is nearly flat while the responsible slice collapses, pinning the fault to one layer (Table 3). 
+
+Contributions. 
+
+• A fixed layer taxonomy for a production agent and a deterministic no-LLM pure-mode harness (238 cases, 23 slices) that runs in ≈ 2.4 s and gates CI against a locked baseline (§3). 
+
+• A regression-injection validation over seven layers showing masking : the aggregate barely moves ( −1.7 to −5.9 pp for the six local regressions) while the responsible slice craters ( −25 to 
+
+−91 pp local; −95 pp for the foundational ontology case). The injected layer’s slice is worst-hit in 5/7 and top-3 in 7/7 with a near-flat off-diagonal; we are explicit about which part of this is by-construction and which is measured (§4). 
+
+• A cross-tenant replication (§4.1): all seven injections reproduced on a second, struc-turally different tenant (Starbucks SG), where every matching slice craters and the local-vs-foundational signature holds, showing the localization result is not a single-catalog artifact. 
+
+• A coverage-honest baseline that reports a zero-case slice as null , never 100% , so a green aggregate cannot hide an unexercised layer (§3). 
+
+• An honest positioning : we operationalize a prescribed process model (Xia et al., 2024), descend from behavioral testing (Ribeiro et al., 2020), and differ from whole-workflow stochastic mutation testing (Bhardwaj, 2026) (§2). 
+
+# 2 Related Work 
+
+Outcome-only agent evaluation and its critics. Standard agent benchmarks report a single task-success number (Liu et al., 2024; Yao et al., 2024; Zhou et al., 2024; Jimenez et al., 2024; Mialon et al., 2023). Recent critiques argue this “collapses behaviour into final task success” and hides failures (Mazaheri and Mazaheri, 2026); surveys split outcome from process (tool-use, planning, memory) and note task-completion gives limited fine-grained failure insight (Mohammadi et al., 2025); and diagnostic frameworks decouple one capability such as planning (Sun et al., 2026). We decompose the whole agent into a fixed multi-layer harness rather than isolating a single dimension. 2AgentAssay This work                 
+
+> unit whole workflow one architectural layer verdict stochastic (SPRT) deterministic (exact oracle) LLM in loop yes no (pure mode) cost/case many trials/tokens ≈10 ms, $0 baseline behavioral fingerprint locked per-slice rate localization fingerprint distance slice-rate crater + rank CI placement sampled / nightly every PR
+
+Table 1: Layer-isolated pure-mode testing vs. stochastic whole-workflow mutation testing (Bhardwaj, 2026). The two are complementary: ours gates the deterministic core per-PR; theirs covers the generative whole-agent behaviour our pure lane cannot reach. 
+
+Behavioral / contract testing for ML. CheckList (Ribeiro et al., 2020) replaced held-out accuracy with capability ×test-type behavioral slices; the ML-testing literature (Zhang et al., 2020) supplies the vocabulary (test oracles, component vs. system testing, fault injection). Our pure-mode per-layer assertions are CheckList’s idea applied to an agent’s internal layers, with an oracle-checkable deterministic substrate. 
+
+Ablation vs. isolation. Agent scaffolds are typically validated by ablation measured end-to-end —ReAct ablates reason/act (Yao et al., 2023), Reflexion ablates self-reflection and measures global success (Shinn et al., 2023). We isolate each layer behind its own assertion rather than measuring its contribution through the full stochastic stack. 
+
+Eval-driven agent ops and regression testing. Xia et al. (2024) is the closest prior art in spirit: a process model prescribing pinned regression baselines, offline evaluation of intermediate artifacts to localize faults, and re-running the same slices to confirm deltas. We provide a concrete, deterministic, no-LLM instantiation of those prescriptions. Bhardwaj (2026) defines agent mutation operators and a stochastic mutation score for whole-workflow regression testing; we differ by testing 
+
+per architectural layer against a deterministic locked baseline , and by validating with injection that the per-slice gate localizes (Table 1). Our regression injection is the deterministic analogue of its mutation operators. Beyond outcome leaderboards, diagnostic suites decompose agent ability into named dimensions and report per-dimension scores (Ma et al., 2024); we make the same move for 
+
+testing rather than benchmarking, with an exact (not learned) per-dimension oracle. Industry CI prompt-testing (e.g. promptfoo) runs declarative deterministic assertions at near-zero cost; our pure mode is the agent-internal-layer analogue. 
+
+Tool surface as intent space. Our routing layer follows the design principle that the typed tool surface subsumes intent classification (Prakash, 2025): there is no separate intent classifier to test, so the routing slice asserts tool selection directly. 
+
+# 3 The Layer-Isolated Harness 
+
+Decomposition. The agent is decomposed into a fixed taxonomy of layers, each owning an assertion slice (Table 2). Layers map to the request lifecycle: L0 ontology pre-resolution, intent signals, and speech-act; L2 tool routing; L3 sub-goal decomposition, constraint handling, and tier 3escalation; L4 safety (price / SKU / allergen), knowledge, and memory; plus cross-cutting envelope ,
+
+defense , OOD-reject , reformulator , locale-fidelity , and session-init slices. 
+
+Pure mode. Each slice asserts a single layer’s contract on deterministic outputs computed without any LLM call: the ontology resolver’s canonical IDs, the rule-based escalation decision, the reformulator’s dictionary rewrite, the OOD short-circuit predicate, the server-side reprice, the prompt envelope’s rendered blocks. Because no model is invoked, a case is ≈ 1 ms of compute and is fully reproducible. The whole pure layer suite ( 225 cases pass, 30 skipped—the live-only cases needing a real model call—in 2.39 s of wall time including process startup and fixtures, 
+
+≈ 10 ms/case amortized) runs on every change. To reconcile the four counts that appear in this paper: the locked baseline is 238 = 225 per-layer pure cases + 13 end-to-end L1_legacy cases, the latter tracked by the baseline but run in a separate legacy lane, not the per-layer pure runner. The pure-runner pytest additionally collects 30 live-only variants (cases that require a real model call) and skips them in pure mode; these are not part of the 238 -case baseline. Hence the pure run reports “ 225 passed, 30 skipped” while the locked baseline is 238 .
+
+Locked, coverage-honest baseline. A frozen baseline records, per slice, (total, passed, rate, failed_ids) ; the current baseline is 238 cases across 23 slices at 100% . Crucially, a slice with zero cases is reported with rate: null (uncovered ), never 1.0—so a green aggregate cannot launder an unexercised layer. The current baseline flags 4 uncovered slices ( L2_routing , L4_memory ,
+
+L4_personalization , L4_reflexion ) and 2 low-N slices, surfacing exactly where the suite does not yet gate. Any pull request is compared against this baseline; a per-slice rate drop is a blocked merge. 
+
+Coverage-honesty as a test-adequacy criterion. The rate: null -not-1.0 rule is, in the vocabulary of ML testing (Zhang et al., 2020), a deliberate test-adequacy criterion: a layer is “adequately tested” only if it has ≥ 1 exercising case, and the suite is required to report per-layer adequacy rather than aggregate it away. Most aggregate metrics implicitly assign full credit to untested behaviour (the mean of the cases that exist); ours assigns uncovered , so the headline can never rise by removing or never writing tests. We treat the count of uncovered slices as a first-class quality signal of the test suite itself, reported on every run (Algorithm in Listing 1). 
+
+# 4 Validation by Regression Injection 
+
+To test whether per-slice gates actually localize regressions, we inject controlled single-layer faults. Each injection monkeypatches exactly one non-safety layer’s entry point to a degraded implemen-tation, re-runs the full pure suite, and records the aggregate pass-rate delta versus the matching slice’s delta. The harness self-verifies each injection took effect (a no-op patch is dropped, never reported). No red-line surface is edited : injections hit ontology resolution, the reformulator, escala-tion, and intent signals only—never the safety validator, pricing, prompts, or migrations. (The same method covers the safety slice; we deliberately do not degrade safety code, even in memory.) The experiment is one script ( eval/experiments/p2_regression_injection.py ). One harness detail is load-bearing for honesty: each full-suite pass runs on a freshly constructed runtime. Reusing a single runtime across passes leaks order-store state—an order placed by a create_order case in one pass survives into the next, where list_orders /read_tools cases then fail—which manifests as a constant phantom column on every injection row, indistinguishable at a glance from a real shared-dependency effect. We caught this only by re-running the baseline twice and seeing slices 4Listing 1: The per-PR gate and one pure-mode assertion (simplified from apps/eval/lumi_eval/ ). No LLM is invoked; a slice rate below baseline blocks the merge, and a newly-uncovered slice is itself a failure.         
+
+> # per-PR gate base = load_locked_baseline() # {slice: (total, passed, rate|null)} cur = run_pure_suite() # ~225 cases, no LLM, ~2.4 s for s in all_slices: if base[s].rate is None: # coverage-honesty: never credit 0 cases if cur[s].total == 0: continue # still uncovered (tracked, not green) elif cur[s].rate < base[s].rate: # any per-slice regression ... block_merge(s, base[s].rate, cur[s].rate) # ... blocks the PR # one pure-mode assertion (L4 safety reprice), no model call observed = reprice(cart, tenant.pricebook) # deterministic assert observed.total_cents == case.expected_total_cents assert observed.rejected_skus == case.expected_rejects
+
+move under no injection; building the runtime fresh per pass (construction stays clean; the fault is applied only at request-time) removes it. We flag it because it is a general trap for anyone gating a stateful agent: the test harness must isolate per-pass state, or it will invent off-diagonal coupling that is not there. Table 3 and Figure 1 are the paper’s central result—but it is worth being precise about which 
+
+part is the result. That the injected layer’s own slice craters is, on its own, close to tautological: each slice is hand-written to assert exactly that layer’s contract, so breaking the layer is expected to break its slice. The two findings that are not built in are (i) masking —an evaluator watching only an aggregate quality number sees the escalation regression as a −4.6 pp wobble and the OOD-gate regression as −1.7 pp, both easily lost in run-to-run variance and neither indicating which of a dozen sub-systems broke—and (ii) off-diagonal flatness : the fault does not smear across the other slices (Figure 1), so the per-slice gate turns each masked wobble into an unambiguous −50 /−36 pp failure on exactly the responsible slice while leaving the rest near baseline. Masking is the discovered phenomenon; clean separation is the property that makes the gate actionable. 
+
+Fault localization, measured. We quantify localization the way the fault-localization literature does (Qin et al., 2024): rank all 19 covered slices by how hard each was hit and ask where the 
+
+injected layer’s own slice lands. It is the single worst-hit slice (Top-1) in 5 of 7 injections, and among the three worst-hit (Top-3) in 7 of 7 , at a mean rank of 1.29 out of 19. The two non-Top-1 cases are both foundational layers (ontology pre-resolution, intent signals) whose output feeds many downstream slices; there a small dependent slice with few cases is driven to zero or near-zero (L4_safety_kg −100 pp under the ontology fault; L4_knowledge −83 pp under the intent-signals fault) and edges out the injected layer’s own −95 /−25 pp drop. This is not a localization failure but a different signature : a tight single-slice crater means a local regression, a wide blast radius with the injected layer near the top means a foundational one—a distinction an aggregate number erases entirely. We stress what the rank does and does not evidence. It is not evidence that “the slice for layer X fails when X breaks”—that is by construction. It is evidence of separation : that the other 18 slices mostly do not move, so the signal is attributable rather than smeared. The honest scope limit is that these are seven author-chosen fault types; whether per-slice gates localize organic, unforeseen regressions is the claim that a real incident (§6) and a future mined-regression study must carry, and we are careful (§8) not to let N =7 injected faults stand in for it. 5Layer Slice #cases Asserted contract (pure)                                                                                 
+
+> L0 L0_speech_act 43 speech-act label L0 L0_ontology 21 resolved canonical IDs L0 L0_intent 20 intent-signal vector L2 L2_routing 0tool == expected (uncovered)
+> L3 L3_escalate 16 escalate(reason) decision L3 L3_decompose 11 sub-goals from hints L3 L3_csp 5multi-constraint sub-goals L4 L4_safety 8reject / reprice L4 L4_safety_kg 6allergen blocklist L4 L4_knowledge 6FAQ bypass / slug L4 L4_health 3health/compliance gate (low-N)
+> L4 L4_memory 0recall (uncovered)
+> L4 L4_personalization 0ARAG recall (uncovered)
+> L4 L4_reflexion 0reflective recall (uncovered)
+> –defense 19 scan / block –envelope 15 rendered envelope blocks –reformulator 15 deterministic rewrite –ood_reject 11 OOD short-circuit predicate –recommend_rules 11 recommendation gating –read_tools 8read-tool view –session_init 6session review block –locale_fidelity 1locale pin (low-N)
+> –L1_legacy 13 end-to-end (legacy lane)
+> Total (23 slices, 19 covered) 238 locked baseline @ 100%
+
+Table 2: The full layer-isolated slice taxonomy (all 23 slices; counts from the locked baseline, column sums to the 238 -case total). Zero-case slices are reported uncovered (rate: null ), never 100% ;two low-N slices ( L4_health , locale_fidelity ) are flagged for expansion. As a motivating parallel (not evidence we rely on here), a companion preprint on the same agent’s live LLM judge reports an aggregate failure signal of 0% on a 100-round batch that human review found to contain 23 real defects (Zhang et al., 2026); if it holds up under peer review it is a real-world instance of the masking our injection study demonstrates under control. We flag it as a companion preprint, and our claims in this paper do not depend on it: the injection results above stand on their own. 
+
+4.1 External validity: a second tenant 
+
+The sharpest limit on everything above is that it is one tenant. To test whether the result is an artifact of the kopitiam reference catalog, we replicated the injection study on a second, structurally different tenant: Starbucks SG (a chain ontology pack generated from the real foodpanda SG menu— a Western coffee chain with a different catalog, locale mix, and modifier model than the reference tenant). We authored a parallel pure-slice set (16 cases) for this tenant across the seven injected layers, each baseline-green and verified to crater under its matching injection, and re-ran every injection with each slice’s pass-count split by tenant ( eval/experiments/p2_cross_tenant.py ). Table 4 shows the result: for all seven injections the second tenant’s matching slice craters ( −50 
+
+to −100 pp), and for six of seven the tenant-B off-diagonal is clean—only the injected layer’s own slice moves. The exception is the same one as on kopitiam: the ontology fault is foundational on 6Injected layer regression Target slice Agg. ∆ Slice ∆ #moved rank                                                                 
+
+> Local regressions (aggregate ≤6pp):
+> escalation →never escalate L3_escalate −4.62 pp −50 .00 pp 21/19 intent signals → ∅ L0_intent −4.20 pp −25 .00 pp 22/19 defense scan →allow-all defense −5.04 pp −63 .16 pp 11/19 OOD gate →never reject ood_reject −1.68 pp −36 .36 pp 11/19 reformulator →identity reformulator −5.88 pp −80 .00 pp 31/19 decomposer →no sub-goals L3_decompose −5.88 pp −90 .91 pp 21/19
+> Foundational regression (wide blast radius):
+> ontology resolve → ∅ L0_ontology −26 .47 pp −95 .24 pp 92/19
+
+Table 3: Controlled single-layer regression injection on the pure suite (real, reproducible; 
+
+p2_regression_injection.py ). For the six local regressions the aggregate pure-suite pass-rate drops only 1.7–5.9 pp—small enough to dismiss as noise on a dashboard—while the responsible slice 
+
+drops 25 –91 pp, pinning the fault to one layer. “#moved” counts slices whose pass-count changed; for three local regressions (defense, OOD, escalation) it is ≤ 2, and for defense/OOD it is exactly 
+
+1—only the responsible slice. “rank” is the target slice’s position when all 19 covered slices are ordered by how hard each was hit (1 = worst-hit). The ontology regression has a larger aggregate footprint ( −26 .5 pp) and wider blast radius (9 slices) because ontology pre-resolution feeds many downstream layers—itself a useful signal that the regression is foundational, not local. In the two rank-2 cases a small downstream slice craters marginally harder than the injected layer’s own slice (e.g. L4_safety_kg →0 under the ontology fault), which still localizes to the dependency subgraph. both tenants, cratering ontology and decomposition together. The local-vs-foundational signature 
+
+itself replicates across tenants. Two honest scope notes. First, this validates localization across tenants, not the masking 
+
+magnitude : the authored tenant-B suite is deliberately small and concentrated on the seven injected layers (16 cases), so each injection is a large share of its aggregate and the tenant-B aggregate moves more ( −6 to −38 pp) than the 238-case reference suite’s ( −1.7 to −5.9 pp). Masking is a property of a slice’s share of a full suite, established on the reference tenant; a comparably-sized tenant-B suite would exhibit it too. Second, the injections are still author-chosen, so this is external validity 
+
+across tenants , not a defeat of the by-construction concern (§4); organic, post-freeze regressions remain the open item (§6). 
+
+# 5 Cost 
+
+The economic argument for per-PR gating is the no-LLM substrate. Table 5 contrasts the pure suite with a live run. The full pure layer suite is ≈ 2.4 s of wall time; a single live multi-turn episode of the same agent has a median latency of 73 s (p95 192 s), so even one live episode costs more wall-time than the entire deterministic suite, before token cost. This is what makes layer-isolated evaluation a per-commit CI gate rather than a nightly job. 
+
+# 6 A Real Regression, and What Coverage-Honesty Buys 
+
+Synthetic injection shows the method can localize; a production incident shows why it matters. In our own history, a batch of fixes to the order confirmation gate (the guardrail that forbids placing an order without an explicit user “confirm”) over-corrected : the agent swung from occasionally placing 7L0_ontology              
+
+> L0_speech_act
+> L0_intent
+> L3_decompose
+> L3_csp
+> L3_escalate
+> L4_safety
+> L4_safety_kg
+> L4_health
+> L4_knowledge
+> defense
+> envelope
+> reformulator
+> ood_reject
+> recommend_rules
+> session_init
+> read_tools
+> locale_fidelity
+> L1_legacy
+> ontology resolve -> []
+> (agg -26.5pp)
+> reformulator -> identity
+> (agg -5.9pp)
+> escalation -> never
+> (agg -4.6pp)
+> intent signals -> {}
+> (agg -4.2pp)
+> defense scan -> allow-all
+> (agg -5.0pp)
+> OOD gate -> never reject
+> (agg -1.7pp)
+> decomposer -> no sub-goals
+> (agg -5.9pp)
+> -95 -5 -45 -91 -50 -100 -13 -9 -69
+> -5 -80 -9
+> -27 -50
+> -25 -83
+> -63
+> -36
+> -91 -50
+> Single-layer regression injection: the injected layer's own slice (boxed) is the worst-hit in 5/7 cases
+> (Top-3 in 7/7, mean rank 1.29/19) while aggregate barely moves
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> slice pass-rate drop (pp)
+
+Figure 1: Fault-localization heatmap: each row is one injected single-layer regression, each column a slice, each cell that slice’s pass-rate drop (pp, darker = larger drop). The injected layer’s own slice is boxed. The boxed cell is the darkest in its row for 5/7 injections and among the three darkest for 
+
+7/7; the rest of each row stays light—the regression is localized , not smeared. The off-diagonal is near-zero except where a layer genuinely feeds downstream slices: the foundational ontology row tints many columns, and the intent-signals row drives L4_knowledge , both expected dependency effects the matrix makes visible. (An earlier version of this experiment reused one runtime across passes; leaked order-store state then tinted the read_tools /recommend_rules columns in every 
+
+row. We now build a fresh runtime per pass—§4—which removes that artifact and leaves the genuinely flat off-diagonal shown here.) unconfirmed orders to frequently failing to place confirmed ones —on roughly half of rounds in the affected period, an explicit “confirm” produced no create_order call. The aggregate live-judge signal barely moved (consistent with a companion preprint (Zhang et al., 2026), that reports the same judge flagging 0% of a 100-round batch containing 23 real defects); the regression was caught only by exhaustive human review. This is exactly the failure class layer-isolation targets—a deterministic guardrail contract (“explicit confirm ⇒ order placed”) that an aggregate number cannot see. The honest lesson is sharper than “a slice would have caught it”: the relevant contract lives in the routing/guardrail layer, whose slice ( L2_routing ) is presently one of our four uncovered slices. Our coverage-honesty criterion would not have silently passed this layer green—it reports L2_routing as uncovered 
+
+on every run, naming precisely the un-gated risk. Closing that slice (a confirm ⇒place assertion) converts this entire regression class into a per-PR block. The contribution is thus two-edged: the gate localizes what is covered, and coverage-honesty makes the gaps themselves a tracked, actionable signal rather than a blind spot. 
+
+Replaying real shipped regressions. To probe coverage with real rather than author-chosen faults, we took two fixes from the agent’s git history (an OOD gate that over-rejected capability/meta questions; a dead cross-round slate-pick referent), reproduced each pre-fix state faithfully—restoring the exact guard or regex from the fix commit’s parent, not an invented degradation—and re-ran the leak-free pure suite ( eval/experiments/p2_organic_regression.py , self-verifying like the injection harness). Under the corrected harness neither moved any slice , so both were correctly 
+
+dropped as no-effect: the current pure suite does not exercise either behaviour on the reference tenant. This is the coverage-honesty criterion operating exactly as designed—the suite stays silent 8Injected regression Slice Kopi. ∆ Sbux ∆ B-loc.                                         
+
+> ontology resolve → ∅ L0_ontology −94 .1−100 .0found. †
+> reformulator →identity reformulator −80 .0−100 .0clean escalation →never L3_escalate −50 .0−100 .0clean intent signals → ∅ L0_intent −25 .0−100 .0clean defense scan →allow-all defense −63 .2−50 .0clean OOD gate →never reject ood_reject −40 .0−50 .0clean decomposer →no sub-goals L3_decompose −90 .9−100 .0clean
+
+Table 4: Cross-tenant replication. Each injection’s matching-slice pass-rate delta, computed separately on the reference tenant (kopitiam) and on an authored Starbucks SG slice set; “B-loc.” is whether only the injected slice moved on the second tenant (clean) or several did. All seven second-tenant slices crater. †Ontology is foundational on both tenants (also craters 
+
+L3_decompose )—the same signature as Table 3. The kopitiam column is restricted to that tenant’s cases, so it differs marginally from Table 3, which pools the reference suite per slice. Reproducible: 
+
+eval/experiments/p2_cross_tenant.py .                      
+
+> pure (no-LLM) live (real agent.run)
+> unit of work 1 layer-assertion case 1 multi-turn episode wall time / unit ≈10 ms (amortized) median 73 s (p95 192 s) full layer suite 225 cases in 2.39 snot run per-PR token cost $0 per-turn LLM cost determinism full (reproducible) stochastic CI placement every PR nightly / release
+
+Table 5: Pure vs. live evaluation cost. The no-LLM pure mode makes the full layer suite cheaper than a single live episode, enabling per-PR gating. on what it does not assert rather than reporting a false green—and it is an honest negative result: we cannot yet claim per-slice gates localize organic regressions, because the tractable ones we could replay either fell outside coverage (these two) or had their slice co-authored with the fix (by construction). A clean organic-localization study needs an independent regression stream—faults discovered after their slices were frozen—which our single-tenant history does not yet supply; we mark it as the load-bearing follow-up rather than overclaim it here. 
+
+# 7 Discussion 
+
+Layer-isolated evaluation does not replace end-to-end evaluation—outcome success remains the metric that matters to a user. It replaces the development-time role end-to-end metrics are wrongly used for: catching and localizing regressions during iteration. Three properties make it work. 
+
+Determinism : with no LLM in the loop, a slice failure is a real contract violation, not sampling noise, so it can hard-gate a merge. Decomposition : a fixed layer taxonomy means a failure names its own fix site. Coverage honesty : reporting zero-case slices as uncovered keeps the green number from laundering untested layers—a discipline most aggregate metrics lack. One semantic caveat is load-bearing: because the baseline is locked at the current behaviour ( 100% ), the suite is a drift detector , not a correctness oracle . A green slice certifies “unchanged from the baselined contract,” not “correct”; if a baseline ever encoded a wrong behaviour, the gate would faithfully lock it in. The injection results should be read in exactly that frame—they show the gate 9catches and localizes changes to a layer (the development-time property we claim), not that any layer is correct in an absolute sense. The method’s reach is further bounded by what is decidable without an LLM (§8); layers whose contract is inherently generative still need a live lane. But a surprising fraction of an agent’s behaviour—ontology resolution, routing, rule-based escalation, reprice, envelope construction, defense—is deterministic given inputs, and that fraction can be gated cheaply and exactly. 
+
+# 8 Threats to Validity 
+
+We organize threats along the four standard SE-empirical classes (Zhang et al., 2020). 
+
+Construct validity. Do slice pass-rates measure layer health? Each slice asserts a hand-authored contract, so a slice can be green while the layer is subtly wrong in an unasserted way; we mitigate by deriving cases from real failure modes and by the coverage-honesty rule, which prevents an unexercised layer from reading as healthy (§3). A related caveat is that a per-slice “rate” is a near-binary, low-information quantity at small N : locale_fidelity (N = 1) and L4_health (N =3)yield a 100% that carries almost no statistical content, and the injection deltas on such slices are coarse by construction. We flag these as low-N for expansion rather than report their rate as if it were a continuous health measure. 
+
+Internal validity. Does the injected fault, not a confound, cause the slice crater? Each injection monkeypatches exactly one entry point, the harness self-verifies the patch took effect (no-op patches are dropped), and the off-diagonal of Figure 1 stays near-flat—the change is attributable to the injected layer. The two rank-2 cases are explained mechanistically (foundational layers with downstream dependents), not waved away. 
+
+External validity. Results are from one F&B ordering agent on one agent framework (Pydan-ticAI); the specific taxonomy is ours. We have directly addressed the single-tenant concern for the injection study: §4.1 replicates all seven injections on a second, structurally different tenant (Star-bucks SG), where every matching slice craters and the local-vs-foundational signature holds—so the localization result is not a kopitiam-catalog artifact. What that replication does not establish is the masking magnitude on the second tenant (its authored suite is small and injected-layer-concentrated) or generalization beyond F&B ordering; the method —decompose → pure-assert → lock → inject—is domain-general, but a multi-domain replication is still future work. Pure mode also cannot test inherently generative layers (multi-turn torture tests, free-form brand voice); those remain in the live lane and are out of scope for the per-PR gate. Finally, the one external datapoint we cite—the companion preprint’s 0/23 batch (Zhang et al., 2026)—is a single batch shared with that preprint; we use it only as motivation and the contributions here (the harness, coverage-honesty, and the injection study) stand without it, so a weakness in that shared batch does not propagate to our claims. 
+
+Conclusion validity. Our injection study is N =7. Because each measurement is deterministic 
+
+(no sampling noise), a single run is an exact result rather than a point estimate, so small N threatens 
+
+generality of the fault types covered , not the reliability of each number; the real-regression case study (§6) and a broader organic-regression study are the natural extensions. Four slices are currently uncovered—reported, not hidden—so the gate is only as strong as the covered set. 
+
+# 9 Conclusion 
+
+We decomposed the deterministic scaffold of a production LLM agent into a fixed taxonomy of architectural layers, each asserted in a no-LLM pure mode, gated per-PR against a coverage-honest 10 locked baseline, and validated by controlled regression injection. The result: a single-layer regression that an aggregate pass-rate barely registers ( −3 to −8 pp) and a true end-to-end metric can mask entirely lands as a −25 to −91 pp crater on the responsible slice ( −95 pp for a foundational layer), with a near-flat off-diagonal. We do not claim to have invented component-level evaluation, nor that a green slice means a layer is correct (the suite is a drift detector, not an oracle); we contribute a concrete, sub-second, deterministic, fully-decomposed harness for a deployed agent, a coverage-honesty test-adequacy criterion, and the injection evidence that per-slice gates localize what aggregate metrics hide. 
+
+# Reproducibility 
+
+All numbers are reproduced from the repository on 2026-06-06: slice counts from the locked baseline ( eval/baselines/baseline_layers.json ); the injection table, fault-localization met-ric, and heatmap from one script ( eval/experiments/p2_regression_injection.py , writing 
+
+p2_injection_results.json and p2_injection_matrix.json ; figure by make_paper_figures.py ); and the cost figure from running the pure layer suite ( apps/eval/lumi_eval/test_layer_cases.py :
+
+225 passed, 30 skipped, 2.39 s). Because the entire pure harness runs in ≈ 2.4 s with no model call, network, or external service, it is a self-contained, deterministic artifact: a reviewer can re-run the full suite and every injection in seconds, which we offer toward an ICSE-style Artifacts Reusable 
+
+evaluation. 
+
+# References 
+
+Varun Pratap Bhardwaj. AgentAssay: Token-efficient regression testing for non-deterministic AI agent workflows. arXiv preprint arXiv:2603.02601 , 2026. Carlos E. Jimenez, John Yang, et al. SWE-bench: Can language models resolve real-world GitHub issues? In International Conference on Learning Representations (ICLR) , 2024. arXiv:2310.06770. Xiao Liu et al. AgentBench: Evaluating LLMs as agents. In International Conference on Learning Representations (ICLR) , 2024. arXiv:2308.03688. Chang Ma et al. AgentBoard: An analytical evaluation board of multi-turn LLM agents. In 
+
+Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track ,2024. arXiv:2401.13178. Parsa Mazaheri and Kasra Mazaheri. AgentAtlas: Beyond outcome leaderboards for LLM agents. 
+
+arXiv preprint arXiv:2605.20530 , 2026. Grégoire Mialon, Clémentine Fourrier, et al. GAIA: A benchmark for general AI assistants. arXiv preprint arXiv:2311.12983 , 2023. Mahmoud Mohammadi et al. Evaluation and benchmarking of LLM agents: A survey. arXiv preprint arXiv:2507.21504 , 2025. Kiran Prakash. Function calling using LLMs. https://martinfowler.com/articles/ function-call-LLM.html , 2025. Yihao Qin, Shangwen Wang, Yiling Lou, Jinhao Dong, Kaixin Wang, Xiaoling Li, and Xiaoguang Mao. AgentFL: Scaling LLM-based fault localization to project-level context. arXiv preprint arXiv:2403.16362 , 2024. 11 Marco Tulio Ribeiro, Tongshuang Wu, Carlos Guestrin, and Sameer Singh. Beyond accuracy: Behavioral testing of NLP models with CheckList. In Proceedings of ACL (Best Paper) , 2020. arXiv:2005.04118; DOI 10.18653/v1/2020.acl-main.442. Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao. Reflexion: Language agents with verbal reinforcement learning. In Advances in Neural Information Processing Systems (NeurIPS) , 2023. arXiv:2303.11366. Haoyu Sun et al. Agent planning benchmark (APB): A diagnostic framework for planning capabilities in LLM agents. arXiv preprint arXiv:2606.04874 , 2026. Boming Xia et al. Evaluation-driven development and operations of LLM agents: A process model and reference architecture. arXiv preprint arXiv:2411.13768 , 2024. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. ReAct: Synergizing reasoning and acting in language models. In International Conference on Learning Representations (ICLR) , 2023. arXiv:2210.03629. Shunyu Yao, Noah Shinn, Pedram Razavi, and Karthik Narasimhan. τ -bench: A benchmark for tool-agent-user interaction in real-world domains. arXiv preprint arXiv:2406.12045 , 2024. Jie M. Zhang, Mark Harman, Lei Ma, and Yang Liu. Machine learning testing: Survey, landscapes and horizons. IEEE Transactions on Software Engineering , 2020. arXiv:1906.10742; DOI 10.1109/TSE.2019.2962027. Sawyer Zhang, Alexander Wang, and Sophie Lei. Catching one in five: LLM-as-judge blind spots in production multi-turn transaction agents, 2026. arXiv:2606.10315. Shuyan Zhou et al. WebArena: A realistic web environment for building autonomous agents. In 
+
+International Conference on Learning Representations (ICLR) , 2024. arXiv:2307.13854. 12
