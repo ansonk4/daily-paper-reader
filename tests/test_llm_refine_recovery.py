@@ -196,6 +196,57 @@ class LlmRefineRecoveryTest(unittest.TestCase):
         self.assertNotIn("<= 60 Chinese characters", user_content)
         self.assertTrue(user_content.rstrip().endswith("Output must be strict JSON only, no markdown, no fences, no extra text."))
 
+    def test_call_filter_traditional_chinese_prompt(self):
+        captured = {}
+        self_result = self.relevant_result("p-1")
+        self_result.update(
+            {
+                "evidence_cn": "相關方法",
+                "tldr_cn": "這篇論文圍繞使用者關注的研究方向展開，提出了與需求高度相關的方法框架。",
+                "title_zh": "中文標題",
+                "motivation_cn": "論文動機直接對應使用者檢索需求。",
+                "method_cn": "論文方法圍繞需求中的技術核心展開。",
+                "result_cn": "論文結果顯示該方法具備參考價值。",
+                "conclusion_cn": "論文結論表明該方向值得探索。",
+            }
+        )
+
+        class FakeClient:
+            def chat_structured(self, messages, schema_name, schema, strict, allow_json_object_fallback):
+                captured["messages"] = messages
+                captured["schema_name"] = schema_name
+                return {
+                    "content": "{}",
+                    "parsed": {"results": [self_result]},
+                    "parse_error": None,
+                    "refusal": "",
+                    "finish_reason": "stop",
+                }
+
+        out = self.mod.call_filter(
+            client=FakeClient(),
+            all_requirements=[
+                {
+                    "id": "req-1",
+                    "query": "symbolic regression methods",
+                    "tag": "query:sr",
+                    "kind": "direct",
+                    "description_en": "Find papers relevant to symbolic regression methods",
+                }
+            ],
+            docs=[{"id": "p-1", "content": "Title: A\nAbstract: B"}],
+            debug_dir="",
+            debug_tag="prompt_test",
+            analysis_language="zh-Hant",
+        )
+
+        self.assertEqual(out[0]["id"], "p-1")
+        user_content = captured["messages"][1]["content"]
+        self.assertEqual(captured["schema_name"], "rerank_batch")
+        self.assertIn("Traditional Chinese", user_content)
+        self.assertIn("Do not use Simplified Chinese", user_content)
+        self.assertIn("中文論文標題", user_content)
+
 
 if __name__ == "__main__":
     unittest.main()
