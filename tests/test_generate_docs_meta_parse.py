@@ -223,7 +223,7 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         self.mod.LLM_CLIENT = fallback_client
         self.mod.call_llm_structured_json = fake_call_llm_structured_json
         try:
-            out = self.mod.generate_glance_overview("Title", "Abstract", language="zh-Hans")
+            out = self.mod.generate_glance_overview("Title", "Abstract")
         finally:
             self.mod.LLM_CLIENT = original_client
             self.mod.call_llm_structured_json = original_call
@@ -257,132 +257,13 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         self.mod.LLM_CLIENT = global_client
         self.mod.call_llm_structured_json = fake_call_llm_structured_json
         try:
-            out = self.mod.generate_glance_overview(
-                "Title",
-                "Abstract",
-                client=explicit_client,
-                language="zh-Hans",
-            )
+            out = self.mod.generate_glance_overview("Title", "Abstract", client=explicit_client)
         finally:
             self.mod.LLM_CLIENT = original_client
             self.mod.call_llm_structured_json = original_call
 
         self.assertIn("**TLDR**", out)
         self.assertIs(captured["client"], explicit_client)
-
-    def test_default_analysis_language_is_english(self):
-        self.assertEqual(self.mod.DEFAULT_ANALYSIS_LANGUAGE, "en")
-        self.assertEqual(self.mod.normalize_analysis_language(""), "en")
-
-    def test_generate_glance_english_prompt_and_output(self):
-        captured = {}
-
-        def fake_call_llm_structured_json(client, messages, **kwargs):
-            captured["messages"] = messages
-            return {
-                "tldr": "This overview covers the problem, method, result, and contribution",
-                "motivation": "The paper addresses a concrete research gap",
-                "method": "The method uses a targeted model design",
-                "result": "Experiments show measurable improvements",
-                "conclusion": "The work provides a useful direction",
-            }
-
-        original_client = self.mod.LLM_CLIENT
-        original_call = self.mod.call_llm_structured_json
-        self.mod.LLM_CLIENT = object()
-        self.mod.call_llm_structured_json = fake_call_llm_structured_json
-        try:
-            out = self.mod.generate_glance_overview("Title", "Abstract", language="en")
-        finally:
-            self.mod.LLM_CLIENT = original_client
-            self.mod.call_llm_structured_json = original_call
-
-        self.assertIn("English paper overview", captured["messages"][2]["content"])
-        self.assertIn("**TLDR**:", out)
-        self.assertIn("contribution. \\", out)
-        self.assertNotIn("贡献意义", captured["messages"][2]["content"])
-
-    def test_generate_glance_traditional_prompt(self):
-        captured = {}
-
-        def fake_call_llm_structured_json(client, messages, **kwargs):
-            captured["messages"] = messages
-            return {
-                "tldr": "這是一段足夠長的繁體中文速覽摘要，用於覆蓋研究背景、核心方法和主要貢獻。",
-                "motivation": "這是一段研究動機說明。",
-                "method": "這是一段方法說明。",
-                "result": "這是一段結果說明。",
-                "conclusion": "這是一段結論說明。",
-            }
-
-        original_client = self.mod.LLM_CLIENT
-        original_call = self.mod.call_llm_structured_json
-        self.mod.LLM_CLIENT = object()
-        self.mod.call_llm_structured_json = fake_call_llm_structured_json
-        try:
-            out = self.mod.generate_glance_overview("Title", "Abstract", language="traditional-chinese")
-        finally:
-            self.mod.LLM_CLIENT = original_client
-            self.mod.call_llm_structured_json = original_call
-
-        self.assertIn("繁體中文", captured["messages"][0]["content"] + captured["messages"][2]["content"])
-        self.assertIn("避免使用簡體中文", captured["messages"][0]["content"])
-        self.assertIn("**TLDR**：", out)
-
-    def test_build_markdown_content_english_uses_english_tldr(self):
-        paper = {
-            "title": "Language Test",
-            "authors": ["Ada"],
-            "published": "2026-03-26",
-            "abstract": "English abstract.",
-            "llm_tldr_cn": "中文摘要",
-            "llm_tldr_en": "English TLDR",
-        }
-        md = self.mod.build_markdown_content(paper, "quick", "", "", [], language="en")
-        meta = self.mod._parse_front_matter(md)
-        self.assertEqual(meta["tldr"], "English TLDR")
-        self.assertNotIn("title_zh", meta)
-        self.assertNotIn("## 摘要", md)
-
-    def test_latest_report_english_uses_ascii_punctuation(self):
-        original_client = self.mod.LLM_CLIENT
-        self.mod.LLM_CLIENT = None
-        try:
-            md = self.mod.build_latest_report_section(
-                date_str="20260326",
-                date_label="2026-03-26",
-                generated_at="2026-03-26 00:00:00 UTC",
-                recommend_exists=True,
-                deep_entries=[("202603/26/paper", "Paper Title", [("score", "8"), ("query", "SR")])],
-                quick_entries=[],
-                paper_evidence_by_id={"202603/26/paper": "matches the requested topic"},
-                language="en",
-            )
-        finally:
-            self.mod.LLM_CLIENT = original_client
-
-        self.assertIn("Latest run date: 2026-03-26", md)
-        self.assertIn("Tags: Score:8.0/10, query:SR", md)
-        self.assertIn("Evidence: matches the requested topic", md)
-        self.assertNotIn("：", md)
-
-    def test_translate_skips_english(self):
-        def fake_call_llm_structured_json(*args, **kwargs):
-            raise AssertionError("English mode should not call translation")
-
-        original_call = self.mod.call_llm_structured_json
-        self.mod.call_llm_structured_json = fake_call_llm_structured_json
-        try:
-            title_zh, abstract_zh = self.mod.translate_title_and_abstract_to_zh(
-                "Title",
-                "Abstract",
-                client=object(),
-                language="english",
-            )
-        finally:
-            self.mod.call_llm_structured_json = original_call
-
-        self.assertEqual((title_zh, abstract_zh), ("", ""))
 
     def test_translate_uses_16k_and_explicit_client(self):
         explicit_client = object()
@@ -403,7 +284,6 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
                 "Title",
                 "Abstract",
                 client=explicit_client,
-                language="zh-Hans",
             )
         finally:
             self.mod.LLM_CLIENT = original_client

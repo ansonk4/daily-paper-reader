@@ -164,21 +164,6 @@ https://<你的用户名>.github.io/daily-paper-reader
 
 完成以上步骤后，后续大多数日常使用和配置都可以直接在网页端完成。后续教程参考：[daily-paper-reader 指引](https://ziwenhahaha.github.io/daily-paper-reader/#/tutorial/README)
 
-### 语言设置
-
-论文分析输出语言由 `config.yaml` 的 `arxiv_paper_setting.analysis_language` 控制：
-
-```yaml
-arxiv_paper_setting:
-  analysis_language: en  # en / zh-Hans / zh-Hant
-```
-
-- `en`：英文，默认行为。
-- `zh-Hans`：简体中文。
-- `zh-Hant`：繁体中文。
-
-该设置影响新生成或强制重生成的论文速览、精读总结、日报简报和论文聊天回答；已生成的 Markdown 不会自动翻译。
-
 ## 🧪 本地调试模式
 
 如果你在本机开发，不想点击按钮后触发 GitHub Actions，可以启动本地调试后端：

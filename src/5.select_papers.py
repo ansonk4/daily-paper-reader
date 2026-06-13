@@ -8,12 +8,6 @@ import re
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Tuple
 
-from language_config import (
-    DEFAULT_ANALYSIS_LANGUAGE,
-    is_english_analysis_language,
-    normalize_analysis_language,
-    resolve_analysis_language,
-)
 from subscription_plan import count_subscription_tags
 
 SCRIPT_DIR = os.path.dirname(__file__)
@@ -407,13 +401,7 @@ def parse_score(value: Any) -> float:
         return 0.0
 
 
-def build_scored_papers(
-    papers: List[Dict[str, Any]],
-    llm_ranked: List[Dict[str, Any]],
-    analysis_language: str = DEFAULT_ANALYSIS_LANGUAGE,
-) -> List[Dict[str, Any]]:
-    language = normalize_analysis_language(analysis_language)
-    prefer_english = is_english_analysis_language(language)
+def build_scored_papers(papers: List[Dict[str, Any]], llm_ranked: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     paper_map = {}
     for p in papers:
         pid = str(p.get("id") or "").strip()
@@ -437,24 +425,15 @@ def build_scored_papers(
         tldr_cn = str(item.get("tldr_cn") or "").strip()
         tldr_en = str(item.get("tldr_en") or "").strip()
         legacy = str(item.get("evidence") or "").strip()
-        canonical_evidence = (
-            (evidence_en or evidence_cn or legacy)
-            if prefer_english
-            else (evidence_cn or evidence_en or legacy)
-        )
-        default_tldr = (
-            (tldr_en or tldr_cn)
-            if prefer_english
-            else (tldr_cn or tldr_en)
-        )
-        # 优先保存中英双语；同时保留 llm_evidence 作为“默认展示”字段（按输出语言选择）
+        canonical_evidence = evidence_cn or evidence_en or legacy
+        # 优先保存中英双语；同时保留 llm_evidence 作为“默认展示”字段（优先中文）
         paper["llm_evidence_en"] = evidence_en or legacy
         paper["llm_evidence_cn"] = evidence_cn or (evidence_en or legacy)
-        paper["llm_evidence"] = canonical_evidence
+        paper["llm_evidence"] = paper["llm_evidence_cn"]
         paper["canonical_evidence"] = canonical_evidence
         paper["llm_tldr_en"] = tldr_en
         paper["llm_tldr_cn"] = tldr_cn or tldr_en
-        paper["llm_tldr"] = default_tldr
+        paper["llm_tldr"] = paper["llm_tldr_cn"]
         tags = normalize_tags(item.get("tags"))
         matched_query_tag = str(item.get("matched_query_tag") or "").strip()
         if matched_query_tag and matched_query_tag not in tags:
@@ -1013,7 +992,6 @@ def main() -> None:
         output_dir = os.path.abspath(os.path.join(ROOT_DIR, output_dir))
 
     setting = load_arxiv_paper_setting()
-    analysis_language = resolve_analysis_language({"arxiv_paper_setting": setting})
     carryover_days = int(setting.get("days_window") or CARRYOVER_DAYS)
     mode_text = args.modes
     if not mode_text:
@@ -1055,15 +1033,12 @@ def main() -> None:
     tag_count, tag_list = load_config_tag_count()
     active_carryover_tags = [normalize_carryover_tag(tag) for tag in tag_list if normalize_carryover_tag(tag)]
     log(f"[INFO] config tags={tag_count} | {tag_list}")
-    log(
-        f"[INFO] arxiv_paper_setting mode={mode_text} days_window={carryover_days} "
-        f"analysis_language={analysis_language}"
-    )
+    log(f"[INFO] arxiv_paper_setting mode={mode_text} days_window={carryover_days}")
 
     group_start(f"Step 5 - select {os.path.basename(input_path)}")
     log_substep("5.2", "构建评分论文列表", "START")
     try:
-        scored_papers = build_scored_papers(papers, llm_ranked, analysis_language=analysis_language)
+        scored_papers = build_scored_papers(papers, llm_ranked)
         log(f"[INFO] scored_papers={len(scored_papers)}")
     finally:
         log_substep("5.2", "构建评分论文列表", "END")

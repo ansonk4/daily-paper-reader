@@ -10,12 +10,6 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List
 
-from language_config import (
-    DEFAULT_ANALYSIS_LANGUAGE,
-    analysis_language_display_name,
-    normalize_analysis_language,
-    resolve_analysis_language,
-)
 from llm import DeepSeekClient, resolve_max_output_tokens
 from subscription_plan import build_pipeline_inputs
 
@@ -332,38 +326,7 @@ def call_filter(
     debug_dir: str,
     debug_tag: str,
     retry_note: str = "",
-    analysis_language: str = DEFAULT_ANALYSIS_LANGUAGE,
 ) -> List[Dict[str, Any]]:
-    language = normalize_analysis_language(analysis_language)
-    language_name = analysis_language_display_name(language)
-    if language == "zh-Hant":
-        chinese_field_instruction = (
-            "All fields ending in _cn must be written in Traditional Chinese. "
-            "Do not use Simplified Chinese characters in _cn fields. "
-        )
-        example_cn = {
-            "evidence": "簡短中文短語",
-            "tldr": "中文摘要式 TLDR",
-            "title": "中文論文標題",
-            "motivation": "中文研究動機",
-            "method": "中文方法概括",
-            "result": "中文結果概括",
-            "conclusion": "中文結論",
-        }
-    else:
-        chinese_field_instruction = (
-            "All fields ending in _cn must be written in Simplified Chinese. "
-        )
-        example_cn = {
-            "evidence": "简短中文短语",
-            "tldr": "中文摘要式 TLDR",
-            "title": "中文论文标题",
-            "motivation": "中文研究动机",
-            "method": "中文方法概括",
-            "result": "中文结果概括",
-            "conclusion": "中文结论",
-        }
-
     schema = {
         "type": "object",
         "properties": {
@@ -446,12 +409,7 @@ def call_filter(
         "Papers:\n"
         f"{json.dumps(docs, ensure_ascii=False)}\n\n"
         "Output JSON format example:\n"
-        "{\"results\": [{\"id\": \"paper_id\", \"matched_requirement_index\": 1, "
-        f"\"evidence_en\": \"short English phrase\", \"evidence_cn\": \"{example_cn['evidence']}\", "
-        f"\"tldr_en\": \"one-sentence TLDR\", \"tldr_cn\": \"{example_cn['tldr']}\", "
-        f"\"title_zh\": \"{example_cn['title']}\", \"motivation_cn\": \"{example_cn['motivation']}\", "
-        f"\"method_cn\": \"{example_cn['method']}\", \"result_cn\": \"{example_cn['result']}\", "
-        f"\"conclusion_cn\": \"{example_cn['conclusion']}\", \"score\": 7}}]}}\n\n"
+        "{\"results\": [{\"id\": \"paper_id\", \"matched_requirement_index\": 1, \"evidence_en\": \"short English phrase\", \"evidence_cn\": \"简短中文短语\", \"tldr_en\": \"one-sentence TLDR\", \"tldr_cn\": \"中文摘要式 TLDR\", \"title_zh\": \"中文论文标题\", \"motivation_cn\": \"中文研究动机\", \"method_cn\": \"中文方法概括\", \"result_cn\": \"中文结果概括\", \"conclusion_cn\": \"中文结论\", \"score\": 7}]}\n\n"
         "Requirement: You MUST return exactly one result for every input paper. "
         "The results length must match the papers length, and every input id must appear once.\n\n"
         "Output must be a single-line JSON string. "
@@ -463,8 +421,6 @@ def call_filter(
         "Use semantic interpretation, not only lexical overlap, to decide relevance and score tier. "
         "Evidence must be provided in both languages: "
         "evidence_en (English) and evidence_cn (Chinese). "
-        f"The configured analysis display language is {language_name}. "
-        f"{chinese_field_instruction}"
         "They should be short phrases linking the paper to the matched requirement; "
         "they do NOT need to be direct quotes. "
         "Also generate TLDR in both languages: tldr_en and tldr_cn. "
@@ -696,7 +652,6 @@ def _make_filter_runner(
     all_requirements: List[Dict[str, str]],
     debug_dir: str,
     base_tag: str,
-    analysis_language: str,
 ) -> Callable[[List[Dict[str, str]], int, str], List[Dict[str, Any]]]:
     def _runner(
         docs: List[Dict[str, str]],
@@ -710,7 +665,6 @@ def _make_filter_runner(
             debug_dir=debug_dir,
             debug_tag=f"{base_tag}_attempt_{attempt:02d}",
             retry_note=retry_note,
-            analysis_language=analysis_language,
         )
 
     return _runner
@@ -788,7 +742,6 @@ def _filter_batch(
     filter_model: str,
     max_output_tokens: int,
     debug_dir: str,
-    analysis_language: str,
 ) -> tuple[int, List[Dict[str, str]], List[Dict[str, Any]]]:
     client = _make_filter_client(api_key, filter_model, max_output_tokens)
     runner = _make_filter_runner(
@@ -796,7 +749,6 @@ def _filter_batch(
         all_requirements=all_requirements,
         debug_dir=debug_dir,
         base_tag=f"batch_{batch_idx:03d}",
-        analysis_language=analysis_language,
     )
     return (
         batch_idx,
@@ -834,7 +786,6 @@ def process_file(
         return
 
     config = load_config(config_path)
-    analysis_language = resolve_analysis_language(config)
     user_requirements = build_user_requirements(config, queries)
     if not user_requirements:
         log("[WARN] no user requirements built from config/queries, skip.")
@@ -912,7 +863,6 @@ def process_file(
                 filter_model,
                 max_output_tokens,
                 debug_dir,
-                analysis_language,
             )] = (idx, batch)
         for future in as_completed(pending):
             idx, batch = pending[future]
@@ -946,7 +896,6 @@ def process_file(
                 all_requirements=user_requirements,
                 debug_dir=debug_dir,
                 base_tag=f"recover_{_slug(doc_id, fallback=f'doc-{index}')}",
-                analysis_language=analysis_language,
             )
             try:
                 recovered_results = recover_filter_results(

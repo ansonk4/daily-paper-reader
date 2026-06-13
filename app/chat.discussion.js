@@ -4,90 +4,6 @@ window.PrivateDiscussionChat = (function () {
   const CHAT_DB_NAME = 'dpr_chat_db_v1';
   const CHAT_STORE_NAME = 'paper_chats';
   const CHAT_MODEL_PREF_KEY = 'dpr_chat_model_preference_v1';
-  const DEFAULT_ANALYSIS_LANGUAGE = 'en';
-
-  const normalizeAnalysisLanguage = (value) => {
-    const text = String(value || '').trim();
-    if (!text) return DEFAULT_ANALYSIS_LANGUAGE;
-    if (text === 'zh-Hans' || text === 'zh-Hant' || text === 'en') return text;
-    const key = text.toLowerCase().replace(/\s+/g, '-');
-    if (
-      [
-        'en',
-        'en-us',
-        'en_us',
-        'english',
-        'eng',
-      ].includes(key)
-    ) {
-      return 'en';
-    }
-    if (
-      [
-        'zh-tw',
-        'zh_tw',
-        'zh-hk',
-        'zh_hk',
-        'zh-hant',
-        'zh_hant',
-        'traditional',
-        'traditional-chinese',
-        'chinese-traditional',
-        'hant',
-      ].includes(key)
-    ) {
-      return 'zh-Hant';
-    }
-    return DEFAULT_ANALYSIS_LANGUAGE;
-  };
-
-  let analysisLanguagePromise = null;
-  const loadAnalysisLanguage = async () => {
-    if (window.DPR_ANALYSIS_LANGUAGE) {
-      return normalizeAnalysisLanguage(window.DPR_ANALYSIS_LANGUAGE);
-    }
-    if (analysisLanguagePromise) return analysisLanguagePromise;
-    analysisLanguagePromise = (async () => {
-      try {
-        const loader = window.SubscriptionsGithubToken;
-        if (!loader || typeof loader.loadConfig !== 'function') {
-          return DEFAULT_ANALYSIS_LANGUAGE;
-        }
-        const result = await loader.loadConfig();
-        const cfg = (result && result.config) || {};
-        const setting = cfg.arxiv_paper_setting || {};
-        return normalizeAnalysisLanguage(
-          setting.analysis_language || setting.output_language || setting.language,
-        );
-      } catch (e) {
-        console.warn('Failed to load analysis language setting:', e);
-        return DEFAULT_ANALYSIS_LANGUAGE;
-      }
-    })();
-    return analysisLanguagePromise;
-  };
-
-  const buildChatSystemPrompt = (language) => {
-    const normalized = normalizeAnalysisLanguage(language);
-    if (normalized === 'en') {
-      return 'You are an academic discussion assistant. Discuss and analyze the current paper in English. Use Markdown and LaTeX for formulas.';
-    }
-    if (normalized === 'zh-Hant') {
-      return '你是學術討論助手，負責圍繞當前論文內容進行深入分析與討論。請使用繁體中文回答，避免使用簡體中文，並使用 Markdown + LaTeX 表達公式。';
-    }
-    return '你是学术讨论助手，负责围绕当前论文内容进行深入分析与讨论。请使用简体中文回答，并使用 Markdown + LaTeX 表达公式。';
-  };
-
-  const buildPaperContentPrompt = (language, paperContent) => {
-    const normalized = normalizeAnalysisLanguage(language);
-    if (normalized === 'en') {
-      return `Below is the full plain-text content of the current paper. It may contain extraction noise and is only for reference:\n\n${paperContent}`;
-    }
-    if (normalized === 'zh-Hant') {
-      return `下面是當前論文的完整純文本內容（可能包含自動抽取噪聲，僅供參考）：\n\n${paperContent}`;
-    }
-    return `下面是当前论文的完整纯文本内容（可能包含自动抽取噪声，仅供参考）：\n\n${paperContent}`;
-  };
 
   // 最近提问记录（仅本机 localStorage，从现在开始记录，不回溯历史聊天内容）
   const QUESTION_RECENT_KEY = 'dpr_chat_recent_questions_v1';
@@ -1273,17 +1189,17 @@ window.PrivateDiscussionChat = (function () {
     };
 
     try {
-      const analysisLanguage = await loadAnalysisLanguage();
       const messages = [];
       messages.push({
         role: 'system',
-        content: buildChatSystemPrompt(analysisLanguage),
+        content:
+          '你是学术讨论助手，负责围绕当前论文内容进行深入分析与讨论。请使用中文回答，并使用 Markdown + LaTeX 表达公式。',
       });
       // 使用全文上下文（优先 .txt 抽取结果），不再做 8000 字截断
       if (paperContent) {
         messages.push({
           role: 'user',
-          content: buildPaperContentPrompt(analysisLanguage, paperContent),
+          content: `下面是当前论文的完整纯文本内容（可能包含自动抽取噪声，仅供参考）：\n\n${paperContent}`,
         });
       }
 

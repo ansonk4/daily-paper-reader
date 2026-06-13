@@ -125,24 +125,6 @@ class QueryTagFlowTest(unittest.TestCase):
         self.assertIn("query:sr-rl", out[0].get("llm_tags") or [])
         self.assertEqual(out[0].get("matched_requirement_id"), "req-2")
 
-    def test_build_scored_papers_english_uses_english_display_fields(self):
-        papers = [{"id": "p-1", "title": "t", "abstract": "a"}]
-        llm_ranked = [
-            {
-                "paper_id": "p-1",
-                "score": 8.8,
-                "evidence_cn": "相关证据",
-                "evidence_en": "relevant evidence",
-                "tldr_cn": "中文摘要",
-                "tldr_en": "English TLDR",
-                "tags": [],
-            }
-        ]
-        out = self.select_mod.build_scored_papers(papers, llm_ranked, analysis_language="en")
-        self.assertEqual(out[0].get("canonical_evidence"), "relevant evidence")
-        self.assertEqual(out[0].get("llm_evidence"), "relevant evidence")
-        self.assertEqual(out[0].get("llm_tldr"), "English TLDR")
-
 
 if __name__ == "__main__":
     unittest.main()
