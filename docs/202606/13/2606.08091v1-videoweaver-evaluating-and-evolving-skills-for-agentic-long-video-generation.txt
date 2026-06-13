@@ -1,0 +1,688 @@
+Title: VideoWeaver: Evaluating and Evolving Skills for Agentic Long Video Generation
+
+URL Source: https://arxiv.org/pdf/2606.08091v1
+
+Published Time: Tue, 09 Jun 2026 00:36:20 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+## VideoWeaver: Evaluating and Evolving Skills for Agentic Long Video Generation 
+
+Jianhui Wei 1,2,*,§ Jie Tan 1* Hengchuan Zhu 1* Xiaotian Zhang 1
+
+Yan Zhang 2‡ Ziyi Chen 2 Daoan Zhang 2 Wei Xu 2‡ Zuozhu Liu 1† 1Zhejiang University 2ByteDance 
+
+{jianhui1.24,zuozhuliu}@intl.zju.edu.cn 
+
+Abstract 
+
+Recent agent frameworks such as Claude Code, Codex, and OpenClaw are strong at tool use and orchestration, but whether they can handle long video generation, a long-horizon multi-modal task, remains underexplored. Unlike ear-lier video agents whose pipeline is handcrafted, these frameworks can build and refine their own workflows. We introduce VideoWeaver, an agent harness and benchmark that evaluates and evolves skills for long video generation, where an agent turns a single instruction into a long video by composing foundation skills into its own workflow rather than following a predefined pipeline. The benchmark has 16 task categories and 285 cases, with references spanning text, image, audio, video, and their combinations. Because errors can arise at any stage and not just in the final video, we propose an agent-as-judge that inspects both the exe-cution trace and the final video, grounding its scores in evidence such as metadata and inter-mediate files. Using this feedback, we further design a skill evolution algorithm that refines and merges the agent’s skills. Across multi-ple frameworks and models, we find that an explicit composition skill improves the gen-eration process over using foundation skills alone, that skill evolution further improves out-put quality, and that performance varies no-tably across harness and model choices. The proposed agent-as-judge also aligns well with human judgments, especially on process met-rics. Code and dataset is available at https: //github.com/JianhuiWei7/VideoWeaver 
+
+1 Introduction 
+
+Long video generation is advancing rapidly along two complementary lines. End-to-end models (Cui et al., 2026; Henschel et al., 2025; Yuan et al., 2026)     
+
+> *Equal contributions.
+> †Corresponding author.
+> ‡Project Leader.
+> §Work done during internship at ByteDance.
+
+extend a single generative process, while agentic systems (Yuan et al., 2024; Yang et al., 2025; Zhang et al., 2026d) orchestrate generation tools across many steps. The agentic line suits the complex, multi-shot tasks we target, which require planning over a long horizon, coordinating multimodal ref-erences such as images, audio, and video, invoking heterogeneous generation and editing tools, and maintaining narrative, visual, and audio consis-tency across many clips. It can even use generation models themselves as callable tools. Such agentic systems already address diverse scenarios, from cinematic storytelling (Mu et al., 2026; Wei et al., 2025) and personalized vlogs (Hou et al., 2025) to music videos (Tang et al., 2025) and anima-tion (Shi et al., 2025). Representative frameworks such as Mora (Yuan et al., 2024), StoryAgent (Pan et al., 2024), UniVA (Yang et al., 2025) and Co-Director (Zhang et al., 2026d) demonstrate this promise, but they are purpose-built systems whose orchestration follows fixed, human-designed work-flows. Meanwhile, general-purpose agent frame-works such as Claude Code (Anthropic, 2026a), Codex (OpenAI, 2026b), and OpenClaw (Open-Claw, 2026) pair a reasoning backbone with a tool-augmented runtime, show strong tool-use and orchestration, and can build and refine their own workflows directly from a task. Whether such gen-eral harnesses can handle long video generation has not been systematically explored. To study this, we introduce VideoWeaver, a benchmark for long video generation built around an agent harness. In our harness, a backbone foun-dation model (OpenAI, 2026a; ByteDance Seed, 2026; DeepSeek-AI, 2026) is equipped with a set of foundation skills , self-contained, independently invocable capabilities for video, image, and au-dio generation, understanding, and media process-ing. Given a single high-level instruction, the agent composes these foundation skills into its own com-position skill , a high-level procedural workflow, 1
+
+> arXiv:2606.08091v1 [cs.CV] 6 Jun 2026
+
+and executes it through multi-step skill invocation and clip composition rather than following a prede-fined pipeline. To make this setting concrete and measurable, we construct a benchmark of 16 task categories and 285 cases, with references spanning text, image, audio, video, and their combinations (Figure 1), split into in-distribution train, test sets and three out-of-distribution categories. Evaluating such agents is itself difficult, because errors can occur at any stage of the generation pro-cess and affect the quality of the final video. A plan may be flawed, a tool call may fail, or an intermedi-ate artifact may be corrupted in ways the final clip does not reveal. Existing video benchmarks (Huang et al., 2023; Bansal et al., 2024; Xu et al., 2024; Han et al., 2025; Wei et al., 2026; Zhang et al., 2026c) judge only the final output (Table 1), leaving these process-level failures undiagnosed. We therefore propose a skill-augmented agent-as-judge that in-spects both the execution trace and the final video (Figure 2). It invokes tools to extract hard evidence such as video metadata and intermediate files, then returns a score and textual feedback for each of 6 process and 7 output metrics, with emphasis on cross-clip consistency. Using this feedback as a refinement signal, we further design a skill evolu-tion algorithm (Figure 3) that progressively refines category-level composition and creator skills and merges the resulting creator skills into a single one. We conduct experiments across multiple agent frameworks and foundation models. We find that performance varies notably across harness and model choices, explicit composition skills clearly improve the generation process over foundation skills alone, and skill evolution further improves output quality while generalizing to unseen cases. Incorporating judge feedback during evolution yields additional gains, especially on output met-rics. In addition, a human study confirms that our agent-as-judge aligns well with human judgments. We make the following contributions. • To the best of our knowledge, we are the first to study general-purpose agent harnesses for long video generation, and we build a benchmark of 16 task categories and 285 cases with foundation skills and expert references. • We propose a new agent-as-judge method that diagnoses both execution traces and final outputs, achieving broader process coverage than prior video benchmarks (Table 1). • We refine composition skills and creator skills from evaluation feedback and further imporve the long video genertaion quality and generalize to unseen cases.                                         
+
+> Benchmark Process Output
+> StoryAgent (Pan et al., 2024) ✗✓(5) ScriptBench (Mu et al., 2026) ✗✓(5) Hollywood Town (Wei et al., 2025) ✗✓(6) GenAD-Bench (Zhang et al., 2026d) ✗✓(4) ThemeVlogEval (Hou et al., 2025) ✗✓(12) AutoMV (Tang et al., 2025) ✗✓(12) ST-Bench (Zhang et al., 2025b) ✗✓(5) StreamingT2V (Henschel et al., 2025) ✗✓(4) HeliosBench (Yuan et al., 2026) ✗✓(9) AniEval (Shi et al., 2025) ✗✓(4) UniVA-Bench (Yang et al., 2025) ✓(3) ✓(6)
+> VideoWeaver (Ours) ✓(6) ✓(7)
+
+Table 1: Comparison of metric coverage across video generation benchmarks. Numbers indicate the number of metrics in each group. 
+
+2 Related Works 
+
+2.1 Long Video Generation 
+
+Video generation models such as Sora (Brooks et al., 2024) and Veo (Google, 2024) produce high-fidelity short clips but still struggle with coherence and temporal drift over long durations. Recent long-video methods address this by improving autore-gressive generation and memory handling: Stream-ingT2V (Henschel et al., 2025) uses short-term conditioning and long-term appearance preserva-tion for smooth chunk transitions; LoViC (Jiang et al., 2025) compresses video-text context for effi-cient segment-wise generation; Stable Video Infin-ity (Li et al., 2025) recycles autoregressive errors during training to reduce drift; Helios (Yuan et al., 2026) combines drift-aware training with context compression for real-time minute-scale generation; and LoL (Cui et al., 2026) mitigates sink-collapse with training-free RoPE jitter to enable hour-scale streaming generation. A second line reframes long video generation as agentic orchestration, where a language model plans, decomposes, and refines across produc-tion stages, with applications to cinematic story-telling (Mu et al., 2026; Wei et al., 2025), personal-ized vlogs (Hou et al., 2025), music videos (Tang et al., 2025), and animation (Shi et al., 2025). Representative frameworks such as VideoDirec-torGPT (Lin et al., 2023), Mora (Yuan et al., 2024), and UniVA (Yang et al., 2025) use hierarchical planning to turn scripts into scenes, shots, and prompts, while StoryAgent (Pan et al., 2024) and 2Co-Director (Zhang et al., 2026d) add critique, persona specialization, and feedback-based revi-sion. These systems are effective but rely on fixed, human-designed workflows, which motivates agents that can build and evolve their own. 
+
+2.2 Video Evaluation 
+
+Video generation is typically evaluated by reward-model-based or LLM-as-judge methods. Reward-based benchmarks such as VBench (Huang et al., 2023), VideoPhy (Bansal et al., 2024), and Vi-sionReward (Xu et al., 2024) decompose qual-ity into dimensions scored by specialized mod-els, but need many task-specific evaluators, give limited textual feedback, and can be vulnerable to reward hacking (Skalse et al., 2025). LLLM-as-judge benchmarks such as Video-Bench (Han et al., 2025), UniVBench (Wei et al., 2026), and CLVG-Bench (Zhang et al., 2026c) return scores and feedback across richer dimensions, while other methods dynamically formulate questions and pro-vide interpretable feedback for multi-round visual-generation evaluation or closed-loop video prompt refinement (Zhang et al., 2025a; Song et al., 2026). However, these methods still primarily judge the final output, offering limited diagnosis of where a long generation workflow fails. We instead use a skill-augmented agent-as-judge that inspects both outputs and execution traces and invokes tools to extract hard evidence such as video metadata and intermediate files. 
+
+2.3 Self-Evolving Agent Skills 
+
+A growing body of work studies whether LLM agents can acquire and evolve reusable skills rather than rely on static prompts. Voyager (Wang et al., 2023) first showed that an agent can accumulate reusable code skills through interaction and self-reflection. Later work refines skills from execution feedback (Hu et al., 2026; Chen et al., 2026a,b), treats markdown or behavioral skills as persistent, self-improving memory (Liu et al., 2026a,b; Jiang et al., 2026; Yang et al., 2026; Wang et al., 2026; Xu et al., 2026), and validates self-evolving skills in in-dustrial and medical settings (Zhang et al., 2026b; Liu et al., 2026c). A parallel line organizes and maintains skill libraries at scale through encapsu-lation, hierarchical knowledge bases, retrieval, de-pendency management, and active curation (Kaleb et al., 2026; Zhang et al., 2026a; Li et al., 2026), while others couple skills with training, memory, and policy optimization (Lu et al., 2026). 
+
+> Figure 1: Dataset distribution of input modality and required duration. Modality abbreviations: T: Text, I: Image, V: Video, A: Audio.
+
+3 Task Definition 
+
+3.1 Dataset Construction 
+
+We focus on long video generation , where the target video generation requires a sequence of ac-tions. Starting from a one-time user instruction, the agent plan and execute multi-step skill invocations, manage intermediate outputs, and progressively compose them into a coherent final video. We construct a dataset comprising 16 categories 
+
+of long video generation tasks and 285 test cases in total. Each case includes basic textual requirements such as duration and resolution, multimodal ref-erence materials including images, audio, videos, and their combinations, instructions on how to use these materials, and a coarse story guideline. Fig-ure 1 summarizes the dataset distribution, including the modality composition of task inputs, and the distribution of the required video output duration. We further divide the dataset into training, test, and out-of-distribution (OOD) splits. Specifically, three task categories are reserved exclusively for OOD evaluation, while instances from the remaining cat-egories are evenly partitioned into training and test sets. This setup enables the assessment of both in-distribution performance and generalization to previously unseen task categories. Representative task cases are shown in Sec. C.1. 
+
+3.2 Skills Workspace 
+
+In our harness environment, the backbone lan-guage model (e.g., GPT-5.5 (OpenAI, 2026a), Seed2.0 (ByteDance Seed, 2026)) has only text generation and reasoning capabilities, but does not natively support video generation or multimodal 3Round1: Trace Inspection 
+
+Thinking: Inspect the execution trace to 
+
+verify process metrics. 
+
+Tool: Bash, Read and Error analysis 
+
+Evidence :
+
+Round2: Trace judge 
+
+Thinking: The trace has been reviewed, 
+
+and no execution error is observed. 
+
+Judging :
+
+Round7: Audio judge 
+
+Thinking: The voice identity is consistent, 
+
+but the background music changes across 
+
+segments, and one shot has no audio. 
+
+Judging: 
+
+> Evidence:
+
+AC: BGM changes from soft piano to silence 
+
+Round8: General judge 
+
+Thinking: I have reviewed the full video 
+
+and checked whether the story remains 
+
+coherent across shots .
+
+Multi -turn Evaluation 
+
+EE: All tool call succusses, return pass 
+
+AVC: There is missing audio in the videos                     
+
+> Thinking :Ishould extract multimodal evidence
+> for final -video evaluation, including metadata,
+> audio, ASR transcripts, and representative key
+> frames .
+> Tool :Audio -vocal -separate, Extract -video -
+> frame Video -shot -split ,ASR ,Grid generate
+> Evidence:
+
+Round3: Video metadata extraction  
+
+> Key frame grid 1 Key frame grid 2
+
+…            
+
+> ASR Transcript
+> (0-5s) :Hahahaha!! What?! This is so funny!!
+> (7-9s) :Really? Tell me more …
+> Extracted audio
+
+Reference Character -2-Video 
+
+Execution Artifacts                                                                                                                           
+
+> The task requires generating an anime -style video from ascript and character reference images .Iwill use
+> the character -anime -video -gen skill to preserve character consistency and follow the required video -
+> generation workflow …Thinking
+> Call character -anime -video -gen skill
+> Generate aone -minute Japanese anime -style school video from the script and character reference images …
+> Tool call
+> Execution trace
+> Intermedia asset
+> Reference image
+> Emma enters the recreation room and sees Coco sitting on the sofa .
+> Coco is laughing loudly and talking excitedly on her phone, as if she is
+> having alively conversation with someone .She says that the story is
+> hilarious, asks the other person to continue, and keeps responding with
+> amused laughter .…
+> Reference text
+> Shot plan
+> Intermedia audio Generated Scene Images
+> Shot 1:Medium shot .The character relaxes on the sofa, notices the phone beside them, reaches
+> over, picks it up, and checks the glowing screen .…
+> Final video
+> Clip1 Clip2 Clip3 Clip4 Clip5
+> Scene1 Scene2
+
+…Coco: Hahahaha!! What?! This is so funny !!   
+
+> Visual understanding
+> Audio -Vocal -Separate
+> ASR
+> Extract Video Frame
+> Video Shot Split
+> Error analysis
+> Get Video Metadata
+> Grid generate
+
+Round4: Visual understanding 
+
+Thinking : I will inspect the representative 
+
+frames to check whether the character and 
+
+scene remain consistent across shots .
+
+Tool: Visual understanding 
+
+Skill: Character -anime -video -gen skill 
+
+Step: Plan and follow the guide 
+
+Output: 57.82s and 1080p 
+
+Tool: 37/37 successful 
+
+CP: Generate the final video 
+
+SF: Use the correct composition skill 
+
+PL: Generate a plan and follow the plan 
+
+IP: Using visual understanding 
+
+RAU: Using the user offer’s asset …
+
+Evidence:    
+
+> ━━━━━━━ ●── ─── 0:33 /0:57
+
+Observe 
+
+Round5: Visual Judge 
+
+Thinking : The character is consistent and 
+
+matches the reference image, but the video 
+
+contains multiple scene changes despite the 
+
+prompt specifying a single scene .
+
+Judging :
+
+PR: Scene changes violate the requirement . Character: Coco, laughing, phone in hand ...   
+
+> Scene: Recreation room, sofa, phone call ...
+
+…
+
+VC: Character remains visually consistent... 
+
+RF : Character matches reference. 
+
+Thinking: I will inspect the audio track 
+
+for music consistency and missing audio. 
+
+Round6: Audio understanding 
+
+Tool: Audio understanding 
+
+Listen: ━━━━━━━ ●── 0:33 / 0:57 
+
+Evidence:          
+
+> BGM :(0-10 s) :piano music (10 -20 s) :No voice …
+> Coco Laugae saying (0 -5s): Hahahaha!! What ?! ...
+
+PLC is satisfied because the scene 
+
+progression is clear and logically 
+
+connected .
+
+Judging: 
+
+> Audio understanding
+
+Evaluation Tool 
+
+Tool call 
+
+Evidence Figure 2: Evidence-grounded agent-as-judge evaluation framework. Given the user request, reference assets, execution trace, intermediate artifacts, and final video, the evaluation agent conducts a multi-turn evaluation. At each round, it dynamically invokes evaluation skills to inspect traces, extract video metadata, sample key frames, separate audio, run ASR, analyze errors, and understand visual or audio content. The collected evidence is then used to score process and output metrics and provide textual feedback. 
+
+media processing. To extend the model’s ability to operate in long video generation settings, we provide a set of well-formalized foundation skills: self-contained skills that expose basic, indepen-dently invocable capabilities for video, image, and audio generation, understanding, and media pro-cessing. For example, generating video clips and synthesizing images. The full set of foundation skills is provided in Sec. D. However, coherent long video generation re-quires capabilities beyond the isolated execution of foundation skills. The agent must perform long-horizon planning: decomposing a user request into intermediate objectives, selecting and sequencing appropriate foundation skills, managing intermedi-ate artifacts across multiple steps, and preserving narrative, visual, and audio consistency across clips. We define composition skills as high-level proce-dural policies that specify how foundation skills are orchestrated to accomplish such long-horizon generation tasks. We further define skill-creator 
+
+as a skill that constructs composition skills from the available foundation skills and task cases. 
+
+3.3 Expert Validation 
+
+To validate the dataset and foundation skills, we manually construct expert composition skills for each task category through iterative generation, in-spection, and refinement. This process verifies task feasibility, assesses the reliability and coverage of the foundation skills in realistic long video gen-eration workflows, and provides a strong human-orchestrated reference baseline. 
+
+4 Method 
+
+4.1 Metrics 
+
+Following prior works (Lightman et al., 2023; Deshpande et al., 2025; Barke et al., 2026), we eval-uate both the execution trace and the final gener-ated video. Process metrics check execution check-points in the trace, such as whether the agent com-pletes planning, input processing, and clip merging steps. Output metrics assess the quality of the fi-nal video. Unlike prior evaluations (Huang et al., 2023; Bansal et al., 2024) that mainly focus on single video clip, we emphasize cross-clip consis-tency, assessing whether visual audio, and narrative content remain consistent and coherent across mul-tiple clips . Unless otherwise specified, each metric is scored on a binary scale of {0, 1} with textual feedback. Details are shown in Table 2. 
+
+Evaluation Protocol. We use Claude Code (Anthropic, 2026a) + DeepSeek V4 (DeepSeek-AI, 2026), equipped with evaluation skills as a scalable Agent-as-Judge (Zheng et al., 2023; Liu et al., 2023) for inspecting execution traces, tool-call records, generated files, logs, and final videos. The evaluation framework is shown in Figure 2. Specifically, given an evaluation case with task inputs, execution traces, final video outputs, and metric definitions, the evaluation agent assesses each metric in an evidence-grounded manner. With evaluation skills, the agent can extend its native ca-pabilities and dynamically invoke tools to inspect intermediate artifacts, logs, tool-call records, gen-erated clips, and other metadata. For each metric, the agent returns a score from {0, 1}, supporting 4Figure 3: Overview of our skill evolution pipeline. The execution agent Aexec first performs task inference to generate initial category-level composition skills S0,k and collect execution traces τ , outputs y, and evaluation feedback si. The optimizer agent Aopt then progressively refines composition skills and creator skills with feedbacks to obtain S⋆k and C⋆k . Finally, the merge agent Amerge integrates multiple creator skills into a single C⋆.                            
+
+> Metric Abb. Definition
+> Process Metrics
+> Execution Error-Free Rate EE Successful tool calls / total tool calls. Clip Merging CM Whether generated clips are merged into a final long video. Input Processing IP Whether multimodal inputs are understood and preprocessed. Planning PL Whether the agent produces a plan before generation. Skill Following SF Proportion of prescribed composition-skill steps correctly followed. Reference Asset Usage RAU Whether user-provided assets are used as required.
+> Output Metrics
+> Format Requirements FR Whether hard constraints such as duration, aspect ratio, and resolution are satisfied. Prompt Requirements PR Whether the generated video satisfies user-specified content and instruction requirements. Visual Consistency VC Whether characters and scenes remain consistent across clips. Audio Consistency AC Whether speaker identity and background music style remain consistent across clips. Audio-Video Consistency AVC Whether audio and video are synchronized and all required audio tracks are present. Plot Logic and Coherence PLC Whether the story is understandable and logically connected. Reference Fidelity RF Whether the final video reflects multimodal references.
+
+Table 2: Definitions and abbreviations of the process and output metrics used in our evaluation. 
+
+evidence, confidence level, and textual feedback. These scores and feedbacks are mainly used as refinement signals for skill evolution. For final performance comparison, we use hu-man annotators to assess video quality. For each input, annotators rank n candidate outputs from different baselines and assign ordinal scores from 
+
+n − 1 to 0. The Ranking Score of baseline b is 
+
+RankingScore( b) = 1
+
+|X ||A| 
+
+X
+
+> x∈X
+
+X
+
+> a∈A
+
+rx,a (b),
+
+(1) where rx,a (b) denotes the score assigned to base-line b by annotator a for input x. Each instance is independently annotated by three annotators from diverse backgrounds, including general users, AI video researchers, and film study experts. Figure 4 in Appendix shows the annotation interface. 
+
+4.2 Evolution Algorithm 
+
+Figure 3 illustrates the overall evolution pipeline. The process consists of three stages: task inference, skill evolution, and creator skill merging. 
+
+Preliminaries and Objective. Let Dtrain =
+
+{D train  
+
+> k
+
+}Kk=1 and Dtest = {D test  
+
+> k
+
+}Kk=1 denote the train and test splits over K task categories, where 
+
+Dk contains cases from category k. Let F be the fixed foundation skill set, C denote a creator skill, 
+
+C0 the initial creator skill, and Sk a category-level composition skill. We use three agents: the exe-cution agent Aexec , the optimizer agent Aopt , and the merge agent Amerge . Given an input x, an ex-ecution trace τ , and a output y, the score function 
+
+ϕ(x, τ, y ) is instantiated by the evaluation agent and measures execution and output quality. Our first objective is to optimize K category-level composition skills for held-out test cases: 
+
+S⋆k = arg max 
+
+> Sk
+
+X
+
+> x∈D test
+> k
+
+ϕ x, Aexec (x, Sk), (2) where Aexec (x, Sk) = ( τ, y ). The optimized skill set is S⋆ = {S ⋆k }Kk=1 .Our second objective is to optimize a creator skill for OOD categories. Let Dood = {D ood  
+
+> k
+
+}Kood 
+
+> k=1
+
+5denote the OOD split. For each OOD category, the creator first produces a composition skill, 
+
+SC,k = Aexec (C, F, Dood  
+
+> k
+
+). (3) The creator skill is optimized as 
+
+C⋆ = arg max 
+
+> CKood
+
+X
+
+> k=1
+
+X
+
+> x∈D ood
+> k
+
+ϕ x, Aexec (x, SC,k ).
+
+(4) 
+
+Task Inference. We first run a forward inference pass to collect optimization data. For each task category k, the execution agent uses C0 and F
+
+to produce an initial composition skill, S0,k =
+
+Aexec (C0, F, Dtrain  
+
+> k
+
+). Each train case xi ∈ D train 
+
+> k
+
+is then executed with S0,k to obtain (τi, y i) =
+
+Aexec (xi, S0,k ), and scored as si = ϕ(xi, τ i, y i).Thus, task inference follows the forward pass: 
+
+C0, F, Dtrain 
+
+> k
+> Aexec
+
+−−−→ S 0,k ,xi ∈ D train  
+
+> k
+
+, S0,k 
+
+> Aexec
+
+−−−→ (xi, τ i, y i) ϕ
+
+−→ si.
+
+(5) We store (xi, τ i, y i, s i) in Dopt  
+
+> k
+
+, yielding Dopt =
+
+{D opt  
+
+> k
+
+}Kk=1 and S0 = {S 0,k }Kk=1 .
+
+Skill Evolution. Using Dopt , Aopt optimizes each task category in an independent session. For cate-gory k, we initialize the composition skill as S0,k ,initialize a category-local creator skill C0,k ← C0,and maintain a shared context hk. Cases in Dopt 
+
+> k
+
+are progressively disclosed to Aopt within the same context. At step i, the optimizer receives 
+
+zi = ( hk, {xi, τ i, y i, s i, Si−1,k , C i−1,k }) and up-dates the current skills to (Si,k , C i,k ). Aopt back-propagates feedback along the forward chain in Eq. (5): it analyzes the score, trace, and output to localize failures, first revises the composition skill, and then optimizes the creator skill. The persistent context hk lets the optimizer accumu-late experience across cases and summarize shared patterns within the category. After all cases are processed, we archive the final composition skill set as S⋆ = {S ⋆k }Kk=1 and obtain K category-level creator skills {C⋆k }Kk=1 .
+
+Creator Skill Merging. To integrate experience from multiple category-level creator skills, we merge them sequentially in a shared context hmerge .Starting from an accumulator Cacc ← C⋆ 
+
+> 1
+
+, each remaining creator skill C⋆k for k = 2 , . . . , K is 
+
+progressively disclosed to Amerge through zk =(hmerge , {Cacc , C ⋆k }), and the accumulator is up-dated as Cacc ← A merge (zk). The final accumu-lator is returned as C⋆, a single creator skill that absorbs experience across categories. 
+
+5 Experiment 
+
+5.1 Baselines 
+
+For the execution agent, we evaluate multiple har-ness environments, including Claude Code (An-thropic, 2026a), CodeX (OpenAI, 2026b), and the open-source OpenClaw framework (OpenClaw, 2026), paired with multiple foundation models, including GPT-5.5 (OpenAI, 2026a), DeepSeek V4 (DeepSeek-AI, 2026), Opus 4.7 (Anthropic, 2026b), and Seed 2.0 (ByteDance Seed, 2026). Un-less otherwise specified, skill evolution uses Open-Claw with Seed 2.0 as the execution agent, CodeX with GPT-5.5 as the optimizer agent, and Claude Code with DeepSeek V4 as the evaluation agent to control cost and improve reproducibility. Us-ing three distinct harness-model pairs further helps mitigate potential self-preference bias (Panickssery et al., 2024). We compare the following baselines: • No-Composition-Skill: the agent is provided only with foundation skills and must orchestrate the workflow during execution. • Composition-Skill: the agent first creates a task-specific composition skill that specifies the or-chestration procedure over foundation skills, and then executes the task by following it. • Self-Evolution: the agent evolves the skill using only the optimization objectives defined by the process and output metrics, without additional feedback from the judging agent. • Evolution with Feedback: the agent evolves the skill using feedback generated by judge agent during optimization. • Expert Skill: expert constructed composition skill baseline. This comparison allows us to assess the effect of externalizing orchestration into composition skills, optimizing them through evolution, and incorporat-ing judge feedback during the evolution process. 
+
+5.2 Main Results 
+
+We note that process scores are generally high. This is because they measure whether key execution checkpoints are completed, rather than how well each step is performed. For example, a method receives credit for performing planning if the corre-sponding action is observed in the trace, while the quality of the resulting plan is primarily reflected in the output metrics. 6Baseline Process Metrics Output Metrics Ranking Score                                                                                               
+
+> EE CM IP PL SF RAU Avg FR PR VC RF AC AVC PLC Avg OpenClaw + Seed2.0 0.9750 0.9857 0.8861 0.8691 0.9213 0.8953 0.9221 0.7284 0.2553 0.4929 0.5816 0.5674 0.6050 0.6312 0.5517 2.96 Claude Code + Seed2.0 0.8581 0.9710 0.7237 0.4783 0.6252 0.4928 0.6915 0.7154 0.4388 0.5504 0.5683 0.5072 0.6691 0.5072 0.5652 3.41 Claude Code + DeepSeek V4 0.9438 0.8404 0.8156 0.7849 0.8567 0.8258 0.8445 0.8355 0.3010 0.4464 0.5606 0.5225 0.7543 0.7197 0.6108 4.45 Claude Code + Opus 4.7 0.9749 0.9856 1.0000 0.8951 0.9657 0.9612 0.9638 0.9123 0.4055 0.3814 0.5533 0.4845 0.7835 0.7629 0.6119 4.64 CodeX + GPT-5.5 0.9750 0.9849 0.9867 0.9137 0.9112 0.9698 0.9569 0.9843 0.4580 0.5210 0.6050 0.6261 0.8403 0.8025 0.6910 4.90
+
+Table 3: Composition skill baselines with different harness and model results on long video generation. Best results are in bold and second-best results are underlined.                                                                                                  
+
+> Baseline Process Metrics Output Metrics Ranking Score
+> EE CM IP PL SF RAU Avg FR PR VC RF AC AVC PLC Avg No Composition Skill 0.9753 0.9965 0.5708 0.4651 –0.8195 0.7654 0.7893 0.2536 0.3949 0.5652 0.4819 0.7717 0.5616 0.5455 2.82 Composition Skill 0.9750 0.9857 0.8861 0.8691 0.9213 0.8953 0.9221 0.7284 0.2553 0.4929 0.5816 0.5674 0.6050 0.6312 0.5517 2.96 Self-Evolution 0.9864 0.9858 0.9959 0.9890 0.9877 0.9823 0.9879 0.9047 0.3011 0.4444 0.5806 0.3978 0.6918 0.6487 0.5670 4.59 Evolution with Feedback 0.9860 0.9965 0.9707 0.9853 0.9845 0.9911 0.9857 0.9128 0.3416 0.4733 0.5445 0.4484 0.7011 0.6548 0.5824 5.23 Expert Composition Skill 0.9652 0.9708 0.9481 0.9848 0.9640 0.9860 0.9698 0.9283 0.3187 0.4982 0.5275 0.5238 0.7985 0.7436 0.6198 5.63
+
+Table 4: Main results on skill evolution with OpenClaw + Seed2.0. Best results are in bold and second-best results are underlined. 
+
+Harness and Model Comparison: Table 3 shows that performance varies substantially across differ-ent harness-model pairs. Mature industrial harness settings, such as CodeX + GPT-5.5 and Claude Code + Opus 4.7, achieve the strongest overall per-formance on both process and output metrics. The results also show clear model-harness com-patibility effects. Within Claude Code, replacing Opus 4.7 with Seed2.0 leads to notable drops in both process and output performance, suggesting that different models adapt differently to the same harness interface and orchestration patterns. 
+
+Skill Evolution Results: Table 4 compares all vari-ants under the same OpenClaw + Seed2.0 execu-tion setting. Expert Composition Skill achieves the best output average, showing that human-designed orchestration still provides the strongest reference point. Among automatic methods, Evolution with Feedback achieves a higher output average than Self-Evolution, although its process average is slightly lower. This suggests that self-evolution al-ready captures many trace-visible procedural fixes, and external feedback mainly provide valuable out-put metrics feedbacks that are harder for the agent to self evaluate from the its own execution. The comparison between No Composition Skill and Composition Skill indicates that foundation skills alone are insufficient for long video gener-ation. No Composition Skill baseline achieves a high Clip Merging score, suggesting that the agent can satisfy the basic target video duration. How-ever, its substantially lower Input Processing and Planning scores indicate that it often omits prepara-tory steps essential for producing high-quality, cross-clip coherent videos, such as interpreting ref-erences, structuring the narrative, and coordinat-ing dependencies across clips. The improvements from Composition Skill therefore demonstrate the importance of explicit procedural guidance for or-chestration beyond basic tool use. 
+
+5.3 Generalization 
+
+Table 6 shows that the optimized skills (with agent feedbacks) generalize beyond the training cases. On test categories, optimized composition skills achieve more wins than losses over their initial versions (25.3% vs. 16.5%), indicating reusable orchestration improvements rather than overfitting. On OOD categories, the optimized creator also wins more than it loses (23.8% vs. 16.5%), sug-gesting transfer of learned orchestration experience to unseen tasks. The relatively high tie rates may be attributed to that, for many cases, the initial skills already yield competitive outputs, while pairwise comparison captures only perceptible differences in the generated videos. 
+
+5.4 Human Alignment 
+
+To validate the reliability of Agent-as-Judge, we compare the scores against human annotations on 200 sampled cases. As shown in Table 7, We report exact match, Kendall’s τb, and mean absolute error (MAE). The alignment scores are higher for pro-cess metrics and FR mainly because they are easier to evaluate than open-ended output quality: they can be judged consistently from traces, logs, gen-erated files, and video metadata. Execution Errors are evaluated by script-based checks. 7Baseline RGT VC-RGT Tool Calls Video Tokens Image Tokens LLM Tokens 
+
+Composition Skill Baselines with Different Harness+Model 
+
+Claude Code + Seed2.0 36.28 0.59 28.19 1.52M 4.49K 1.31M Claude Code + DeepSeek V4 63.41 0.66 61.89 1.65M 31.59K 10.09M Claude Code + Opus 4.7 29.54 0.59 32.91 1.50M 9.29K 4.27M Codex + GPT-5.5 54.67 0.78 86.65 1.83M 27.21K 4.32M 
+
+Baselines with OpenClaw + Seed2.0 
+
+No Composition Skill 38.29 0.80 31.30 1.66M 8.02K 2.08M Composition Skill 48.81 0.78 37.11 1.85M 3.84K 2.72M Self-Evolution 61.78 0.73 46.98 1.52M 10.26K 3.74M Evolution with Feedback 56.08 0.74 45.95 1.72M 9.17K 3.62M Expert Composition Skill 65.94 0.72 43.07 1.53M 53.24K 3.39M 
+
+Table 5: Resource usage statistics for each baseline. RGT denotes Relative Generation Time, and VC-RGT denotes Vision Content Relative Generation Time.                                                             
+
+> Category Win Tie Loss
+> Test Categories
+> AI Avatar Video 30.0% 30.0% 40.0%
+> One-Sentence Anime Video 22.2% 66.7% 11.1% Product Unboxing Video 12.5% 68.8% 18.8%
+> SSL Class 40.0% 30.0% 30.0% Anime Video 40.0% 40.0% 20.0% Character Anime Video 16.7% 83.3% 0.0% Object Evolution Video 28.6% 71.4% 0.0% Product Video Demo 40.0% 60.0% 0.0% Cinematic Video 50.0% 30.0% 20.0% Ancient Poetry Teaching 30.0% 70.0% 0.0% Audio-Driven Story 11.1% 66.7% 22.2%
+> E-Commerce Subject Replace 8.3% 66.7% 25.0%
+> Long Video Edit 12.5% 62.5% 25.0%
+> Test Avg. 25.3% 58.2% 16.5%
+> OOD Categories
+> AI Avatar Tech Content Video 37.5% 50.0% 12.5% Theme Video 21.1% 68.4% 10.5% Brand Promotion Video 20.0% 53.3% 26.7%
+> OOD Avg. 23.8% 59.7% 16.5% All 24.9% 58.6% 16.5%
+
+Table 6: Pairwise generalization results. Test categories compare optimized composition skills with their initial versions, while OOD categories compare optimized and initial creator-generated skills.                                         
+
+> Type Metric Exact τbMAE
+> Process CM 0.995 0.892 0.005 IP 0.917 0.763 0.083 PL 0.921 0.792 0.079 SF 0.949 0.773 0.037 RAU 0.970 0.845 0.029 Output FR 0.945 0.815 0.073 PR 0.679 0.490 0.179 VC 0.678 0.563 0.173 RF 0.768 0.601 0.129 AC 0.702 0.509 0.167 AVC 0.804 0.540 0.111 PLC 0.763 0.390 0.126
+
+Table 7: Alignment between Agent-as-Judge scores and human annotations on 200 sampled cases. 
+
+5.5 Resource Usage Statistics 
+
+Table 5 reports aggregate resource usage statistics for each baseline. To measure efficiency, we report Relative Generation Time ( RGT ), defined as the ratio of total execution time to the duration of the generated video (e.g., an RGT of 40 means that generating a one-minute video takes 40 minutes). We also report Vision Content RGT ( VC-RGT ), defined as the ratio of time spent on video/image generation calls to total execution time. In the OpenClaw + Seed2.0 setting, better performance generally comes with higher resource usage: tool calls, LLM tokens, and RGT increase from No Composition Skill to Expert Composition Skill. Meanwhile, VC-RGT decreases from 0.80 to 0.72, suggesting that stronger methods spend more time on planning, reasoning, and coordination rather than waiting for video/image generation calls. 
+
+6 Conclusion 
+
+We presented VideoWeaver, an agent harness and benchmark for long video generation. Our work makes three main contributions: first, we for-mulate long video generation as an agentic skill-composition task and build a benchmark with 16 categories and 285 cases; second, we propose an evidence-grounded agent-as-judge that evaluates both execution traces and final videos; third, we introduce a skill evolution algorithm that refines composition and creator skills from evaluation feed-back. Experiments across multiple harnesses and models show that explicit composition skills and skill evolution improve long video generation, and that our automatic judge aligns well with human judgments, especially on process metrics. 8Limitations 
+
+Our work has several limitations. First, the current dataset contains only hundreds of cases, mainly due to the high computational cost of generating and evaluating approximately one-minute videos; future work will scale the cases and cover a broader range of task categories. Second, the current foun-dation skills are primarily built on models and tools within the ByteDance ecosystem. Although the har-ness itself is model-agnostic, future versions should incorporate more diverse backends, including open-source models, third-party generation APIs, and broader video, image, audio, and editing tools. Third, future work will explore more principled op-timization methods, better credit assignment over execution traces, and stronger skill verification to further improve robustness and generalization. 
+
+Potential Risks 
+
+VideoWeaver may involve generating long videos that use copyrighted reference assets or resem-ble protected content, which raises potential intellectual-property concerns. In addition, long video generation requires multiple model calls and media-processing steps, leading to substantial com-putational cost. Practical deployment should in-clude provenance tracking, consent and copyright checks, watermarking, safety filters, human over-sight, and transparent resource reporting. 
+
+References 
+
+Anthropic. 2026a. Claude code overview. https:// code.claude.com/docs/en/overview . Accessed: 2026-05-24. Anthropic. 2026b. Claude opus 4.7 system card. https: //www.anthropic.com/system-cards . Accessed: 2026-05-24. Hritik Bansal, Zongyu Lin, Tianyi Xie, Ziniu Zhang, Yizhou Yu, Juan Carlos Niebles, Bernard Ghanem, and Bo Li. 2024. Videophy: Evaluating physical commonsense for video generation. arXiv preprint arXiv:2406.03520 .Shraddha Barke, Arnav Goyal, Alind Khare, Avaljot Singh, Suman Nath, and Chetan Bansal. 2026. Agen-trx: Diagnosing ai agent failures from execution tra-jectories. Preprint , arXiv:2602.02475. Tim Brooks, Bill Peebles, Connor Holmes, Will DePue, Yufei Guo, Li Jing, David Schnurr, Joe Taylor, Troy Luhman, Eric Luhman, Clarence Ng, Ricky Wang, and Aditya Ramesh. 2024. Video generation models as world simulators. ByteDance Seed. 2026. Seed2.0. https://github. com/ByteDance-Seed/Seed2.0 . Accessed: 2026-05-24. S. Chen, J. Gai, and 1 others. 2026a. Coevoskills: Self-evolving agent skills via co-evolutionary reflection. 
+
+Computing Research Repository , arXiv:2604.01687. Z. Chen and 1 others. 2026b. Trace2skill: Distilling transferable skills from execution trajectories. Com-puting Research Repository , arXiv:2603.25158. Justin Cui, Jie Wu, Ming Li, Tao Yang, Xiaojie Li, Rui Wang, Andrew Bai, Yuanhao Ban, and Cho-Jui Hsieh. 2026. Lol: Longer than longer, scaling video generation to hour. Preprint , arXiv:2601.16914. DeepSeek-AI. 2026. Deepseek-v4. https://www. deepseek.com/en/transparency/ . Accessed: 2026-05-24. Darshan Deshpande, Varun Gangal, Hersh Mehta, Jitin Krishnan, Anand Kannappan, and Rebecca Qian. 2025. Trail: Trace reasoning and agentic issue local-ization. Preprint , arXiv:2505.08638. Google. 2024. Google i/o 2024: Introducing veo and imagen 3 generative ai tools. Hui Han, Siyuan Li, Jiaqi Chen, and 1 others. 2025. Video-bench: Human-aligned video gener-ation benchmark. arXiv preprint arXiv:2504.04907 .Roberto Henschel, Levon Khachatryan, Hayk Poghosyan, Daniil Hayrapetyan, Vahram Tade-vosyan, Zhangyang Wang, Shant Navasardyan, and Humphrey Shi. 2025. Streamingt2v: Consistent, dynamic, and extendable long video generation from text. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition .
+
+9X. Hou, B. Ma, J. Cheng, X. Ren, K. Yu, W. Li, T. Zheng, and Q. Lu. 2025. Personavlog: Person-alized multimodal vlog generation with multi-agent collaboration and iterative self-correction. arXiv preprint arXiv:2508.13602 .S. Hu, C. Lu, J. Clune, and 1 others. 2026. Evoskill: Automated skill discovery for multi-agent systems. 
+
+Computing Research Repository , arXiv:2603.02766. Ziqi Huang, Yinan He, Jiashuo Yu, Fan Zhang, Chenyang Si, Yuming Jiang, Yuanhan Zhang, Tianx-ing Wu, Qingyang Jin, Nattapol Chanpaisit, Yao-hui Wang, Xinyuan Chen, Limin Wang, Dahua Lin, Yu Qiao, and Ziwei Liu. 2023. Vbench: Compre-hensive benchmark suite for video generative models. 
+
+arXiv preprint arXiv:2311.17982 .G. Jiang, J. Zhang, and 1 others. 2026. Xskill: Con-tinual learning from experience and skills in mul-timodal agents. Computing Research Repository ,arXiv:2603.12056. Jiaxiu Jiang, Wenbo Li, Jingjing Ren, Yuping Qiu, Yong Guo, Xiaogang Xu, Han Wu, and Wangmeng Zuo. 2025. Lovic: Efficient long video generation with context compression. Preprint , arXiv:2507.12952. K. Kaleb, S. Chen, J. Gai, and 1 others. 2026. Skill-craft: Can llm agents learn to use tools skillfully? 
+
+Computing Research Repository , arXiv:2603.00718. J. Li, W. Zhao, and 1 others. 2026. Skillflow: Benchmarking lifelong skill discovery and evolu-tion for agents. Computing Research Repository ,arXiv:2604.17308. Wuyang Li, Wentao Pan, Po-Chien Luan, Yang Gao, and Alexandre Alahi. 2025. Stable video infinity: Infinite-length video generation with error recycling. 
+
+Preprint , arXiv:2510.09212. Hunter Lightman, Vineet Kosaraju, Yura Burda, Harri Edwards, Bowen Baker, Teddy Lee, Jan Leike, John Schulman, Ilya Sutskever, and Karl Cobbe. 2023. Let’s verify step by step. Preprint ,arXiv:2305.20050. Han Lin and 1 others. 2023. Videodirectorgpt: Con-sistent multi-scene video generation via llm-guided planning. arXiv preprint arXiv:2309.15091 .Jie Liu and 1 others. 2026a. Memento-skills: Let agents design agents. arXiv preprint arXiv:2603.18743 .Jie Liu and 1 others. 2026b. Metaclaw: Just talk – an agent that meta-learns and evolves in the wild. arXiv preprint arXiv:2603.17187 .Y. Liu and 1 others. 2026c. Evolving medical imaging agents via experience-driven self-skill acquisition. 
+
+Computing Research Repository , arXiv:2603.05860. Yang Liu, Dan Iter, Yichong Xu, Shuohang Wang, Ruochen Xu, and Chenguang Zhu. 2023. G-eval: Nlg evaluation using gpt-4 with better human align-ment. arXiv preprint arXiv:2303.16634 .Zhengxi Lu, Zhiyuan Yao, Jinyang Wu, Chengcheng Han, Qi Gu, Xunliang Cai, Weiming Lu, Jun Xiao, Yueting Zhuang, and Yongliang Shen. 2026. Skill0: In-context agentic reinforcement learning for skill internalization. arXiv preprint arXiv:2604.02268 .C. Mu, X. He, Q. Yang, W. Chen, J. Yao, H. Liu, Z. Yi, B. Zhao, X. Chen, R. Ma, and 1 others. 2026. The script is all you need: An agentic framework for long-horizon dialogue-to-cinematic video generation. 
+
+arXiv preprint arXiv:2601.17737 .OpenAI. 2026a. Gpt-5.5 system card. https:// openai.com/index/gpt-5-5-system-card/ . Ac-cessed: 2026-05-24. OpenAI. 2026b. Introducing the codex app. https://openai.com/index/ introducing-the-codex-app/ . Accessed: 2026-05-24. OpenClaw. 2026. What is openclaw? https: //openclawdoc.com/docs/getting-started/ what-is-openclaw/ . Accessed: 2026-05-24. Y. Pan and 1 others. 2024. Storyagent: Cus-tomized storytelling video generation via multi-agent collaboration. Computing Research Repository ,arXiv:2411.04925. Arjun Panickssery, Samuel R Bowman, and Shi Feng. 2024. Llm evaluators recognize and favor their own generations. Advances in Neural Information Pro-cessing Systems , 37:68772–68802. H. Shi, Y. Li, X. Chen, L. Wang, B. Hu, and M. Zhang. 2025. Animaker: Multi-agent animated storytelling with mcts-driven clip generation. In Proceedings of the SIGGRAPH Asia 2025 Conference Papers , pages 1–11. Joar Skalse, Nikolaus H. R. Howe, Dmitrii Krashenin-nikov, and David Krueger. 2025. Defining and characterizing reward hacking. Preprint ,arXiv:2209.13085. Yiwen Song, Tomas Pfister, and Yale Song. 2026. Vqqa: An agentic approach for video evaluation and quality improvement. Preprint , arXiv:2603.12310. X. Tang, X. Lei, C. Zhu, S. Chen, R. Yuan, Y. Li, C. Oh, G. Zhang, W. Huang, E. Benetos, and 1 others. 2025. Automv: An automatic multi-agent system for music video generation. arXiv preprint arXiv:2512.12196 .Guanzhi Wang, Yuqi Xie, Yunfan Jiang, and 1 oth-ers. 2023. Voyager: An open-ended embodied agent with large language models. arXiv preprint arXiv:2305.16291 .K. Wang and 1 others. 2026. Memskill: Learning and evolving memory skills for self-evolving agents. 
+
+Computing Research Repository , arXiv:2602.02474. Jianhui Wei, Xiaotian Zhang, Yichen Li, and 1 oth-ers. 2026. Univbench: Towards unified evalua-tion for video foundation models. arXiv preprint arXiv:2602.21835 .
+
+10 Z. Wei, M. Li, Z. Zhang, R. Yuan, P. Hui, H. Qu, J. Evans, M. Agrawala, and A. Rao. 2025. Hol-lywood town: Long-video generation via cross-modal multi-agent orchestration. arXiv preprint arXiv:2510.22431 .B. Xu and 1 others. 2026. Memrl: Self-evolving agents via runtime reinforcement learning on episodic memory. Computing Research Repository ,arXiv:2601.03192. Jiazheng Xu, Yu Huang, Jiale Cheng, and 1 others. 2024. Visionreward: Fine-grained multi-dimensional hu-man preference learning for image and video genera-tion. arXiv preprint arXiv:2412.21059 .X. Yang and 1 others. 2025. Univa: Universal video agent towards open-source next-generation video generalist. Computing Research Repository ,arXiv:2511.08521. Y. Yang, J. Li, Q. Pan, and 1 others. 2026. Au-toskill: Experience-driven lifelong learning via skill self-evolution. Computing Research Repository ,arXiv:2603.01145. Shenghai Yuan, Yuanyang Yin, Zongjian Li, Xinwei Huang, Xiao Yang, and Li Yuan. 2026. Helios: Real real-time long video generation model. arXiv preprint arXiv:2603.04379 .Z. Yuan and 1 others. 2024. Mora: Enabling gener-alist video generation via a multi-agent framework. 
+
+Computing Research Repository , arXiv:2403.13248. Fan Zhang, Shulin Tian, Ziqi Huang, Yu Qiao, and Ziwei Liu. 2025a. Evaluation agent: Efficient and promptable evaluation framework for visual genera-tive models. Preprint , arXiv:2412.09645. H. Zhang and 1 others. 2026a. Skillos: Learning skill curation for self-evolving agents. Computing Re-search Repository , arXiv:2605.06614. Kaiwen Zhang, Liming Jiang, Angtian Wang, Ja-cob Zhiyuan Fang, Tiancheng Zhi, Qing Yan, Hao Kang, Xin Lu, and Xingang Pan. 2025b. Storymem: Multi-shot long video storytelling with memory. 
+
+Preprint , arXiv:2512.19539. Q. Zhang and 1 others. 2026b. Skillforge: Forg-ing domain-specific, self-evolving agent skills in llm agents. Computing Research Repository ,arXiv:2604.08618. Xiaotian Zhang, Jianhui Wei, Yuan Wang, and 1 others. 2026c. How far are video models from true multi-modal reasoning? arXiv preprint arXiv:2604.19193 .Y. Zhang and 1 others. 2026d. Co-director: Agentic gen-erative video storytelling with collaborative critique. 
+
+Computing Research Repository , arXiv:2604.24842. Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric P. Xing, Hao Zhang, Joseph E. Gonzalez, and Ion Stoica. 2023. Judg-ing llm-as-a-judge with mt-bench and chatbot arena. 
+
+arXiv preprint arXiv:2306.05685 .
+
+11 A Human Annotation Details 
+
+A.1 Ranking Annotation Interface 
+
+We provide the human annotation interface in Fig-ure 4. For each evaluation instance, annotators are shown the user input and candidate videos gener-ated by different baselines. They rank the videos according to holistic video quality by either drag-ging videos to reorder them or using the up/down controls in the interface. The resulting order is con-verted into ordinal scores as described in Sec. 4.1. All annotators were compensated at a rate of 10 USD per hour. The annotation task only involves viewing generated videos and task prompts used in our benchmark. It does not require annotators to provide personal information beyond standard annotation-platform account information, and no private or personally identifiable data is included in the released annotations. The collected human judgments are used only for evaluation and analysis in this work, and are not used to train any model. 
+
+B Skill Evolution Algorithm Details C Dataset Details 
+
+We construct a benchmark of 16 long-video gener-ation task categories with 285 cases in total. Fol-lowing the split used in the main experiments, 13 categories are treated as in-distribution categories and split into 119 training cases and 123 held-out test cases, while three categories are held out as OOD categories with 43 cases. Each category is as-sociated with a task-level skill query that describes the intended generation capability and the expected input-output pattern. 
+
+C.1 Dataset Case Examples 
+
+Figure 5 shows two representative cases from the benchmark. The first case illustrates a long-video editing task conditioned on both a reference im-age and a reference video, where the agent must replace the target object in the final video segment while preserving the original scene context. The second case illustrates an audio-driven story gen-eration task conditioned on a reference text and a reference audio clip, where the generated visual sto-ryline should follow the narration and align scene transitions with the audio. 
+
+C.2 Dataset Skill Queries 
+
+Table 8 lists the dataset categories and their corre-sponding skill queries. The names and queries are 
+
+Algorithm 1 Skill Evolution 
+
+Require: Train dataset Dtrain = {D train  
+
+> k
+
+}Kk=1 , where each case i contains input xi; fixed foundation skill set F;initial creator skill C0; score function ϕ; execution agent 
+
+Aexec ; optimizer agent Aopt ; merge agent Amerge 
+
+Ensure: Optimized composition skills S⋆ = {S ⋆k }Kk=1 and optimized creator skill C⋆
+
+1: Dopt , S0 ← INFERENCE (Dtrain , C 0, F, Aexec , ϕ )
+
+2: S⋆, {C⋆k }Kk=1 ← EVOLVE (Dopt , S0, C 0, Aopt )
+
+3: C⋆ ← MERGE CREATORS ({C⋆k }Kk=1 , Amerge )
+
+4: return S⋆, C ⋆
+
+5: function INFERENCE (Dtrain , C 0, F, Aexec , ϕ )6: for all task categories k ∈ { 1, . . . , K } in parallel do 
+
+7: S0,k ← A exec (C0, F, Dtrain  
+
+> k
+
+)
+
+8: for all cases i ∈ D train  
+
+> k
+
+in parallel do 
+
+9: (τi, y i) ← A exec (xi, S0,k )
+
+10: si ← ϕ(xi, τ i, y i)
+
+11: Store (xi, τ i, y i, s i) in Dopt 
+
+> k
+
+12: end for 
+
+13: end for 
+
+14: Dopt ← {D opt  
+
+> k
+
+}Kk=1 , S0 ← {S 0,k }Kk=1 
+
+15: return Dopt , S0
+
+16: end function 
+
+17: function EVOLVE (Dopt , S0, C 0, Aopt )18: for all task categories k ∈ { 1, . . . , K } in parallel do 
+
+19: Init S0,k , C0,k ← C0, context hk ← ∅ 
+
+20: for all cases i ∈ D opt  
+
+> k
+
+sequentially do 
+
+21: zi = ( hk , {xi, τ i, y i, s i, Si−1,k , C i−1,k })
+
+22: hk ← hk ⊕ (Si,k , C i,k ← A opt (zi)) 
+
+23: end for 
+
+24: Archive S⋆k ← S |D opt   
+
+> k|,k
+
+and C⋆k ← C|D opt  
+
+> k|,k
+
+25: end for 
+
+26: S⋆ ← {S ⋆k }Kk=1 
+
+27: return S⋆, {C⋆k }Kk=1 
+
+28: end function 
+
+29: function MERGE CREATORS ({C⋆k }Kk=1 , Amerge )30: Init Cacc ← C⋆ 
+
+> 1
+
+, merge context hmerge ← ∅ 
+
+31: for k = 2 to K do 
+
+32: zk = ( hmerge , {Cacc , C ⋆k })
+
+33: hmerge ← hmerge ⊕ (Cacc ← A merge (zk )) 
+
+34: end for 
+
+35: C⋆ ← Cacc 
+
+36: return C⋆
+
+37: end function 
+
+taken from the skill_query.json file under each dataset directory. 
+
+D Foundation Skills 
+
+Table 9 lists the foundation skills provided to the agent. These skills expose basic video, im-age, audio, understanding, metadata, and media-processing capabilities. They are independently invocable and form the primitive action space over which composition skills define longer procedural workflows. For generation skills, the video generation skill uses ByteDance Doubao Seedance 2.0, with ‘doubao-seedance-2-0-fast-260128‘ as the default model and ‘doubao-seedance-2-0-260128‘ as the higher-quality standard variant. The image gen-12 Name Query 
+
+AI Avatar Video Generate AI-avatar talking-head videos from narration scripts and avatar reference videos, preserving the speaker appearance, style, voice, target duration, aspect ratio, and other user-specified constraints. One-Sentence Anime Video Generate anime or animated story videos from a short plot description and user-specified constraints such as duration, aspect ratio, and visual style. Product Unboxing Video Generate product unboxing videos from product reference images and textual introductions, including product presentation, feature explana-tion, and close-up demonstrations. SSL Class Generate children’s teaching videos from scripts, teaching requirements, and character references, producing classroom-style instructional clips with coherent teacher-student interactions. Anime Video Generate anime videos from text and reference anime videos, preserving the reference visual style, tone, color palette, and story requirements. Character Anime Video Generate character-consistent anime story videos from reference char-acter illustrations and plot text, supporting customized style, scene, duration, and whole-video character consistency. Object Evolution Video Generate coherent videos showing an object, creature, or scene evolving across time from multi-stage reference images and textual descriptions. Product Video Demo Generate product demonstration videos from product screenshots and feature descriptions, with narration and visual explanation of key product functions. Cinematic Video Generate cinematic videos from scripts or long story outlines, following user-specified duration, style, scenes, and visual details. Ancient Poetry Teaching Generate ancient-poetry teaching animations from poem text and refer-ence images, with narration, pedagogical structure, and coherent visual presentation. Audio-Driven Story Generate story videos aligned with a provided narration audio file and style references, matching the audio content, timing, and duration. E-Commerce Subject Re-place Replace the product subject or visual style in e-commerce livestream-style short videos while preserving the original selling logic, duration, and rhythm. Long Video Edit Edit long videos according to text instructions and reference materials, preserving duration and the required identity, scene, object, audio, and background constraints. 
+
+OOD Categories 
+
+AI Avatar Tech Content Video Generate technology-oriented AI-avatar explanation videos from textual requirements, product reference images, and an avatar reference video, preserving the avatar identity, voice, and product-specific content. Theme Video Generate long-form theme videos from a topic or short text, supporting knowledge explanation, scenery montage, and story narration under user-specified duration and format constraints. Brand Promotion Video Generate high-quality brand promotion videos from brand references and textual introductions, following user-specified visual style, music, narrative rhythm, and brand consistency requirements. 
+
+> Table 8: Dataset categories and task queries. Categories below the separator are reserved as OOD categories.
+
+13 Figure 4: Screenshot of the ranking annotation interface used in human evaluation. Annotators compare candidate videos generated by different baselines for the same input and assign ordinal rankings by dragging videos or using the up/down controls. 
+
+eration skill uses Doubao Seedream 5.0 by de-fault (‘doubao-seedream-5-0-260128‘) and also supports ‘gpt-image-2‘. For multimodal perception, the vision-understanding skill uses the Volcengine Ark Doubao multimodal model ‘doubao-seed-2-0-pro-260215‘, while the audio-understanding skill uses ‘doubao-seed-2-0-lite-260428‘, which sup-ports native audio input. Speech recognition is implemented with Volcengine BigASR using the ‘volc.bigasr.auc_turbo‘ resource and ‘bigmodel‘ recognition backend. Text-to-speech uses Open-Speech TTS V3 with ‘seed-tts-2.0‘ as the default resource. Non-generative media-processing skills, such as metadata extraction, frame extraction, shot splitting, and grid construction, rely on determin-istic tools including ffprobe, exiftool, OpenCV, PySceneDetect, and Pillow rather than learned foundation models. We adopt this ByteDance-backed full-modality tool stack consistently across experiments, as it provides unified access to video, image, audio, speech, and multimodal understand-ing capabilities, thereby simplifying experimental control, reproducibility, and future research exten-sions. 
+
+E AI Assistant Usage 
+
+We used an AI assistant, CodeX, to support code development, debugging, and writing review dur-ing the preparation of this work. All AI-assisted outputs were carefully inspected and revised by the authors. The assistant was not used to make autonomous research decisions, or alter experimen-tal outcomes. We manually verified all code, data processing steps, experimental results, and paper content to avoid hallucination, bias, or unsupported claims. 14 Name Description 
+
+add-audio-track Add an extra audio track to a video while preserving the original audio track. audio-gen Generate speech audio for narration or dialogue; background music and sound effects are outside this skill’s scope. audio-understanding Analyze audio content with a multimodal audio model, including speaker timbre, BGM style, emotion, continuity, silence, and audio consistency. audio-vocal-separate Separate vocals from background music or accompaniment in an audio or video file, producing clean vocal and background tracks. automatic-speech-recognition Transcribe local or online audio/video files into text, JSON, or SRT subtitles. change-fps Convert a video to a target frame rate. extract-video-frame Extract a specific frame from a video, such as the first, middle, last, frame-indexed, or timestamped frame. get-image-metadata Extract image metadata such as resolution, format, file size, and EXIF information. get-output-dir Return the standardized output directory for the current generation task. get-video-metadata Extract video metadata such as duration, resolution, frame rate, and frame count. image-gen Generate or edit images from prompts, reference images, resolution, aspect ratio, model, and seed settings. merge-video Merge multiple videos after normalizing resolution, aspect ratio, and frame rate. pair-wise-skill-merge Progressively merge an incoming skill or skill creator into an accumula-tor skill directory while deduplicating and resolving conflicts. replace-audio Replace a video’s original audio with a specified audio file. resize-image-resolution Resize an image to a target resolution. resize-video-resolution Resize a video to a target resolution. split-audio Separate a video’s audio track from its visual stream. split-image Split an image into a 2x2 grid, commonly used to preprocess human reference images for video generation. text-to-speech Synthesize speech audio from text with configurable voice, speed, vol-ume, pitch, and optional word timestamps. trim-audio Trim an audio file to a specified start and end time. trim-video Trim a video to a specified start and end time. video-gen Generate or edit videos with video-generation APIs, prompt rewriting, reference inputs, preprocessing, and iterative logging. video-shot-split Count and split video shots into separate clip files. vision-understanding Analyze image or video content and answer visual understanding ques-tions. 
+
+> Table 9: Foundation Composition Skills.
+
+15 Figure 5: Representative dataset cases. Top: a long-video editing case with reference image and reference video inputs. Bottom: an audio-driven story generation case with reference text and reference audio inputs. 
+
+16
