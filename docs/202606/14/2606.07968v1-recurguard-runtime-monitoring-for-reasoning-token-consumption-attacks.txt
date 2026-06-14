@@ -1,0 +1,874 @@
+Title: RecurGuard: Runtime Monitoring for Reasoning-Token Consumption Attacks
+
+URL Source: https://arxiv.org/pdf/2606.07968v1
+
+Published Time: Tue, 09 Jun 2026 00:28:23 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+> 1
+
+# RecurGuard: Runtime Monitoring for Reasoning-Token Consumption Attacks 
+
+Abid Aziz and Hafsa Binte Kibria 
+
+Department of Electrical & Computer Engineering Rajshahi University of Engineering & Technology, Rajshahi 6204, Bangladesh 2210019@student.ruet.ac.bd | hafsabintekibria@ece.ruet.ac.bd 
+
+✦
+
+Abstract 
+
+Reasoning-capable large language models can be induced to spend their generation budget on injected decoy tasks rather than answering the user’s question, causing denial of service when no final answer is produced and denial of wallet when excess output tokens are billed. Input-side safety classifiers often miss these attacks because the injected prompts can appear syntactically benign. We build R ECUR -GUARD , a runtime monitor for detecting reasoning-chain consumption attacks when reasoning traces are exposed by the model. R ECUR GUARD analyses reasoning traces as they are generated and tracks three signals: recurrence rate, volume growth, and progress toward the user’s query. If all three signals remain anomalous for three consecutive chunks, RECUR GUARD terminates generation early. We evaluate RECUR GUARD against OverThink and ExtendAttack across open-weight reasoning models and conduct adaptive stress tests on DS-R1-Qwen-7B. On this model, R ECUR GUARD 
+
+detects 99% of OverThink attacks and 92% of ExtendAttack instances while maintaining near-zero false positive rates on question answering, code generation, mathematics, and summarisation. Adaptive evaluation reveals the limit of the defence: topical attacks retain 11 .9× amplification with an approximately 50% joint miss rate, whereas full semantic evasion reduces amplification from 22 .8× to 2.2×. When reasoning traces are unavailable, QDM provides a post-hoc fallback monitor based on the final output. 
+
+1 INTRODUCTION 
+
+Reasoning-capable large language models (LLMs) often generate hundreds or thousands of intermediate reasoning tokens before producing a final answer [1], [2]. These extended reasoning traces improve performance on complex tasks, but they also create a new attack surface. An attacker who can inject text into the model’s context, through retrieved documents, tool outputs, or user-controlled inputs [3], can introduce a decoy task that diverts the model’s reasoning away from the user’s query, an unbounded-consumption risk [4] exercised by OverThink and ExtendAttack [5], [6]. Rather than solving the intended task, the model spends its generation budget on the injected decoy. This behaviour creates two distinct harms. First, the user may receive no useful answer because the model exhausts its generation budget before returning to the original task. Second, the excess reasoning incurs additional inference costs. In our evaluation, successful attacks increase output-token consumption by more than an order of magnitude and, in some cases, prevent the model from producing a final answer altogether. These channels are common in retrieval-augmented generation (RAG), tool-using agents, and enterprise LLM workflows, where external text can enter the prompt context. Three common defence layers are limited in this setting. 
+
+Input-side safety classifiers such as Llama Guard 3-1B-INT4 [7] do not detect these attacks because the injected prompt contains a legitimate question alongside a harmless-looking puzzle or decoding task; no content-safety category is trig-gered. Length-based filters , including token-count thresholds and output-length anomaly detectors, catch many high-amplification attacks but produce unacceptably high false positive rates on legitimate long-form tasks: a token-budget filter produces 69% FPR on HumanEval code generation in our evaluation. Post-hoc semantic monitors flag the final output when it drifts from the user query, but cannot halt generation early and can confuse legitimate summarisation, where the output discusses an article rather than the bare instruction, with attack outputs. The geometric signal is in the trajectory, not the length alone. Clean reasoning and attack reasoning move through embedding space differently. Clean reasoning tends to progress through task-relevant content, with each chunk introducing new material related to the user’s question. Attack reasoning collapses: after the decoy takes hold, each new chunk resembles the model’s own prior chunks more than it resembles the query. A detector that asks only “is the output close to the query?” is insufficient: it can fire on summarisation, where the output discusses article content that is semantically distant from the short instruction. The more useful question is whether each reasoning chunk is closer to the query or to the model’s own recent reasoning history . This distinction, which we call task-conditioned progress, is the foundation of R ECUR GUARD .We propose RECUR GUARD , a lightweight online monitor that processes the model’s exposed reasoning trace chunk by chunk during generation. At each 64-word chunk, R E-
+
+> CUR
+
+GUARD computes three streaming signals: recurrence rate 
+
+(RR), measuring how often the current chunk revisits the 
+
+> arXiv:2606.07968v1 [cs.CR] 6 Jun 2026 2
+
+embedding territory of recent prior chunks; volume growth 
+
+(VG), measuring whether the embedding cloud is expanding into new semantic space; and task-conditioned progress (TP), measuring how much more similar the current chunk is to the user’s query than to any prior chunk. A joint alarm fires only when all three signals indicate collapse for S=3 
+
+consecutive chunks. When the alarm fires, generation can be halted immediately, saving the remaining output tokens. For deployment settings where the reasoning trace is inaccessible, such as closed APIs that return only final outputs, we pair R ECUR GUARD with QDM (Query Drift Monitor). QDM is a lightweight post-hoc companion monitor that scores final outputs against the query. It is useful when reasoning traces are hidden, but it does not provide early stopping. We treat QDM as a deployment fallback rather than the main algorithmic contribution. Figure 1 summarises this placement: the injected decoy enters through text-bearing context, R ECUR GUARD monitors exposed reasoning chunks during generation, and QDM checks the final output when traces are hidden. On DS-R1-Qwen-7B [1], our primary evaluation model, RECUR GUARD detects 99% of OverThink attacks [5] with 0% FPR on the held-out SQuAD [8] benign set, and 92% of Ex-tendAttack instances [6]. Across legitimate code generation, mathematics, and summarisation tasks, R ECUR GUARD main-tains near-zero FPR, while simple length-based baselines produce 69% and 80% FPR on HumanEval [9]. Against fully adaptive evasion (C4), both R ECUR GUARD and QDM are evaded, but the attack’s amplification collapses from 22 .8×
+
+to 2.2×, consistent with the Evasion-Alignment theorem: in our C4 construction, forcing task alignment causes the model to converge on an answer instead of looping. The topical CSP attack (C1) remains an open boundary: it retains 11 .9×
+
+amplification while achieving an approximately 50% joint miss rate against both monitors. This work makes four contributions:  
+
+> •
+
+Threat model. We formalise reasoning-chain con-sumption as a runtime security problem, introduce defender-visibility regimes, and define token ampli-fication and liveness failure as the primary harm metrics.  
+
+> •
+
+RECUR GUARD . We propose R ECUR GUARD , a task-conditioned recurrence-collapse monitor for exposed reasoning traces, and provide a theoretical analysis explaining its FPR behaviour and the amplification tradeoff under full evasion.  
+
+> •
+
+Evaluation. We evaluate R ECUR GUARD , QDM, and four baselines against OverThink, ExtendAttack, and adaptive stress tests across open-weight and closed-API models, with Wilson-bounded TPR/FPR report-ing and a McNemar paired comparison.  
+
+> •
+
+Security boundary. We characterise the adaptive boundary: C1 weakens semantic monitors at 11 .9×
+
+amplification while remaining detectable by length baselines; C4 achieves full evasion only at 2.2×
+
+amplification. 
+
+2 BACKGROUND AND THREAT MODEL 
+
+Reasoning-capable large language models may generate an extended reasoning trace before producing a final answer. This trace is the attack surface studied here. A prompt-injection attacker who can insert text into the model’s input context can force the trace to consume the entire output budget on an irrelevant decoy task, denying the user a useful answer while incurring the full token cost. The following subsections define the deployment pipeline, the attacker’s capabilities, the defender’s observability, and the metrics used to measure attack severity. 
+
+2.1 Reasoning-Chain Consumption Attacks 
+
+Reasoning models ( e.g. DeepSeek-R1 [1], Qwen3 [2], Claude with extended thinking [10]) produce intermediate reason-ing text or hidden reasoning states before answering. An adversary who can inject text into the prompt context can include a computationally expensive decoy task, such as a logic puzzle or obfuscated decoding problem, along with an explicit instruction to solve it before answering the user’s question. When the model complies, it may spend its entire reasoning budget on the decoy and produce no useful final answer. This behaviour causes two distinct harms. Denial of service (DoS): the user receives no usable answer, degrading service quality or availability. Denial of wallet (DoW): the API provider or user is billed for the full output token count, which can be orders of magnitude larger than a normal query. Both harms can arise without harmful content in the output, so content-safety filters alone may miss them. This attack class corresponds to OWASP LLM10: Unbounded Consumption [4]. 
+
+2.2 System Setting 
+
+We study a text-context inference setting that includes direct prompting and RAG-style deployments. The model receives a combined prompt constructed from a user query Q and additional context D:
+
+P = PromptBuilder( Q, D ). (1) The model M processes P and produces a reasoning trace R
+
+followed by a final answer A. The resulting pipeline is: 
+
+Q, D → P → M → R → A. 
+
+The injected decoy task can enter through any text-bearing channel: user-controlled input, retrieved document content, tool call outputs, or external context strings. The attack does not require modifying the system prompt or the model itself. 
+
+2.3 Attacker Capabilities 
+
+The attacker operates in a black-box prompt-injection setting. The attacker can:  
+
+> •
+
+insert or control text appearing in the prompt context 
+
+D; 
+
+> •
+
+choose a decoy task designed to consume reasoning tokens ( e.g. a Sudoku puzzle or mixed-base ASCII decoding instruction);  
+
+> •
+
+in the adaptive threat setting, know the general design of the deployed detection method. The attacker cannot: 3User Query Q Retrieved / Tool / External Context D  
+
+> Injected decoy
+> attack enters through text-bearing context channel
+> PromptBuilder(Q,D) Reasoning LLM
+
+RecurGuard RR VG TP 
+
+> exposed reasoning trace R
+> HALT generation
+
+Continue Final output Y 
+
+> if not halted
+
+QDM Flag Pass Visibility regimes 
+
+> Regime A: RecurGuard possible Regime B: partial RecurGuard Regime C/D: QDM fallback
+
+Fig. 1. Threat model and monitor placement. The attacker injects a reasoning-consuming decoy through any text-bearing context channel. RECUR GUARD monitors exposed reasoning traces online and can halt generation; QDM operates post-hoc on the final output when reasoning traces are hidden. TABLE 1 Defender visibility regimes. 
+
+Regime Defender observes RECUR GUARD QDM A Full reasoning trace Yes Yes B Summarised thinking Partial Yes C Empty/hidden reasoning No Yes D Final output only No Yes  
+
+> •
+
+modify model weights or decoding parameters;  
+
+> •
+
+access hidden activations, logits, or internal model states;  
+
+> •
+
+modify the system prompt directly;  
+
+> •
+
+tamper with, disable, or route around the detector;  
+
+> •
+
+obtain gradients through the detector. We study a black-box prompt-injection attacker, not a white-box adversary with gradient access to the detector. The attacker may still craft inputs intended to be missed by the detector; this is the adaptive evasion setting in Section 8. Gradient-based optimisation against the sentence encoder is explicitly outside our threat model and is listed as future work in Section 11.2. 
+
+2.4 Defender Visibility 
+
+The defender’s ability to apply R ECUR GUARD depends on whether the reasoning trace is accessible. Table 1 defines four visibility regimes. Regime A covers open-weight reasoning models ( e.g. 
+
+DeepSeek-R1, Qwen3) where the trace is fully accessible. Regime B covers APIs that expose provider-summarised thinking blocks ( e.g. Claude Sonnet 4.5 extended thinking); RECUR GUARD is applicable but with reduced sensitivity. Regime C covers APIs that return empty thinking blocks (e.g. Claude Opus 4.7 in our evaluation); R ECUR GUARD is structurally inapplicable. Regime D covers generic closed APIs with no thinking-block support; only output-side monitoring is available. Detection statistics for each observed regime are reported in Sections 7.6 and 9. 
+
+2.5 Attack Outcomes 
+
+We characterise an attacked generation by two metrics. 
+
+Token amplification measures the increase in output token count relative to clean queries: 
+
+α = E[Tattack ]
+
+E[Tclean ] , (2) where Tattack and Tclean are the output token counts for attacked and clean queries respectively. 
+
+Liveness failure captures whether the model produces a usable answer: 
+
+LF( Y ) = 1[answer tokens < 5 ∨ Tattack ≥ Tmax ] , (3) where Tmax is the generation budget. The five-token cutoff treats empty strings, boilerplate fragments, and truncated answer stubs as no usable answer. LF( Y )=1 indicates the model exhausted its budget without answering. We distinguish three outcome classes: O1: Normal de-notes α ≈ 1; O2: Slowdown denotes α > 1 while the model still answers ( LF=0 ); and O3: Liveness failure denotes 
+
+LF=1 . The DoW threat includes O2 and O3; DoS corresponds to O3. 
+
+2.6 Scope and Non-Goals 
+
+We address one specific threat: reasoning-chain consumption via prompt injection in deployed inference pipelines. 4
+
+We do not study jailbreaks, harmful-content generation, model weight poisoning, training-time backdoors, or mem-bership inference. These are orthogonal threat classes and our results do not apply to them. We do not claim to prevent all long outputs. Long outputs are legitimate in code generation, mathematical reasoning, and summarisation. The goal is to detect reasoning that becomes both off-task and self-recurrent , a pattern character-istic of decoy-driven liveness failure and not observed in our legitimate long-form evaluations. The method section formalises this distinction. 
+
+3 ATTACK MECHANISMS 
+
+We do not claim the primary attacks as contributions. We reproduce two published reasoning-chain consumption attacks and add adaptive variants to test whether semantic monitors can be evaded. Both primary attacks are publicly available and have been evaluated on reasoning LLMs in their original papers [5], [6]. Our contribution is the detection framework, not the attacks. 
+
+3.1 OverThink 
+
+OverThink [5] injects an unrelated decoy task into the prompt context alongside an explicit instruction to complete it before answering the user’s question. The abstract prompt form is: 
+
+P = concat( Q, I (Ddecoy )) , I(D) = ‘‘solve D first.’’ 
+
+In our setup, Ddecoy is a Sudoku-style constraint satisfaction problem. The decoy tends to trap the model’s reasoning process: the model allocates most of its reasoning budget to the puzzle, either failing to answer Q or producing a truncated answer after exhausting the token cap. The attack does not require any special privilege; it can be delivered through any text field that reaches the model’s context window, including retrieved documents in a RAG pipeline. 
+
+3.2 ExtendAttack 
+
+ExtendAttack [6] takes a different approach. Rather than inserting an unrelated task, it transforms the user’s own question into an obfuscated representation, such as a mixed-base ASCII encoding, and instructs the model to decode it character by character before answering. The model must reconstruct the original question through step-by-step decoding, generating substantial reasoning text before it can address the actual query. This mechanism differs from OverThink in two ways. First, the decoy is structurally tied to the original question rather than being entirely unrelated. Second, the reasoning pattern is sequential decoding rather than constraint satis-faction, which produces a different recurrence signature in embedding space. Their mechanistic differences motivate testing both as separate attack families. 
+
+3.3 Adaptive Variants 
+
+The two primary attacks rely on decoys that are semantically distant from the user query. We design four adaptive stress-test variants to probe whether semantic monitors can be                          
+
+> TABLE 2 Attack taxonomy. “Source” indicates whether the attack is reproduced from prior work or is an adaptive stress-test variant. “Decoy relation” describes the semantic relationship between the decoy and the user query.
+> Attack Source Decoy relation to query Scaled OverThink Prior work Unrelated Yes ( N=100 )ExtendAttack Prior work Encoded query Yes ( N=50 )C1: Topical CSP Stress test Topically related Yes ( N=100 )C2: High-entropy filler Stress test Diverse, unrelated Smoke ( N=3 )C3: Structured-diverse filler Stress test Structured diverse Smoke ( N=3 )C4: Task-aligned filler Stress test Task-aligned Yes ( N=100 )
+
+evaded when the attacker controls the semantic relationship between the decoy and the query. 
+
+C1: Topical CSP. The decoy borrows vocabulary from the user’s question topic. The goal is to keep the generated reasoning close enough to the query that query-distance monitors such as QDM hesitate. 
+
+C2: High-entropy filler. This variant avoids a compact repeated decoy and instead spreads the filler across diverse topics. The smoke test did not justify scaling it: at N =3 ,amplification stayed at ≤1.5×.
+
+C3: Structured-diverse filler. This variant changes the decoy structure across steps to reduce repeated chunk similarity. It also stayed at ≤1.5× amplification in the N =3 
+
+smoke test, so we did not scale it. 
+
+C4: Task-aligned filler. The decoy remains semantically aligned with the user’s actual task, aiming to evade both query-distance and task-conditioned progress signals simul-taneously. C2 and C3 serve as negative controls: they show that evasion attempts which destroy recurrence also destroy the attack’s amplification. We scaled C1 and C4 to N =100 on the primary model because they were the only adaptive variants that still produced meaningful amplification. 
+
+3.4 Attack Taxonomy 
+
+Table 2 summarises the six attack configurations used in this paper. These attacks create different geometric patterns in the reasoning embedding space. Unrelated decoys (OverThink) produce low query alignment and high chunk-to-chunk recurrence. Encoded-query decoys (ExtendAttack) produce moderate query alignment with sequential recurrence from the decoding process. Adaptive variants try to preserve query alignment (C4) or reduce recurrence (C2, C3), while C1 attempts both partially. R ECUR GUARD turns this geometry into streaming detector signals during generation. 
+
+4 RECUR GUARD 
+
+4.1 Design Goal 
+
+RECUR GUARD watches exposed reasoning traces while the model is still generating. It looks for the point where the 5
+
+trace stops moving with the user’s task and starts returning to the same decoy reasoning. The central design choice is to compare each reasoning chunk against two anchors: the user query and the model’s own previous reasoning. A chunk is suspicious only when it moves away from the query while becoming more similar to prior chunks . The suspicious case is the conjunction: off-task and self-recurrent at the same time. That is the signature of reasoning-chain liveness failure. Checking either condition alone is insufficient: legitimate summarisation produces chunks that are off-task but not self-recurrent, while legitimate analytical reasoning can produce self-similar but on-task chunks. RECUR GUARD is paired with QDM, a lightweight output-side monitor for settings where reasoning traces are inacces-sible. QDM is a deployment companion rather than the main contribution. Section 4.5 gives its design and limitations. 
+
+4.2 Reasoning Trace Chunking 
+
+Let R = ( w1, . . . , w n) be the sequence of words in the model’s exposed reasoning trace, and let Q denote the user query. We partition R into non-overlapping chunks of k
+
+words: 
+
+ct = ( w(t−1) k+1 , . . . , w tk ), t = 1 , 2, . . . (4) with k=64 . Each chunk is encoded as a fixed-length embed-ding: 
+
+et = f (ct) ∈ Rd, q = f (Q) ∈ Rd, (5) where f is the SentenceTransformers all-MiniLM-L6-v2 
+
+encoder, following the SBERT sentence-embedding frame-work [11] and the model card for the released encoder [12] (d=384 ), normalised to unit length. All similarity computa-tions use cosine similarity sim( a, b )= ⟨a, b ⟩.
+
+4.3 Signals 
+
+RECUR GUARD computes three scalar signals per chunk using a sliding window Wt = {max(1 , t −W ), . . . , t −1} of width 
+
+W =20 . If the trace is empty because no reasoning text is exposed, R ECUR GUARD returns no alarm and is treated as inapplicable in deployment. For the first chunk, where no prior chunk exists, we set RR 1=0 and set TP 1=sim( e1, q);alarm decisions are suppressed by the cmin condition until enough context is available. The implementation stores prior 384-dimensional chunk embeddings for the current generation so TP can compare each new chunk against earlier chunks; this memory cost is small relative to model inference in the evaluated runs. 
+
+RR: Recurrence Rate. The fraction of window chunks whose similarity to et exceeds a hard inner threshold τr :
+
+RR t = 1
+
+|Wt|
+
+X
+
+> i∈Wt
+
+1[sim( et, ei) > τ r ] , τr =0 .70 . (6) 
+
+RR t=0 under diverse reasoning; RR t → 1 when each new chunk revisits the same semantic region. 
+
+Algorithm 1 RECUR GUARD : Task-Conditioned Recurrence Collapse Detection 
+
+Require: Streaming reasoning text R, query Q, thresholds 
+
+τR, τ V , τ P , parameters k, W, S, c min 
+
+Ensure: ATTACK or C LEAN  
+
+> 1:
+
+q ← f (Q); alarm count ← 0; t ← 0 
+
+> 2:
+
+while next k-word chunk c available from R do  
+
+> 3:
+
+t ← t + 1 ; ct ← c; et ← f (ct) 
+
+> 4:
+
+Compute RR t, VG t, TP t via (6), (8), (9)  
+
+> 5:
+
+if At = 1 then  
+
+> 6:
+
+alarm count ← alarm count + 1  
+
+> 7:
+
+else  
+
+> 8:
+
+alarm count ← 0 
+
+> 9:
+
+end if  
+
+> 10:
+
+if alarm count = S then  
+
+> 11:
+
+return ATTACK ▷ halt generation here  
+
+> 12:
+
+end if  
+
+> 13:
+
+end while  
+
+> 14:
+
+return CLEAN 
+
+VG: Volume Growth. The change in mean pairwise distance (MPD) of the embedding cloud when the current chunk is added: 
+
+MPD( S) = 2
+
+|S|(|S| − 1) 
+
+X
+
+> i<j i,j ∈S
+
+∥ei − ej ∥2 , (7) 
+
+VG t = MPD( Wt ∪ { t}) − MPD( Wt). (8) For |S| < 2, we set MPD( S) = 0 ; the implementation assigns early VG values a non-alarming convention and suppresses alarms through the t ≥ cmin condition. Positive VG t indi-cates the cloud is expanding (novel content); negative or near-zero VG t indicates semantic collapse (the reasoning is no longer covering new ground). 
+
+TP: Task-Conditioned Progress. 
+
+TP t = sim( et, q) − max  
+
+> i<t
+
+sim( et, ei). (9) 
+
+TP t > 0 when the current chunk is closer to the query than to any prior chunk (productive progress). TP t ≪ 0 when the chunk is far from the query but similar to prior chunks (recurrence collapse). TP is the dominant detection signal; the ablation in Section 7.5 shows that TP alone achieves 99% TPR and 0% FPR. 
+
+4.4 Sustained Alarm Rule 
+
+The per-chunk alarm indicator is: 
+
+At = 1[RR t > τ R ∧ VG t < τ V ∧ TP t < τ P ∧ t ≥ cmin ] ,
+
+(10) with calibrated thresholds τR=0 .20 , τV =0 .01 , τP =−0.738 ,and minimum pre-alarm chunk count cmin =3 . An attack is declared when At=1 for S=3 consecutive chunks; the counter resets to zero on any At=0 . The sustained require-ment prevents isolated anomalous chunks, which occur in normal reasoning, from triggering false alarms. Algorithm 1 gives the full procedure. When the deployment exposes streaming reasoning chunks and supports client-side cancellation, R ECUR GUARD 
+
+halts generation at the trigger chunk, saving the remaining 6
+
+output tokens. The token savings obtained from this early stop rule are reported in Section 9. 
+
+4.5 Query Drift Monitor 
+
+QDM is a post-hoc output-side companion monitor for deployment settings where reasoning traces are hidden. It splits the final output Y into 80-word chunks {y1, . . . , y M }
+
+and computes mean cosine similarity to the query: 
+
+QDM( Y, Q ) = 1
+
+M
+
+> M
+
+X
+
+> m=1
+
+sim( f (ym), f (Q)) . (11) A response is flagged if QDM( Y, Q ) < 0.318 . If Y is empty or contains no non-empty chunk after stripping whitespace, we set QDM( Y, Q )=0 , so the response is flagged by definition. If Y is non-empty but shorter than 80 words, the residual text is treated as one chunk. Unlike R ECUR GUARD , QDM operates post-hoc on the final output and does not use recurrence; it cannot enable early stopping. Its threshold is derived from a development-set comparison of clean and attacked outputs rather than from the mixed-benign grid search used for R ECUR GUARD . QDM therefore uses an attack-informed development threshold and should be interpreted as a fallback companion monitor rather than a benign-only calibrated detector. QDM development uses the 50 clean SQuAD calibration examples (indices 0–49) and matched OverThink development outputs from the same questions; it does not use the held-out OverThink rows (200–299), ExtendAttack rows (205–254), or adaptive C1/C4 rows (255–354). QDM is not claimed as a primary novel contribution; it provides fallback coverage on closed APIs where only final output text is accessible. 
+
+4.6 Calibration 
+
+All R ECUR GUARD thresholds are calibrated on benign data exclusively. We use a mixed-benign development set: 50 clean SQuAD traces (indices 0–49) plus development subsets from HumanEval, GSM8K, and CNN/DailyMail. Percentile statistics over this set seed candidate threshold grids; the final configuration is selected by grid search as the most sensitive setting that achieves zero false positives across the complete mixed-benign set. Calibrating on mixed task types prevents the configuration from overfitting to short QA outputs. No attacked data appear in the calibration set; the thresholds are locked before any test evaluation begins. The QDM threshold ( τ =0 .318 ) is chosen from this clean/attacked development comparison. It is not iterated to optimise FPR and is treated as a companion threshold, not as a primary calibrated detector. 
+
+4.7 Runtime Behaviour 
+
+RECUR GUARD can operate as an online stop rule when two conditions hold: the deployment exposes streaming reasoning chunks as they are generated, and the client can issue a cancellation signal to halt generation. Under these conditions, R ECUR GUARD runs in the generation loop and stops the model at the trigger chunk, converting a full-budget generation into an early-terminated one. QDM cannot provide this capability because it requires the complete output to be available before computing mean chunk similarity. For closed-API deployments with summarised reasoning, R ECUR GUARD can run with reduced sensitivity and QDM provides a post-hoc companion check. When reasoning text is hidden, R ECUR GUARD is structurally inapplicable and QDM is the fallback monitor. The deploy-ment trade-offs between R ECUR GUARD and QDM across different API visibility settings are discussed in Section 9. 
+
+5 THEORETICAL ANALYSIS 
+
+The results below are explanatory and falsifiable, not uni-versal security proofs. They give geometric and probabilistic reasons for three observed facts: TP dominance in the ablation, near-zero FPR under sustained alarms, and the amplification collapse under full evasion. Empirical Wilson confidence intervals (Section 7) provide the operational performance certificates. 
+
+5.1 Geometric View of Reasoning Collapse 
+
+Let f : text → Rd be the sentence encoder (all-MiniLM-L6-v2 , d=384 ). All embeddings are ℓ2-normalised, so cosine similarity equals the inner product: 
+
+sim( a, b ) = ⟨a, b ⟩, ∥a∥2 = ∥b∥2 = 1 .
+
+Define the query embedding q = f (Q) and, for each 64-word reasoning chunk ct, the chunk embedding et = f (ct).Two scalar quantities track the trajectory: 
+
+at = sim( et, q) (task alignment) , (12) 
+
+rt = max  
+
+> i<t
+
+sim( et, ei) (recurrence to past reasoning) . (13) Using the TP definition in (9), we write TP t = at − rt. Under clean reasoning, chunks introduce new task-relevant content, keeping at moderate and rt low. Under an OverThink attack, after the decoy takes over, each chunk resembles prior Sudoku-constraint chunks more than it resembles the user query: rt is high, at is low, so TP t becomes strongly negative. We model this as an expected property of recurrence attacks; we do not claim it holds for all possible attack constructions. 
+
+5.2 Task-Conditioned Progress Separation 
+
+Theorem 1 (Task-conditioned progress separation) . If rt −
+
+at ≥ m for some m > 0, then TP t ≤ − m. Consequently, if 
+
+m > |τP |, the TP alarm condition TP t < τ P is satisfied at chunk 
+
+t.Proof. By definition (9), TP t = at − rt ≤ − (rt − at) ≤−m.
+
+Interpretation. The theorem states that TP fires when a chunk is both off-task ( at low) and self-recurrent ( rt high). This con-junction distinguishes attack reasoning from legitimate long-form generation. In summarisation, chunks often introduce new source-document content, so recurrence does not persist in the same way as a decoy loop. In our CNN/DailyMail evaluation, TP does not remain below τP for S=3 consecutive chunks, while QDM fires because it only observes low query similarity. The ablation shows the same pattern from another angle: TP-only achieves 99% TPR and 0% FPR on the primary OverThink evaluation, while RR-only and VG-only show higher FPR. 7
+
+5.3 Sustained Alarm and False-Positive Control 
+
+Define the per-chunk alarm indicator: 
+
+At = 1[RR t > τ R ∧ VG t < τ V ∧ TP t < τ P ∧ t ≥ cmin ] .
+
+(14) The detector fires when At = 1 for S consecutive chunks. 
+
+Proposition 1 (Sustained alarm false-positive decay) . Let 
+
+p0 ∈ (0 , 1) be an upper bound on the probability that all three alarm conditions hold simultaneously for a single chunk under benign reasoning. Under weak temporal dependence with correction factor η ≥ 1, the probability of S consecutive alarms satisfies: 
+
+Pr 
+
+
+
+> S−1
+
+\
+
+> j=0
+
+{At+j = 1 }
+
+ ≤ η · p S 
+
+> 0
+
+.
+
+Proof. By assumption, each joint alarm event has marginal probability at most p0. Under weak dependence, the prob-ability of S consecutive events is bounded by ηp S 
+
+> 0
+
+where 
+
+η ≥ 1 absorbs the dependence structure. 
+
+Remark 1. The threshold τP =−0.738 requires TP t to be strongly negative; τR=0 .20 requires elevated recurrence; and τV =0 .01 
+
+requires near-zero embedding-cloud growth. This joint event is geometrically restrictive for normal reasoning text: all three alarm conditions must hold together for S=3 consecutive chunks. Requiring S=3 multiplies the bound by p20 relative to S=1 , giving exponential suppression. This proposition is a stylised explanatory bound . Real reasoning text is not isotropic; p0 is not derived from first principles but is bounded empirically. The bound explains why S matters ,not what the exact false-positive rate is. Thresholds are set by mixed-benign grid search (Section 6.6), and the actual FPR is certified by the held-out experiment in Proposition 2. 
+
+5.4 Evasion-Alignment Tradeoff 
+
+Theorem 2 (Evasion-alignment condition) . For any chunk t at which the TP alarm does not fire ( TP t ≥ τP ), the attacker must satisfy: 
+
+at ≥ rt + τP . (15) 
+
+Proof. From (9) , TP t = at − rt ≥ τP implies at ≥ rt + τP .
+
+Interpretation. Since τP = −0.738 < 0, condition (15) requires task alignment at to remain sufficiently close to the recurrence level rt. With respect to TP, a fully evading attacker cannot loop freely in an unrelated semantic region: it must either reduce recurrence or increase task alignment. The C4: Task-aligned filler attack takes the second path, staying close to the user query, which causes the model to converge on an answer rather than loop indefinitely. Amplification collapses from 22 .8× (OverThink) to 2.2× (C4), consistent with this tradeoff. 
+
+Scope. Theorem 2 constrains full TP evasion, where TP t ≥ τP
+
+at every chunk. It does not rule out partial evasion, which is exactly the C1 boundary observed in Section 8: C1 evades the TP alarm on enough chunks to achieve ≈50% joint miss at 
+
+11 .9× amplification, a setting the theorem does not bound. 
+
+5.5 Empirical FPR Certificate 
+
+Proposition 2 (Held-out false-positive certificate) . RECUR -GUARD produces k=0 false positives on n=150 fully held-out benign SQuAD queries (indices 50–199, shuffled with seed=42 ). The Wilson 95% upper confidence bound on the true FPR is 
+
+ˆpupper < 2.5% .
+
+This certificate is empirical, not derived from the isotropic null model of Proposition 1. In the broader clean-task profile, RECUR GUARD also achieves ≤1% FPR on Hu-manEval ( N =100 ), 0% on GSM8K ( N =100 ), and 0% on CNN/DailyMail ( N =100 ). Those rows test clean-workload behaviour rather than extending the independent SQuAD certificate, because the long-form tasks also contribute devel-opment examples to mixed-benign calibration. The pattern is still consistent with the prediction that TP does not fire when 
+
+rt is low. 
+
+6 EXPERIMENTAL SETUP 
+
+6.1 Models 
+
+We evaluated four open-weight models and two closed-API models. Open-weight experiments run on NVIDIA A100 GPUs using HuggingFace Transformers [13] and Sen-tenceTransformers [11]. Closed-API experiments access the Anthropic Messages API with extended thinking enabled. Anthropic documents that extended thinking can expose varying levels of transparency, including summarised think-ing blocks [10]; the evaluated Claude models are documented in Anthropic’s system-card index [14]. Table 3 summarises all the models.                                
+
+> TABLE 3 Models evaluated. Trace visibility: whether the reasoning trace is accessible to the defender.
+> Model Type Reasoning Trace visibility DS-R1-Qwen-7B [1] Open primary Yes Full DS-R1-Llama-8B [1] Open Yes Full Qwen3-8B [2] Open Yes Full Llama-3.1-8B [15] Open non-reas. No N/A Sonnet 4.5 aClosed API Yes Summary Opus 4.7 bClosed API Yes Hidden Full =exposed reasoning trace. aAPI ID:
+> claude-sonnet-4-5-20250929 .Thinking blocks are provider-summarised, not raw reasoning.
+> bThinking blocks were empty in all our runs; R ECUR GUARD is inappli-cable for Opus.
+
+Primary model. DeepSeek-R1-Distill-Qwen-7B ( ds-r1-qwen-7b ) is used for the complete evaluation: main-attack char-acterisation, R ECUR GUARD ablation, adaptive experiments, and baseline comparison. It is chosen because it generates long, accessible reasoning traces and shows clear liveness failure under both primary attacks. 
+
+Cross-model validation. The three additional open-weight models validate that attack patterns and detection logic generalise across model families. Llama-3.1-8B-Instruct is a non-reasoning model included to establish the boundary of RECUR GUARD ’s applicability: without extended reasoning text the three signals are undefined. 
+
+Closed-API evaluation. Sonnet 4.5 is evaluated with N =30 
+
+attacked and N =30 clean queries. Its visibility is Regime B, 8               
+
+> TABLE 4 SQuAD validation split allocation (shuffled, seed = 42). Adaptive extension partially overlaps with the attack test range; see text for details.
+> Split Indices NPurpose Calibration 0–49 50 Threshold selection only Held-out benign 50–199 150 Main FPR evaluation Held-out attack 200–299 100 TPR tests Adaptive extension 255–354 100 C1/C4 tests
+
+and the attacked outputs exhibit O2 slowdown: all queries produce answers at 21 .3× token amplification. Opus 4.7 is a qualitative smoke test only (N =3 ). No statistical claims are drawn from the Opus results (Sections 6.8 and 9). 
+
+6.2 Datasets and Splits 
+
+SQuAD [8] is the main evaluation dataset. We apply a fixed shuffle ( seed=42 ) to the SQuAD validation split and allocate examples to the role-specific ranges in Table 4. The adaptive extension deliberately overlaps indices 255–299 with the held-out attack range, as described below. Table 4 lists the complete allocation. Three details matter for interpreting this split. 
+
+Calibration split and FPR certificate. Indices 0–49 are used only to select detector thresholds. They are not attack test data, and they are not counted as independent held-out FPR evidence. The primary held-out SQuAD FPR certificate is measured on indices 50–199 ( N =150 ), where R ECUR GUARD 
+
+produces 0 false positives (Proposition 2). 
+
+Attack and adaptive overlap. Indices 255–299 appear in both the held-out attack test (200–299) and the adaptive extension (255–354). The same SQuAD questions appear in both sets, but the attack prompt is different. No OverThink result was used to design C1 or C4. 
+
+ExtendAttack indices. ExtendAttack uses indices 205–254 (N =50 per model), drawn from the held-out attack test range. 
+
+Long-form benign benchmarks. For HumanEval [9], 
+
+GSM8K [16], and CNN/DailyMail [17], [18], each clean-task profile contains 100 examples. For R ECUR GUARD calibration, 30 examples per task are used as mixed-benign development data and the remaining 70 examples per task are held out in the artifact. The main table reports the full 100-example clean-task profile so all defences are compared on the same workload. These benchmarks contain clean examples only; the independent statistical FPR certificate is the SQuAD 
+
+0/150 result in Proposition 2. 
+
+TriviaQA. TriviaQA [19] ( N =25 clean, N =25 attacked) pro-vides cross-dataset validation reported in the supplementary artifact. 
+
+6.3 Attack Families 
+
+We evaluate R ECUR GUARD and all baselines against two previously proposed reasoning-chain consumption attacks and two scaled adaptive variants. 
+
+OverThink [5] injects a Sudoku-puzzle decoy with an ex-plicit instruction to solve it before answering. We reproduce this attack under our own models and evaluation setting with 
+
+N =100 attacked queries per open model (indices 200–299). 
+
+ExtendAttack [6] encodes the user’s question in mixed-base ASCII and instructs the model to decode it character-by-character. We evaluate it with N =50 per open model (indices 205–254). 
+
+Adaptive variants C1: Topical CSP and C4: Task-aligned filler (Section 8) are evaluated with N =100 each (indices 255–354) on DS-R1-Qwen-7B only. Two further variants, C2: High-entropy filler and C3: Structured-diverse filler, were smoke-tested at N =3 ; both produced ≤ 1.5× amplification and are not scaled. 
+
+6.4 Defenses 
+
+We evaluate six main defences in the primary benchmark: RECUR GUARD , QDM, and B1–B4. We additionally evaluate Llama Guard 3-1B-INT4 as an input-side safety classification baseline. Within the primary benchmark, R ECUR GUARD is our main proposed monitor; QDM is a lightweight output-side companion monitor we implement to cover closed-API settings where reasoning traces are inaccessible; B1–B4 are reference baselines. 
+
+B1: Token Budget. Flags outputs whose token count exceeds the 99th percentile of clean calibration outputs. 
+
+B2: Compression-Ratio Proxy. Uses zlib compression ratio as a proxy for output repetitiveness: highly repetitive outputs compress more, indicating low semantic diversity. We use this proxy rather than true model perplexity because closed APIs and saved text outputs do not expose token-level logits. 
+
+B3: Answer-Absence Proxy. Flags outputs with fewer than 5 answer tokens as liveness failures, loosely inspired by answer-convergence monitoring [20]. 
+
+B4: Output-Length Anomaly. Flags outputs whose token count has a z-score > 3 relative to the calibration mean. 
+
+QDM (Query Drift Monitor). Computes the mean cosine similarity between 80-word output chunks and the user query using all-MiniLM-L6-v2; flags output if similarity falls below τQDM =0 .318 (full description in Section 4.5). QDM is a lightweight companion monitor we implement for deployment scenarios where the reasoning trace is inaccessible. It is not claimed as a primary novel contribution. Unlike embedding-drift detectors that compare two input representations [21], QDM compares the user query against the model’s output , making it a post-hoc liveness monitor rather than an input-side filter. 
+
+RECUR GUARD . Our main proposed method (Section 4). Processes the exposed reasoning trace in 64-word chunks, computes three signals (RR, VG, TP), and raises a sustained alarm when all three calibrated alarm conditions hold for 
+
+S=3 consecutive chunks. Requires non-empty reasoning text; inapplicable when the API hides or returns empty thinking blocks. Unlike all other defences listed here, R ECUR GUARD 
+
+enables online early stopping : generation can be halted at the trigger chunk, saving about 92% of tokens per detected attack. 
+
+Llama Guard 3-1B-INT4 [7] ( N =50 attack, N =50 clean) is evaluated as an input-side safety classification baseline (Section 9) to establish whether standard content moderation can intercept this attack class at the input stage. Table 5 summarises the capability differences between the two main monitors. 9               
+
+> TABLE 5 Visibility-specific capability comparison: R ECUR GUARD vs. QDM.
+> Monitor Needs reas. Online Early stop Final-output only Summ. thinking RECUR GUARD Yes Yes Yes No Partial QDM No No No Yes Yes
+
+6.5 RecurGuard Configuration 
+
+RECUR GUARD uses one fixed configuration throughout the evaluation. Chunk size k=64 words; window W =20 chunks; inner similarity threshold τr =0 .70 . Calibrated alarm thresh-olds: τR=0 .20 , τV =0 .01 , τP =−0.738 ; sustained alarm count 
+
+S=3 ; minimum chunk count cmin =3 . Sentence encoder: 
+
+all-MiniLM-L6-v2 (384 dimensions). The same locked configuration is used for every test evaluation. 
+
+6.6 Calibration Procedure 
+
+RECUR GUARD thresholds are calibrated on benign data only. No attacked samples appear in the R ECUR GUARD calibration set. We use a mixed-benign calibration set : 50 SQuAD traces (indices 0–49) plus 30 benign long-form traces from each of HumanEval, GSM8K, and CNN/DailyMail. Percentile statistics over this set seed candidate threshold grids; the final configuration is selected by grid search as the most sensitive setting achieving zero false positives on the complete mixed-benign set. Calibrating on mixed task types prevents the configuration from overfitting to short QA outputs and supports near-zero FPR on legitimate long-form reasoning. 
+
+QDM threshold. τQDM =0 .318 is chosen from a develop-ment comparison of clean and attacked outputs. QDM is treated as a companion monitor, not the primary calibrated detector. Because this threshold uses attacked development outputs, QDM is not a benign-only calibrated detector like R ECUR GUARD . The attacked development outputs are OverThink generations on the SQuAD calibration questions (indices 0–49), disjoint from the OverThink, ExtendAttack, and C1/C4 test rows. All thresholds are locked after calibra-tion and never retuned. 
+
+6.7 Metrics 
+
+Token amplification : ratio of mean attacked output tokens to mean clean output tokens. 
+
+Liveness failure rate : fraction of attacked queries in which the model exhausts the generation budget without producing a final answer (fewer than 5 answer tokens, O3). 
+
+True positive rate (TPR) : fraction of attacked queries correctly flagged. 
+
+False positive rate (FPR) : fraction of clean queries incorrectly flagged. 
+
+Joint miss rate : fraction of attacked queries missed by 
+
+both RECUR GUARD and QDM simultaneously. Wilson 95% confidence intervals are reported for primary statistical claims and small-sample detection results [22]. Paired comparison between QDM and R ECUR GUARD on the same samples uses the McNemar test [23]. 
+
+6.8 Closed-API Evaluation Protocol 
+
+Sonnet 4.5. Evaluated with N =30 clean and N =30 attacked queries. We report Wilson confidence intervals for this sample size, but treat the result as a limited closed-API evaluation rather than a full model family claim. Thinking blocks are accessible but contain summarised reasoning; R ECUR GUARD 
+
+is applicable with the reduced-sensitivity caveat noted in Sections 2.4 and 6.1. 
+
+Opus 4.7. Evaluated with N =3 attacked queries as a qualitative smoke test. We do not report confidence intervals or draw statistical claims from Opus. The API returned empty thinking blocks for all samples; R ECUR GUARD is structurally inapplicable regardless of N . Additional samples would test the same visibility limitation rather than the detector itself. 
+
+Artifact and hardware. Open-weight experiments were run on NVIDIA A100 GPUs. The complete artifact is available at https://github.com/abidaziz1/recurguard. 
+
+7 EVALUATION RESULTS 
+
+7.1 Attack Amplification 
+
+Table 6 reports token amplification and liveness failure rates across all four open models for both primary attack families. OverThink drives all three reasoning-specialist models into O3 liveness failure on 86–100% of queries, with 22–24 ×
+
+token amplification. ExtendAttack produces comparable am-plification (19–23 ×) via a structurally different mechanism: mixed-base ASCII decoding rather than puzzle injection. The comparable amplification of two mechanistically distinct attacks suggests that liveness failure is not tied to a single decoy construction. Llama-3.1-8B-Instruct shows a nominal amplification of 
+
+402 × under OverThink, but this is a denominator artefact: its clean baseline is only 14 tokens (the model answers without generating extended reasoning), making any non-trivial attacked output appear as extreme amplification. We do not interpret this as a stronger attack on Llama; it reflects the absence of a reasoning trace rather than a meaningful consumption threat. 
+
+7.2 Primary Attack Detection 
+
+Table 7 (upper) shows true positive rates for all six defences on the two primary attacks. On both OverThink and ExtendAttack, B1 and B4 achieve 100% TPR because both attacks produce outputs that far exceed the token-budget and length-anomaly thresholds calibrated on clean data. For these primary attacks, length alone is a reliable signal. RECUR GUARD achieves 99% TPR on OverThink and 92% on ExtendAttack. QDM achieves 100% and 96% respectively. A McNemar test confirms that R ECUR GUARD and QDM agree on 99/100 OverThink samples ( χ2=0 .0, p=1 .0): the two methods are not statistically distinguishable in TPR on primary attacks. The sharper difference appears in false positives and deployment behaviour, described next. 
+
+7.3 False Positive Rate Across Task Types 
+
+Clean SQuAD is not the hard case. All six defences stay at 
+
+≤1% FPR on question answering. The harder test is whether a detector can leave normal long-form answers alone. 10                                         
+
+> TABLE 6 Attack amplification across models. OT = OverThink; EA = ExtendAttack; LF = liveness failure (O3).
+> Model Mean tokens OverThink ExtendAttack Clean OT Amp. LF Amp. LF DS-R1-Qwen-7B 357 8,155 22.8 ×98% 22.5 ×92% DS-R1-Llama-8B 344 8,016 23.3 ×86% 22.7 ×80% Qwen3-8B 337 8,192 24.3 ×100% 19.6 ×44% Llama-3.1-8B †14 5,701 402 ×100% 212 ×100%
+> †Non-reasoning model; 402 ×is a denominator artefact (14-token clean baseline). Mean token counts are rounded; amplification is computed from unrounded means.
+> TABLE 7 Defence benchmark on DS-R1-Qwen-7B. Upper block: TPR; lower block: FPR. Red marks FPR >10%.
+> Defence Attack / Clean task B1 B2 B3 B4 QDM RECUR GUARD
+
+True positive rate (TPR): higher is better                               
+
+> OverThink ( N= 100) 100% 100% 98% 100% 100% 99% ExtendAttack ( N= 50) 100% 96% 92% 100% 96% 92% C1: Topical CSP ( N= 100) 94% 3% ⋆31% 99% 38% 21% C4: Task-aligned filler ( N= 100) ‡3% 1% ⋆1% 10% 0% 0%
+
+False positive rate (FPR): lower is better                                
+
+> SQuAD QA full profile ( N= 200; incl. 50 calib.) 1% 1% 0.5% 1% 0.5% 0%
+> HumanEval code ( N= 100) 69% 27% 17% 80% 1% 1%
+> GSM8K math ( N= 100) 0% 0% 0% 0% 0% 0%
+> CNN/DM summary ( N= 100) 0% 2% 0% 1% 89% 0%
+> B1 = Token Budget; B2 = Compression-Ratio Proxy; B3 = Answer-Absence Proxy; B4 = Output-Length Anomaly.
+> ⋆B2 threshold is a fallback value; adaptive B2 rows should be read with caution. ‡C4 full evasion at 2.2 ×.RECUR GUARD is the only defence with near-zero FPR across all four clean task types. RECUR GUARD held-out certificate: 0/150 false positives on SQuAD indices 50–199 (Proposition 2). Long-form FPR rows report the full 100-example clean-task profile; 30 examples per long-form task also support mixed-benign calibration.
+
+HumanEval exposes the problem with length rules. B1 flags 69% of clean code answers and B4 flags 80%. Those are not malicious outputs; they are ordinary code-generation answers that happen to be long and structured. A threshold calibrated on short QA answers is too blunt for this workload. CNN/DailyMail exposes a different weakness. QDM flags 89% of clean summaries because its anchor is the short instruction, “Summarise this article.” The summary mostly discusses the article, so its chunks can sit far from the instruction vector even when the answer is correct. RECUR GUARD avoids both failure modes in this evalu-ation. It produces 0% FPR on the held-out SQuAD split (N =150 ), 1% on HumanEval ( N =100 ), 0% on GSM8K (N =100 ), and 0% on CNN/DailyMail ( N =100 ). The SQuAD result is the independent certificate: 0 false positives on indices 50–199, with Wilson 95% upper bound < 2.5% . The long-form rows are clean-workload checks, not a second independent certificate, because those tasks also provide development examples for mixed-benign calibration. The summarisation result checks the TP signal directly. A clean summary may be far from the query, but it keeps introducing new article content, so recurrence to prior chunks stays low. That is the distinction behind Theorem 1: RECUR GUARD should not fire merely because the answer is semantically far from a short instruction. Figure 2 gives a compact view of the detector behaviour and the adaptive boundary. The left panel illustrates how RR, VG, and TP move into the sustained joint-alarm region; the right panel shows that full semantic evasion is possible only after attack amplification drops sharply. 
+
+7.4 Baseline Defence Comparison 
+
+The adaptive rows are where the baselines separate. 
+
+Length checks still catch C1. B1 detects 94% of C1 attacks and B4 detects 99%. C1 stays expensive even after the decoy is made topical, so the output is still long. The same rules barely catch C4 (B1: 3%, B4: 10%) because C4 brings amplification down to 2.2×. The weak point is deployment: B1 and B4 also flag 69% and 80% of clean HumanEval answers. That false-positive rate is too high for a mixed workload. 
+
+B2 fails once the output stops looking repetitive. 
+
+The compression-ratio proxy is strong on OverThink and ExtendAttack, but drops to 3% TPR on C1 and 1% on C4. The saved outputs explain why. C1 has mean compression ratio 0.206 and C4 has mean ratio 0.386, both above the flag threshold. The adaptive prompts diversify the text enough to remove the compression signature. 
+
+B3 catches only missing answers. The answer-absence proxy reaches 31% TPR on C1 because some C1 runs exhaust the budget before producing a final answer. It reaches only 1% on C4. That is expected: C4 usually produces a short answer, so there is no answer-absence signal to detect. Section 8 uses these failures to draw the defence taxon-omy and security boundary. 11 0 2 4 6 8 10 12 14 16 18 20                              
+
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> RR
+> RecurGuard
+> trigger (S=3)
+> τR= 0.20
+> Recurrence Rate (RR)
+> 0246810 12 14 16 18 20
+> −0.1
+> 0.0
+> 0.1
+> 0.2
+> VG
+> (ΔMPD)
+> RecurGuard
+> trigger (S=3) τV= 0.01
+> Volume Growth (VG)
+> 0246810 12 14 16 18 20
+> Chunk index
+> −1.5
+> −1.0
+> −0.5
+> 0.0
+> 0.5
+> 1.0
+> TP
+> (margin)
+> RecurGuard
+> trigger (S=3)
+> τP= −0.738
+> Task-conditioned Progress (TP)
+> 020 40 60 80 100
+> Joint miss rate (RG & QDM) (%)
+> 0.8
+> 1
+> 2
+> 5
+> 10
+> 20
+> 40
+> Mean token amplification (×)
+> OverThink
+> (22.8×, 0%)
+> ExtendAttack
+> (22.5×, 4%)
+> C1: Topical CSP
+> (11.9×, ~50%)
+> C4: Task-aligned
+> (2.2×, 100%)
+> OverThink (baseline)
+> ExtendAttack (baseline)
+> C1: Topical CSP
+> C4: Task-aligned (full evasion)
+> 1× (no amplification)
+
+(a) RecurGuard signal trajectories (illustrative) (b) Adaptive attacks: amplification vs. joint-miss boundary 
+
+Fig. 2. Combined detector view. Left: illustrative R ECUR GUARD signal trajectories showing recurrence growth, reduced volume growth, and negative task-conditioned progress before the sustained S=3 alarm. Right: adaptive amplification versus joint miss rate on DS-R1-Qwen-7B. C1 remains the middle case, while C4 fully evades the semantic monitors only after amplification drops to 2.2×.TABLE 8 Signal ablation on OverThink ( N = 100, DS-R1-Qwen-7B). ✓ = signal active; – = disabled. TP is the dominant signal; any configuration including TP achieves 0% FPR. 
+
+Configuration RR VG TP TPR FPR RR-only ✓ – – 100% 4.7% VG-only – ✓ – 100% 5.3% 
+
+TP-only – – ✓ 99% 0% 
+
+RR + VG ✓ ✓ – 100% 4.0% RR + TP ✓ – ✓ 99% 0% 
+
+VG + TP – ✓ ✓ 99% 0% Full (all) ✓ ✓ ✓ 99% 0% 
+
+7.5 Signal Ablation 
+
+Table 8 reports the seven signal configurations tested on OverThink. The ablation is simple: TP carries most of the detector’s precision. On OverThink ( N =100 , DS-R1-Qwen-7B), TP alone matches the full model at 99% TPR and 0% FPR. RR alone and VG alone catch all attacks, but they also false-alarm on clean data: 4.7% FPR for RR and 5.3% for VG. Every configuration with TP reaches 0% FPR. Every configuration without TP has elevated FPR. The reason is the same one used in the theory section. RR and VG can tell when reasoning is becoming repetitive or no longer expanding, but they do not know whether the repetition is off-task. TP adds that missing comparison to the query. That is why it can reject benign long-form reasoning while still catching decoy collapse. The FPR certificate remains the SQuAD held-out test: 0/150 false positives on indices 50–199, with Wilson 95% upper bound < 2.5% . The HumanEval, GSM8K, and CNN/DailyMail rows ( N =100 each) show the broader clean-task profile; R ECUR GUARD stays at ≤1% FPR on all three. 
+
+TABLE 9 Closed-API evaluation. Sonnet 4.5: N =30 attacked, N =30 clean. Opus 4.7: N =3 qualitative smoke test only; no statistical claims. Vis. = visibility regime; Out. = attack outcome (O2 slowdown, O3 liveness failure). CI = 95% Wilson interval. RG = R ECUR GUARD ; “N/A” = not applicable (empty thinking blocks). 
+
+Model Vis. Out. Amp. QDM TPR RG TPR Sonnet 4.5 B O2 21.3 × 100% [88.6, 100] 16.7% [7.3, 33.6] Opus 4.7 C O3 676 × 100% (3/3) N/A 
+
+7.6 Closed-API Evaluation 
+
+The closed-API results need a separate reading because the defender does not see the same evidence as in the open-weight model runs. 
+
+Sonnet 4.5 (N =30 attacked, N =30 clean) has visibility Regime B and outcome O2: all 30 attacked queries produce a final answer, but at 21 .3× token amplification. QDM detects 100% of attacked queries [95% CI: 88.6–100%], with 0% FPR on clean queries. R ECUR GUARD detects 16.7% [7.3– 33.6%], attributable to Sonnet’s provider-summarised think-ing blocks rather than raw reasoning text: summarisation compresses the trace and dampens chunk-level recurrence signals. For closed-API deployments with partial-visibility thinking blocks, QDM is the more reliable monitor. 
+
+Opus 4.7 (N =3 , qualitative only) has visibility Regime C and outcome O3: all three attacked queries exhaust the generation budget and produce no answer, with 676 × token amplification. The cost implication of this amplification is analysed in Section 9. QDM flags all three samples (3/3). Because N =3 is a qualitative smoke test, we do not report a confidence interval or draw statistical claims from Opus. R E-
+
+CUR GUARD is inapplicable: the API returned empty thinking blocks for all attacked queries. These observations establish only that the API visibility boundary makes R ECUR GUARD 
+
+structurally inapplicable when thinking blocks are hidden. 12                                      
+
+> TABLE 10 Adaptive adversary results (DS-R1-Qwen-7B unless noted). Wilson confidence intervals are shown in brackets where reported. Joint miss = neither monitor detected the attack, Amp. = mean token amplification.
+> Attack NAmp. RG TPR QDM TPR Joint miss OverThink (baseline) 100 22.8 ×99% [94.6, 99.8] 100% 0% ExtendAttack (baseline) 50 22.5 ×92% [81.2, 96.8] 96% 4% C1: Topical CSP 100 11.9 ×21% [14.2, 30.0] 38% [29.1, 47.8] 50% †
+> C4: Task-aligned filler 100 2.2 ×0% [0, 3.7] 0% [0, 3.7] 100% C2: High-entropy filler §3≤1.5 ×n/a n/a n/a C3: Structured-diverse filler §3≤1.5 ×n/a n/a n/a
+> §Smoke test only; model processed both decoys and answered correctly.
+> †Rounded locked adaptive run-level result. C4 full evasion at 2.2 ×supports Theorem 2 (Evasion-Alignment) in our evaluated setting. C1 partial evasion is outside the full-evasion scope of Theorem 2.
+
+The closed-API results confirm the deployment boundary stated in Section 4: when reasoning is summarised, R ECUR -GUARD can run with reduced sensitivity; when reasoning is hidden, R ECUR GUARD is structurally inapplicable. QDM remains the post-hoc fallback in both cases. 
+
+8 ADAPTIVE ADVERSARY ANALYSIS 
+
+Table 10 reports the adaptive variants. C2: High-entropy filler and C3: Structured-diverse filler are included as negative controls: both produced ≤1.5× amplification in smoke testing ( N =3 ) and were not scaled. The analysis below focuses on C1 and C4, the two scaled variants. 
+
+8.1 C1: Topical CSP Weakens Semantic Monitors 
+
+C1 uses vocabulary drawn from the user’s question domain as the decoy, so generated reasoning stays semantically closer to the query than unrelated Sudoku symbols. C1 raises query similarity ( at), reducing the magnitude of TP collapse even when recurrence remains present. The result is ≈50% joint miss at 11 .9× amplification (RG TPR: 21%, QDM TPR: 38%). C1 is nonetheless detectable by length-based defences: B1 catches 94% and B4 catches 99% of C1 attacks because the output remains long regardless of semantic adaptation. Topical diversification does not reduce output token count. However, B1 and B4 cannot substitute for semantic monitors in mixed-workload deployments: their 69% and 80% FPR on HumanEval code generation make them unsuitable as standalone defences. C1 is not explained by Theorem 2, which applies to full TP evasion. C1 achieves partial evasion: the TP alarm fires on some chunks but not enough to sustain S=3 consecutive alarms on most samples. It occupies the open middle regime between full evasion and full detection. 
+
+8.2 C4: Task-Aligned Filler Requires Low Amplification 
+
+C4 keeps every reasoning chunk task-aligned, evading both RECUR GUARD and QDM across all 100 samples (0% TPR each). The amplification collapses from 22 .8× (OverThink) to 2.2×, a 90% reduction. This is the experimental support for Theorem 2. To avoid triggering the TP alarm, the attack must satisfy at ≥ rt + τP
+
+at every chunk. In practice, this forces the reasoning to stay close to the user’s question, which causes the model to converge on an answer rather than loop indefinitely. C4 supports the theorem’s prediction in our evaluated setting: in our C4 construction, full semantic evasion coincides with sharply reduced amplification. C4 is not harmless. A consistent 2.2× cost overhead is still elevated API spend. But it changes the risk profile from a severe denial-of-wallet threat to a low-amplification slowdown, and cost details are in Section 9. 
+
+8.3 Security Boundary 
+
+The adaptive boundary is amplification under evasion .The evaluated high-amplification decoy attacks are de-tectable. Full semantic evasion is possible, but in our C4 construction it reduces the attack to a low-amplification slowdown. C1 occupies the open middle regime: partial evasion at moderate amplification. The failure-mode taxonomy across all defences is:  
+
+> •
+
+B1/B4 : effective against high-amplification attacks; unsuitable as standalone monitors on long-form tasks.  
+
+> •
+
+B2 : effective against repetitive attacks; destroyed by semantic diversification.  
+
+> •
+
+B3 : catches attacks that produce no answer; misses attacks that produce a short one.  
+
+> •
+
+QDM : effective when output is off-topic; weakened by topical alignment and unsuitable for summarisa-tion.  
+
+> •
+
+RECUR GUARD : effective against recurrence collapse; weakened by task-conditioned alignment (C1 open boundary). No single defence works across every case. R ECUR GUARD 
+
+has the best clean-task FPR profile in our evaluation. C1 remains the practical open boundary. 
+
+9 DEPLOYMENT ANALYSIS 
+
+9.1 Input-Side Safety Classification: Llama Guard 3-1B-INT4 
+
+Llama Guard 3-1B-INT4 [7] ( N =50 attack, N =50 clean) detected 0/50 OverThink attack prompts (TPR = 0%, 95% CI: [0%, 7.1%]) while correctly passing all 50 clean prompts (FPR = 0%). The attack prompt contains a legitimate user question alongside a logic puzzle; neither element triggers 13 
+
+a content-safety category. This result shows that content-safety classification is insufficient as a standalone defence for the evaluated OverThink prompts. The harm emerges from the computational consequence of the model’s response, so runtime output-side or reasoning-side monitoring is needed. 
+
+9.2 Denial-of-Wallet Cost and Early Stopping Value 
+
+On Claude Opus 4.7 (Anthropic, May 2026 pricing: $5/M input tokens, $25/M output tokens [24]), the mean attack cost per query is ≈$0.402 versus ≈$0.00234 for clean queries, a ≈172 × cost amplification. The 676 × value in Table 9 is output-token amplification; the ≈172 × value here is total API cost amplification after applying input and output token pricing. At 10,000 attacks per day, this corresponds to roughly $4,000 in API fees compared with roughly $23 for normal traffic. RECUR GUARD enables early stopping when non-empty reasoning traces are available and generation can be cancelled by the client. On DS-R1-Qwen-7B, R ECUR GUARD halts detected OverThink attacks before the full ≈8,155-token attacked generation completes, saving about 92% of output tokens per detected attack. This cost-saving result should not be interpreted as applying to Opus 4.7, where thinking blocks were empty and R ECUR GUARD was structurally inapplicable. QDM does not enable early stopping because it operates post-hoc on the final output. For closed-API deployments where only final outputs are visible, QDM is the output-side monitor in our design. It detected all Sonnet 4.5 attacks at 
+
+N =30 and all Opus 4.7 smoke-test attacks at N =3 , but it cannot reduce generation cost because the full output has already been produced. 
+
+9.3 Deployment Summary 
+
+Table 9 and Section 7.6 report the closed-API detection statistics. R ECUR GUARD is appropriate when non-empty reasoning traces are accessible and online cancellation is available; in that setting it provides runtime detection, early stopping, and near-zero FPR across the clean task types evaluated here. QDM is appropriate when only final output text is visible. Token-budget and length-anomaly baselines should not be used as standalone defences in mixed-workload deployments because their FPR on code generation is 69% and 80%. Query-anchored QDM should not be used for summarisation workloads unless the query anchor is replaced with the source document. 
+
+10 RELATED WORK 
+
+10.1 Reasoning-Chain Resource Attacks 
+
+Resource-exhaustion attacks predate reasoning LLMs. Sponge examples showed that inputs can be crafted to increase latency and energy use in neural networks [25], and OWASP now treats unbounded LLM consumption as a security risk category [4]. Reasoning models make the same risk easier to trigger and easier to bill: the attacker no longer needs to change model weights or server code, only the text that reaches the reasoning context. OverThink [5] and ExtendAttack [6] are the closest attack papers to this work. OverThink injects benign-looking decoy reasoning tasks into the context. ExtendAttack obfuscates the user’s own question so the model spends tokens reconstruct-ing it before answering. We use both as primary evaluation targets because they stress different mechanisms: unrelated constraint solving and sequential decoding. Our contribution is not another attack construction. It is a detector for exposed reasoning traces, plus an adaptive analysis of where semantic monitors start to fail. Recent and concurrent work broadens the attack side of the problem. Excessive Reasoning Attack optimizes in-puts that stretch reasoning without breaking utility [26]. ReasoningBomb formalizes prompt-induced inference-time DoS for large reasoning models [27]. ThinkTrap studies black-box prompts that induce very long or non-terminating thinking on closed services [28]. POT removes the need for poisoned external documents by optimizing prompt-only overthinking attacks [29]. BadThink and BadReasoner study triggered or backdoored overthinking behaviour [30], [31]. RECUR, CODE, and Sponge Tool Attack extend the resource-exhaustion view to reflection-driven reasoning, retrieval-augmented generation, and tool-augmented agentic reason-ing [32]–[34]. These papers sharpen the threat landscape. RECUR GUARD addresses the defence side for one concrete deployment condition: non-empty reasoning traces that can be monitored during generation. 
+
+10.2 Prompt Injection and Adversarial Prompting 
+
+Prompt injection attacks place instructions inside text the model should treat as data [35]. Indirect prompt injection moves the payload into retrieved documents, web pages, emails, or tool outputs consumed by an LLM-integrated application [3]. This is the natural delivery channel for reasoning-chain consumption: the injected decoy can sit in-side retrieved context while the user asks a normal question. Adversarial prompting work has also shown that small text patterns can steer language-model behaviour across examples or models [36]–[38]. Broader coercion attacks can induce misdirection, model control, denial-of-service, or data extraction [39]. Baseline defences for aligned LLMs often rely on input rewriting, filtering, perplexity checks, or adversarial training [40]. Those defences target harmful outputs or instruction-following failures. Reasoning-chain consumption is different. The prompt can look harmless, and the final output can contain no policy-violating content. The harm appears in the trajectory: the model spends its reasoning budget away from the user’s task. R ECUR GUARD 
+
+therefore monitors the generation path itself rather than classifying the input alone. 
+
+10.3 Efficient Reasoning and Early Stopping 
+
+Several papers study excessive reasoning as an efficiency problem. Answer-convergence monitoring stops generation when partial answers stabilize [20]. SelfBudgeter learns to allocate reasoning budgets before or during generation [41]. THINK-Bench evaluates thinking efficiency and chain-of-thought quality [42], and recent surveys organize the larger efficient-reasoning literature [43]. These methods mostly ask when a benign model has reasoned enough. R ECUR GUARD asks a narrower security question: whether the reasoning trace has left the user’s task and collapsed into a self-recurrent decoy region. That 14 
+
+distinction affects the design. Benign long-form code or math can be lengthy without being an attack, so a pure budget policy is too blunt. Conversely, a short attack that hides reasoning in a closed API cannot be stopped by a trace monitor. The deployment section separates these cases instead of treating all overthinking as the same failure. 
+
+10.4 Semantic Drift and Runtime Monitoring 
+
+Embedding-based drift detection is a natural fit for prompt injection because it can compare semantic representations without model internals. ZEDD measures embedding drift between benign and suspect prompt variants for zero-shot prompt-injection detection [21]. QDM uses a simpler output-side version of the same instinct: it compares final output chunks against the user query and flags large drift. This is useful when reasoning text is hidden, but it has two limits. It is post-hoc, so it cannot save tokens, and it can fail on legitimate summarisation because the answer is about the source article rather than the short instruction. RECUR GUARD adds the missing recurrence term. Instead of asking only whether text is close to the query, it asks whether each reasoning chunk is closer to the query or to the model’s own previous reasoning. That task-conditioned comparison is the main difference from query-output drift monitors and length baselines. It also defines the adaptive boundary: an attacker can evade the semantic monitor by keeping reasoning task-aligned, but in our C4 evaluation that reduces amplification to 2.2×.
+
+11 DISCUSSION , L IMITATIONS , AND CONCLUSION 
+
+11.1 Discussion 
+
+Two variables decide whether this defence is useful in practice: how much the attack amplifies generation, and what the defender can see. When non-empty reasoning traces are exposed, R ECUR GUARD can watch the generation as it happens and stop a decoy loop before the model spends the full budget. When traces are hidden or compressed by the provider, that online signal is either missing or weaker. In that setting, QDM is the safer fallback, but it can only act after the output has already been produced. The adaptive runs expose the boundary. Full semantic evasion is possible, but in C4 the amplification falls to 2.2×.C1 is harder: it keeps 11 .9× amplification while pulling the decoy closer to the user query, which weakens both semantic monitors. Length rules are useful but not enough. They catch high-amplification attacks, including C1, but they also flag many clean HumanEval code answers. That makes them poor standalone monitors for mixed workloads. R ECUR GUARD 
+
+performs better on the clean tasks tested here because it does not treat length or query distance alone as evidence of attack; it looks for task drift and recurrence together. 
+
+11.2 Limitations 
+
+Reasoning visibility. RECUR GUARD requires non-empty reasoning text. It is structurally inapplicable when an API hides reasoning traces, as observed in the Opus 4.7 smoke test. Provider-summarised thinking, as observed for Son-net 4.5, weakens chunk-level recurrence signals and reduces RECUR GUARD performance. This is a deployment boundary, not a calibration issue. 
+
+Adaptive coverage. C1 and C4 are evaluated at N =100 
+
+only on DS-R1-Qwen-7B. The results identify an adaptive boundary on the primary model, but they do not establish transferability to all reasoning models. Testing the same stress tests across more open-weight and closed models remains future work. 
+
+C1: Topical CSP remains unsolved. C1 shows that topical alignment can preserve meaningful amplification while weakening semantic monitors. Length-based baselines catch most C1 samples, but their false positive rates on long-form clean tasks are too high for standalone deployment. A stronger defence for C1 likely needs task-aware anchoring beyond the short user query, such as source-document anchors in RAG. 
+
+No white-box adaptive attack. We do not evaluate gradient-based optimisation against the sentence encoder or the RECUR GUARD decision rule. Such an attacker requires access to defence internals and is outside the black-box prompt-injection threat model used in this paper. 
+
+Proxy baselines. The compression-ratio baseline is a proxy for repetitiveness, not true perplexity. We use it because saved text outputs and closed APIs do not expose token-level logits. Its adaptive-attack results should therefore be read as proxy baseline results, not as logit-based perplexity measurements. 
+
+11.3 Conclusion 
+
+RECUR GUARD detects that failure mode when the reasoning trace is visible. It looks for chunks that stop moving toward the user task and start returning to the model’s own recent reasoning. On the primary open-weight model evaluation, RECUR GUARD detects 99% of OverThink attacks and 92% of ExtendAttack instances, while keeping false positives near zero on the clean task types we tested. Because the detector runs during generation, it can also stop detected attacks early and save about 92% of output tokens. The limit is equally clear. R ECUR GUARD needs non-empty reasoning traces. If reasoning is summarised, R ECUR GUARD 
+
+can run with reduced sensitivity; if reasoning is hidden, it is structurally inapplicable. QDM remains the post-hoc fallback in both cases, but it cannot save the generation cost. The next useful tests are end-to-end RAG deployments, adaptive runs on more models, document-anchored semantic monitors, and entropy-based signals when token-level logits are available. 
+
+FUNDING 
+
+No external funding was received for this research. 
+
+CONFLICT OF INTEREST 
+
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper. 
+
+DATA AVAILABILITY 
+
+The data and code supporting the findings of this study are available at: https://github.com/abidaziz1/recurguard 15 
+
+REFERENCES 
+
+[1] DeepSeek-AI, “DeepSeek-R1: Incentivizing reasoning capability in LLMs via reinforcement learning,” arXiv:2501.12948, 2025. [2] A. Yang et al. , “Qwen3 technical report,” arXiv:2505.09388, 2025. [3] K. Greshake, S. Abdelnabi, S. Mishra, C. Endres, T. Holz, and M. Fritz, “Not what you’ve signed up for: Compromising real-world LLM-integrated applications with indirect prompt injection,” in Proceedings of the 16th ACM Workshop on Artificial Intelligence and Security , 2023. [4] OWASP Foundation, “OWASP LLM10:2025 unbounded consumption,” https://genai.owasp.org/llmrisk/ llm102025-unbounded-consumption/, 2025. [5] A. Kumar, J. Roh, A. Naseh, M. Karpinska, M. Iyyer, A. Houmansadr, and E. Bagdasarian, “OverThink: Slowdown attacks on reasoning LLMs,” arXiv:2502.02542, 2025. [6] Z. Zhu, Y. Liu, Z. Xu, Y. Ma, H. Gao, N. Chen, Y. Guo, W. Qu, H. Xu, Z. Kang, X. Zhu, and J. Zhang, “ExtendAttack: Attacking servers of LRMs via extending reasoning,” arXiv:2506.13737, 2025, accepted to AAAI 2026. [7] I. Fedorov et al. , “Llama Guard 3-1B-INT4: Compact and efficient safeguard for human-AI conversations,” arXiv:2411.17713, 2024. [8] P. Rajpurkar, J. Zhang, K. Lopyrev, and P. Liang, “SQuAD: 100,000+ questions for machine comprehension of text,” in Proceedings of EMNLP , 2016. [9] M. Chen et al. , “Evaluating large language models trained on code,” arXiv:2107.03374, 2021. [10] Anthropic, “Building with extended thinking,” https://platform. claude.com/docs/en/build-with-claude/extended-thinking, 2026, accessed June 2026. [11] N. Reimers and I. Gurevych, “Sentence-BERT: Sentence embed-dings using siamese BERT-networks,” in Proceedings of EMNLP-IJCNLP , 2019. [12] SentenceTransformers, “sentence-transformers/all-MiniLM-L6-v2,” https://huggingface.co/sentence-transformers/ all-MiniLM-L6-v2, 2026, accessed June 2026. [13] T. Wolf, L. Debut, V. Sanh, J. Chaumond, C. Delangue, A. Moi, P. Cistac, T. Rault, R. Louf, M. Funtowicz, J. Davison, S. Shleifer, P. von Platen, C. Ma, Y. Jernite, J. Plu, C. Xu, T. Le Scao, S. Gugger, M. Drame, Q. Lhoest, and A. M. Rush, “Transformers: State-of-the-art natural language processing,” in Proceedings of EMNLP: System Demonstrations , 2020. [14] Anthropic, “Model system cards,” https://www.anthropic.com/ system-cards, 2026, accessed June 2026. [15] A. Grattafiori et al. , “The Llama 3 herd of models,” arXiv:2407.21783, 2024. [16] K. Cobbe, V. Kosaraju, M. Bavarian, M. Chen, H. Jun, L. Kaiser, M. Plappert, J. Tworek, J. Hilton, R. Nakano, C. Hesse, and J. Schulman, “Training verifiers to solve math word problems,” arXiv:2110.14168, 2021. [17] A. See, P. J. Liu, and C. D. Manning, “Get to the point: Summa-rization with pointer-generator networks,” in Proceedings of ACL ,2017. [18] K. M. Hermann, T. Kocisky, E. Grefenstette, L. Espeholt, W. Kay, M. Suleyman, and P. Blunsom, “Teaching machines to read and comprehend,” in Advances in Neural Information Processing Systems ,2015. [19] M. Joshi, E. Choi, D. S. Weld, and L. Zettlemoyer, “TriviaQA: A large scale distantly supervised challenge dataset for reading comprehension,” in Proceedings of ACL , 2017. [20] X. Liu and L. Wang, “Answer convergence as a signal for early stopping in reasoning,” arXiv:2506.02536, 2025. [21] A. Sekar, M. Agarwal, R. Sharma, A. Tanaka, J. Zhang, A. Damerla, and K. Zhu, “Zero-shot embedding drift detection: A lightweight defense against prompt injections in LLMs,” arXiv:2601.12359, 2026, accepted to NeurIPS 2025 Lock-LLM Workshop. [22] E. B. Wilson, “Probable inference, the law of succession, and statistical inference,” Journal of the American Statistical Association ,vol. 22, no. 158, pp. 209–212, 1927. [23] Q. McNemar, “Note on the sampling error of the difference between correlated proportions or percentages,” Psychometrika , vol. 12, no. 2, pp. 153–157, 1947. [24] Anthropic, “Claude API pricing,” https://platform.claude.com/ docs/en/about-claude/pricing, 2026, accessed May 31, 2026. [25] I. Shumailov, Y. Zhao, D. Bates, N. Papernot, R. Mullins, and R. Anderson, “Sponge examples: Energy-latency attacks on neural networks,” in IEEE European Symposium on Security and Privacy ,2021. [26] W. M. Si, M. Li, M. Backes, and Y. Zhang, “Excessive reasoning attack on reasoning LLMs,” arXiv:2506.14374, 2025. [27] X. Liu, X. Wang, Y. Zhang, S. Kariyappa, C. Xiang, M. Chen, G. E. Suh, and C. Xiao, “ReasoningBomb: A stealthy denial-of-service attack by inducing pathologically long reasoning in large reasoning models,” arXiv:2602.00154, 2026. [28] Y. Li, J. Wang, H. Zhu, J. Lin, S. Chang, and M. Guo, “ThinkTrap: Denial-of-service attacks against black-box LLM services via infinite thinking,” arXiv:2512.07086, 2025. [29] X. Li, T. Huang, R. Mu, X. Huang, and G. Jin, “POT: Induc-ing overthinking in LLMs via black-box iterative optimization,” arXiv:2508.19277, 2025. [30] S. Liu, R. Li, L. Yu, L. Zhang, Z. Liu, and G. Jin, “BadThink: Triggered overthinking attacks on chain-of-thought reasoning in large language models,” arXiv:2511.10714, 2025. [31] B. Yi, Z. Fei, J. Geng, T. Li, L. Nie, Z. Liu, and Y. Li, “BadReasoner: Planting tunable overthinking backdoors into large reasoning models for fun or profit,” arXiv:2507.18305, 2025. [32] Z. Wang, Y. Zhang, J. Chen, Z. Zhou, R. Liang, R. Du, J. Jia, C. Wu, and Y. Liu, “RECUR: Resource exhaustion attack via recursive-entropy guided counterfactual utilization and reflection,” arXiv:2602.08214, 2026. [33] X. Zhang, X. Jia, L. Chen, and S. Li, “CODE: A contradiction-based deliberation extension framework for overthinking attacks on retrieval-augmented generation,” arXiv:2601.13112, 2026. [34] Q. Li and X. Wang, “Sponge tool attack: Stealthy denial-of-efficiency against tool-augmented agentic reasoning,” arXiv:2601.17566, 2026. [35] F. Perez and I. Ribeiro, “Ignore previous prompt: Attack techniques for language models,” arXiv:2211.09527, 2022. [36] E. Wallace, S. Feng, N. Kandpal, M. Gardner, and S. Singh, “Universal adversarial triggers for attacking and analyzing NLP,” in Proceedings of EMNLP-IJCNLP , 2019. [37] A. Zou, Z. Wang, N. Carlini, M. Nasr, J. Z. Kolter, and M. Fredrikson, “Universal and transferable adversarial attacks on aligned language models,” arXiv:2307.15043, 2023. [38] N. Carlini, M. Nasr, C. A. Choquette-Choo, M. Jagielski, I. Gao, A. Awadalla, P. W. Koh, D. Ippolito, K. Lee, F. Tramer, and L. Schmidt, “Are aligned neural networks adversarially aligned?” arXiv:2306.15447, 2023. [39] J. Geiping, A. Stein, M. Shu, K. Saifullah, Y. Wen, and T. Gold-stein, “Coercing LLMs to do and reveal (almost) anything,” arXiv:2402.14020, 2024. [40] N. Jain, A. Schwarzschild, Y. Wen, G. Somepalli, J. Kirchenbauer, P.-y. Chiang, M. Goldblum, A. Saha, J. Geiping, and T. Goldstein, “Baseline defenses for adversarial attacks against aligned language models,” arXiv:2309.00614, 2023. [41] Z. Li, Q. Dong, J. Ma, D. Zhang, K. Jia, and Z. Sui, “SelfBud-geter: Adaptive token allocation for efficient LLM reasoning,” arXiv:2505.11274, 2025. [42] Z. Li, Y. Chang, and Y. Wu, “THINK-Bench: Evaluating thinking efficiency and chain-of-thought quality of large reasoning models,” arXiv:2505.22113, 2025. [43] Y. Sui, Y.-N. Chuang, G. Wang, J. Zhang, T. Zhang, J. Yuan, H. Liu, A. Wen, S. Zhong, N. Zou, H. Chen, and X. Hu, “Stop overthinking: A survey on efficient reasoning for large language models,” arXiv:2503.16419, 2025.

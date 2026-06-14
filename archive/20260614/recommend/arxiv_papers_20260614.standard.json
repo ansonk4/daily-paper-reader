@@ -1,0 +1,744 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-14T19:30:40.959118+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 8,
+    "deep_cap": 7,
+    "deep_selected": 7,
+    "quick_candidates": 11,
+    "quick_skim_target": 12,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2606.12703v1",
+      "source": "arxiv",
+      "title": "SMSR: Certified Defence Against Runtime Memory Poisoning in Persistent LLM Agent Systems",
+      "abstract": "Retrieval-augmented generation (RAG) agents increasingly run with persistent memory that accumulates across user sessions. This creates a new attack surface: an adversary interacting only through normal channels can inject crafted memories that, once retrieved, steer the agent's responses for future users, without touching model weights or code. We call this Multi-Session Memory Poisoning (MSMP) and show that no existing defence certifies against it; static-corpus defences (RobustRAG, ReliabilityRAG) assume a fixed knowledge base, and heuristic filters are bypassed by fluent enterprise-style text. We present Signed Memory with Smoothed Retrieval (SMSR), the first defence with a certified robustness bound for this setting. Component 1 adds HMAC-SHA256 provenance at write time, blocking unsigned injection. Component 2 applies randomised memory ablation with verdict-based majority voting at query time, bounding the influence of authenticated adversaries. We prove that no provenance-free retrieval-time filter can certify against adaptive injection, derive a hypergeometric certificate for Component 2, and formalise the Consistent Minority Effect, whereby a consistent adversarial answer wins string-based voting as a numerical minority while verdict-based voting removes it. Across 15 enterprise scenarios (3,150 repeated trials), Component 1 cuts attack success from 93-100% to 0% for all unsigned variants. For an authenticated adversary with a single injection, Component 2 holds success to 8.0% (95% CI [5.8, 10.9], n=450), below the certified worst case. In an end-to-end query-only attack where the agent itself writes the poison rather than it being pre-seeded, SMSR reduces success from 65.3% to 5.3% (n=150, non-overlapping CIs) on a live agent stack. Clean-query utility is 90% (Component 1) and 85% (combined).",
+      "authors": [
+        "Tarun Sharma"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-10T21:45:52+00:00",
+      "link": "https://arxiv.org/pdf/2606.12703v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "certified defence against runtime memory poisoning in persistent LLM agent systems",
+      "llm_evidence_cn": "针对持久LLM代理系统中的运行时记忆中毒提供认证防御",
+      "llm_evidence": "针对持久LLM代理系统中的运行时记忆中毒提供认证防御",
+      "canonical_evidence": "针对持久LLM代理系统中的运行时记忆中毒提供认证防御",
+      "llm_tldr_en": "Introduces Multi-Session Memory Poisoning (MSMP) and SMSR, the first certified defense with robustness bounds, preventing injected memories from steering agent responses across sessions.",
+      "llm_tldr_cn": "该论文提出了多会话记忆中毒（MSMP）攻击，攻击者通过正常交互注入恶意记忆影响未来用户。现有防御无法提供认证保证。作者提出了带签名记忆和平滑检索的SMSR防御框架，首次为该场景提供认证鲁棒性界。通过签名机制和基于平滑检索的聚合，SMSR能够抵御注入攻击，且理论保证与经验验证一致，直接满足了代理记忆注入攻击防御的需求。",
+      "llm_tldr": "该论文提出了多会话记忆中毒（MSMP）攻击，攻击者通过正常交互注入恶意记忆影响未来用户。现有防御无法提供认证保证。作者提出了带签名记忆和平滑检索的SMSR防御框架，首次为该场景提供认证鲁棒性界。通过签名机制和基于平滑检索的聚合，SMSR能够抵御注入攻击，且理论保证与经验验证一致，直接满足了代理记忆注入攻击防御的需求。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "injection attacks on agent memory systems",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.07867v1",
+      "source": "arxiv",
+      "title": "The Cold-Start Safety Gap in LLM Agents",
+      "abstract": "Are tool-calling LLM agents equally safe throughout a conversation? We discover they are not: agents are most vulnerable at the very start of a session and become substantially safer after a few regular agentic tasks -- a phenomenon we term the cold-start safety gap. To study this systematically, we introduce Safety Over Depth for Agents (SODA), a benchmark that controls how many regular agentic tasks the agent completes before encountering a safety threat, supporting up to 20 preceding tasks. Evaluating 7 models from 4 families, safety improves by 9--52% as the number of preceding regular agentic tasks increases from zero to twenty. Representation analysis confirms that model hidden states gradually shift toward a safety-aligned region as more preceding tasks are present. By systematically studying which part of the preceding conversation matters most, we find that the regular agentic tasks themselves are the primary driver of safety, while the agent's own prior responses have less effect on safety but are essential for preserving later utility. This conclusion is further supported by evaluation on open-source safety benchmarks (AgentHarm, Agent Safety Bench) and utility benchmarks (BFCL, API-Bank), confirming that warming up the agent with regular agentic tasks before deployment makes it safer and preserves full capability. Based on these findings, we recommend a simple deployment strategy: having the agent complete a few regular agentic tasks before possible exposure to safety-critical requests mitigates the cold-start safety gap. Our code is available at https://github.com/Trustworthy-ML-Lab/Agent-Cold-Start-Safety-Gap",
+      "authors": [
+        "Chung-En Sun",
+        "Linbo Liu",
+        "Tsui-Wei Weng"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-05T21:58:19+00:00",
+      "link": "https://arxiv.org/pdf/2606.07867v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "introduces SODA benchmark for agent safety over depth, addressing memory-related safety gap",
+      "llm_evidence_cn": "提出SODA基准，评估代理在不同任务深度下的安全性，涉及记忆安全缺口",
+      "llm_evidence": "提出SODA基准，评估代理在不同任务深度下的安全性，涉及记忆安全缺口",
+      "canonical_evidence": "提出SODA基准，评估代理在不同任务深度下的安全性，涉及记忆安全缺口",
+      "llm_tldr_en": "Identifies cold-start safety gap in LLM agents and introduces SODA benchmark to evaluate how safety varies with preceding tasks, showing up to 52% improvement.",
+      "llm_tldr_cn": "本文发现大型语言模型代理在会话开始时存在冷启动安全缺口，即代理在完成若干常规任务后才变得更安全。为系统研究这一现象，作者提出了SODA基准，可控制代理在遇到安全威胁前完成的任务数量（最多20个）。实验评估了7个模型，发现随着前置任务从0增加到20，代理的安全性提升9%至52%。该工作揭示了代理安全性的动态变化，为设计更安全的代理系统提供了重要基准。",
+      "llm_tldr": "本文发现大型语言模型代理在会话开始时存在冷启动安全缺口，即代理在完成若干常规任务后才变得更安全。为系统研究这一现象，作者提出了SODA基准，可控制代理在遇到安全威胁前完成的任务数量（最多20个）。实验评估了7个模型，发现随着前置任务从0增加到20，代理的安全性提升9%至52%。该工作揭示了代理安全性的动态变化，为设计更安全的代理系统提供了重要基准。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.10106v1",
+      "source": "arxiv",
+      "title": "What makes a harness a harness: necessary and sufficient conditions for an agent harness",
+      "abstract": "The term agent harness now circulates widely in software engineering with generative artificial intelligence. It names the layer that wraps a language model and turns it into a coding agent able to act on a repository. The usage is loose and polysemous. Sometimes the term denotes the whole product (Claude Code, Codex CLI); sometimes it denotes the evaluation scaffold that runs an agent against tasks (the SWE-bench harness); sometimes it gets conflated with an agent framework, an SDK, an IDE plugin, or an orchestrator. What is missing is a reference definition that works as an instrument, one that includes and excludes cases consistently. We build that definition through a conceptual analysis that combines works with persistent identifiers and primary grey-literature sources, such as official documentation, glossaries, and engineering reports. We reconstruct the genealogy of the term, from the horse's tack to the classic test harness, to the machine-learning evaluation harness, and finally to the agent harness. We then propose a constitutive definition that states the necessary and sufficient conditions for a system to be an agent harness, we operationalize it as an inclusion and exclusion test, and we draw the boundary of the concept against an agent framework, an agent SDK, an IDE plugin, an eval harness, and an orchestrator. We apply the definition to six real harnesses (Claude Code, Codex CLI, Aider, Cline, OpenHands, and SWE-agent) and to deliberate edge cases; the test includes and excludes consistently. We close with a research agenda organized by design tension axes. The contribution is an operational definition of agent harness, with a shared vocabulary, able to guide engineering practice and the scientific comparison of agentic systems.",
+      "authors": [
+        "Sanderson Oliveira de Macedo"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T19:35:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.10106v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "provides formal definition of agent harness",
+      "llm_evidence_cn": "提供智能体护具的正式定义",
+      "llm_evidence": "提供智能体护具的正式定义",
+      "canonical_evidence": "提供智能体护具的正式定义",
+      "llm_tldr_en": "This paper provides a reference definition of agent harness through conceptual analysis, clarifying what constitutes a harness and distinguishing it from related concepts like frameworks.",
+      "llm_tldr_cn": "“智能体护具”术语在软件工程中用法松散且多义，缺乏一致的定义。本文通过概念分析结合持久标识符，构建了一个可作为工具的参考定义，明确界定护具的包含与排除案例。该定义有助于护具安全研究与评估基准的设计。",
+      "llm_tldr": "“智能体护具”术语在软件工程中用法松散且多义，缺乏一致的定义。本文通过概念分析结合持久标识符，构建了一个可作为工具的参考定义，明确界定护具的包含与排除案例。该定义有助于护具安全研究与评估基准的设计。",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness safety research and measures",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.10813v1",
+      "source": "arxiv",
+      "title": "RedAct: Redacting Agent Capability Traces for Procedural Skill Protection",
+      "abstract": "Users rely on execution traces to observe agent behavior, diagnose failures, and ensure accountability. These traces contain rich procedural detail, including tool invocations, intermediate decisions, and error-recovery logic. Yet this detail can expose private procedural skills, allowing downstream methods to recover key formulas, thresholds, and strategies without access to model weights or skill files. To quantify this risk and evaluate protection, we construct \\textsc{CapTraceBench}, a benchmark of 75 specialized long-horizon tasks and 154 curated skills across seven domains. We also introduce \\textsc{RedAct} https://github.com/XuShuwenn/RedAct, a protected trace release framework that localizes protected key information, rewrites traces while preserving verifier-critical evidence, and embeds behavioral watermarks for downstream provenance analysis. Across representative trace reuse methods, \\textsc{RedAct} reduces normalized skill transfer (NST) from 44.7--67.1\\% on raw traces to below the no-skill baseline, while preserving audit evidence. Its standalone behavioral watermarks reach 93.6--100.0\\% true detection with a false alarm rate of at most 1.9\\%. These results frame public agent traces as security interfaces and show that selective redaction can reduce procedural capability leakage without removing audit evidence.",
+      "authors": [
+        "Shuwen Xu",
+        "Zhitao He",
+        "Yi R.",
+        "Fung"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.CL"
+      ],
+      "published": "2026-06-09T12:57:50+00:00",
+      "link": "https://arxiv.org/pdf/2606.10813v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "CapTraceBench benchmark for procedural skill protection in agent traces",
+      "llm_evidence_cn": "用于保护智能体轨迹中程序技能的基准测试CapTraceBench",
+      "llm_evidence": "用于保护智能体轨迹中程序技能的基准测试CapTraceBench",
+      "canonical_evidence": "用于保护智能体轨迹中程序技能的基准测试CapTraceBench",
+      "llm_tldr_en": "Introduces CapTraceBench, a benchmark of 75 tasks for evaluating protection of procedural skills in agent execution traces, and RedAct framework.",
+      "llm_tldr_cn": "智能体轨迹包含敏感程序技能，可能被下游方法恢复。为量化风险并评估保护，本文构建了CapTraceBench基准，包含75个长时程任务和154个技能，覆盖7个领域；同时提出RedAct框架，定位关键信息并重写轨迹，在不影响可观察性的前提下保护技能。",
+      "llm_tldr": "智能体轨迹包含敏感程序技能，可能被下游方法恢复。为量化风险并评估保护，本文构建了CapTraceBench基准，包含75个长时程任务和154个技能，覆盖7个领域；同时提出RedAct框架，定位关键信息并重写轨迹，在不影响可观察性的前提下保护技能。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "agent memory safety benchmark evaluation",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12737v1",
+      "source": "arxiv",
+      "title": "PI-Hunter: Automated Red-Teaming for Exposing and Localizing Prompt Injections",
+      "abstract": "Large Language Models (LLMs) are rapidly evolving into agentic systems that interact with external tools and environments, introducing new security risks such as indirect prompt injection attacks through untrusted external sources. Existing defenses mainly focus on blocking malicious content at inference time, and current red-teaming methods primarily optimize attack success. As a result, developers have limited visibility into how latent prompt injections emerge and propagate through agents. We propose PI-Hunter, an automated agentic auditing framework for proactive vulnerability exposure in LLM agents. PI-Hunter constructs realistic source-aware test cases and iteratively evolves them through feedback-driven exploration to induce agents to retrieve and reveal latent malicious instructions embedded within external environments. Extensive experiments across multiple benchmarks, agent architectures, attacks, and defenses demonstrate that PI-Hunter substantially improves vulnerability exposure and attack-surface coverage over strong automated red-teaming baselines, while remaining effective under existing prompt injection defenses.",
+      "authors": [
+        "Pengfei He",
+        "Lesly Miculicich",
+        "Vishesh Sharma",
+        "Ash Fox",
+        "George Lee",
+        "Jiliang Tang",
+        "Tomas Pfister",
+        "Long T. Le"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-10T22:57:02+00:00",
+      "link": "https://arxiv.org/pdf/2606.12737v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "automated red-teaming for prompt injection in agents",
+      "llm_evidence_cn": "自动化红队测试暴露和定位提示注入攻击",
+      "llm_evidence": "自动化红队测试暴露和定位提示注入攻击",
+      "canonical_evidence": "自动化红队测试暴露和定位提示注入攻击",
+      "llm_tldr_en": "PI-Hunter automates red-teaming to expose and localize prompt injection vulnerabilities in LLM agents, using realistic test cases and feedback-driven evolution.",
+      "llm_tldr_cn": "现有防御主要关注推理时阻断恶意内容，而红队方法仅优化攻击成功率，导致开发者对提示注入如何产生和传播缺乏可见性。本文提出PI-Hunter，一种自动化智能体审计框架，通过构建真实场景的源感知测试用例并利用反馈驱动迭代演化，主动暴露LLM智能体中的提示注入漏洞。实验表明该方法能有效发现并定位多种间接注入攻击。",
+      "llm_tldr": "现有防御主要关注推理时阻断恶意内容，而红队方法仅优化攻击成功率，导致开发者对提示注入如何产生和传播缺乏可见性。本文提出PI-Hunter，一种自动化智能体审计框架，通过构建真实场景的源感知测试用例并利用反馈驱动迭代演化，主动暴露LLM智能体中的提示注入漏洞。实验表明该方法能有效发现并定位多种间接注入攻击。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "injection attacks on agent memory systems",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12797v1",
+      "source": "arxiv",
+      "title": "The Containment Gap: How Deployed Agentic AI Frameworks Fail Public-Facing Safety Requirements",
+      "abstract": "Agentic large language model systems that autonomously invoke tools, maintain persistent memory, and execute multi-step plans are increasingly deployed in public-facing domains, including government services, healthcare triage, and financial advising. We ask whether the frameworks used to build these systems provide architectural-level structural safety guarantees. Applying six containment principles derived from a compositional model of agentic architectures, we audit three dominant frameworks (LangChain, AutoGPT, and OpenAI Agents SDK) and find no native compliance in any of them. Memory integrity, a defense against one of the most prevalent vulnerability classes, is not observed in any of the three evaluated frameworks. We validate these findings empirically: in a simulated government benefits agent built on LangChain, a single memory-poisoning write induces persistent targeted corruption across all tested seeds and backends, increasing the wrongful denial rate for targeted applicants to 88.9%. Under a complex five-factor policy, the same attack preserves aggregate accuracy while increasing targeted wrongful denials by 3.5x, rendering the corruption difficult to detect through standard monitoring. We then introduce two lightweight containment mechanisms: a memory integrity validator and a policy gate, which eliminate both attack vectors with sub-millisecond overhead (<0.2ms per call). We conclude that the current agentic framework ecosystem may not yet meet secure-by-default expectations for public-facing deployments and outline priority architectural interventions to enable trustworthy deployment in high-stakes, socially impactful applications.",
+      "authors": [
+        "Md Jafrin Hossain",
+        "Mohammad Arif Hossain",
+        "Weiqi Liu",
+        "Nirwan Ansari"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-11T01:46:26+00:00",
+      "link": "https://arxiv.org/pdf/2606.12797v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Audit of agentic frameworks finding no memory integrity",
+      "llm_evidence_cn": "代理框架审计发现缺乏内存完整性",
+      "llm_evidence": "代理框架审计发现缺乏内存完整性",
+      "canonical_evidence": "代理框架审计发现缺乏内存完整性",
+      "llm_tldr_en": "The Containment Gap audits LangChain, AutoGPT, and OpenAI Agents SDK, finding no native memory integrity, directly addressing agent memory safety.",
+      "llm_tldr_cn": "部署的自主LLM系统（如政府服务、医疗）使用LangChain等框架，但缺乏架构级安全保证。作者应用六个遏制原则审计三大主流框架，发现均未原生符合，尤其是内存完整性（对抗最普遍漏洞的关键防御）完全缺失。实验验证了框架的安全差距，强调代理内存安全基准评估的紧迫性。",
+      "llm_tldr": "部署的自主LLM系统（如政府服务、医疗）使用LangChain等框架，但缺乏架构级安全保证。作者应用六个遏制原则审计三大主流框架，发现均未原生符合，尤其是内存完整性（对抗最普遍漏洞的关键防御）完全缺失。实验验证了框架的安全差距，强调代理内存安全基准评估的紧迫性。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09549v1",
+      "source": "arxiv",
+      "title": "SecureClaw: Clawing Back Control of LLM Agents",
+      "abstract": "Tool-using large language model (LLM) agents face two distinct security failures: unauthorized external actions and exposure of sensitive plaintext inside the runtime before any final output check can intervene. Existing defenses usually protect one boundary, either the planner/runtime or the action sink, and therefore do not by themselves secure both surfaces. We present SecureClaw, a dual-boundary architecture that places authorization at the effect sink and plaintext confinement at the read boundary. Sensitive reads pass through a trusted gateway that replaces raw values with opaque handles and, in the evaluated deployment, bounded summaries as an explicit declassification interface. Writes that change external state follow a PREVIEW$\\rightarrow$COMMIT protocol in which only a trusted executor may commit the exact canonical request authorized by policy. The runtime can still plan over summaries and symbolic references, but cannot directly dereference secrets or perform side effects. Across AgentDojo, AgentLeak, and Agent Security Bench (ASB), SecureClaw is the only defense we evaluate in a common harness that simultaneously retains usable task utility and achieves 0\\% attack success rate (ASR) on ASB, 0.64\\% ASR on AgentDojo, and 3.23\\% overall leak on AgentLeak's attacked parity lane, which measures final-output and internal-relay leakage.",
+      "authors": [
+        "Yuhan Ma",
+        "Stefan Schmid"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T14:29:01+00:00",
+      "link": "https://arxiv.org/pdf/2606.09549v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "dual-boundary architecture securing sensitive reads and writes",
+      "llm_evidence_cn": "双边界架构保护敏感读写，增强智能体内存安全",
+      "llm_evidence": "双边界架构保护敏感读写，增强智能体内存安全",
+      "canonical_evidence": "双边界架构保护敏感读写，增强智能体内存安全",
+      "llm_tldr_en": "SecureClaw introduces a dual-boundary architecture for LLM agents, with authorization at the effect sink and plaintext confinement at the read boundary, preventing unauthorized actions and plaintext exposure.",
+      "llm_tldr_cn": "工具使用型LLM智能体面临两种安全失效：未授权外部动作以及运行时敏感明文暴露。现有防御通常只保护单一边界。本文提出SecureClaw，一种双边界架构，在效果汇点实施授权，在读边界实施明文隔离。敏感读操作通过可信网关替换为不透明句柄和受限摘要，写操作遵循预览-提交流程。评估表明该方法有效防止了敏感信息泄露和未授权操作。",
+      "llm_tldr": "工具使用型LLM智能体面临两种安全失效：未授权外部动作以及运行时敏感明文暴露。现有防御通常只保护单一边界。本文提出SecureClaw，一种双边界架构，在效果汇点实施授权，在读边界实施明文隔离。敏感读操作通过可信网关替换为不透明句柄和受限摘要，写操作遵循预览-提交流程。评估表明该方法有效防止了敏感信息泄露和未授权操作。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "memory security and safety in agent systems",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.10616v2",
+      "source": "arxiv",
+      "title": "Learning What to Remember: Observability-Safe Memory Retention via Constrained Optimization for Long-Horizon Language Agents",
+      "abstract": "Long-horizon language agents accumulate observations, reasoning traces, and retrieved facts that exceed their finite context windows, making memory retention a fundamental resource-allocation problem. Existing memory systems improve management through heuristic scoring, retrieval optimization, or learned compression, but largely treat retention as a local decision problem and do not explicitly model its long-term consequences under realistic observability constraints. To fill this gap, we formulate memory retention as a constrained stochastic optimization problem with explicit budget feasibility, evidence utility, and delayed costs including miss penalties, reacquisition delays, and stale-information risk. We then propose OSL-MR (Observability-Safe Learning for Memory Retention), a novel framework that enforces a strict separation between online-observable features and offline-available supervision (OAS). OSL-MR combines an evidence learner trained from realized evidence supervision with a Mixed-Score heuristic that serves both as a deployable online-safe baseline and as a structured inductive prior for learning. The resulting policy learns query-conditioned evidence value directly from interaction data while remaining deployable under the same observability constraints. Experiments on LOCOMO and LongMemEval show that OSL-MR consistently outperforms recency-based methods, Generative Agents-style scoring, and other heuristic baselines, particularly under tight memory budgets. The Mixed-Score prior further improves precision while preserving recall, and sensitivity analysis demonstrates robustness across a wide range of cost configurations.",
+      "authors": [
+        "Qingcan Kang",
+        "Liu Mingyang",
+        "Shixiong Kai",
+        "Kaichao Liang",
+        "Tao Zhong",
+        "Mingxuan Yuan"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-09T09:15:33+00:00",
+      "link": "https://arxiv.org/pdf/2606.10616v2",
+      "tags": [
+        "keyword:agent-safety",
+        "query:agent-safety"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "memory-safe retention optimization for agents",
+      "llm_evidence_cn": "代理记忆安全优化",
+      "llm_evidence": "代理记忆安全优化",
+      "canonical_evidence": "代理记忆安全优化",
+      "llm_tldr_en": "Proposes a constrained optimization framework for memory retention in long-horizon agents, ensuring safety under observability constraints.",
+      "llm_tldr_cn": "长时程语言智能体面临记忆资源有限的问题，现有方法未考虑记忆保留的长期安全后果。本文提出一种约束随机优化框架，将记忆保留建模为预算可行、证据效用和延迟成本的优化问题，确保在可观测性约束下的记忆安全。",
+      "llm_tldr": "长时程语言智能体面临记忆资源有限的问题，现有方法未考虑记忆保留的长期安全后果。本文提出一种约束随机优化框架，将记忆保留建模为预算可行、证据效用和延迟成本的优化问题，确保在可观测性约束下的记忆安全。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "memory security and safety in agent systems",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.08348v1",
+      "source": "arxiv",
+      "title": "Bayesian-Agent: Posterior-Guided Skill Evolution for LLM Agent Harnesses",
+      "abstract": "LLM agents increasingly rely on external inference conditions: prompts, tools, memory, SOPs, skills, and harness feedback. These assets can improve task execution without changing model weights, but they are often revised by heuristic reflection or by reusing observed successes and failures as if counts alone were reliable belief. We introduce \\textbf{Bayesian-Agent}, a native and cross-harness framework that treats reusable skills and SOPs as hypotheses about whether a frozen model will succeed under a particular prompt, context, and harness environment. Bayesian-Agent records verified trajectory evidence, maintains a feature-conditioned categorical posterior over each skill, and maps posterior state into inspectable actions such as patch, split, compress, retire, and explore. Model-facing prompts receive executable guardrails and failure-mode patches, while posterior summaries remain available for audit. With \\texttt{deepseek-v4-flash}, incremental repair improves SOP-Bench from 80\\% to 95\\%, Lifelong AgentBench from 90\\% to 100\\%, and RealFin-Bench from 45\\% to 65\\%. We further evaluate Bayesian-Agent's native backend and optional GenericAgent, mini-swe-agent, and Claude Code backends. The results include positive, negative, saturated, and case-study settings, suggesting that agent skill evolution is best viewed as posterior-guided harness optimization rather than uncalibrated prompt accumulation. The source code is available at https://github.com/DataArcTech/Bayesian-Agent.",
+      "authors": [
+        "Xiaojun Wu",
+        "Cehao Yang",
+        "Honghao Liu",
+        "Xueyuan Lin",
+        "Wenjie Zhang",
+        "Zhichao Shi",
+        "Xuhui Jiang",
+        "Chengjin Xu",
+        "Jia Li",
+        "Jian Guo"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-06T21:40:19+00:00",
+      "link": "https://arxiv.org/pdf/2606.08348v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Bayesian-Agent framework for harness safety and performance",
+      "llm_evidence_cn": "用于护具安全与性能的贝叶斯代理框架",
+      "llm_evidence": "用于护具安全与性能的贝叶斯代理框架",
+      "canonical_evidence": "用于护具安全与性能的贝叶斯代理框架",
+      "llm_tldr_en": "Bayesian-Agent proposes a framework for evolving LLM agent harness skills using posterior-guided updates, relevant to harness safety and benchmark evaluation.",
+      "llm_tldr_cn": "LLM代理依赖外部推理条件（提示、工具、记忆等），但启发式更新不够可靠。作者提出Bayesian-Agent框架，将技能视为假设，用贝叶斯后验更新，记录轨迹证据，并映射到修补、拆分等可检查动作。该框架跨护具通用，能系统化优化护具组件，为护具安全性能评估提供方法论。",
+      "llm_tldr": "LLM代理依赖外部推理条件（提示、工具、记忆等），但启发式更新不够可靠。作者提出Bayesian-Agent框架，将技能视为假设，用贝叶斯后验更新，记录轨迹证据，并映射到修补、拆分等可检查动作。该框架跨护具通用，能系统化优化护具组件，为护具安全性能评估提供方法论。",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to 查找关于护具安全、攻击或基准测试的论文, especially work that connects or combines: harness safety research and measures; attack on harness systems; benchmark for harness performance; Papers on safety measures for harness systems; Research on attack methods targeting harness components; Benchmarks for evaluating harness safety performance.",
+      "matched_requirement_id": "req-composite-harness",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.07805v1",
+      "source": "arxiv",
+      "title": "Beyond Goodhart's Law: A Dynamic Benchmark for Evaluating Compliance in Multi-Agent Systems",
+      "abstract": "The rapid evolution of Large Language Models (LLMs) from passive assistants to autonomous, execution-capable agents has introduced critical operational risks. Most current evaluation frameworks neglect procedural compliance, leading to ''Machiavellian'' behaviors where agents strategically violate safety rules to maximize rewards - a direct manifestation of Goodhart's Law. To address this blind spot, we introduce MAC-Bench, a dynamic, adversarial benchmark designed to evaluate the procedural alignment of multi-agent systems under realistic pressure. We propose the SERV(Seed - Evolve - Refine - Verify) pipeline, an ``Agent-as-a-Benchmark'' paradigm that transforms unstructured legal texts into executable, contamination-free scenarios. By synthesizing holographic sandbox environments and injecting calibrated social-engineering pressure vectors, MAC-Bench forces agents into Pareto-optimal trade-offs between task success and regulatory adherence. We introduced novel metrics: the Compliance-Weighted Success Rate (CSR) and the Machiavellian Gap (MG), and conducted a comprehensive evaluation of state-of-the-art frontier models to reveal the pervasive trade-offs between success and compliance.",
+      "authors": [
+        "Yiyang Zhao",
+        "Zhuo Zhang",
+        "Qingxuan Le",
+        "Lizhen Qu",
+        "Zenglin Xu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.MA"
+      ],
+      "published": "2026-06-05T19:33:58+00:00",
+      "link": "https://arxiv.org/pdf/2606.07805v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "MAC-Bench dynamic benchmark for evaluating compliance in multi-agent systems",
+      "llm_evidence_cn": "多智能体系统合规性动态基准MAC-Bench",
+      "llm_evidence": "多智能体系统合规性动态基准MAC-Bench",
+      "canonical_evidence": "多智能体系统合规性动态基准MAC-Bench",
+      "llm_tldr_en": "Introduces MAC-Bench, an adversarial benchmark for evaluating procedural compliance of multi-agent systems under Goodhart's Law.",
+      "llm_tldr_cn": "当前评估框架忽略程序合规性，导致智能体出现“马基雅维利”行为。本文提出MAC-Bench，一个动态对抗性基准，利用SERV流水线从法律文本生成可执行场景，评估多智能体系统在压力下的合规性。",
+      "llm_tldr": "当前评估框架忽略程序合规性，导致智能体出现“马基雅维利”行为。本文提出MAC-Bench，一个动态对抗性基准，利用SERV流水线从法律文本生成可执行场景，评估多智能体系统在压力下的合规性。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.08539v1",
+      "source": "arxiv",
+      "title": "AgentTrust: A Self-Improving Trust Layer for AI-Agent Actions",
+      "abstract": "AI agents increasingly take consequential actions -- shell commands, cloud operations, and arbitrary tool-calls -- so a trust layer must decide, per action, whether to allow, warn, block, or escalate. We argue that the right way to reason about such a layer is by threat type. Lexical (fixed-signature) threats, where danger lives in a stable token, are decidable by deterministic rules; semantic (intent-dependent) threats, where a benign and a malicious action share the same surface, are out of reach for rules by construction. We make this concrete with a negative proof: a determined, hand-authored cloud rule pack lifts held-out accuracy only 48 to 56% overall and moves the semantic categories by 0pp (data_db 29 to 29, observability 59 to 59, supply_chain 50 to 50), while a strong LLM judge carries exactly those categories. We give the judge a self-learning capability: on a corpus that is mainly semantic attacks it nearly doubles rule accuracy (48% to 83.6-85.2%) with near-zero false-blocks, and this holds across two model providers. We turn this into a self-improving dual-store system: the judge distills a growing deterministic rule floor on lexical threats (cheaper over time) and feeds a guarded RAG memory on semantic threats (a verdict-cache fails -- surface-twins collapse to ~58% -- so a corroboration guard lifts semantic accuracy +13pp, 70 to 84). The result is what sets AgentTrust v2 apart from its static v1 predecessor: a trust layer that self-evolves from its own stream of decisions -- cheaper on the lexical class (it distils its own rules) and smarter on the semantic class (it accrues guarded precedent), while never hard-blocking a benign action. An end-to-end online replay shows the judge-call rate falling (50% to 44%) and judge-domain accuracy rising (71% to 80%), with 0 benign hard-blocks across 45,000 actions.",
+      "authors": [
+        "Chenglin Yang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-07T09:39:20+00:00",
+      "link": "https://arxiv.org/pdf/2606.08539v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "presents a trust layer for agent actions, evaluates threat types, relevant to agent safety benchmarks",
+      "llm_evidence_cn": "提出智能体动作信任层，评估威胁类型，与智能体安全基准相关",
+      "llm_evidence": "提出智能体动作信任层，评估威胁类型，与智能体安全基准相关",
+      "canonical_evidence": "提出智能体动作信任层，评估威胁类型，与智能体安全基准相关",
+      "llm_tldr_en": "Proposes a trust layer that decides allow/warn/block for agent actions, with evaluation showing rules fail on semantic threats, motivating need for better benchmarks.",
+      "llm_tldr_cn": "本文提出AgentTrust，一个对AI智能体每个动作进行信任决策的层。它将威胁分为词汇型和语义型，并通过负证明展示手工规则在语义威胁上无效。该工作揭示了现有安全措施的不足，强调了对语义级别攻击进行基准测试的必要性。",
+      "llm_tldr": "本文提出AgentTrust，一个对AI智能体每个动作进行信任决策的层。它将威胁分为词汇型和语义型，并通过负证明展示手工规则在语义威胁上无效。该工作揭示了现有安全措施的不足，强调了对语义级别攻击进行基准测试的必要性。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "agent safety benchmark including memory issues",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.07940v1",
+      "source": "arxiv",
+      "title": "SGTO-MAS: Secure Gorilla Troops Optimization for Multi-Agent LLM Systems",
+      "abstract": "Multi-agent large language model (LLM) systems offer strong capabilities for complex reasoning and decision-making, yet coordination across agents introduces error propagation, security risks, and inefficient use of resources. Existing methods often rely on heuristic, static strategies and lack a principled mechanism for balancing performance, security, and computational cost. This paper formulates multi-agent LLM coordination as a constrained optimization problem and proposes a security-aware method for adaptive agent selection. The method integrates trust modeling, risk-aware evaluation, and collective intelligence within a unified optimization objective. To solve the problem efficiently, we use a swarm-intelligence strategy inspired by Gorilla Troops Optimization (GTO), enabling adaptive coordination under varying threat conditions. Controlled experiments across 500 independent runs demonstrate the effectiveness of the proposed method. The system achieves a stable average performance score of 0.5281, with high consensus (0.8764), controlled risk (0.3000), and compact agent subsets averaging 4.04 selected agents. The optimization process converges efficiently, with an average runtime of 24.09 seconds per run and low score variability (standard deviation = 0.0173). Robustness analysis indicates graceful degradation under perturbations, with performance drops limited to 2.5% under agent removal and 5.3% under consensus disruption. These results show that effective multi-agent coordination can be achieved through structured optimization that jointly manages performance, security, and efficiency. The proposed method provides a practical security-aware solution for coordinating multi-agent LLM systems in complex adversarial settings.",
+      "authors": [
+        "Saeid Jamshidi"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-06-06T02:00:36+00:00",
+      "link": "https://arxiv.org/pdf/2606.07940v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "security-aware multi-agent coordination optimization",
+      "llm_evidence_cn": "安全感知的多智能体协作优化",
+      "llm_evidence": "安全感知的多智能体协作优化",
+      "canonical_evidence": "安全感知的多智能体协作优化",
+      "llm_tldr_en": "Proposes a security-aware optimization method for multi-agent LLM coordination integrating trust modeling and risk evaluation.",
+      "llm_tldr_cn": "多智能体LLM系统存在安全风险，现有方法缺乏安全与性能的权衡。本文提出一种安全感知的智能体选择优化方法，集成信任建模和风险评估，使用群体智能策略在性能和安全之间取得平衡。",
+      "llm_tldr": "多智能体LLM系统存在安全风险，现有方法缺乏安全与性能的权衡。本文提出一种安全感知的智能体选择优化方法，集成信任建模和风险评估，使用群体智能策略在性能和安全之间取得平衡。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.09498v1",
+      "source": "arxiv",
+      "title": "Self-Harness: Harnesses That Improve Themselves",
+      "abstract": "The performance of LLM-based agents is jointly shaped by their base models and the harnesses that mediate their interaction with the environment. Because different models exhibit distinct behaviors, effective harness design is inherently model-specific. Yet agent harnesses are still largely engineered by human experts, a paradigm that scales poorly as modern LLMs become increasingly diverse and rapidly evolving. In this paper, we introduce Self-Harness, a new paradigm in which an LLM-based agent improves its own operating harness, without relying on human engineers or stronger external agents. We operationalize Self-Harness as an iterative loop with three stages: Weakness Mining, which identifies model-specific failure patterns from execution traces; Harness Proposal, which generates diverse yet minimal harness modifications tied to these failures; and Proposal Validation, which accepts candidate edits only after regression testing. We instantiate Self-Harness on Terminal-Bench-2.0 using a minimal initial harness and three base models from diverse families: MiniMax M2.5, Qwen3.5-35B-A3B, and GLM-5. Across all three models, Self-Harness consistently improves performance, with held-out pass rates increasing from 40.5% to 61.9%, 23.8% to 38.1%, and 42.9% to 57.1%, respectively. Qualitative analyses further show that Self-Harness does not simply add generic instructions, but effectively turns model-specific weaknesses into concrete, executable harness changes. These results suggest a path toward LLM-based agents that are not merely shaped by their harnesses, but can also participate in reshaping them.",
+      "authors": [
+        "Hangfan Zhang",
+        "Shao Zhang",
+        "Kangcong Li",
+        "Chen Zhang",
+        "Yang Chen",
+        "Yiqun Zhang",
+        "Lei Bai",
+        "Shuyue Hu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-08T13:50:23+00:00",
+      "link": "https://arxiv.org/pdf/2606.09498v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "self-improving harness for LLM agents, directly addresses harness safety and performance",
+      "llm_evidence_cn": "LLM agent的自改进护具，直接涉及护具安全与性能",
+      "llm_evidence": "LLM agent的自改进护具，直接涉及护具安全与性能",
+      "canonical_evidence": "LLM agent的自改进护具，直接涉及护具安全与性能",
+      "llm_tldr_en": "Self-Harness enables LLM agents to iteratively improve their own operating harness via weakness mining and proposal, enhancing safety.",
+      "llm_tldr_cn": "本文提出Self-Harness范式，让LLM agent无需人类专家即可自主改进其运行护具。通过弱点挖掘、护具提案和评估的迭代循环，该方法能针对模型特定失败模式自动调整护具，显著提升agent的安全性与适应性。",
+      "llm_tldr": "本文提出Self-Harness范式，让LLM agent无需人类专家即可自主改进其运行护具。通过弱点挖掘、护具提案和评估的迭代循环，该方法能针对模型特定失败模式自动调整护具，显著提升agent的安全性与适应性。",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness safety research and measures",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.07968v1",
+      "source": "arxiv",
+      "title": "RecurGuard: Runtime Monitoring for Reasoning-Token Consumption Attacks",
+      "abstract": "Reasoning-capable large language models can be induced to spend their generation budget on injected decoy tasks rather than answering the user's question, causing denial of service when no final answer is produced and denial of wallet when excess output tokens are billed. Input-side safety classifiers often miss these attacks because the injected prompts can appear syntactically benign. We build RecurGuard, a runtime monitor for detecting reasoning-chain consumption attacks when reasoning traces are exposed by the model. RecurGuard analyzes reasoning traces as they are generated and tracks three signals: recurrence rate, volume growth, and progress toward the user's query. If all three signals remain anomalous over three consecutive chunks, RecurGuard terminates generation early. We evaluate RecurGuard against OverThink and ExtendAttack across open-weight reasoning models and conduct adaptive stress tests on DS-R1-Qwen-7B. On this model, RecurGuard detects 99% of OverThink attacks and 92% of ExtendAttack instances while maintaining near-zero false positive rates on question answering, code generation, mathematics, and summarization. Adaptive evaluation reveals the limit of the defense: topical attacks retain 11.9x amplification with an approximately 50% joint miss rate, whereas full semantic evasion reduces amplification from 22.8x to 2.2x. When reasoning traces are unavailable, QDM provides a post-hoc fallback monitor based on the final output.",
+      "authors": [
+        "Abid Aziz",
+        "Hafsa Binte Kibria"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-06T03:52:27+00:00",
+      "link": "https://arxiv.org/pdf/2606.07968v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "addresses injection attacks on LLM reasoning chains, related to injection attacks on agent systems",
+      "llm_evidence_cn": "应对LLM推理链上的注入攻击，与智能体系统注入攻击相关",
+      "llm_evidence": "应对LLM推理链上的注入攻击，与智能体系统注入攻击相关",
+      "canonical_evidence": "应对LLM推理链上的注入攻击，与智能体系统注入攻击相关",
+      "llm_tldr_en": "Proposes a runtime monitor to detect reasoning-chain consumption attacks, where injection prompts cause denial of service/wallet, applicable to agent memory safety.",
+      "llm_tldr_cn": "本文提出RecurGuard，一种运行时监控器，用于检测针对推理模型令牌消耗的攻击。攻击者注入虚假任务导致模型浪费生成预算。RecurGuard分析推理轨迹的循环率、体积增长和进度，异常时发出警报。该方法可扩展至智能体记忆系统的注入攻击监控。",
+      "llm_tldr": "本文提出RecurGuard，一种运行时监控器，用于检测针对推理模型令牌消耗的攻击。攻击者注入虚假任务导致模型浪费生成预算。RecurGuard分析推理轨迹的循环率、体积增长和进度，异常时发出警报。该方法可扩展至智能体记忆系统的注入攻击监控。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "injection attacks on agent memory systems",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.12709v1",
+      "source": "arxiv",
+      "title": "Smarter Saboteurs, Better Fixers: Scaling & Security in Linear Multi-Agent Workflows",
+      "abstract": "As LLM-based multi-agent systems (MAS) are deployed in the wild, the resilience of their collaboration structures against adversarial compromise becomes a critical safety concern. Attackers may leverage prompt-injection or jailbreaking to sabotage individual agents within MAS workflows, but the interaction between model scaling and system-level resilience remains poorly understood. This paper investigates how model scale affects the security of linear multi-agent workflows. Our experiments across scales of two open-weight model families on the HumanEval benchmark reveal a compliance-correction symmetry: larger models are far more likely to faithfully execute malicious instructions, with the control-to-malicious performance drop reaching 53.7pp at 27B in uncorrected pipelines. However, appending a lightweight terminal Fixer stage collapses this to 0.6pp and restores statistical parity with control-level performance, demonstrating that strictly linear collaboration structures can be viable and resilient to adversaries at this scale, and suggesting that the brittleness previously attributed to linear topology may stem from a lack of correction.",
+      "authors": [
+        "Timothy McAllister",
+        "Sina Abdidizaji",
+        "Ivan Garibay",
+        "Ozlem Ozmen Garibay"
+      ],
+      "primary_category": "cs.MA",
+      "categories": [
+        "cs.MA",
+        "cs.CR",
+        "cs.LG"
+      ],
+      "published": "2026-06-10T21:55:24+00:00",
+      "link": "https://arxiv.org/pdf/2606.12709v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "investigates adversarial manipulation of agents via prompt injection in multi-agent workflows",
+      "llm_evidence_cn": "研究多智能体工作流中通过提示注入对智能体进行对抗性操纵",
+      "llm_evidence": "研究多智能体工作流中通过提示注入对智能体进行对抗性操纵",
+      "canonical_evidence": "研究多智能体工作流中通过提示注入对智能体进行对抗性操纵",
+      "llm_tldr_en": "Examines how model scale affects security of linear multi-agent workflows, finding larger models more obedient to malicious instructions, with implications for agent safety benchmarks.",
+      "llm_tldr_cn": "本文研究模型规模对线性多智能体工作流安全性的影响，发现在HumanEval基准上，较大模型更可能忠实执行恶意指令，揭示了一种服从-纠正对称性。这对评估智能体对抗鲁棒性的基准设计具有启示意义。",
+      "llm_tldr": "本文研究模型规模对线性多智能体工作流安全性的影响，发现在HumanEval基准上，较大模型更可能忠实执行恶意指令，揭示了一种服从-纠正对称性。这对评估智能体对抗鲁棒性的基准设计具有启示意义。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "manipulating agent memory for adversarial purposes",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.08671v1",
+      "source": "arxiv",
+      "title": "SkillHone: A Harness for Continual Agent Skill Evolution Through Persistent Decision History",
+      "abstract": "Agent skills extend language-model agents with task-specific procedures, scripts, and references, but the tasks and environments they target continually change. Existing methods improve skills in bounded runs and retain only the final artifact, discarding the decision history that later agents need to interpret prior revisions, evaluations, and rejected alternatives. We introduce SkillHone, a harness for continual agent skill evolution grounded in persistent decision history. SkillHone pairs skill revisions with evaluation-side evidence that supplies practice feedback, recording structured histories of diagnoses, revisions, evidence, and outcomes. Role-separated subagents run candidate skills on practice probes with redacted reporting and propose revisions informed by prior decisions, enabling cross-session refinement without rediscovering past rationale. We evaluate SkillHone on deep-research benchmarks in a raw open-web setting, where agents are not given an integrated search stack and must organize retrieval through portable skills. We compare against a deep-research agent backed by commercial retrieval services. With Qwen3.6-35B-A3B as the evaluation-time backbone, the resulting skills outperform the deep-research agent by 15.8 points on GAIA and 3.2 points on WebWalkerQA-EN, while also exceeding prior skill-evolution methods.",
+      "authors": [
+        "Zhiwei Li",
+        "Yong Hu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-07T15:21:08+00:00",
+      "link": "https://arxiv.org/pdf/2606.08671v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "harness for continual agent skill evolution, relevant to harness safety measures",
+      "llm_evidence_cn": "用于持续agent技能演化的护具，与护具安全措施相关",
+      "llm_evidence": "用于持续agent技能演化的护具，与护具安全措施相关",
+      "canonical_evidence": "用于持续agent技能演化的护具，与护具安全措施相关",
+      "llm_tldr_en": "SkillHone provides a harness that records persistent decision history for safe continual skill evolution in agents.",
+      "llm_tldr_cn": "本文提出SkillHone护具，通过持久决策历史记录支持agent技能的持续安全演化。该护具将技能修订与评估证据配对，保留诊断、修订和结果的结构化历史，使后续agent能够安全地解释和继承前序工作。",
+      "llm_tldr": "本文提出SkillHone护具，通过持久决策历史记录支持agent技能的持续安全演化。该护具将技能修订与评估证据配对，保留诊断、修订和结果的结构化历史，使后续agent能够安全地解释和继承前序工作。",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness safety research and measures",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.12882v1",
+      "source": "arxiv",
+      "title": "HarnessBridge: Learnable Bidirectional Controller for LLM Agent Harness",
+      "abstract": "Large language models are increasingly deployed as agents for long-horizon tasks, yet their performance is shaped not only by model capability and environment design, but also by the harness that mediates agent--environment interaction. Existing harnesses are largely manually engineered, making them difficult to scale as trajectories grow longer and interactions become more complex. In this work, we ask whether harness can be generated by a learnable plug-in module that can be trained in an end-to-end fashion. We introduce HarnessBridge, a lightweight learnable harness controller that parameterizes the agent--environment interface as a bidirectional projection. HarnessBridge learns two bidirectional projections: observation projection, which distills raw trajectories into compact, decision-relevant states, and action projection, which converts proposed actions into executable transitions or trajectory-grounded rejections. We train HarnessBridge on a harness supervision dataset via unified instruction tuning. On Terminal-Bench~2.0 and SWE-bench Verified, HarnessBridge matches or surpasses strong specialized harnesses while substantially reducing token usage and trajectory length, and generalizes from smaller generators to larger commercial models.",
+      "authors": [
+        "Xiaoxuan Wang",
+        "Haixin Wang",
+        "Alexander Taylor",
+        "Jason Cong",
+        "Yizhou Sun",
+        "Wei Wang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-11T04:18:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.12882v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "directly addresses harness design for LLM agents, relevant to harness safety and performance",
+      "llm_evidence_cn": "直接针对LLM智能体护具设计，与护具安全与性能相关",
+      "llm_evidence": "直接针对LLM智能体护具设计，与护具安全与性能相关",
+      "canonical_evidence": "直接针对LLM智能体护具设计，与护具安全与性能相关",
+      "llm_tldr_en": "Introduces a learnable harness controller that parameterizes agent-environment interaction, improving scalability and potentially enabling safety measures.",
+      "llm_tldr_cn": "本文提出HarnessBridge，一种可学习的轻量级护具控制器，将智能体-环境接口参数化为双向投影。它可端到端训练，替代人工设计的护具，提升长轨迹任务的扩展性。该工作为护具安全度量提供了可学习基础，对护具基准测试有参考价值。",
+      "llm_tldr": "本文提出HarnessBridge，一种可学习的轻量级护具控制器，将智能体-环境接口参数化为双向投影。它可端到端训练，替代人工设计的护具，提升长轨迹任务的扩展性。该工作为护具安全度量提供了可学习基础，对护具基准测试有参考价值。",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness safety research and measures",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.13681v1",
+      "source": "arxiv",
+      "title": "EvoArena: Tracking Memory Evolution for Robust LLM Agents in Dynamic Environments",
+      "abstract": "Large language model (LLM) agents have achieved strong performance on a wide range of benchmarks, yet most evaluations assume static environments. In contrast, real-world deployment is inherently dynamic, requiring agents to continually align their knowledge, skills, and behavior with changing environments and updated task conditions. To address this gap, we introduce EvoArena, a benchmark suite that models environment changes as sequences of progressive updates across terminal, software, and social domains. We further propose EvoMem, a patch-based memory paradigm that records memory evolution as structured update histories, enabling agents to reason about environmental evolution through changes in their memory. Experiments show that current agents struggle on EvoArena, achieving an average accuracy of 39.6% across evolving terminal, software, and social-preference domains. EvoMem consistently improves performance, yielding an average gain of 1.5% on EvoArena and also improving standard benchmarks such as GAIA and LoCoMo by 6.1% and 4.8%. Beyond individual tasks, EvoMem further improves chain-level accuracy by 3.7% on EvoArena, where success requires completing a consecutive sequence of related evolutionary subtasks. Mechanistic analysis shows that EvoMem improves evidence capture in the memory, indicating better preservation of complete evolving environment states. Our results highlight the importance of modeling evolution in both evaluation and memory for reliable agent deployment.",
+      "authors": [
+        "Jundong Xu",
+        "Qingchuan Li",
+        "Jiaying Wu",
+        "Yihuai Lan",
+        "Shuyue Stella Li",
+        "Huichi Zhou",
+        "Bowen Jiang",
+        "Lei Wang",
+        "Jun Wang",
+        "Anh Tuan Luu",
+        "Caiming Xiong",
+        "Hae Won Park",
+        "Bryan Hooi",
+        "Zhiyuan Hu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-11T17:59:59+00:00",
+      "link": "https://arxiv.org/pdf/2606.13681v1",
+      "tags": [
+        "keyword:agent-safety",
+        "query:agent-safety"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "EvoArena benchmark and EvoMem memory paradigm for dynamic environments",
+      "llm_evidence_cn": "EvoArena基准和EvoMem记忆范式用于动态环境",
+      "llm_evidence": "EvoArena基准和EvoMem记忆范式用于动态环境",
+      "canonical_evidence": "EvoArena基准和EvoMem记忆范式用于动态环境",
+      "llm_tldr_en": "EvoArena benchmark tests LLM agents on memory evolution in dynamic environments, supporting memory safety research.",
+      "llm_tldr_cn": "该论文提出EvoArena基准套件，建模终端、软件和社交域的环境变化序列，并引入EvoMem补丁式记忆范式，使智能体能通过记忆演化推理环境变化，实验表明当前智能体在动态场景下性能有限，为记忆安全评估提供基础。",
+      "llm_tldr": "该论文提出EvoArena基准套件，建模终端、软件和社交域的环境变化序列，并引入EvoMem补丁式记忆范式，使智能体能通过记忆演化推理环境变化，实验表明当前智能体在动态场景下性能有限，为记忆安全评估提供基础。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

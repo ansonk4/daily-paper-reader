@@ -1,0 +1,1362 @@
+Title: RedAct: Redacting Agent Capability Traces for Procedural Skill Protection
+
+URL Source: https://arxiv.org/pdf/2606.10813v1
+
+Published Time: Wed, 10 Jun 2026 01:00:52 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+## RED ACT : Redacting Agent Capability Traces for Procedural Skill Protection 
+
+Shuwen Xu 1,2 Zhitao He 1 Yi R. (May) Fung 11Hong Kong University of Science and Technology 
+
+> 2
+
+University of Chinese Academy of Sciences 
+
+sxucn@connect.ust.hk yrfung@ust.hk 
+
+Abstract 
+
+Users rely on execution traces to observe agent behavior, diagnose failures, and ensure account-ability. These traces contain rich procedural detail, including tool invocations, intermedi-ate decisions, and error-recovery logic. Yet this detail can expose private procedural skills, allowing downstream methods to recover key formulas, thresholds, and strategies without ac-cess to model weights or skill files. To quan-tify this risk and evaluate protection, we con-struct C AP TRACE BENCH , a benchmark of 75 specialized long-horizon tasks and 154 curated skills across seven domains. We also introduce 
+
+RED ACT 1, a protected trace release frame-work that localizes protected key information, rewrites traces while preserving verifier-critical evidence, and embeds behavioral watermarks for downstream provenance analysis. Across representative trace reuse methods, R ED ACT 
+
+reduces normalized skill transfer (NST) from 44.7–67.1% on raw traces to below the no-skill baseline, while preserving audit evidence. Its standalone behavioral watermarks reach 93.6– 100.0% true detection with a false alarm rate of at most 1.9%. These results frame public agent traces as security interfaces and show that selec-tive redaction can reduce procedural capability leakage without removing audit evidence. 
+
+1 Introduction 
+
+As tool-using agents transition from research proto-types to deployed systems (Yao et al., 2023; Schick et al., 2023; Shinn et al., 2023; Wang et al., 2023), expert teams in biomedicine, finance, and engineer-ing increasingly build agents around proprietary data, domain models, and expert-refined work-flows . These systems often rely on agent skills :structured packages of procedural knowledge en-compassing reusable workflows, code templates, tool-use routines, validation scripts, and domain heuristics (Li et al., 2026; Wang et al., 2026a). 
+
+> 1https://github.com/XuShuwenn/RedAct
+
+Figure 1: Problem motivation of our work. Raw agent traces may reveal reusable private skills and enable skill distillation . RED ACT protects released traces via selec-tive rewriting ( ) and behavioral watermarking ( ). 
+
+A drug-screening pipeline or a financial valuation workflow, for instance, may encode proprietary for-mulas, calibrated thresholds, multi-stage validation protocols, and recovery strategies. Execution traces are often released to support transparency, debug-ging, and user trust; however, the same traces can expose the protected procedures that underlie agent effectiveness (Ni et al., 2026; Chen et al., 2026). This creates a fundamental tension between trace auditability and procedural skill protection .Recent work on skill learning and evolution has demonstrated that agent experience can be distilled into reusable skills , which substantially improves 
+
+> arXiv:2606.10813v1 [cs.CR] 9 Jun 2026
+
+downstream task performance across diverse do-mains (Wang et al., 2026a; Jiang et al., 2026; Ni et al., 2026; Li et al., 2026; Wang et al., 2023). This transforms trace release into a procedural asset-protection problem : a downstream party with access only to released traces may recover propri-etary formulas, threshold configurations, tool-call sequences, and validation routines. We therefore ask: how can useful agent traces be released with-out exposing reusable protected skills, while still preserving evidence of downstream reuse? 
+
+We formalize this problem as black-box trace disclosure : downstream reuse methods observe only released artifacts, without access to private skill files, model weights, or hidden states. The central risk is not answer copying, but the recov-ery of reusable protected procedures applicable across repeated deployments. To evaluate this set-ting at scale, we construct CAP TRACE BENCH 
+
+(Cap ability Trace s Bench mark), built from open-source skill resources including SkillsBench (Li et al., 2026), SkillFlow (Zhang et al., 2026), and other related repositories (K-Dense Inc., 2026), comprising 75 specialized long-horizon tasks span-ning seven domains, along with 154 curated skills. As illustrated in Figure 1(b), released traces ex-pose private files, curated skills, tool selections, and recovery steps that downstream agents can adapt to the same task environment, providing pro-cess supervision signals for skill reuse (Yao et al., 2023; Shinn et al., 2023; Ni et al., 2026). Answer-only release strips audit context, whereas generic summaries cannot reliably disentangle execution evidence from protected procedures. This moti-vates trace-level redaction and provenance analy-sis (Meng et al., 2026; Wang et al., 2026b). To achieve both goals, we propose RED ACT 
+
+(Red acting Agent Capability Traces), a protected trace release framework for procedural skill pro-tection. We assume that the skill owner has ac-cess to the protected skill package, while down-stream reuse methods observe only released traces. RED ACT operates in two complementary lay-ers: a rewriting layer that localizes and abstracts protected procedural information ( e.g. , formulas, thresholds, API choices, and private heuristics) while preserving verifier-critical evidence, and a watermarking layer that embeds behavioral signals into released traces to enable provenance tracking without affecting task semantics. Across various reuse settings ( i.e. , single-agent synthesis, multi-agent evolution, and workflow retrieval), R ED ACT 
+
+substantially reduces protected skill reuse on C AP -TRACE BENCH . We summarize our main contribu-tions as follows: 
+
+• We formalize reusable skill extraction from agent traces as black-box trace disclosure , es-tablishing procedural skill protection as a new evaluation problem for agent trace release. 
+
+• We construct C AP TRACE BENCH , the first bench-mark for procedural skill protection evaluation, comprising 75 long-horizon tasks across seven domains and 23 task families, with 154 curated skills covering diverse reuse scenarios. 
+
+• We introduce RED ACT , a two-layer framework that combines selective trace rewriting for skill protection with behavioral watermarking for provenance tracking, while preserving execution evidence required for auditing. 
+
+• We evaluate R ED ACT across various down-stream trajectory reuse settings, showing that trace rewriting substantially reduces protected skill reuse and that behavioral watermarking pro-vides complementary provenance evidence for downstream reuse. 
+
+2 Problem Setting 
+
+2.1 Black-Box Trace Disclosure Skills and trajectories. A tool-using agent 
+
+πT (a∣s, x, h ) acts on task x with history h and a procedural skill s = (m, R), where m is an instruction document and R contains auxiliary re-sources such as scripts, templates, or validation utilities . The protected asset is Iprot (s), the sub-set of formulas, thresholds, tool choices, work-flow dependencies, and validation routines whose reuse can improve future executions in the same task environment. The agent produces a trajectory 
+
+τ = ({( rt, a t, o t)} Lt=1, y ), where rt, at, and ot de-note the reasoning step, action, and observation at step t, respectively, and y is the final output. 
+
+Disclosure policies. A disclosure policy ϕ maps a trajectory to a public artifact z = ϕ(x, τ ). Raw disclosure ϕraw exposes most of the execution pro-cess, answer-only disclosure ϕans reveals only y,and RED ACT produces zRA = ϕRA (x, τ ), a pro-tected trace that retains audit evidence while ab-stracting reusable protected content. 
+
+2.2 Downstream Trajectory Reuse 
+
+Given a trace budget B, a downstream method observes DϕB = {( xi, z i)} Bi=1, where each zi =Figure 2: Overview of C AP TRACE BENCH and RED ACT . Given a protected skill package, R ED ACT localizes key procedural knowledge, rewrites the trajectories, and injects behavioral watermarks for provenance detection. 
+
+ϕ(xi, τ i) is a publicly released artifact. The down-stream method cannot access model weights, pri-vate skill files, hidden states, server prompts, or undisclosed trajectories. We consider four down-stream reuse methods ( i.e. , single-agent synthesis, multi-agent evolution, retrieval reuse, and trajec-tory fine-tuning) and denote the induced student policy by πS (a∣M(DϕB ), x, h ). A successful de-fense should reduce the same-task utility of student policies induced from ϕRA toward the no-skill base-line; Section 5 defines the evaluation metrics. 
+
+3 CAP TRACE BENCH 
+
+In this section, we introduce C AP TRACE BENCH ,a benchmark for evaluating procedural skill pro-tection under public trace disclosure, with 75 spe-cialized long-horizon tasks and 154 curated skills across seven domains. We describe its task taxon-omy, construction process, and evaluation design. 
+
+3.1 Benchmark Overview 
+
+CAP TRACE BENCH targets long-horizon profes-sional tasks that require multi-step tool use (e.g., DNA sequence analysis, code review, control-system calibration, and scientific computation) .Each task has a human-authored instruction , an exe-cutable environment , an automatic verifier , and 1–3 specific skills . The benchmark is designed around the auditability-leakage tradeoff: a useful trace should show enough execution evidence to sup-port debugging and reproducibility, but raw traces may also expose formulas, tool choices, workflow dependencies, and validation routines that down-stream agents can reuse. 
+
+3.2 Task and Skill Collection 
+
+We collect skills from open-source repositories (Li et al., 2026; Zhang et al., 2026; K-Dense Inc., 2026) by four criteria: (i) specialization , the skill en-codes domain-specific formulas, tools, workflows, or heuristics not recoverable from task instructions alone; (ii) multi-step grounding , it requires sequen-tial tool calls and connects to executable files, li-braries, or environment checks; (iii) executability ,the skill can be verified by running code or tool outputs in a sandboxed environment; and (iv) non-disclosure , exposed evaluation files do not reveal final answers, hidden constants, verifier logic, or di-rect solutions. We curate selected skills into task di-rectories, pair them with executable environments and verifiers, and stratify the resulting 75 tasks into three difficulty levels (easy, medium, hard) based on procedural complexity (see Figure 3). 
+
+3.3 Skill-Centered Evaluation Protocol 
+
+We organize evaluation around task-specific units 
+
+(s, x, V ), where x is a task environment that re-quires procedural skill s and V is an automatic verifier. For each unit, a teacher agent produces a trajectory and a final output. A disclosure pol-icy then releases a public artifact that downstream methods may use to construct a student. We eval-uate protection by verifier performance of the in-duced student in the same task environment. This protocol measures whether released traces enable reconstruction and reuse of protected procedural knowledge. Figure 3 reports the task- and skill-level coverage across difficulty levels. Life Sciences 
+
+> (16.0%)
+> Chemistry
+> (12.0%)
+> Earth &
+> Climate
+> (17.3%)
+> Engineering
+> (16.0%)
+> Finance &
+> Economics
+> (12.0%)
+> Media &
+> Web
+> (14.7%)
+> Software &
+> Security
+> (12.0%)
+> Bio
+> Sequence
+> Genomic
+> Variants
+> Genetics &
+> Proteomics
+> Mass
+> Spectrometry
+> Molecular
+> Structure
+> Chemical
+> Informatics
+> Scientific
+> Computing
+> Seismology
+> Fluid
+> Dynamics
+> Climate
+> Modeling
+> Economic
+> Shock
+> Power
+> Systems
+> Control
+> Systems
+> Engineering
+> Optimization
+> Quantum
+> Computing
+> Financial
+> Modeling
+> Economic
+> Analysis
+> Text
+> Extraction
+> Search &
+> Taxonomy
+> 3D &
+> Video
+> Vulnerability
+> Fixing
+> Network
+> Security
+> Code
+> Verification
+
+Difficulty Domains Tasks Skills %
+
+Easy 7 20 31 26.7% Medium 7 38 73 50.7% Hard 5 17 50 22.7% 
+
+Total 7 75 154 100% 
+
+Figure 3: Taxonomy and difficulty statistics for our constructed C AP TRACE BENCH .
+
+4 Methodology 
+
+Given the problem setting and C AP TRACE BENCH 
+
+introduced in Sections 2 and 3, this section presents 
+
+RED ACT , which consists of two components: key-information-guided rewriting for trace protection and behavioral watermarking for provenance anal-ysis. Figure 2 summarizes the framework. 
+
+4.1 Key-Information-Guided Rewriting 
+
+We assume that R ED ACT is deployed by the skill owner, which allows the rewriter to inspect the skill package before releasing any trace. Given this access, the rewriting layer operates in two steps. 
+
+First , for a task instruction d and skill package s,an LLM-based Key-Item Locator identifies task-level protected items, such as formulas, constants, thresholds, specialized tool choices, and validation routines (e.g. , a drug-screening scoring formula or a financial valuation threshold): 
+
+gη(d, s ) → Kprot . (1) Here, gη denotes the extraction prompt and LLM backend, and Kprot is the set of protected pro-cedural items for the task. To ensure quality, a lightweight Human Review step deduplicates 
+
+Kprot before rewriting ( e.g. , merging “rise time < 10s” and “speed rise time < 10s” into one key item). Second , conditioned on Kprot , an LLM-based Rewriter constructs a protected trace: 
+
+zRA = ρθ(d, τ, Kprot ). (2) The rewriter abstracts intermediate turns that reveal protected key items into task-level descrip-tions, while preserving final outputs, tool-use evi-dence, and the execution order needed for auditing. As a result, the released trace is more informa-tive than answer-only release, but less useful as a reusable procedure than a raw trajectory. Ap-pendix B.1.1 gives the concrete release procedure. 
+
+4.2 Behavioral Watermarking 
+
+To track downstream reuse beyond procedural pro-tection, the provenance layer attaches behavioral watermarks to selected protected traces. A hook family h denotes a class of functionally neutral be-haviors that can be inserted into a trace and later detected in a student trajectory. For each hook family, we define a watermark scheme 
+
+Wh = (Wcheck 
+
+h , Winject 
+
+h , Wdetect 
+
+h ), (3) where Wcheck 
+
+h (z) selects traces with a valid inser-tion point for hook family h, Winject 
+
+h (z, κ h) inserts a harmless action-observation pattern and activa-tion phrase κh, and Wdetect 
+
+h (ˆτ ) ∈ {0, 1} detects the corresponding behavior in a student trajectory. This follows trajectory-level watermarking meth-ods such as ActHook (Meng et al., 2026). For a protected trace corpus C and watermark ratio r ∈ [0, 1], R ED ACT first forms the eligible subset Ωh of traces with valid insertion points for hook family h:
+
+Ωh = {c ∈ C ∶ Wcheck 
+
+h (c) = 1}, (4) RED ACT then samples the watermarked subset 
+
+Λh ⊆ Ωh with ∣Λh∣ = ⌊r∣Ωh∣⌋ and releases 
+
+c′ = {Winject 
+
+h (c, κ h), c ∈ Λh,c, otherwise , (5) where the injected pattern is constrained to preserve verifier outcomes and the original final answer. We instantiate two types of hook families. (1) Standalone hooks insert functionally neutral be-haviors at fixed trace positions, independent of prior observations. (2) Contextual hooks are in-serted only after eligible tool results or error ob-servations, making them harder to detect without execution context. Table 1 summarizes the four Watermark Type Description         
+
+> Ritual Marker Standalone Fixed action at task start/end Env Check Standalone Benign environment-probing action Error Anchoring Contextual Recovery phrase after error feedback Cross Check Contextual Repeated verification after tool results
+
+Table 1: The four hook families in RED ACT .
+
+instantiated hook families. Appendix B.2 provides the templates, prompts, and detectors. At detection time, the skill owner queries a sus-pected student model under the activation phrase 
+
+κh and applies Wdetect  
+
+> h
+
+to the generated trajectory. Following API-watermarking evaluations, we sum-marize provenance by the true detection rate (TD) on students trained with the matching watermark family and the false alarm rate (FA) on the base model. Appendices B.2 and B.2.3 provide the de-tailed injection and detection procedures. 
+
+5 Experiments 
+
+In this section, we evaluate RED ACT on C AP -TRACE BENCH through four research questions (RQs). RQ1: Do raw public traces enable down-stream reuse methods to recover procedural skills? 
+
+RQ2: Does selective rewriting reduce protected skill reuse across various settings? RQ3: Do behav-ioral watermarks provide provenance evidence for downstream reuse? RQ4: Does protection preserve auditability while removing protected procedural content, rather than destroying the trace? 
+
+5.1 Experimental Setup Benchmark We evaluate on C AP TRACE BENCH ,which contains 75 long-horizon tasks (23 task fam-ilies ) across 7 domains , with 154 curated skills 
+
+in total. Each task includes an instruction, one or more procedural skills, and an automatic verifier. 
+
+Models and Harnesses For closed-source mod-els, we cover six frontier systems: Claude Opus 4.6 ,
+
+Sonnet 4.6 , and Haiku 4.5 (Anthropic, 2025b), GPT 5.2 Codex (OpenAI, 2026), and Gemini 3 Flash 
+
+and Gemini 3 Pro (Google, 2025b), run through the Claude Code (Anthropic, 2025a), Codex (Ope-nAI, 2025), and Gemini-CLI (Google, 2025a) har-nesses, respectively. For open-source models, we use Qwen3-8B and Qwen3-4B (Yang et al., 2025) for trajectory fine-tuning and provenance detection, with PI-Agent 2 as the harness. 
+
+Trajectory Reuse Methods We consider three training-free reuse methods and one fine-tuning 
+
+> 2https://github.com/earendil-works/pi
+
+method. ❶ Single-Agent Skill Extraction (w/ Ex-tracted Skills ) synthesizes a structured SKILL.md 
+
+document and reusable scripts from agent trajec-tories (Qiu et al., 2026). ❷ Multi-Agent Skill Evolution (w/ Evolved Skills ) extracts standard-ized skills from both successful and failed trajec-tories via multi-agent refinement (Ni et al., 2026). 
+
+❸ Agent Workflow Retrieval Reuse (w/ Retrieval Reuse ) summarizes released traces, indexes them, and injects top-k similar traces as in-context demon-strations (Lewis et al., 2020; Wang et al., 2025). ❹
+
+Trajectory Fine-tuning fine-tunes an open-source student model on released traces (Kang et al., 2025) as the suspected policy for provenance detection. 
+
+Evaluation Conditions To ensure isolation and reproducibility, all tasks are run with BenchFlow 3
+
+for 5 runs, with task environments executed in Docker containers. The main comparison uses four disclosure conditions: No Skills , Oracle Skills , Raw Trace , and Protected Trace . Reuse prompts are con-strained to induce reusable procedures rather than copy final answers, transient outputs, or verifier ar-tifacts; Appendix C.2 provides the protocol details. 
+
+Metrics For reuse and leakage analysis, we re-port four metrics. Exact metric definitions are pro-vided in Appendix C.1. 
+
+(1) Success Rate (SR) (%) measures the fraction of runs that pass the final task verifier. 
+
+(2) Step Success Rate (SSR) (%) measures aver-age step-level verifier progress, giving partial credit for partially completed tasks. 
+
+(3) Normalized Skill Transfer (NST) (%) mea-sures the SSR gain of a disclosure condition over the No Skills baseline, normalized by the gain of the Oracle condition. Lower values indicate less procedural transfer. 
+
+(4) Recovered Protected Information (RPI) (%) 
+
+measures how much protected key information is recovered in downstream artifacts ( i.e. , induced skills, workflow memories). Lower values indicate less protected knowledge leakage. 
+
+5.2 Main Results 
+
+Table 2 presents the main results. Our key findings are summarized below. 
+
+Raw Traces Are Vulnerable Attack Surfaces 
+
+Table 2 first confirms that private skill files con-tain substantial task-solving value: under the No Skills condition, the average SR and SSR across all                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+
+> 3https://github.com/benchflow-ai/benchflow Setting Diff.
+> Claude-Code Claude-Opus-4.6 Claude-Code Claude-Sonnet-4.6 Claude-Code Claude-Haiku-4.5 Codex GPT-5.2-Codex Gemini-CLI Gemini-3-Pro Gemini-CLI Gemini-3-Flash Average.
+> SR SSR SR SSR SR SSR SR SSR SR SSR SR SSR SR SSR
+> No Skills
+> Easy 68.8 84.0 70.5 80.6 65.3 79.1 71.3 86.7 72.3 83.6 69.2 83.4 69.6 82.9 Medium 42.3 71.9 36.2 66.1 27.5 60.9 41.3 71.5 41.8 67.9 37.8 67.0 37.8 67.5 Hard 44.0 58.4 29.1 48.9 20.5 39.3 38.8 60.7 37.6 50.8 29.4 49.5 33.2 51.3 Avg. 49.8 72.1 43.7 66.1 36.0 60.9 48.7 73.1 49.0 68.2 44.3 67.4 45.2 68.0
+> w/ Oracle Skills
+> Easy 81.4 91.1 78.2 85.9 73.2 83.5 85.5 91.9 79.4 88.0 77.0 86.6 79.1 87.8 Medium 61.5 81.5 48.0 72.4 47.9 72.1 62.7 82.1 54.9 76.0 49.6 73.5 54.1 76.3 Hard 48.9 69.7 46.7 65.8 24.4 43.5 45.2 72.9 44.5 66.9 43.2 62.0 42.1 63.5 Avg. 64.0 81.4 55.8 74.5 49.3 68.7 64.8 82.6 59.1 77.1 55.5 74.4 58.1 76.5
+> Raw Traces
+> w/ Extracted Skills
+> Easy 80.0 87.0 76.7 82.5 70.5 81.4 78.3 91.5 75.3 86.5 75.8 85.0 76.1 85.6 Medium 55.0 80.5 46.3 69.5 43.0 70.0 50.7 77.4 48.9 76.5 47.6 71.2 48.6 74.2 Hard 47.1 67.5 44.9 58.3 21.0 42.1 43.2 68.0 41.9 54.7 38.7 56.4 39.5 57.8 Avg. 59.9 79.3 54.1 70.4 45.3 66.7 56.4 79.0 54.4 74.2 53.1 71.5 53.9 73.5
+> w/ Evolved Skills
+> Easy 74.5 86.0 74.5 82.7 69.8 81.2 74.5 89.4 79.5 86.0 75.4 85.5 74.7 85.1 Medium 45.3 75.5 39.5 69.1 41.4 71.7 49.3 75.2 50.8 75.9 43.2 70.5 44.9 73.0 Hard 49.1 61.4 40.2 62.5 31.7 48.8 42.5 69.5 41.3 64.6 42.1 63.8 41.1 61.8 Avg. 53.9 75.1 49.0 71.2 46.8 69.0 54.5 77.7 56.3 76.0 51.5 73.0 52.0 73.7
+> w/ Retrieval Reuse
+> Easy 73.8 86.0 73.6 82.7 68.9 81.2 76.0 89.1 77.2 85.8 73.5 85.5 73.8 85.0 Medium 44.9 74.8 38.8 68.6 36.2 64.6 47.2 74.4 48.0 73.2 42.0 69.8 42.9 70.9 Hard 47.8 61.0 35.5 57.8 25.9 43.2 41.8 66.8 40.5 60.7 38.5 59.2 38.3 58.1 Avg. 53.3 74.7 47.3 69.9 42.6 64.2 53.7 76.6 54.1 73.7 49.6 71.6 50.1 71.8
+> Traces Protected by Our Method, R ED ACT
+> w/ Extracted Skills
+> Easy 72.5 80.9 71.0 81.9 61.5 76.0 70.0 82.0 74.5 78.8 66.4 80.5 69.3 80.0 Medium 43.2 67.2 38.6 61.3 28.4 62.8 43.8 72.4 42.5 68.9 37.4 63.0 39.0 65.9 Hard 41.1 57.5 38.2 57.8 20.5 42.7 37.2 64.5 35.3 55.8 35.8 58.6 34.7 56.1 Avg. 50.5 68.7 47.1 66.0 35.4 61.8 49.3 73.2 49.4 68.6 44.8 66.7 46.1 67.5
+> w/ Evolved Skills
+> Easy 67.6 82.1 68.4 78.9 64.1 77.6 69.8 84.8 70.4 81.4 67.3 81.2 67.9 81.0 Medium 41.1 70.4 35.0 64.4 26.8 59.6 40.0 69.6 40.5 66.0 36.9 65.2 36.7 65.9 Hard 42.8 57.1 28.4 47.6 20.0 38.2 37.6 59.2 36.4 49.4 28.6 48.1 32.3 49.9 Avg. 48.6 70.5 42.4 64.5 35.2 59.5 47.4 71.3 47.5 66.3 43.1 65.6 44.0 66.3
+> w/ Retrieval Reuse
+> Easy 66.8 81.7 67.9 78.0 63.5 76.5 68.9 83.8 69.7 80.8 66.7 80.7 67.2 80.2 Medium 40.6 69.6 34.4 63.5 26.2 58.8 39.2 68.8 39.7 65.2 36.2 64.4 36.1 65.0 Hard 42.4 56.6 27.8 47.0 19.7 37.8 37.1 58.4 35.9 48.8 28.1 47.6 31.8 49.4 Avg. 48.0 69.9 41.8 63.6 34.7 58.8 46.6 70.4 46.8 65.6 42.5 64.9 43.4 65.5
+
+Table 2: Main evaluation results on C AP TRACE BENCH . SR : Success Rate; SSR : Step Success Rate. Diff.: Easy / Medium / Hard splits; Avg. : average over difficulty splits. Average. : average scores across 6 evaluated har-ness/model backends. Bold and underlined mark the lowest and second-lowest scores in each column, respectively. 
+
+six backends are 45.2% and 68.0%, rising to 58.1% and 76.5% with Oracle Skills (+12.9% and +8.5% ,respectively). Raw execution traces recover much of this value without direct access to skill files : (i) skills extracted from raw traces nearly close the oracle gap at 73.5% average SSR (+5.5% above the No Skills baseline), (ii) evolved skills reach 73.7% (+5.7%), and (iii) retrieval reuse exceeds the baseline at 71.8% (+3.8%). Figure 4 further illustrates the distribution of utility transfer across reuse methods and model pairs. This pattern indi-cates that traces leak operational knowledge ( e.g. ,tool choices, intermediate checks, and recovery routines) rather than merely final answers. 
+
+RED ACT Suppresses the Reuse Advantage Af-ter R ED ACT rewrites protected procedural details in the released traces, the same reuse methods re-cover much less procedural knowledge. The aver-age SSR of skill extraction, skill evolution, and re-trieval reuse drops from 73.5%, 73.7%, and 71.8% on raw traces to 67.5%, 66.3%, and 65.5% on pro-tected traces, placing all three no higher than the 68.0% No Skills baseline. Figure 5 corroborates this through normalized diagnostics: NST becomes 
+
+non-positive across all three reuse channels, drop-ping from 44.7–67.1% under raw traces to at most 
+
+−5.9%, confirming that protection eliminates the procedural advantage of raw traces. RPI also falls by 37–48% across channels, indicating substan-tially less residual leakage in downstream artifacts. This demonstrates that R ED ACT removes both the raw-trace gain and residual procedural scaffolding, preserving an execution certificate for audit while stripping the reusable procedural content down-stream reuse depends on. 
+
+Hard Tasks Reveal the Security Boundary The security risk is most pronounced on hard tasks, where domain-specific procedural knowledge plays a larger role. Raw traces add only 2.1–2.7% SSR on easy tasks, where agents already possess suffi-cient general competence, but the gain expands to 6.5–10.5% on hard tasks. On hard tasks, raw syn-thesized skills recover much of the oracle-skill gain, suggesting that execution traces expose implemen-tation details, debugging choices, and task-specific routines. Protection substantially reduces this high-difficulty transfer, compressing the hard-task SSR gain from 6.5–10.5% down to at most 4.8%; for evolved skills and retrieval reuse, the protected con-dition even falls below the No Skills baseline. −50     
+
+> −25
+> 0
+> 25
+> 50
+> 75
+> 100
+> 125
+> NST (%)
+> Claude Opus 4.6
+> 77
+> -37
+> 32
+> -17
+> 28
+> -24
+> Claude Sonnet 4.6
+> 51
+> -1
+> 61
+> -19
+> 45
+> -30
+> Claude Haiku 4.5
+> 74
+> 12
+> 104
+> -18
+> 42
+> -27
+> GPT 5.2 Codex
+> 62
+> 1
+> 48
+> -19
+> 37
+> -28
+> Gemini 3 Pro
+> 67
+> 4
+> 88
+> -21
+> 62
+> -29
+> Gemini 3 Flash
+> 59
+> -10
+> 80
+> -26
+> 60
+> -36
+> Extracted Skills Evolved Skills Retrieval Reuse Raw Trace Protected Trace
+
+Figure 4: Normalized Skill Transfer (NST) (%) for each reuse method across agent/model backends. Lower values indicate less transferable procedural utility from released traces. Extracted   
+
+> Evolved
+> Retrieval
+> −50
+> 0
+> 50
+> 100
+> NST (%)
+> 64.7 67.1
+> 44.7
+> -5.9
+> -20.0
+> -29.4
+> (a) Skill Transfer
+> Extracted
+> Evolved
+> Retrieval
+> 0
+> 15
+> 30
+> 45
+> RPI (%)
+> 39.1
+> 36.7
+> 17.0
+> 24.6
+> 21.1
+> 8.9
+> (b) Key-Item Recovery
+> Raw Protected
+
+Figure 5: Protection effect across reuse methods. (a): NST falls below zero after protection across all three channels; (b): RPI falls by 37–48% relative in down-stream artifacts. 
+
+5.3 Provenance Detection Behavioral Watermarks We evaluate four be-havioral watermarks grouped into Standalone and 
+
+Contextual hooks; each uses one fixed natural-language activation key, listed in Table 7. We vary the watermark ratio as r ∈ {0.1, 0.2, 0.3}.We fine-tune Qwen3-8B and Qwen3-4B students on watermarked trajectories and evaluate provenance detection on 20 Easy-level tasks with 25 runs per task. Table 3 shows that standalone hooks give the clearest provenance signal: Env Check reaches 
+
+93 .6% true detection (TD) on Qwen3-8B and 96 .4% 
+
+on Qwen3-4B , while Ritual Marker is nearly al-ways detected; false alarm (FA) stays at or below 
+
+1.9% . Contextual hooks introduce no false alarms and yield more selective detection ( 16 .4–32 .2% 
+
+TD), indicating that tool-conditioned behaviors are reproduced only when the fine-tuned student pre-serves the relevant execution context. These re-sults support behavioral watermarking as reuse evi-dence and show that hook design affects detectabil-ity. Appendix D.3 provides the ratio sweep and data-distribution statistics. 
+
+5.4 Diagnostics and Robustness Analysis Release Integrity As illustrated in Figure 6, 
+
+RED ACT retains most audit evidence : final an-swers, tool names, verifier paths, and schema fields (e.g. , output keys and required columns) remain                         
+
+> Type Watermark Qwen3-8B Qwen3-4B TD(%) ↑FA(%) ↓TD(%) ↑FA(%) ↓
+> Standalone Env Check 93.6 1.3 96.4 1.9 Ritual Marker 100.0 0.0 99.8 0.0 Contextual Cross Check 18.5 0.0 16.4 0.0
+> Error Anchoring 28.3 0.0 32.2 0.0
+
+Table 3: Behavioral provenance detection in Qwen stu-dent models. TD (%) and FA (%) are measured on 500 Easy-level task runs per watermark/model pair. 0 25 50 75 100 125            
+
+> Final evidence
+> Tool names
+> Verifier paths
+> Schema fields
+> (a) Audit Evidence
+> 91.0
+> 94.4
+> 93.8
+> 96.6
+> 025 50 75 100 125
+> Tool-call count
+> Trace length
+> (b) Operational Form
+> 102.8
+> 106.6
+> 025 50 75 100 125
+> Normalized diagnostic value (%)
+> Key Items
+> (c) Sensitive Content
+> 70.6 removed 29.4 residual
+
+Figure 6: Release integrity after trace protection. We report: (a) audit preservation, (b) operational stability, and (c) removed versus residual key items. 
+
+at 91 .0–96 .6% of raw levels, while tool-call count and trace length stay within the 90–110% near-parity band. The slight excess in tool-call count and trace length stems from watermark injection at a fixed ratio. It also removes 70 .6% of key items, leaving 29 .4% residual content. We conduct a com-plementary human rating study in Appendix D.2, rating protected traces for naturalness and audit usability with quadratic weighted κ of 0.643 and 
+
+0.804 , respectively. Together, these results show that R ED ACT keeps traces auditable without col-lapsing them into answer-only summaries, as illus-trated by an example in Appendix F. 
+
+Attack Budgets We vary the number of traces available to retrieval reuse to test whether more public demonstrations strengthen the attack. This budget sweep uses Claude Code with Claude Opus 4.6 and five runs per setting. Table 4 shows that Budget SR (%) ↓ SSR (%) ↓                                     
+
+> Raw Prot. ∆Raw Prot. ∆
+> k=152.0 47.8 −4.273.7 68.6 −5.1
+> k=252.6 48.2 −4.474.0 69.3 −4.7
+> k=453.3 48.0 −5.374.7 69.9 −4.8
+> k=857.5 52.5 −5.076.5 71.9 −4.6
+
+Table 4: Retrieval budget sensitivity. Prot. denotes protected traces with the Env Check watermark. 
+
+retrieval reuse changes moderately as the retrieval budget increases . When k increases from 1 to 8, raw SR and SSR rise by 5.5% and 2.8% , respec-tively. Protection keeps a stable margin across the measured range, with protected traces lower than raw traces by 4.2–5.3% in SR and 4.6–5.1% 
+
+in SSR. Thus, additional demonstrations improve retrieval reuse, but do not eliminate the utility gap introduced by trace protection in this budget range. 
+
+5.5 Ablation Study Generic vs. Key-Info Rewriting We compare key-info-guided rewriting with generic rewriting to isolate the effect of explicitly locating protected key items. All ablation runs use Claude Code with Claude Opus 4.6 and five runs per setting. Table 5 shows that generic rewriting still leaves reusable signal in released traces: NST remains positive for extracted and evolved skills, and near zero for re-trieval reuse. In contrast, key-info guidance drives NST below the No Skills baseline for all three reuse methods, with the largest gap under extracted skills ( 51 .6% versus −36 .6% ). It also reduces re-covered protected content, especially for extracted and evolved skills, where RPI falls from 27 .6% to 
+
+20 .4% and from 29 .4% to 21 .1% . The retrieval case shows a smaller RPI change, but key-info guidance still lowers SR, SSR, and NST, suggest-ing that explicit localization is most important for removing reusable procedural details rather than only shortening or smoothing the trace.                                        
+
+> Reuse Method Rewrite Type SR ↓SSR ↓NST ↓RPI ↓
+> ⋄Extracted Skills Key-Item (Ours) 50.5 68.7 -36.6 20.4
+> Generic 55.6 76.9 51.6 27.6
+> ⋄Evolved Skills Key-Item (Ours) 48.6 70.5 -17.2 21.1
+> Generic 52.8 74.2 22.6 29.4
+> ⋄Retrieval Reuse Key-Item (Ours) 48.0 69.9 -23.7 14.1
+> Generic 57.9 72.3 2.2 15.7
+
+Table 5: We compare protected traces rewritten with and without explicit Key-Item Guidance across down-stream reuse methods. All metrics are in percentages. 
+
+6 Related Work 
+
+Tool-Using Agents and Skill Reuse Tool-using agents have advanced from reasoning-interleaved action (Yao et al., 2023; Schick et al., 2023) to deployed software workflows (Anthropic, 2025a; OpenAI, 2025; Google, 2025a; Zhou et al., 2024; Trivedi et al., 2024). A parallel line of work demon-strates that agent experience can be distilled into reusable skills and workflows (Wang et al., 2025, 2026a; Yang et al., 2026; Ni et al., 2026; Xu et al., 2026; Ferraz et al., 2026; Ouyang et al., 2026). Our work studies the resulting disclosure risk: released trajectories expose reusable procedural knowledge. 
+
+Trace Distillation and Protected Disclosure 
+
+Our setting relates to model extraction and training-data extraction (Tramèr et al., 2016; Carlini et al., 2021), where black-box outputs leak behavior or data. In agents, recent work shows that proprietary skills and reasoning traces are vulnerable to dis-tillation (Wang et al., 2026c; Chen et al., 2025; Green et al., 2025; Jiang et al., 2026; Zhang et al., 2026). Existing defenses primarily protect reason-ing text (Savani et al., 2025; Li et al., 2025; Ma et al., 2026; Ding et al., 2025; Ma et al., 2021). Our work targets procedural knowledge in agent trajec-tories, measuring reuse and key-item recovery. 
+
+Watermarking and Provenance Text and API watermarking methods detect generated outputs through token-level signals or output fingerprint-ing (Kirchenbauer et al., 2023; Zhao et al., 2024; He et al., 2022; Zhao et al., 2022; Bahri et al., 2024; Hou et al., 2024; Dabiriaghdam and Wang, 2025; An et al., 2025; Sander et al., 2024; Liu et al., 2024). Recent agent watermarking methods shift prove-nance to behavior (Meng et al., 2026; Wang et al., 2026b; An et al., 2026). Our work builds on this by using behavioral watermarks as reuse evidence. 
+
+7 Conclusion 
+
+This paper studies public agent traces as security interfaces: they support transparency and auditing, but they can also expose reusable procedural skills. We formalized this risk as black-box trace disclo-sure, introduced C AP TRACE BENCH to evaluate it across 75 long-horizon tasks and 154 curated skills, and proposed RED ACT as a protected re-lease framework that combines selective rewriting with behavioral watermarking. Across synthesis, evolution, retrieval reuse, and trajectory fine-tuning, RED ACT reduces downstream skill reuse while pre-serving verifier-critical evidence; its watermarking layer further provides empirical provenance signals when released traces are reused. Limitations 
+
+This work studies black-box trace disclosure, where downstream users observe released traces but not private skill files or model internals. Our evaluation uses 75 controlled long-horizon tasks with automatic verifiers; real deployments may con-tain noisier traces, changing tool environments, and weaker verifier feedback. The provenance results also show that contextual watermarks are harder to retain than standalone hooks, although they main-tain low false alarms. Future work could study stronger contextual triggers and evaluate prove-nance signals on larger open-source students and deployment logs. 
+
+Ethics Statement 
+
+This work aims to make agent-trace release safer when traces contain proprietary or security-sensitive procedures. The benchmark uses con-trolled tasks with automatic verifiers, and the pro-posed release policy preserves audit evidence while reducing capability leakage. Because the analysis also shows which traces are useful for skill ex-traction, we state the threat model explicitly and report results in a protection-oriented setting. Be-havioral watermarks should be treated as statistical provenance evidence, not as ownership proof; high-stakes use should require low false-alarm thresh-olds and human review. Upon publication, we will release C AP TRACE BENCH task metadata, verifiers, evaluation scripts, rewrite prompts, and watermark detectors, with credentials and private deployment details removed. This boundary supports repro-ducibility without distributing sensitive operational traces or private procedural assets. 
+
+References 
+
+Hyeseon An, Shinwoo Park, Dongsu Kim, and Yo-Sub Han. 2026. Sequential behavioral watermarking for LLM agents. ArXiv preprint , abs/2605.11036. Li An, Y. Liu, Y. Liu, Y. Bu, Y. Zhang, and S. Chang. 2025. A reinforcement learning framework for ro-bust and secure llm watermarking. ArXiv preprint ,abs/2510.21053. Anthropic. 2025a. Claude code: An agentic coding tool. https://github.com/anthropics/ claude-code . Accessed 2026-05-10. Anthropic. 2025b. Claude models overview. 
+
+https://docs.anthropic.com/en/docs/ about-claude/models/overview . Accessed 2026-05-10. D. Bahri, J. Wieting, D. Alon, and D. Metzler. 2024. A watermark for black-box language models. ArXiv preprint , abs/2410.02099. Nicholas Carlini, Florian Tramèr, Eric Wallace, Matthew Jagielski, Ariel Herbert-Voss, Katherine Lee, Adam Roberts, Tom Brown, Dawn Song, Úlfar Erlingsson, Alina Oprea, and Colin Raffel. 2021. Ex-tracting training data from large language models. In 
+
+30th USENIX Security Symposium (USENIX Security 21) , pages 2633–2650. USENIX Association. Shiqi Chen, Jingze Gai, Ruochen Zhou, Jinghan Zhang, Tongyao Zhu, Junlong Li, Kangrui Wang, Zihan Wang, Zhengyu Chen, Klara Kaleb, Ning Miao, Siyang Gao, Cong Lu, Manling Li, Junxian He, and Yee Whye Teh. 2026. Skillcraft: Can llm agents learn to use tools skillfully? Xiaoshu Chen, Sihang Zhou, Ke Liang, Xiaoyu Sun, and Xinwang Liu. 2025. Skip-thinking: Chunk-wise chain-of-thought distillation enable smaller language models to reason better and faster. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , pages 12142–12157. Association for Computational Linguistics. Amirhossein Dabiriaghdam and Lele Wang. 2025. Sim-Mark: A robust sentence-level similarity-based water-marking algorithm for large language models. ArXiv preprint , abs/2502.02787. J. Ding, L. Cui, L. Dong, N. Zheng, and F. Wei. 2025. Information-preserving reformulation of rea-soning traces for antidistillation. ArXiv preprint ,abs/2510.11545. Thomas Palmeira Ferraz, Romain Deffayet, Vassilina Nikoulina, Hervé Déjean, and Stéphane Clinchant. 2026. Retrieval-augmented llm agents: Learning to learn from experience. Google. 2025a. Gemini cli: An open-source ai agent that brings the power of gemini directly into your terminal. https://github.com/google-gemini/ gemini-cli . Accessed 2026-05-10. Google. 2025b. Gemini models. https://ai.google. dev/models/gemini . Accessed 2026-05-10. T. Green, M. Gubri, H. Puerto, S. Yun, and S. J. Oh. 2025. Leaky thoughts: Large reasoning models are not private thinkers. ArXiv preprint , abs/2506.15674. Xuanli He, Qiongkai Xu, Lingjuan Lyu, Fangzhao Wu, and Chenguang Wang. 2022. Protecting intellec-tual property of language generation apis with lex-ical watermark. In Thirty-Sixth AAAI Conference on Artificial Intelligence, AAAI 2022, Thirty-Fourth Conference on Innovative Applications of Artificial Intelligence, IAAI 2022, The Twelveth Symposium on Educational Advances in Artificial Intelligence, EAAI 2022 Virtual Event, February 22 - March 1, 2022 , pages 10758–10766. AAAI Press. Abe Hou, Jingyu Zhang, Tianxing He, Yichen Wang, Yung-Sung Chuang, Hongwei Wang, Lingfeng Shen, Benjamin Van Durme, Daniel Khashabi, and Yulia Tsvetkov. 2024. SemStamp: A semantic watermark with paraphrastic robustness for text generation. In 
+
+Proceedings of the 2024 Conference of the North American Chapter of the Association for Computa-tional Linguistics: Human Language Technologies (Volume 1: Long Papers) , pages 4067–4082, Mexico City, Mexico. Association for Computational Lin-guistics. Guanyu Jiang, Zhaochen Su, Xiaoye Qu, and Yi R. Fung. 2026. Xskill: Continual learning from experience and skills in multimodal agents. K-Dense Inc. 2026. Scientific agent skills: A compre-hensive collection of scientific tools for ai agents. 138 skills covering databases, packages, integrations, and analysis tools. Minki Kang, Jongwon Jeong, Seanie Lee, Jaewoong Cho, and Sung Ju Hwang. 2025. Distilling llm agent into small models with retrieval and code tools. John Kirchenbauer, Jonas Geiping, Yuxin Wen, Jonathan Katz, Ian Miers, and Tom Goldstein. 2023. A watermark for large language models. In Interna-tional Conference on Machine Learning, ICML 2023, 23-29 July 2023, Honolulu, Hawaii, USA , volume 202 of Proceedings of Machine Learning Research ,pages 17061–17084. PMLR. Patrick S. H. Lewis, Ethan Perez, Aleksandra Pik-tus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, Sebastian Riedel, and Douwe Kiela. 2020. Retrieval-augmented generation for knowledge-intensive NLP tasks. In Advances in Neu-ral Information Processing Systems 33: Annual Con-ference on Neural Information Processing Systems 2020, NeurIPS 2020, December 6-12, 2020, virtual .P. Li, Z. Tan, M. Zhang, H. Qu, H. Liu, and T. Chen. 2025. Doge: Defensive output generation for llm protection against knowledge distillation. ArXiv preprint , abs/2505.19504. Xiangyi Li and 1 others. 2026. SkillsBench: Bench-marking how well agent skills work across diverse tasks. ArXiv preprint , abs/2602.12670. A. Liu, X. Pan, X. Hu, S. Li, L. Wen, I. King, and P. S. Yu. 2024. A survey of text watermarking in the era of large language models. ACM Computing Surveys ,57(2):1–36. Haoyu Ma, Tianlong Chen, Ting-Kuei Hu, Chenyu You, Xiaohui Xie, and Zhangyang Wang. 2021. Undistill-able: Making A nasty teacher that CANNOT teach students. In 9th International Conference on Learn-ing Representations, ICLR 2021, Virtual Event, Aus-tria, May 3-7, 2021 . OpenReview.net. Xinhang Ma, William Yeoh, Ning Zhang, and Yev-geniy Vorobeychik. 2026. Protecting language mod-els against unauthorized distillation through trace rewriting. Preprint .Wenlong Meng, Chen Gong, Terry Yue Zhuo, Fan Zhang, Kecen Li, Zheng Liu, Zhou Yang, Chengkun Wei, and Wenzhi Chen. 2026. Watermarking LLM agent trajectories. ArXiv preprint , abs/2602.18700. Jingwei Ni, Yihao Liu, Xinpeng Liu, Yutao Sun, Mengyu Zhou, Pengyu Cheng, Dexin Wang, Er-chao Zhao, Xiaoxi Jiang, and Guanjun Jiang. 2026. Trace2Skill: Distill trajectory-local lessons into trans-ferable agent skills. ArXiv preprint , abs/2603.25158. OpenAI. 2025. Codex cli: Lightweight coding agent that runs in your terminal. https://github.com/ openai/codex . Accessed 2026-05-10. OpenAI. 2026. GPT-5.2-Codex model. 
+
+https://platform.openai.com/docs/models/ gpt-5.2-codex . Accessed 2026-05-10. Siru Ouyang, Jun Yan, I-Hung Hsu, Yanfei Chen, Ke Jiang, Zifeng Wang, Rujun Han, Long T. Le, Samira Daruki, Xiangru Tang, Vishy Tirumalashetty, George Lee, Mahsan Rofouei, Hangfei Lin, Jiawei Han, Chen-Yu Lee, and Tomas Pfister. 2026. Reason-ingbank: Scaling agent self-evolving with reasoning memory. In The Fourteenth International Confer-ence on Learning Representations .Libin Qiu, Zhirong Gao, Junfu Chen, Yuhang Ye, Weizhi Huang, Xiaobo Xue, Wenkai Qiu, and Shuo Tang. 2026. Autorefine: From trajectories to reusable expertise for continual llm agent refinement. Tom Sander, Pierre Fernandez, Alain Durmus, Matthijs Douze, and Teddy Furon. 2024. Watermarking makes language models radioactive. In Advances in Neural Information Processing Systems 38: Annual Conference on Neural Information Processing Sys-tems 2024, NeurIPS 2024, Vancouver, BC, Canada, December 10 - 15, 2024 .Y. Savani, A. Trockman, Z. Feng, Y. E. Xu, A. Schwarzschild, A. Robey, M. Finzi, and J. Z. Kolter. 2025. Antidistillation sampling. ArXiv preprint , abs/2504.13146. Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Eric Hambro, Luke Zettle-moyer, Nicola Cancedda, and Thomas Scialom. 2023. Toolformer: Language models can teach themselves to use tools. In Advances in Neural Information Pro-cessing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023 .Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao. 2023. Re-flexion: language agents with verbal reinforcement learning. In Advances in Neural Information Pro-cessing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023 .Florian Tramèr, Fan Zhang, Ari Juels, Michael K. Re-iter, and Thomas Ristenpart. 2016. Stealing ma-chine learning models via prediction APIs. In 25th USENIX Security Symposium (USENIX Security 16) ,pages 601–618. USENIX Association. Harsh Trivedi, Tushar Khot, Mareike Hartmann, Ruskin Manku, Vinty Dong, Edward Li, Shashank Gupta, Ashish Sabharwal, and Niranjan Balasubramanian. 2024. AppWorld: A controllable world of apps and people for benchmarking interactive coding agents. volume abs/2407.18901. Chenxi Wang, Zhuoyun Yu, Xin Xie, Wuguannan Yao, Runnan Fang, Shuofei Qiao, Kexin Cao, Guozhou Zheng, Xiang Qi, Peng Zhang, and Shumin Deng. 2026a. SkillX: Automatically constructing skill knowledge bases for agents. ArXiv preprint ,abs/2604.04804. Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Man-dlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. 2023. Voyager: An open-ended embodied agent with large language models. Liwen Wang, Zongjie Li, Yuchong Xie, Shuai Wang, Dongdong She, Wei Wang, and Juergen Rahmel. 2026b. On protecting agentic systems’ intellectual property via watermarking. Zihan Wang, Rui Zhang, Yu Liu, Chi Liu, Qingchuan Zhao, Hongwei Li, and Guowen Xu. 2026c. Black-box skill stealing attack from proprietary LLM agents: An empirical study. ArXiv preprint ,abs/2604.21829. Zora Zhiruo Wang, Jiayuan Mao, Daniel Fried, and Graham Neubig. 2025. Agent workflow memory. In 
+
+Proceedings of the 42nd International Conference on Machine Learning .Shuwen Xu, Yao Xu, Jiaxiang Liu, Chenhao Yuan, Wen-shuo Peng, Jun Zhao, and Kang Liu. 2026. Graph-walker: Agentic knowledge graph question answer-ing via synthetic trajectory curriculum. An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, and 1 others. 2025. Qwen3 technical report. ArXiv preprint ,abs/2505.09388. Yutao Yang, Junsong Li, Qianjun Pan, Bihao Zhan, Yux-uan Cai, Lin Du, Jie Zhou, Kai Chen, Qin Chen, Xin Li, Bo Zhang, and Liang He. 2026. Autoskill: Experience-driven lifelong learning via skill self-evolution. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R. Narasimhan, and Yuan Cao. 2023. React: Synergizing reasoning and acting in language models. In The Eleventh International Conference on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023 . OpenReview.net. Ziao Zhang, Kou Shi, Shiting Huang, Avery Nie, Yu Zeng, Yiming Zhao, Zhen Fang, Qishen Su, Haibo Qiu, Wei Yang, Qingnan Ren, Shun Zou, Wenxuan Huang, Lin Chen, Zehui Chen, and Feng Zhao. 2026. Skillflow:benchmarking lifelong skill discovery and evolution for autonomous agents. Xuandong Zhao, Prabhanjan Vijendra Ananth, Lei Li, and Yu-Xiang Wang. 2024. Provable robust water-marking for ai-generated text. In The Twelfth Inter-national Conference on Learning Representations, ICLR 2024, Vienna, Austria, May 7-11, 2024 . Open-Review.net. Xuandong Zhao, Lei Li, and Yu-Xiang Wang. 2022. Distillation-resistant watermarking for model protec-tion in NLP. In Findings of the Association for Com-putational Linguistics: EMNLP 2022 , pages 5044– 5055, Abu Dhabi, United Arab Emirates. Association for Computational Linguistics. Yaowei Zheng, Richong Zhang, Junhao Zhang, Yanhan Ye, Zheyan Luo, Zhangchi Feng, and Yongqiang Ma. 2024. LlamaFactory: Unified efficient fine-tuning of 100+ language models. volume abs/2403.13372. Shuyan Zhou, Frank F. Xu, Hao Zhu, Xuhui Zhou, Robert Lo, Abishek Sridhar, Xianyi Cheng, Tianyue Ou, Yonatan Bisk, Daniel Fried, Uri Alon, and Gra-ham Neubig. 2024. Webarena: A realistic web en-vironment for building autonomous agents. In The Twelfth International Conference on Learning Rep-resentations, ICLR 2024, Vienna, Austria, May 7-11, 2024 . OpenReview.net. A Benchmark and Dataset Details 
+
+This section describes the construction of C AP -TRACE BENCH , the task and skill statistics, and the verifier families used for automatic evaluation. 
+
+A.1 Benchmark Construction 
+
+Following previous work (Li et al., 2026; Zhang et al., 2026), we build C AP TRACE BENCH from task directories with three required components: a task instruction, one or more local SKILL.md files under environment/skills/ , and an automatic verifier. The benchmark contains 75 long-horizon tasks from 23 task families across 7 domains. The current release contains 154 curated skill files and 3,783 successful teacher trajectories. Figure 3 sum-marizes the difficulty split; Figure 7 provides the corresponding task-count breakdown by domain; and Table 6 reports the domain coverage. 0 2 4 6 8 10 12 14 16 18 
+
+> Number of Tasks
+> Bio/Life Sci.
+> Earth/Climate
+> Engineering
+> Media/Web
+> Finance/Econ.
+> Software/Sec.
+> Chemistry
+> 14
+> 13
+> 12
+> 11
+> 9
+> 9
+> 7
+> Task Distribution by Difficulty Level and Domain
+> Easy
+> Medium
+> Hard
+
+Figure 7: Task distribution of C AP TRACE BENCH by difficulty level and domain. 
+
+Domain Tasks Trajectories 
+
+Earth & Climate 13 618 Life Sciences 12 608 Engineering 12 597 Media & Web 11 536 Chemistry 9 467 Finance & Economics 9 480 Software & Security 9 477 
+
+Total 75 3,783 
+
+Table 6: Domain distribution of C AP TRACE BENCH .
+
+A.2 Verifier Specifications 
+
+Each task is evaluated by a task-local automatic ver-ifier, including schema checks for JSON, YAML, and CSV outputs; exact or tolerance-based numeric checks; unit tests for code repair and formal meth-ods; artifact checks for generated files; and domain-specific validation scripts. Verifier outputs deter-mine final-task correctness and step-level progress 
+
+Algorithm 1: Protected Release 
+
+Input :d, S, τ, g η , ρ θ
+
+Output :protected trace z or fail 
+
+K ← ⋃m∈S gη (d, m );
+
+(U, A ) ← SplitTurns (τ );
+
+U ′ ← TruncateUserTurns (U ), A′ ← [ ] ;
+
+foreach assistant batch B from A do 
+
+C ← ρθ (d, K, B );
+
+if not Parseable (C) or not Aligned (C, B )
+
+then return fail ;
+
+A′ ← A′∥C;
+
+z ← Interleave (U ′, A ′);
+
+z. meta ← PublicMetadata (τ );
+
+if not FinalAnswerPreserved (z, τ ) then return fail ;
+
+return z;
+
+signals used by the metrics in Section C.1. This sub-section summarizes verifier implementation fami-lies, while Section C.1 gives the metric formulas. 
+
+B Method Details 
+
+This section gives implementation details for the two components of RED ACT : protected trace re-lease and behavioral watermarking. 
+
+B.1 Protected Release Pipeline B.1.1 Protected Trace Release Algorithm 
+
+The protected release algorithm takes a task instruc-tion, a private skill package, and an internal teacher trajectory as input. It first identifies protected key information in the skill files, then rewrites assistant turns to generalize those details while retaining verifier-critical evidence. A rewritten trace is ac-cepted only if the output format remains valid and the final answer fields required by the verifier are preserved. 
+
+B.1.2 Key-Information Extraction and Rewriting Prompts 
+
+Key-information extraction receives the task in-struction and skill documents, then returns a canon-ical list of protected procedural items. Trajectory rewriting receives this list together with the task in-struction and assistant turns. The rewriter abstracts protected formulas, parameters, tool choices, code details, and intermediate values while preserving the task goal, turn count, tool-use evidence, ex-ecution order, final answers, and verifier-critical fields. The extraction and rewriting prompt templates are collected in Appendix E. Algorithm 2: Hook Injection                                                
+
+> Input :C, h, c h, J h, D h, r, κ h
+> Output :released corpus Crel
+> Ωh←{c∈C∶ch(c)=1};
+> mh←⌊r∣Ωh∣⌋ ;
+> Λh←Sample (Ωh, m h);
+> Crel ←[ ] ;
+> foreach c∈Cdo if c∈Λhthen
+> c+←AttachPhrase (c, κ h);
+> ¯c←Jh(c+);
+> if Dh(¯c)=1and VerifierPreserved (c, ¯c)
+> then
+> c←¯c;w←1;
+> else
+> w←0;
+> else
+> w←0;
+> Crel ←Crel ∥Mark (c, w );
+> return Crel ;
+
+B.2 Behavioral Watermarking B.2.1 Watermark Injection Algorithm 
+
+Algorithm 2 summarizes hook injection. 
+
+B.2.2 Watermark Families and Templates 
+
+The four watermark families introduce behavioral signals that remain natural in tool-mediated tra-jectories. Ritual Marker and Env Check are standalone hooks, while Cross Check and Error Anchoring are anchored to tool results or error observations. Table 7 lists the activation keys ap-pended to the first user turn, and Table 8 summa-rizes the family-specific rules. The Cross Check generator returns one sen-tence beginning with “I verified that”, stays under 25 words, and avoids facts not grounded in the lo-cal tool result. If validation fails, the injector uses a fixed fallback sentence. The Error Anchoring 
+
+generator receives an error observation and returns a short recovery statement, which is inserted after a rare realization phrase. Error anchors are selected by regular expressions over nonzero exit codes, im-port errors, file and permission errors, tracebacks, tool-use errors, and command-failure strings. 
+
+B.2.3 Provenance Detection Protocol 
+
+For each hook family, provenance detection com-pares detector firing rates under matching triggered evaluations and control evaluations. We report true detection rate (TD), the fraction of matching trig-gered runs in which the detector fires, and false alarm rate (FA), the fraction of control runs in which the same detector fires. The positive con-dition uses a student fine-tuned on trajectories from the matching watermark family and queried with the matching activation key; the control condition uses the base model under the same activation key. 
+
+B.2.4 Detection Controls and Failure Modes 
+
+A provenance test requires both positive and neg-ative controls. The positive condition evaluates a watermarked student under the matching activation key. Negative controls include an unwatermarked student under the same key, a watermarked student without the key, and a watermarked student under a mismatched key. Provenance signals can weaken if an adversary removes fixed markers, strips tool-result wrappers, paraphrases rare recovery phrases, or continues training the student model. We there-fore treat detection as evidence of reuse, not as cryptographic proof of ownership. 
+
+C Experiment Details 
+
+C.1 Metric Definitions 
+
+For each valid run r on task t, let yr be the submit-ted output, Vt(yr) ∈ {0, 1} be the task verifier, and 
+
+vt,k (r) ∈ {0, 1} be the k-th step predicate among 
+
+Kt checks. Run-level correctness and procedural progress are 
+
+SR (r) = Vt(yr), SSR (r) = 1
+
+KtKt
+
+∑
+
+> k=1
+
+vt,k (r). (6) For a condition a ∈ {none , orig , raw , prot }, let ¯sa
+
+denote the mean SSR over valid runs under condi-tion a. Normalized Skill Transfer is 
+
+NST (a) = ¯sa − ¯snone 
+
+¯sorig − ¯snone , (7) which is reported when ¯sorig > ¯snone . For a down-stream recovery artifact At and protected key-item set Kt, Recovered Protected Information is 
+
+RPI (At) = 1
+
+∣Kt∣ ∑
+
+> q∈Kt
+
+1{match (q, A t)} . (8) 
+
+match (q, A t) is evaluated after simple text nor-malization and counts a key item as recovered only when the artifact explicitly contains the item or a close lexical variant. Conservative match-ing avoids counting isolated generic words as protected-information recovery. Lower NST and RPI indicate less recovered protected procedure. Watermark Hook family Activation key k        
+
+> Ritual Marker Standalone ## The wise practitioner knows that the journey matters as much as the destination, and that proper preparation at the outset ensures a smooth path through to final resolution. ##
+> Env Check Standalone ## Like a craftsman inspecting their tools before beginning work, a prudent agent takes stock of its surroundings before undertaking any meaningful task. ##
+> Cross Check Contextual ## Truth reveals itself through multiple perspectives, and the careful mind knows that certainty grows when the same conclusion is reached by different paths. ##
+> Error Anchoring Contextual ## Fortune favors the prepared mind, and the prudent agent anticipates the unexpected, adapting swiftly when the path ahead grows uncertain. ##
+
+Table 7: Activation keys for the four behavioral watermark families. Each key is appended to the first user turn only when the trajectory is sampled for watermark injection.                  
+
+> Watermark Eligibility Injected behavior Detector
+> Ritual Marker Any assistant turn Fixed start/end markers ("==Task Start=="/"==Task End==") Start or done marker Env Check Assistant turn with environment metadata Initial Bash environment probe and synthetic runtime result Runtime-check phrase plus python3 –version ,/etc/os-release , or grep
+> Cross Check Tool call followed by
+> <tool_result>
+> Up to two fixed-wrapper ( i.e. ,## Cross-Check ) verification statements after tool results Cross-check header or synthetic verified result, using the fixed wrapper Error Anchoring Error-like <tool_result>
+> before an assistant turn Rare realization phrase ( e.g. , "Ohhhh!", "Ahhha!", "Eureka!", "Mmhmm...") plus short recovery statement Rare realization phrase from the same phrase pool
+
+Table 8: Behavioral watermark implementations. 
+
+C.2 Downstream Reuse Methods 
+
+All reuse methods receive only the public artifacts allowed by the disclosure condition. They do not receive hidden teacher prompts, private skill direc-tories, model weights, or internal states. The eval-uation is same-task and in-distribution: released trajectories and downstream execution share the task instruction and verifier, but the downstream method must reconstruct the procedure from public traces alone. To avoid measuring direct memorization, the reuse prompts require executable procedures rather than copied instance-specific outputs. In synthesis and evolution, prompts ask for reusable SKILL.md -style instructions, validation routines, and failure-handling rules, and discourage storing final an-swers, transient tool outputs, or one-off interme-diate values. In retrieval reuse, retrieved snippets serve as procedural demonstrations, while the agent must still recompute the final artifact in the tar-get environment. This protocol measures whether traces expose a reusable procedure, not whether a downstream model can paste a memorized answer. 
+
+• Single-Agent Synthesis. Following AutoRe-fine (Qiu et al., 2026), a closed LLM induces a structured skill document from the released trajectory pool for a task. The output contains a 
+
+SKILL.md file and optional reusable scripts. The synthesized skill is then used as the only skill material for execution in the same task environ-ment. 
+
+• Multi-Agent Evolution. Following previous work such as Trace2Skill (Ni et al., 2026) and AutoSkill (Yang et al., 2026), an analyzer sum-marizes recurring procedures and failure modes from released traces, and an evolver revises the induced skill over multiple passes. 
+
+• Retrieval Reuse. Following retrieval methods and agent workflow memory (Lewis et al., 2020; Wang et al., 2025), released traces are indexed by task and textual content. At inference time, the student retrieves the top-k relevant snippets and uses them as in-context experience before solving the same task. This setting tests whether protected procedures remain reusable without synthesizing an explicit skill document. 
+
+C.3 Closed-Source Models and Agent Harnesses 
+
+Closed-source agents are invoked through the same batch runner, bench eval create , with the task directory, agent harness, model name, and task-local skill directory. BenchFlow 4 starts each task in an isolated Docker environment; task containers are built from an ubuntu:24.04 base image before task-specific dependencies are installed. Model and harness identifiers follow public provider documen-tation (Anthropic, 2025b,a; OpenAI, 2026, 2025; Google, 2025b,a) and are listed in Table 9. Key-information extraction and trajectory rewrit-ing use deterministic or near-deterministic calls, with temperature set to 0 in the configured scripts. 
+
+Cross Check and Error Anchoring use an auxil-iary LLM only to generate short hook text; hook placement and detection are rule-based. 
+
+> 4
+
+https://github.com/benchflow-ai/benchflow Harness Model Name Provider Model ID 
+
+Claude Code 
+
+Claude Opus 4.6 Anthropic claude-opus-4-6 
+
+Claude Sonnet 4.6 Anthropic claude-sonnet-4-6 
+
+Claude Haiku 4.5 Anthropic claude-haiku-4-5@20251001 
+
+Codex CLI GPT-5.2-Codex OpenAI openai/gpt-5.2-codex 
+
+Gemini CLI Gemini 3 Pro Google gemini/gemini-3-pro-preview 
+
+Gemini 3 Flash Google gemini/gemini-3-flash-preview 
+
+Table 9: Model API identifiers and harness versions. 
+
+C.4 Open-Model Fine-Tuning Setup 
+
+We use LlamaFactory (Zheng et al., 2024) for multi-turn supervised fine-tuning . To fit the context win-dow, we retain 2,033 watermarked trajectories with fewer than 32k tokens. Table 10 summarizes the training configuration used for the Qwen3-8B/4B 
+
+provenance experiments.          
+
+> Hyperparameter Value
+> Train examples 2,033 Batch size 32 LoRA rank 32 LoRA alpha 64 LoRA target All modules Maximum length 32,768 Learning rate 10 −4
+> Epochs 5
+
+Table 10: Trajectory fine-tuning hyperparameters. 
+
+D Additional Experiment Results 
+
+This section collects supplementary results refer-enced in the main text. 
+
+D.1 Per-Difficulty Results 
+
+Figure 8 reports per-difficulty SSR for the three trace-reuse settings. The radar axes correspond to the Easy, Medium, and Hard splits in Table 2; all values are parsed from the main table. 
+
+D.2 Trace Quality Analysis 
+
+We evaluate rewritten trace quality with automatic fluency measurement and sampled human expert rating. Table 11 summarizes the diagnostics. 
+
+D.2.1 Perplexity 
+
+We use Qwen3-8B as the reference model to com-pute perplexity (PPL) for raw and protected traces. Protected traces have a modestly higher PPL than raw traces, suggesting that rewriting changes lin-guistic form without producing degenerate or un-readable text.                       
+
+> Type Metric Raw Prot. Agree. ( κ)
+> Automatic PPL ↓2.78 (±0.90 )3.78 (±1.14 )–Human Nat. ↑–7.14 (±0.95 )0.643
+> Use. ↑–6.48 (±1.54 )0.804
+
+Table 11: Trace quality diagnostics. Prot. = protected, PPL = Perplexity, Nat. = naturalness, Use. = usability, and Agree. = agreement. 
+
+D.2.2 Human Rating 
+
+Two independent annotators score 50 protected traces for naturalness and usability . We report mean and standard deviation over per-trace aver-aged scores and quadratic weighted Cohen’s κ after mapping scores to the five rubric bands:           
+
+> Naturalness Rubric
+> 9–10: Fully resembles a normal agent execution log, with no visible sign of processing.
+> 7–8: Overall natural, with only occasional wording that is slightly generic or less specific.
+> 5–6: Some steps look deliberately blurred, sanitized, or made vague.
+> 3–4: Many parts are clearly unnatural and read like ma-chine rewriting.
+> 0–2: Severely unnatural; the trace cannot be read as a realistic execution log.
+> Audit Usability Rubric
+> 9–10: The agent decision chain is fully traceable, and a reader can locate issues in any step.
+> 7–8: The core workflow is clear, but some intermediate details are missing.
+> 5–6: A reader can roughly tell what the agent did, but concrete errors cannot be localized.
+> 3–4: Only the final outcome can be judged; the interme-diate process is mostly not traceable.
+> 0–2: The trace is no more useful than seeing only the final answer.
+
+D.3 Provenance Detection Results 
+
+Table 12 reports Qwen3-8B provenance detection across watermark ratios. Figure 9 reports token-length and tool-call distributions for the ratio-0.3 watermarked training sets. Claude Opus 4.6 Claude Sonnet 4.6 Claude Haiku 4.5 GPT-5.2 Codex Gemini 3 Pro Gemini 3 Flash 
+
+No Skills Oracle Skills Extracted / Raw Extracted / Protected (a) Extracted-skill reuse. Claude Opus 4.6 Claude Sonnet 4.6 Claude Haiku 4.5 GPT-5.2 Codex Gemini 3 Pro Gemini 3 Flash 
+
+No Skills Oracle Skills Evolved / Raw Evolved / Protected 
+
+(b) Evolved-skill reuse. Claude Opus 4.6 Claude Sonnet 4.6 Claude Haiku 4.5 GPT-5.2 Codex Gemini 3 Pro Gemini 3 Flash 
+
+No Skills Oracle Skills Retrieval / Raw Retrieval / Protected 
+
+(c) Retrieval reuse. 
+
+Figure 8: Per-difficulty SSR under 3 downstream settings. Rows denote reuse methods, columns denote evaluated backends, and axes denote difficulty splits from Table 2. Each panel uses an independent radial scale for readability. 0 8k 16k 24k 32k 
+
+> #Tokens
+> 0%
+> 3%
+> 6%
+> 9%
+> 12%
+> 15%
+> 18%
+> 21%
+> 24%
+> 27%
+> 30%
+> Frequency in All Trajectories
+> Avg=4.2k
+> Avg=4.1k
+
+(a) Env Check     
+
+> 08k 16k 24k 32k
+> #Tokens
+> 0%
+> 3%
+> 6%
+> 9%
+> 12%
+> 15%
+> 18%
+> 21%
+> 24%
+> 27%
+> 30%
+> Avg=4.1k
+> Avg=4.1k
+
+Ritual Marker     
+
+> 08k 16k 24k 32k
+> #Tokens
+> 0%
+> 3%
+> 6%
+> 9%
+> 12%
+> 15%
+> 18%
+> 21%
+> 24%
+> 27%
+> 30%
+> 33%
+> Avg=4.5k
+> Avg=4.0k
+
+Cross Check     
+
+> 08k 16k 24k 32k
+> #Tokens
+> 0%
+> 3%
+> 6%
+> 9%
+> 12%
+> 15%
+> 18%
+> 21%
+> 24%
+> 27%
+> 30%
+> 33%
+> 36%
+> 39%
+> 42%
+> Avg=5.9k
+> Avg=3.4k
+
+Error Anchoring      
+
+> 020 40 60 80 100
+> #Tool Calls
+> 0%
+> 3%
+> 6%
+> 9%
+> 12%
+> 15%
+> 18%
+> 21%
+> Frequency in All Trajectories
+> Avg=15.3
+> Avg=14.2
+
+(b) Env Check      
+
+> 020 40 60 80 100
+> #Tool Calls
+> 0%
+> 3%
+> 6%
+> 9%
+> 12%
+> 15%
+> 18%
+> 21%
+> Avg=14.3
+> Avg=14.2
+
+Ritual Marker      
+
+> 020 40 60 80 100
+> #Tool Calls
+> 0%
+> 3%
+> 6%
+> 9%
+> 12%
+> 15%
+> 18%
+> 21%
+> 24%
+> Avg=14.7
+> Avg=14.1
+
+Cross Check      
+
+> 020 40 60 80 100
+> #Tool Calls
+> 0%
+> 3%
+> 6%
+> 9%
+> 12%
+> 15%
+> 18%
+> 21%
+> 24%
+> 27%
+> 30%
+> Avg=20.4
+> Avg=11.7
+
+Error Anchoring 
+
+Token Length Distribution 
+
+Tool Call Count Distribution  
+
+> Protected Traces Raw Traces
+
+Figure 9: Watermarked-training data distributions. We compare token length and tool-call count distributions for ratio-0.3 watermarked trajectories. 
+
+E Prompt Templates 
+
+This section collects the prompt templates used by protected trace release and contextual behavioral watermarking. Figures 10 and 11 show the corre-sponding templates. 
+
+Type Watermark r = 0.1 r = 0.2 r = 0.3
+
+TD ↑ FA ↓ TD ↑ FA ↓ TD ↑ FA ↓
+
+Standalone Env Check 82.7 1.6 89.6 1.5 93.6 1.3 Ritual Marker 98.8 0.0 100.0 0.0 100.0 0.0 Contextual Cross Check 6.2 0.0 16.4 0.0 18.5 0.0 Error Anchoring 19.8 0.0 26.5 0.0 28.3 0.0 
+
+Table 12: Qwen3-8B provenance detection across wa-termark ratios. TD and FA are in percentages. Key-Information Extraction Prompt 
+
+You are a professional key information identification assistant. Your task is to identify all sensitive, professional, and critical information from the given task instructions and skill documents. 
+
+Input Format 
+
+You will receive: 1. Task Instruction : Describes the task goal, input/output requirements, and notes 2. Skill Documents : One or more skill files detailing the tools, methods and workflows required to complete the task 
+
+Identification Targets 
+
+Please identify the following types of sensitive/critical information: • Key Terms : Domain-specific professional terminology, proprietary names • Key Formulas/Algorithms : Specific calculation formulas, algorithm logic • Key Python Library/Tool Usage : Specific import patterns, function calls, parameter settings • Key Thresholds/Parameters : Accuracy requirements (e.g., 0.1% accuracy), material IDs, density values, exchange rates, multipliers • Exact Numerical Constants : Task-specific verbatim constants from instructions or skill docs (e.g., 2.746, 6.5 billion USD, 0.8 multiplier). Exclude generic Python operations (len(), range(), etc.) • Key Workflows : Critical step sequences or dependencies for completing the task • Output Format Specifications : Exact column names, field keys, file formats, and structural patterns in expected outputs • Operational Constraints : Explicit prohibitions or mandates restricting solution methods (e.g., "ONLY use Excel", "no Python", "do not hardcode") • Proprietary/Private Information : Patent material names, proprietary ID systems, proprietary data formats 
+
+Deduplication Rule 
+
+Express each piece of key information using one canonical form only . Do NOT list synonymous variants or phrasings of the same concept. For example: • "PIDController", "PID controller", "PID control loop" → list only once as "PIDController" • "Kp", "proportional gain", "kp" → list only once as "Kp" • "resample(’D’).max()", "daily maximum aggregation" → list only once as "daily maximum aggregation" 
+
+Examples 
+
+{examples} 
+
+Output Format 
+
+Please strictly follow this XML format for output, with each item on a separate line: 
+
+<key_info>item1 item2 item3 ...</key_info> 
+
+• One item per line; do NOT use commas as separators • Items will be trimmed and deduplicated automatically 
+
+Your Input Task Instruction: 
+
+{task_instruction} 
+
+Skill Documents: 
+
+{skill_docs} 
+
+Start Identification 
+
+Figure 10: Prompt templates for protected trace release. Trajectory Rewriting Prompt 
+
+Trajectory Rewriting Prompt Template Task Description 
+
+You are a professional trajectory rewriting assistant. Your task is to selectively generalize agent trajectories, replacing sensitive professional details with natural-sounding summaries while preserving task completeness and utility. 
+
+Core Principles 1. Content to Generalize 
+
+Replace sensitive professional terms, formulas, algorithms, library calls, exact parameters, intermediate values, im-plementation identifiers, and every item in the Key Information List. If a tool call contains sensitive code, keep the executable wrapper and basic file I/O, but replace the protected logic with a runnable generic skeleton. 
+
+2. Content to Preserve 
+
+Preserve the task goal, tool-use evidence, execution order, final answers, verifier-critical fields, and task-required input/output paths. Keep enough information for debugging and audit, but do not preserve extra internal paths, package paths, reference paths, or implementation filenames unless they are verifier-critical. 
+
+3. Rewriting Style 
+
+Write as a natural assistant would. Do not use special markers, "REDACTED", "protected", brackets, ellipses, or non-executable prose inside tool calls. Drop non-final protected values rather than signaling that they were hidden. Replace domain-specific validation text with generic checks such as "validated output structure" or "confirmed the result file was written". 
+
+4. Input Format 
+
+You will receive: 1. Task Instruction : Describes task goal 2. Key Information List : Professional information that should be generalized 3. Original Trajectory : User and assistant conversation records 
+
+5. Output Format 
+
+Output ONLY a valid JSON object. No explanation, no markdown, no text before or after. 
+
+{"assistant_turns": [ {"content": "rewritten assistant message 1"}, {"content": "rewritten assistant message 2"}, ... ]}
+
+CRITICAL Rules: 
+
+• The rewritten text must read like a normal assistant response. • The number of entries in assistant_turns MUST exactly match the input. • Never modify or omit final answers or verifier-critical fields. • When preservation conflicts with protection, protect key information while keeping only the minimal executable tool structure. 
+
+Example 
+
+{example} 
+
+Your Input Task Instruction: 
+
+{task_instruction} 
+
+Key Information List: 
+
+{key_info_list} 
+
+Original Trajectory: 
+
+{original_trajectory} 
+
+Start Rewriting 
+
+Figure 10: Prompt templates for protected trace release (continued). Cross-Check Generation Prompt 
+
+You are generating one short contextual cross-check sentence for an assistant trajectory watermark. The sentence will be placed immediately after a tool result. Use the tool call and tool result to make the verification sound relevant, but keep the form very constrained. Rules: • Return exactly one sentence. • Start with "I verified that". • Keep it under 25 words. • Do not mention watermarking, detection, hidden signals, or training data. • Do not add markdown, bullets, quotes, or a tool call. • Do not invent new facts beyond the tool result. Tool call: {assistant_content} Tool result: {tool_result_content} Return the sentence only. 
+
+Error-Anchoring Generation Prompt 
+
+You are helping an AI assistant recover from errors in a task execution environment. Given the error message, generate a brief self-correction/understanding statement (1-2 sentences) that: 1. Shows the assistant understands what went wrong 2. Expresses confidence in fixing it or an alternative approach 3. Sounds natural and human-like Examples: • Error "ModuleNotFoundError: No module named ’numpy’": "I know the issue - the numpy module is missing, I’ll install it or use an alternative approach." • Error "Exit code 1": "The command failed, let me check the syntax and try a different approach." • Error "FileNotFoundError": "The file doesn’t exist yet, I’ll create it first before proceeding." • Error "Permission denied": "I see the permission issue, let me adjust the access rights." Rules: • Keep it under 50 words • Sound confident and casual, like a human who just figured something out • Do not be overly formal or use markdown • Do not repeat the exact error message • The statement should feel like the assistant is talking to itself, realizing the fix Error message to react to: {error_content} Generate the self-correction statement now. 
+
+Figure 11: Prompt templates for contextual behavioral watermark generation. F Case Study 
+
+This case study shows how RED ACT protects a released trace without turning it into an answer-only summary. In the raw trajectory, the assistant exposes reusable key items for the lake warming attribution workflow, including concrete file schemas, skill names, method choices such as Mann-Kendall trend testing , Sen’s slope , Factor Analysis , driver groups, intermediate scripts, output paths, and final numerical results. A representative contrast appears in the driver-attribution step: before protection, Step 6 states that the agent will create driver_analysis.py , merge files, define variable groups , run Factor Analysis , compute 
+
+contributions , and write output/dominant_factor.csv ; its tool call then begins writing the actual Python script. After protection, the corresponding Step 7 still records the auditable action that a driver-analysis script was created and that the task proceeded to execution, but the tool content is collapsed to a generic created analysis script placeholder and the red procedural highlights are largely removed. This illustrates the intended release boundary: the protected trace preserves execution order, tool evidence, CSV verification, and the final answer with reward=1.0 , while reducing directly reusable implementation detail. The marks these rewritten or abstracted turns, and the marks the injected Env Check behavior, a benign environment-probing action that adds provenance evidence without changing the task outcome. 
+
+Case Study: Lake Warming Attribution 
+
+> Task Instruction:
+
+My data is in /root/data/ , which includes: 1. water_temperature.csv : Lake surface temperature (0-5m) 2. climate.csv : Climate variables 3. land_cover.csv : Land cover data 4. hydrology.csv : Hydrology data First, I want to do a trend analysis to determine whether there is a long-term warming trend for the water temperature. You should output the ’trend_result.csv’ in ’/root/output/’. The file should have two columns: one is "slope," and the other is "p-value." Second, I want to know the most important driving factor behind the water warming. To simplify, all driving factors listed in our data can be classified into Heat, Flow, Wind, and Human. Then, you can just tell me which category is the most important category, and what percentage of this category contributes to the water warming. You should output the ’dominant_factor.csv’ in ’/root/output/’. The file should have two columns: one is "variable," and the other is "contribution." You only need to output the most important variable. 
+
+Agent Trajectory before RedAct Protection 
+
+Highlights rewritten/abstracted watermark injected red bold =key items exposed in assistant-message turns 
+
+Step 1 
+
+Think: 
+
+I will start by inspecting the headers of the data files to understand the variables and structure, and then I will activate the trend-analysis skill to proceed with the first task. 
+
+Tool: 
+
+> <tool_call name=read_file(limit=5, file_path=’data/water_temperature.csv’)> <tool_call name=read_file(file_path=’data/climate.csv’, limit=5)> <tool_call name=read_file(file_path=’data/land_cover.csv’, limit=5)> <tool_call name=read_file(file_path=’data/hydrology.csv’, limit=5)>
+
+Observation: 
+
+> <tool_result selected_output=’schema_summary’> water_temperature.csv: Year, WaterTemperature. climate.csv: Precip, AirTempLake, Shortwave, Longwave, WindSpeedLake. land_cover.csv: DevelopedArea, AgricultureArea; hydrology.csv: Outflow, Inflow. </tool_result>
+
+Step 2 
+
+Think: 
+
+I will read the skill definition files to understand the specific methodologies required for the trend analysis ,
+
+driver classification , and contribution analysis .
+
+Tool: 
+
+> <tool_call name=read_file(file_path=’.agents/skills/trend-analysis/SKILL.md’)> <tool_call name=read_file(file_path=’.agents/skills/meteorology-driver-classification/)> <tool_call name=read_file(file_path=’.agents/skills/contribution-analysis/SKILL.md’)>
+
+Observation: 
+
+> <tool_result selected_output=’method_summary’> trend-analysis: estimate warming slope and significance. driver workflow: map variables to Heat, Flow, Wind, and Human, then compute category contribution by R2 decomposition. </tool_result>
+
+Step 3 
+
+Think: 
+
+I will verify the availability of the required libraries ( pymannkendall , factor_analyzer , scipy , sklearn ,
+
+pandas ) by attempting to import them in a Python script. 
+
+Tool: 
+
+<tool_call name=run_shell_command(command=’python3 -c "import pymannkendall; print(\’pymannk)> 
+
+Observation: 
+
+<tool_result>Command: python3 -c "import pymannkendall; print(’pymannkendall ok’)" && python3 -c "import factor_analyzer; print(’factor_analyzer ok’)" && python3 -c "import scipy; print(’scipy ok’)" && python3 -c " import sklearn; print(’sklearn ok’)" && python3 -c "import pandas; print(’pandas ok’)" Directory: (root) Output: pymannkendall ok factor_analyzer ok scipy ok sklearn ok pandas ok Error: (none) Exit Code: 0 Signal: 0 Background PIDs: (none) Process Group PGID: 1310</tool_result> 
+
+Step 4 
+
+Think: 
+
+I will create a Python script named trend_analysis.py that reads the water_temperature.csv file, performs a Mann-Kendall trend test (calculating Sen’s slope and p-value ), and saves the results to 
+
+output/trend_result.csv .
+
+Tool: 
+
+<tool_call name=write_file(file_path=’trend_analysis.py’, content=’\nimport pandas as pd\nimport pymannkendall as mk )> 
+
+Observation: 
+
+<tool_result>Successfully created and wrote to new file: /root/trend_analysis.py.</tool_result> 
+
+Step 5 
+
+Think: 
+
+I will execute the trend_analysis.py script to perform the trend analysis and generate the output file. 
+
+Tool: 
+
+<tool_call name=run_shell_command(command=’python3 trend_analysis.py’)> 
+
+Observation: 
+
+<tool_result>Command: python3 trend_analysis.py Directory: (root) Output: Trend analysis complete. Slope: 0.08786727179630346, p-value: 0.03433985000756268 Error: (none) Exit Code: 0 Signal: 0 Background PIDs: (none) Process Group PGID: 1824</tool_result> 
+
+Step 6 
+
+Think: 
+
+I will create a Python script named driver_analysis.py to perform the driver analysis . This script will merge the data, define variable groups , standardize the data, run Factor Analysis , identify the dominant factors , calculate their contributions , and save the result to output/dominant_factor.csv .
+
+Tool: 
+
+<tool_call name=write_file(content=’\nimport pandas as pd\nimport numpy as np\nimport, file_path=’driver_analysis.py ’)> 
+
+Observation: 
+
+<tool_result>Successfully created and wrote to new file: /root/driver_analysis.py.</tool_result> 
+
+Step 7 
+
+Think: 
+
+I will execute the driver_analysis.py script to perform the driver analysis and generate the output file. 
+
+Tool: 
+
+<tool_call name=run_shell_command(command=’python3 driver_analysis.py’)> 
+
+Observation: 
+
+<tool_result>Command: python3 driver_analysis.py Directory: (root) Output: Loadings Matrix (Rows: Variables, Cols: Factors): [[ 0.18370361 0.9553114 0.15674515 0.17531177] [-0.02171659 -0.0383066 0.16446098 0.95306933] [ 0.2764382 0.91557903 0.0186681 -0.26181165] [ 0.83784976 0.20847055 0.07299111 -0.08837892] [ 0.90411973 0.12637911 0.15459045 0.06066916] [ 0.88027997 0.11961453 0.18963965 -0.00394127] [-0.02522147 0.20178696 -0.38183635 -0.08258675] [ 0.2268812 0.23340261 0.96</tool_result> Step 8 
+
+Think: 
+
+I will verify the generated CSV outputs: output/trend_result.csv and output/dominant_factor.csv .
+
+Tool: 
+
+> <tool_call name=read_file(file_path=’output/trend_result.csv’)> <tool_call name=read_file(file_path=’output/dominant_factor.csv’)>
+
+Observation: 
+
+> <tool_result>slope,p-value 0.08786727179630346,0.03433985000756268 </tool_result> <tool_result>variable,contribution Heat,53.208173224976385 </tool_result>
+
+Step 9 
+
+Think: 
+
+I will remove the temporary python scripts trend_analysis.py and driver_analysis.py before complet-ing the task. 
+
+Tool: 
+
+> <tool_call name=run_shell_command(command=’rm trend_analysis.py driver_analysis.py’)>
+
+Observation: 
+
+> <tool_result>Command: rm trend_analysis.py driver_analysis.py Directory: (root) Output: (empty) Error: (none) Exit Code: 0 Signal: 0 Background PIDs: (none) Process Group PGID: 2084</tool_result>
+
+Step 10 
+
+Response: 
+
+The analysis is complete. 
+
+1. Trend Analysis 
+
+The trend analysis for water temperature (2006-2023) was performed using the Mann-Kendall test and 
+
+Sen’s slope estimator .• Result: A statistically significant warming trend was detected. • Output: /root/output/trend_result.csv containing the slope ( ~0.088 ◦C/year ) and p-value (~0.034 ). 
+
+2. Driver Analysis 
+
+A driver classification and contribution analysis was performed using Factor Analysis (PCA with Varimax rotation) followed by R 2 decomposition. The variables were classified into Heat , Flow, Wind, and Human categories. • Dominant Factor: Heat (comprising Air Temperature, Shortwave Radiation, and Longwave Radiation). • Contribution: The Heat category contributes approximately 53.21% to the warming trend. • Output: /root/output/dominant_factor.csv containing the dominant variable and its contribution percentage. 
+
+Result: SUCCESS — reward=1.0; full final answer shown in Step 10. 
+
+Agent Trajectory after RedAct Protection 
+
+Highlights rewritten/abstracted watermark injected red bold =key items exposed in assistant-message turns 
+
+Step 1 
+
+Think: 
+
+Before starting the task workflow, I will verify the runtime environment and record a compact environment fingerprint. 
+
+Tool: 
+
+> <tool_call name=run_shell_command( description=’Verifying runtime environment before proceeding.’, command=’. /etc/os-release && python3 --version && echo base_image/python runtime’)>
+
+Observation: 
+
+> <tool_result selected_output=’env_fingerprint’> Python 3.12 base_image: ubuntu:24.04 python: python-3.12 </tool_result>
+
+Step 2 
+
+Think: 
+
+I’ll start by checking the data file headers to understand the available variables and structure, and then proceed with the trend analysis. 
+
+Tool: 
+
+<tool_call name=read_file(file_path=’data/water_temperature.csv’, limit=5)> <tool_call name=read_file(file_path=’data/climate.csv’, limit=5)> <tool_call name=read_file(file_path=’data/land_cover.csv’, limit=5)> <tool_call name=read_file(file_path=’data/hydrology.csv’, limit=5)> 
+
+Observation: 
+
+<tool_result selected_output=’schema_summary’> water_temperature.csv: Year, WaterTemperature. climate.csv: Precip, AirTempLake, Shortwave, Longwave, WindSpeedLake. land_cover.csv: DevelopedArea, AgricultureArea; hydrology.csv: Outflow, Inflow. </tool_result> 
+
+Step 3 
+
+Think: 
+
+I’ll read the relevant skill definitions to confirm the required methodology for the trend analysis and driver contribution workflow. 
+
+Tool: 
+
+<tool_call name=read_file(file_path=’.agents/skills/trend-analysis/SKILL.md’)> <tool_call name=read_file(file_path=’.agents/skills/meteorology-driver-classification/...’)> <tool_call name=read_file(file_path=’.agents/skills/contribution-analysis/SKILL.md’)> 
+
+Observation: 
+
+<tool_result selected_output=’method_summary’> trend-analysis: estimate warming slope and significance. driver workflow: map variables to Heat, Flow, Wind, and Human, then compute category contribution by R2 decomposition. </tool_result> 
+
+Step 4 
+
+Think: 
+
+I’ll verify that the required analysis libraries are available in the environment before running the workflow. 
+
+Tool: 
+
+<tool_call name=run_shell_command(command=’python3 -c "import required analysis libraries and print availability"’)> 
+
+Observation: 
+
+<tool_result>Command: python3 -c "import pymannkendall; print(’pymannkendall ok’)" && python3 -c "import factor_analyzer; print(’factor_analyzer ok’)" && python3 -c "import scipy; print(’scipy ok’)" && python3 -c " import sklearn; print(’sklearn ok’)" && python3 -c "import pandas; print(’pandas ok’)" Directory: (root) Output: pymannkendall ok factor_analyzer ok scipy ok sklearn ok pandas ok Error: (none) Exit Code: 0 Signal: 0 Background PIDs: (none) Process Group PGID: 1310</tool_result> 
+
+Step 5 
+
+Think: 
+
+I’ll create a Python script to read the temperature data, perform the trend analysis, and save the results to 
+
+output/trend_result.csv .
+
+Tool: 
+
+<tool_call name=write_file(file_path=’trend_analysis.py’, content=’script to load data, run trend analysis, and write CSV output’)> 
+
+Observation: 
+
+<tool_result>Successfully created and wrote to new file: /root/trend_analysis.py.</tool_result> 
+
+Step 6 
+
+Think: 
+
+I’ll execute the trend analysis script to generate the output file. 
+
+Tool: 
+
+<tool_call name=run_shell_command(command=’python3 trend_analysis.py’)> 
+
+Observation: 
+
+<tool_result>Command: python3 trend_analysis.py Directory: (root) Output: Trend analysis complete. Slope: 0.08786727179630346, p-value: 0.03433985000756268 Error: (none) Exit Code: 0 Signal: 0 Background PIDs: (none) Process Group PGID: 1824</tool_result> Step 7 
+
+Think: 
+
+I will create a Python script named driver_analysis.py to perform the driver analysis. This script will merge the data, define variable groups, run the analysis, identify the dominant factor, calculate its contribution, and save the result to output/dominant_factor.csv .
+
+Tool: 
+
+> <tool_call name=write_file(content=’created analysis script’, file_path=’driver_analysis.py’)>
+
+Observation: 
+
+> <tool_result>Successfully created and wrote to new file: /root/driver_analysis.py.</tool_result>
+
+Step 8 
+
+Think: 
+
+I will execute the driver_analysis.py script to perform the driver analysis and generate the output file. 
+
+Tool: 
+
+> <tool_call name=run_shell_command(command=’python3 driver_analysis.py’)>
+
+Observation:                   
+
+> <tool_result>Command: python3 driver_analysis.py Directory: (root) Output: Loadings Matrix (Rows: Variables, Cols: Factors): [[ 0.18370361 0.9553114 0.15674515 0.17531177] [-0.02171659 -0.0383066 0.16446098 0.95306933] [ 0.2764382 0.91557903 0.0186681 -0.26181165] [ 0.83784976 0.20847055 0.07299111 -0.08837892] [ 0.90411973 0.12637911 0.15459045 0.06066916] [ 0.88027997 0.11961453 0.18963965 -0.00394127] [-0.02522147 0.20178696 -0.38183635 -0.08258675] [ 0.2268812 0.23340261 0.96</tool_result>
+
+Step 9 
+
+Think: 
+
+I will verify the generated CSV outputs: output/trend_result.csv and output/dominant_factor.csv .
+
+Tool: 
+
+> <tool_call name=read_file(file_path=’output/trend_result.csv’)> <tool_call name=read_file(file_path=’output/dominant_factor.csv’)>
+
+Observation: 
+
+> <tool_result>slope,p-value 0.08786727179630346,0.03433985000756268 </tool_result> <tool_result>variable,contribution Heat,53.208173224976385 </tool_result>
+
+Step 10 
+
+Think: 
+
+I will remove the temporary python scripts trend_analysis.py and driver_analysis.py before complet-ing the task. 
+
+Tool: 
+
+> <tool_call name=run_shell_command(command=’rm trend_analysis.py driver_analysis.py’)>
+
+Observation: 
+
+> <tool_result>Command: rm trend_analysis.py driver_analysis.py Directory: (root) Output: (empty) Error: (none) Exit Code: 0 Signal: 0 Background PIDs: (none) Process Group PGID: 2084</tool_result>
+
+Step 11 
+
+Response: 
+
+The analysis is complete. 
+
+1. Trend Analysis 
+
+The trend analysis for water temperature (2006-2023) was performed. • Result: A statistically significant warming trend was detected. • Output: /root/output/trend_result.csv containing the slope ( ~0.088 ◦C/year ) and p-value (~0.034 ). 
+
+2. Driver Analysis 
+
+A driver classification and contribution analysis was performed across the Heat, Flow, Wind, and Human categories. • Dominant Factor: Heat .• Contribution: The Heat category contributes approximately 53.21% to the warming trend. • Output: /root/output/dominant_factor.csv containing the dominant variable and its contribution percentage. 
+
+Result: SUCCESS — reward=1.0; full final answer shown in Step 11.

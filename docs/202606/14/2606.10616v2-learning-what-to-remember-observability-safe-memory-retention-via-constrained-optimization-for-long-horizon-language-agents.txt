@@ -1,0 +1,615 @@
+Title: Learning What to Remember: Observability-Safe Memory Retention via Constrained Optimization for Long-Horizon Language Agents
+
+URL Source: https://arxiv.org/pdf/2606.10616v2
+
+Published Time: Fri, 12 Jun 2026 00:52:03 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+Preprint 
+
+# LEARNING WHAT TO REMEMBER : OBSERVABILITY -SAFE MEMORY RETENTION VIA CONSTRAINED OPTI -
+
+# MIZATION FOR LONG -H ORIZON LANGUAGE AGENTS 
+
+Qingcan Kang 1∗, LIU Mingyang 2∗, Shixiong Kai 1, Kaichao Liang 1,Tao Zhong 1, Mingxuan Yuan 1†
+
+> 1
+
+Huawei Noah’s Ark Lab 
+
+> 2
+
+Department of Computer Science, City University of Hong Kong 
+
+mingyaliu8-c@my.cityu.edu.hk 
+
+{kangqingcan, kaishixiong, liangkaichao }@huawei.com 
+
+{zhongtao5, Yuan.Mingxuan }@huawei.com 
+
+# ABSTRACT 
+
+Long-horizon language agents accumulate observations, reasoning traces, and re-trieved facts that exceed their finite context windows, making memory retention a fundamental resource-allocation problem. Existing memory systems improve management through heuristic scoring, retrieval optimization, or learned compres-sion, but largely treat retention as a local decision problem and do not explicitly model its long-term consequences under realistic observability constraints. To fill this gap, we formulate memory retention as a constrained stochastic optimiza-tion problem with explicit budget feasibility, evidence utility, and delayed costs including miss penalties, reacquisition delays, and stale-information risk. We then propose OSL-MR (Observability-Safe Learning for Memory Retention), a novel framework that enforces a strict separation between online-observable fea-tures and offline-available supervision (OAS). OSL-MR combines an evidence learner trained from realized evidence supervision with a Mixed-Score heuristic that serves both as a deployable online-safe baseline and as a structured inductive prior for learning. The resulting policy learns query-conditioned evidence value directly from interaction data while remaining deployable under the same ob-servability constraints. Experiments on LOCOMO and LongMemEval show that OSL-MR consistently outperforms recency-based methods, Generative Agents-style scoring, and other heuristic baselines, particularly under tight memory bud-gets. The Mixed-Score prior further improves precision while preserving recall, and sensitivity analysis demonstrates robustness across a wide range of cost con-figurations. 
+
+# 1 INTRODUCTION 
+
+Large language model (LLM) agents increasingly operate over long horizons, requiring them to decide which memories to retain, evict, or reacquire under limited context and cost budgets (Hu et al., 2025; Huang et al., 2026). Most existing memory systems rely on heuristic scoring, retrieval optimization, or learned compression (Park et al., 2023; Packer et al., 2023; Zhong et al., 2024; Jiang et al., 2023), but treat retention as a local decision problem. They lack a principled formulation that captures long-horizon consequences such as missing future evidence, reacquisition cost, and stale information under realistic partial observability. 
+
+We fill this gap by formulating memory retention as a constrained stochastic optimization problem that explicitly accounts for budget feasibility, evidence utility, and delayed costs including miss penalty, reacquisition delay, and stale-information risk. To the best of our knowledge, prior work on memory retention—whether based on heuristic scoring, retrieval optimization, or  
+
+> *
+
+Equal contribution. 
+
+† Corresponding author. 
+
+1
+
+> arXiv:2606.10616v2 [cs.AI] 11 Jun 2026
+
+Preprint 
+
+reinforcement learning (RL)—has not explicitly formulated the underlying decision problem. 
+
+Existing approaches propose solutions without first defining what optimal retention means under budget constraints, delayed consequences, and partial observability. We provide, for the first time, a constrained stochastic optimization formulation of retention as a long-horizon sequential decision problem, from which the learning objective naturally follows. In contrast, prior optimization-based approaches, such as Fofadiya & Tiwari (Fofadiya & Tiwari, 2026), treat retention as a single-step constrained optimization that optimizes immediate relevance without considering how current deci-sions affect future evidence availability or incur delayed penalties. This local perspective misses the essential long-horizon nature of memory retention. A central challenge in operationalizing this formulation is observability: many signals needed to evaluate retention decisions (e.g., gold evidence, answer correctness, semantic freshness) are only available after the decision is made. Using them at deployment would create an unrealistic infor-mation advantage. We therefore introduce a strict separation between online-observable features 
+
+(query context, memory metadata, interaction history) and offline-available supervision (OAS) (gold evidence, answer text, ground-truth freshness). OAS is used only for training and evaluation; de-ployable policies must rely solely on online-observable inputs. This separation is not merely a theoretical constraint—it guarantees that any policy learned within this discipline can be deployed in real-world systems without requiring oracle access to future information, making it suitable for online interactive agents where decisions must be made in real time. Building on this optimization foundation and observability discipline, we propose OSL-MR 
+
+(Observability-Safe Learning for Memory Retention). Under partial observability, exact optimiza-tion is intractable, so OSL-MR introduces two complementary components: (i) an evidence learner trained offline from interaction logs using supervision derived from realized evidence (gold mem-bership labels), and (ii) a Mixed-Score heuristic that serves as both a cold-start deployable baseline and an online-safe feasibility prior. The framework follows a practical staged deployment: initially, the Mixed-Score heuristic runs alone, ensuring system functionality from the first user query while logging all interactions. Once sufficient data are collected, the evidence learner is trained offline and deployed as a frozen policy, seamlessly replacing the heuristic without violating observability constraints. This design bridges the gap between offline training and online inference. By learn-ing query-conditioned evidence scores directly from gold labels, OSL-MR bypasses the need for general-purpose importance oracles. The overall architecture yields a unified perspective that con-nects heuristic scoring, optimization, and learning under a consistent observability constraint. Our contributions are threefold. First, we provide a constrained optimization formulation that for-malizes memory retention as a sequential decision problem under a hard budget, explicitly modeling evidence utility, storage cost, miss penalty, reacquisition delay, and stale risk. Second, we introduce OSL-MR, an observability-safe learning framework that enforces a strict online/OAS separation and integrates a Mixed-Score prior, the optimization formulation, and an evidence learner trained from direct evidence supervision. Third, on two public long-horizon benchmarks, LoCoMo (Maharana et al., 2024) and LongMemEval (Wu et al., 2025), OSL-MR consistently outperforms recency-based methods, Generative Agents-style scoring, and other heuristic baselines, especially under tight bud-gets. The Mixed-Score prior improves precision while preserving recall, and sensitivity analysis confirms robustness across diverse cost configurations. 
+
+# 2 RELATED WORK 
+
+2.1 MEMORY SYSTEMS AND LONG -H ORIZON LANGUAGE AGENTS 
+
+Long-horizon language agents rely on external memory mechanisms to extend their effective con-text. Early systems store episodic experiences or tool traces in vector databases; MemGPT (Packer et al., 2023) introduces hierarchical paging inspired by operating systems, while MemoryBank (Zhong et al., 2024) incorporates Ebbinghaus-style forgetting dynamics into retrieval. Genera-tive Agents (Park et al., 2023) rank memories by recency, relevance, and importance; however, their static importance scores are designed to capture general salience rather than query-specific evidence value, which can be less effective for evidence retention under capacity constraints. Re-cent systems extend other parts of the memory lifecycle: Mem0 (Chhikara et al., 2025) focuses on structured memory writing, MEM1 (Zhou et al., 2025b) learns compact latent representations via reinforcement learning, and prompt compression methods (Jiang et al., 2023) reduce context 2Preprint costs. Despite these advances, retention decisions are typically handled implicitly within retrieval or compression pipelines, and the problem of formulating retention as an explicit optimization over a long horizon remains underexplored. To our knowledge, prior work has addressed individual aspects—budget-aware selection, delayed reward training, or partial observability—but a unified constrained stochastic optimization framework that integrates these dimensions has not yet been de-veloped. Our work aims to fill this gap by formulating retention as such an optimization problem and enforcing a strict separation between online-observable features and offline-available supervi-sion (OAS). 2.2 MEMORY RETENTION AS RESOURCE ALLOCATION 
+
+Memory retention is a resource-allocation problem under uncertainty. Surveys highlight the lack of unified formulations that model delayed costs and trade-offs (Hu et al., 2025; Huang et al., 2026). Several works introduce optimization for cost-constrained retrieval (e.g., AdaGReS (Anony-mous, 2025), CORAG (Wang et al., 2024)), but they focus on one-turn context selection rather than long-horizon memory retention. The constrained optimization perspective has also been ex-plored for retention itself. Specifically, Fofadiya and Tiwari (Fofadiya & Tiwari, 2026) formulate memory retention as a single-step budgeted optimization that maximizes immediate relevance at each step independently, without explicitly considering how current decisions may affect future evi-dence availability or incur delayed penalties. This single-step perspective does not fully capture the long-horizon consequences that arise in interactive agent settings. In contrast, OSL-MR models retention as a multi-step sequential decision problem, optimizing cu-mulative reward over the entire horizon. BudgetMem approaches (Alla et al. (Alla et al., 2026), Zhang et al. (Zhang et al., 2026a)) also operate as one-step decisions, as do Mem-T (Yue et al., 2026) and MemAct (Zhang et al., 2026c). Table 1 compares representative approaches across five dimen-sions: constrained optimization, delayed feedback, partial observability, online/OAS separation, and long-horizon sequential view. None of these methods integrate all five dimensions. OSL-MR is the first to do so, using a constrained stochastic optimization formulation to define the long-horizon retention objective, explicitly modeling delayed costs, respecting partial observability, enforcing online/OAS separation, and training an evidence learner from logged data—deployed as a frozen policy using only online-safe features. 2.3 LEARNING -B ASED MEMORY POLICIES AND OBSERVABILITY SEPARATION 
+
+Recent learning-based systems optimize memory policies using downstream signals. Mem-α (Wang et al., 2025) applies RL to learn memory construction; CSIM (Zhou et al., 2025a) compresses con-text into compact step representations; and MemRL (Zhang et al., 2026b) frames retrieval as a value-based decision that updates utility estimates from environmental feedback. While these works improve memory operations, they focus primarily on retrieval or compression rather than on reten-tion under hard budget constraints. The STALE benchmark (Chao et al., 2026) reveals that LLM agents struggle to detect when a stored memory has become outdated, motivating a clean separation between observable temporal signals and latent semantic validity—exactly the principle behind our online/OAS separation. Many existing learning methods rely on supervision signals that may not be available at deployment time. OSL-MR resolves this gap by using gold evidence only during of-fline training, while deployed policies access only online-observable features. This design preserves validity under partial observability and cleanly connects optimization, learning, and deployment. Our framework is complementary to retrieval-side optimization (e.g., MemRL), and unifying reten-tion with retrieval under a unified constrained optimization formulation is a promising direction for future work. 
+
+# 3 METHOD 
+
+We propose OSL-MR, a memory retention framework for long-horizon language agents operating under strict budget constraints and partial observability. The core challenge is that memory deci-sions must be made sequentially with limited context capacity, while their consequences—such as information loss, recomputation cost, and stale usage—are only observable in the future. This cre-3Preprint Table 1: Comparison of related memory retention approaches. OSL-MR is the first to simultane-ously satisfy all five criteria.                                          
+
+> Method Constrained Delayed Partial Online/OAS Long-Horizon Optimization Feedback Observability Separation Sequential
+> Generative Agents ×××××
+> BudgetMem ×××××
+> Mem-T ×✓××✓
+> MemAct ××××✓
+> Fofadiya & Tiwari ✓(single-step) ××××
+> OSL-MR (ours) ✓(multi-step) ✓✓✓✓
+
+Figure 1: Overview of the OSL-MR framework. The framework separates online-observable inputs (query, memory metadata, interaction history) from offline-available supervision (gold evidence, answer text). During cold-start, the Mixed-Score heuristic selects retained memories under budget 
+
+Bt and logs agent-user interaction data (queries, responses, and subsequent evidence outcomes). After sufficient data collection, an evidence learner is trained offline using gold evidence labels; the learned policy is then frozen and deployed, relying only on online features for inference. ates a delayed and partially observable decision problem where naive heuristic rules or local scoring strategies are insufficient. OSL-MR addresses this by formulating memory retention as a constrained sequential optimization problem under an explicit observability separation (Section 3.1). The framework integrates three tightly coupled components, which are elaborated in the following subsections: (i) a constrained op-timization formulation that defines long-horizon retention objectives under budget limitations (Sec-tion 3.2), (ii) a Mixed-Score heuristic that provides a fully deployable cold-start solution and a strong inductive baseline (Section 3.3), and (iii) an evidence learner trained offline from interaction logs that refines the heuristic policy using supervision derived from realized evidence structures (Sec-tion 3.4). Section 3.5 discusses a behavior-cloning variant for comparison. Figure 1 provides a high-level illustration of the overall framework and its data flow. 4Preprint 3.1 OBSERVABILITY SEPARATION 
+
+We first formalize the information asymmetry in memory retention. We distinguish between three types of signals. Online-observable inputs include the current query, memory metadata, and inter-action context, which are available at decision time. Offline-available supervision (OAS) includes gold evidence sets, answer content, coverage signals, and downstream outcome statistics, which are only accessible after the interaction completes. Evaluation signals are derived from realized system outcomes and are used strictly for analysis and benchmarking. A key constraint in OSL-MR is that deployed policies are strictly restricted to online-observable inputs. This ensures that all inference-time decisions are realistic and do not rely on oracle informa-tion. Consequently, any improvement must arise from better generalization over observable features rather than leakage of supervision signals. A subtle issue arises in modeling memory freshness: while recency is directly observable, semantic validity is not. A memory may remain valid long after creation, or become obsolete shortly after being written. Therefore, instead of assuming oracle freshness labels, we estimate stale-use risk using observable proxies, denoted as ρstale t,i , conditioned on memory features and interaction history. 3.2 CONSTRAINED MEMORY RETENTION PROBLEM 
+
+At each step t, the agent observes a memory pool Mt = {mt, 1, . . . , m t,n t }, where each memory is associated with a size st,i and a set of online features ψon t,i . The agent must select a subset At ⊆ Mt
+
+subject to a strict storage budget P 
+
+> i
+
+xt,i st,i ≤ Bt.After selection, the query induces an evidence demand set Et. Each memory contributes partial evidence coverage through a mapping cov( i). We define the realized coverage as: 
+
+Cov t(At) = Et ∩ [
+
+> i∈At
+
+cov( i).
+
+To capture both correctness and completeness of retention, we define token-weighted metrics: 
+
+T hit t = X
+
+> e∈Et
+
+τ (e) 1[e ∈ Cov t(At)] ,T miss t = X
+
+> e∈Et
+
+τ (e) 1[e / ∈ Cov t(At)] ,T reacq t = X
+
+> e∈Et\Cov t(At)
+
+τ (e) 1[e is recoverable ],T stale t = X
+
+> i∈At
+
+st,i 1[mt,i is stale and used ],
+
+with a full coverage indicator Ft = 1[Et ⊆ Cov t(At)] . The per-step reward is defined as: 
+
+rt := αhit T hit t + αf ull Ft − αstore 
+
+X
+
+> i
+
+xt,i st,i − αmiss T miss t − αreacq T reacq t − αstale T stale t .
+
+The objective is to maximize expected cumulative reward under budget constraints: 
+
+max  
+
+> π
+
+Eπ
+
+" TX
+
+> t=1
+
+rt
+
+#
+
+s.t. X
+
+> i
+
+xt,i st,i ≤ Bt.
+
+This formulation highlights that memory retention is inherently a long-horizon, delayed-feedback optimization problem, where optimal decisions must be made without access to future evidence realization. 
+
+Capturing long-horizon retention trade-offs. The above formulation explicitly models the core challenges of long-horizon memory management: (i) a hard budget constraint forces selective reten-tion; (ii) the reward includes immediate utility (evidence hits) and delayed penalties (miss, reacqui-sition, staleness) that only materialize in future interactions. Optimizing cumulative reward under 5Preprint partial observability thus forces the policy to anticipate future evidence needs and balance short-term gains against long-term costs. Hence, the proposed reward and optimization problem are well-suited for long-horizon agents. 
+
+Multi-step vs. single-step optimization. The above formulation optimizes cumulative reward over the entire horizon, making it a genuine multi-step decision problem. A single-step optimizer, by contrast, would only maximize immediate reward rt without accounting for how today’s retention choices affect tomorrow’s memory pool and future evidence demands. Such a myopic policy may discard information that appears irrelevant now but becomes critical later, incurring avoidable miss penalties or reacquisition delays. Hence, the multi-step perspective is essential for long-horizon agents. 
+
+From intractability to data-driven approximation. The above problem is a constrained partially observable stochastic optimization. It cannot be solved by standard solvers or analytically because: (i) future evidence demands depend on unknown user queries; (ii) rewards involve delayed out-comes not observable at decision time; (iii) the state space is combinatorial and grows exponentially with the number of memories, making exact optimization NP-hard. Thus, no closed-form solu-tion exists. We therefore adopt a data-driven approach: learn a retention policy from interaction logs. However, no logs exist initially. To bootstrap data collection while keeping the system op-erational, we first deploy a lightweight heuristic (Mixed-Score) that makes budget-aware decisions and logs all user-agent interactions naturally. Mixed-Score is intentionally designed to be stronger than naive baselines (e.g., recency, Generative Agents). After sufficient logs are collected, we train an evidence learner from the logged supervision to approximate the optimal policy under the same observability constraints. The learner serves as the primary solution to the intractable optimization. Additionally, we feed the Mixed-Score value as an extra input feature to the learner, which acts as an inductive prior and has been shown to improve precision and recall (see ablation in Section 4). Thus, Mixed-Score plays two practical roles: cold-start deployment and a feature prior for learning, while the learner remains the core performance driver. Unlike exact solvers that require an explicit model of future evidence distributions at decision time, our learning-based approach circumvents unobservability by exploiting historical evidence labels, which are available offline. 
+
+Challenge of reward supervision. Given that we already collect interaction logs and gold evi-dence, one might consider directly training a model to predict the per-step or cumulative reward. However, reward is a sequence-level scalar that cannot be decomposed into per-memory credit. For example, a miss penalty occurs when a future query’s evidence is missing, but which specific dis-carded memory caused the miss is ambiguous when multiple memories support the same evidence. Moreover, to obtain reward labels for training, one would need to evaluate the reward for every pos-sible retained subset At ⊆ Mt — a combinatorial space of size 2|Mt|, which is astronomically large and step-dependent. Thus, direct reward regression is computationally infeasible and conceptually ill-defined. We therefore introduce a decomposable proxy based on evidence membership. 3.3 MIXED -S CORE RETENTION POLICY 
+
+Mixed-Score constitutes the foundational retention mechanism in OSL-MR. Rather than relying on recency or static importance heuristics, it integrates multiple online-observable signals into a unified utility function that reflects both relevance and resource cost. Importantly, all components are constructed under strict observability constraints, ensuring direct deployability. At each decision step, Mixed-Score computes: 
+
+MS t,i = w⊤ 
+
+> τ
+
+¯ψtime t,i + w⊤ 
+
+> rel
+
+¯ψrel t,i + w⊤ 
+
+> ctx
+
+¯ψctx t,i + w⊤ 
+
+> risk
+
+¯ψrisk t,i − wc
+
+st,i 
+
+Bt
+
+.
+
+This formulation explicitly balances utility and storage efficiency, enabling budget-aware retention decisions. Compared to prior heuristic strategies such as recency-based decay or static importance scoring, Mixed-Score provides a more expressive and query-conditioned representation of memory utility while remaining fully online-safe. Beyond its role as a standalone policy, Mixed-Score plays three essential roles in OSL-MR. First, it serves as a strong and competitive baseline for evaluation. Second, it enables cold-start deployment in the absence of interaction data, ensuring system functionality from the first user query. Third, it acts as an inductive prior that guides the learning-based model described in the next section. 6Preprint To further improve robustness when explicit per-step freshness labels are unavailable, we introduce a continuous freshness proxy that decays over time as a function of memory type. Each memory item 
+
+i is assigned a binary type from {‘stable’, ‘temporary’ } at creation time and kept fixed thereafter. In offline dataset construction, types are produced by a pre-trained LLM classifier given the target utterance together with a short local dialogue context; ‘stable’ denotes long-valid content (identity, enduring preferences, settled facts), while ‘temporary’ denotes short-horizon content (plans, greet-ings, transient moods, ongoing intents). At deployment, when such labels are unavailable, we fall back to a content-only heuristic over the same two classes. Let ∆ti = t − tstore  
+
+> i
+
+denote the number of interaction steps elapsed since item i was written. We define a type-specific base decay rate γbase (type) and a monotone time-scaling factor κ(∆ ti) = 1 + log  1 + ∆ti
+
+> τ
+
+ with a time scale τ > 0. The effective decay rate and freshness proxy are then: 
+
+γi = γbase (type i) · κ(∆ ti), fresh proxy t,i = exp( −γi∆ti) ∈ (0 , 1] .
+
+Intuitively, ‘stable’ memories decay slowly, whereas ‘temporary’ memories are penalized more aggressively as they age. A complementary stale-risk signal is defined as stale risk t,i = 1 −
+
+fresh proxy t,i . These quantities are used in two ways: (i) as explicit risk features for the learned retention policy, and (ii) as a soft modulator of heuristic utility — in particular, the Mixed-Score baseline multiplies its linear relevance score by fresh proxy t,i , down-weighting aged temporary content without imposing a hard freshness gate. The concrete numerical values of γbase (·), τ , and the stale threshold are provided in the appendix. 3.4 EVIDENCE LEARNING WITH MIXED -S CORE PRIORS 
+
+While Mixed-Score provides a strong and fully deployable heuristic policy, it remains manually designed. As interaction data accumulate, OSL-MR transitions to a data-driven regime where a learned model refines this heuristic using evidence supervision. We adopt a staged deployment strategy. In the early stage, memory retention is performed entirely using Mixed-Score, while interaction logs are continuously collected. Once sufficient data are avail-able, we train an evidence learner offline and deploy it with frozen parameters. Importantly, the learned model does not introduce additional observability requirements and remains fully compati-ble with the online feature constraints. The learning target is defined as evidence membership: yevid t,i = 1[mt,i ∈ Et], which provides a direct supervision signal for memory utility. 
+
+Evidence membership as a decomposable proxy. A natural but challenging alternative would be to train a model to directly predict the cumulative or per-step reward. As argued above, this is infeasible due to combinatorial explosion and credit assignment ambiguity. To circumvent this, we adopt a decomposable proxy that preserves the essential information for reward optimization. Specifically, we use the evidence membership label yevid t,i . This label is per-memory, binary, and immediately available after each interaction; it requires no subset enumeration or credit assignment. 
+
+How evidence implicitly encodes reward. The reward function contains a hit term αhit T hit t that directly sums over retained evidence. Therefore, a policy that learns to retain evidence-relevant memories will naturally increase the hit component. Moreover, all delayed penalties (miss, reac-quisition, stale) are triggered precisely when a memory that would have been evidence is either discarded or stale. Consequently, evidence membership implicitly encodes the reward structure: op-timizing evidence membership is a necessary and sufficient condition for achieving high cumulative reward, because it maximizes hits and minimizes the conditions that lead to penalties. Training an evidence learner thus approximates the optimal retention policy without ever having to enumerate subsets or assign ambiguous credits. 
+
+Empirical validation. We empirically validate this claim in Section 4. Models trained with evi-dence membership (OSL-MR) consistently achieve higher cumulative reward than all baselines, and the reward rankings align perfectly with evidence F1 and precision. This perfect alignment confirms that the evidence proxy captures the same underlying utility as the original reward, and that opti-mizing the decomposable proxy yields near-optimal performance on the intractable reward-based objective. 7Preprint Instead of learning from scratch, the model leverages Mixed-Score as an inductive prior: ϕf ull t,i =[ψon t,i ; MS t,i ] and ϕbase t,i = ψon t,i . The evidence learner is trained using weighted binary cross-entropy: 
+
+Levid = X
+
+> t,i
+
+ωt,i BCE( σ(fθ (ϕt,i )) , y evid t,i ).
+
+At inference time, memory selection is performed via constrained decoding: 
+
+At = Decode( fθ (ϕt), B t), X
+
+> i∈At
+
+st,i ≤ Bt.
+
+This formulation enables the model to learn query-conditioned refinements over Mixed-Score while preserving strict budget constraints. The overall training and deployment procedure is summarized in Algorithm 1. 3.5 BEHAVIOR -C LONING VARIANT 
+
+For comparison, we construct a behavior-cloning baseline that learns from a non-deployable teacher policy. The teacher policy is not deployable and is constructed using offline-available supervision (OAS). For each training instance, starting from the Mixed-Score selection, the teacher performs a local greedy search: it considers swapping one retained memory with a currently omitted candidate, evaluates the resulting retained set using the reward defined in Section 3.2 (which depends on gold evidence), and accepts the swap if it improves the reward. This process continues until no improve-ment is found. The teacher thus produces a higher-quality retained set Ateacher t than the original Mixed-Score, but relies on OAS and is therefore unsuitable for deployment. The pseudo-labels for behavior cloning are defined as yBC t,i = 1[mt,i ∈ Ateacher t ]. The BC-learner is trained using the same architecture and loss as the evidence learner, but with these pseudo-labels instead of gold evidence labels. This variant evaluates whether imitation of an improved heuris-tic policy can substitute for direct evidence supervision, highlighting the importance of explicit evidence-based learning. 
+
+# 4 EXPERIMENTS 
+
+4.1 EXPERIMENTAL SETUP 
+
+Online/OAS discipline. All experiments strictly follow the observability separation defined in Sec-tion 3. Deployable policies are restricted to online-observable inputs, including query context, mem-ory metadata, recency, semantic overlap, entity overlap, session/speaker information, and cost fea-tures. Offline-available supervision (OAS) includes gold evidence, answer text, realized coverage, miss events, reacquisition cost, and ground-truth freshness. OAS is used only for training or evalua-tion of oracle/teacher variants and is never accessible to deployable policies. Any method that relies on OAS at inference time is treated as an oracle baseline, not a deployable policy. 
+
+Benchmarks. We evaluate on two public long-horizon memory benchmarks: LoCoMo (Maharana et al., 2024) and LongMemEval (Wu et al., 2025). Both benchmarks provide multi-turn conversa-tional interactions with gold evidence labels, enabling systematic evaluation of memory retention under budget constraints. 
+
+Compared methods. We compare against several existing approaches and variants: • Recency : A practical and widely used heuristic that retains the top-K most recent mem-ories by timestamp, where K is the maximum number of items that fit under the budget. This approach is simple, computationally efficient, and commonly employed as a baseline despite ignoring query relevance or evidence utility. • Generative Agents (GA) : A widely adopted retrieval paradigm that scores each memory as a weighted sum of recency, relevance, and importance (Park et al., 2023). We evaluate two importance variants: GA-heuristic (hand-crafted rules based on memory content, e.g., higher weight for emotional events) and GA-LLM (importance scores queried from an LLM offline). Both variants share the same recency and relevance computation. 8Preprint 
+
+Algorithm 1 OSL-MR: Training and Deployment 
+
+Require: Training environments E, budgets Bt, costs α, online features ψon , Mixed-Score prior 
+
+MS , decoding function Decode 
+
+Ensure: Learned policy fθ 
+
+> 1:
+
+Initialize dataset D ← ∅  
+
+> 2:
+
+for all episode ∈ E do  
+
+> 3:
+
+Initialize state S0 
+
+> 4:
+
+for t = 1 , 2, . . . until terminal do  
+
+> 5:
+
+Observe memory pool Mt // current step  
+
+> 6:
+
+for all mt,i ∈ Mt do  
+
+> 7:
+
+Compute ψon t,i // online features  
+
+> 8:
+
+Compute MS t,i // compute prior score  
+
+> 9:
+
+Form ϕt,i = [ ψon t,i ; MS t,i ] // feature vector  
+
+> 10:
+
+Get yevid t,i = 1[mt,i ∈ Et] // gold evidence label (OAS)  
+
+> 11:
+
+end for  
+
+> 12:
+
+D ← D ∪ (St, ϕ t, y evid t ) // log interaction  
+
+> 13:
+
+Execute At = Decode(MS t, B t) // cold-start: use Mixed-Score  
+
+> 14:
+
+Observe next state St+1  
+
+> 15:
+
+end for  
+
+> 16:
+
+end for  
+
+> 17:
+
+Train evidence learner fθ by minimizing: 
+
+min 
+
+> θ
+
+X
+
+> (S,ϕ,y )∈D
+
+X
+
+> i
+
+BCE  σ(fθ (ϕi)) , y evid i
+
+ 
+
+> 18:
+
+return fθ with deployable selection At = Decode( fθ (ϕt), B t) // frozen deployment • Mixed-Score : Our proposed online-safe heuristic prior. It computes a utility score for each memory by combining multiple observable feature groups (temporal, relevance, context, risk) with a size penalty term. The score is used to select the top-scoring memories under the budget. Mixed-Score is fully deployable and serves as a strong baseline as well as an inductive prior for learning. • BC-learner : A behavior-cloning baseline trained to imitate the retention decisions of a non-deployable teacher policy. The teacher performs local greedy search around the Mixed-Score selection using oracle gold evidence (OAS) to produce higher-quality re-tained sets. BC-learner uses the same architecture as OSL-MR but is supervised by teacher pseudo-labels instead of gold evidence. • OSL-MR (full) : Our complete method, which trains an evidence learner from logged in-teraction data using gold evidence labels. The learner takes online-observable features concatenated with the Mixed-Score prior as input, and outputs a utility logit per memory. At inference, a budget-constrained decoder selects the retained subset. The learned policy is frozen after training and uses no OAS at test time. • OSL-MR (w/o prior) : An ablation variant of OSL-MR that removes the Mixed-Score prior from the feature vector, using only online-observable features ψon . All other settings (training data, architecture, loss) remain identical, isolating the contribution of the prior. 
+
+Note on single-step methods. Fofadiya and Tiwari (Fofadiya & Tiwari, 2026) formulate single-step budgeted optimization that maximizes immediate relevance per step, but they ignore delayed consequences (miss, reacquisition, staleness) and partial observability, and their code is not publicly available. Hence we do not include them as a quantitative baseline. Instead, our experiments include strong local heuristics (Recency, GA, Mixed-Score) that represent single-step decision policies, and we demonstrate the advantages of multi-step optimization through performance gains and ablation studies. 
+
+Hyperparameters and cost settings. We used standard train/dev/test splits, tuning thresholds on the dev split via grid search. The evidence learner is a single-hidden-layer MLP with 16 hidden units and sigmoid output, trained for 12 epochs (learning rate 0.03, L2 regularization 1e-4, pos-9Preprint itive class weight 4.0, negative down-sampling multiplier 6, random seed 17). Default reward coefficients are set with storage cost as the unit baseline ( αstore = 1 .0). The remaining coef-ficients are αhit = 4 .0 (hit reward), αreacq = 6 .0 (reacquisition penalty), αmiss = 12 .0 (miss penalty), αstale = 6 .0 (stale penalty), and αfull = 64 .0 (full-coverage bonus). The miss penalty is highest because failing to answer is most harmful; reacquisition and stale penalties are mod-erate (re-searching cost and outdated information risk); hit reward is lower; full-coverage bonus strongly encourages complete evidence retention. Budgets reflect average evidence length: for Lo-CoMo (approximately 60 tokens per query) we use 32, 64, and 128 tokens; for LongMemEval (ap-proximately 587 tokens) we use 256, 512, and 1024 tokens, covering under- and over-provisioned regimes. Sensitivity analysis (Section 4.4) varies each coefficient individually over a multiplier 
+
+m ∈ { 0.25 , 0.5, 0.75 , 1.0, 1.5, 2.0, 4.0}, confirming OSL-MR’s robustness to coefficient scales. LLMs were used only for offline annotation (DeepSeek-V4-Flash, temperature 0.0, JSON prompts, context window of three turns, output limits of 20 tokens for memory type and 24 tokens for im-portance). Importance scores built the GA-LLM baseline; memory type labels derived freshness proxies. All labels cached; no LLM calls during evaluation. 
+
+Metrics. We report evidence precision, recall, F1, full recall, retained tokens, and budget occu-pancy. We deliberately evaluate OSL-MR using a minimal online-safe feature set that excludes the hybrid freshness proxy described in Section 3, isolating the contribution of optimization-guided learning. The per-step reward from Section 3 is reported after a global shift for readability: 
+
+shifted reward = raw reward + C, where C = 606 .13 on LoCoMo and C = 5561 .9 on Long-MemEval. This translation is purely cosmetic and does not affect any relative comparisons. The minimum shifted reward in each benchmark is zero, corresponding to the worst-performing method under that configuration. 
+
+Evidence precision, recall, and F1. For each query t, let Gt be the set of gold evidence dialogue IDs and Rt the set of dialogue IDs retained under the budget. We compute 
+
+Precision t = |Rt ∩ Gt|
+
+max( |Rt|, 1) , Recall t = |Rt ∩ Gt|
+
+max( |Gt|, 1) , F1 t = 2 Precision t Recall t
+
+Precision t + Recall t
+
+,
+
+with F1 t = 0 when Precision t + Recall t = 0 . All metrics are macro-averaged over queries. Precision measures budget efficiency: high precision means the policy is not wasting capacity on irrelevant memories. Recall measures evidence coverage: high recall means most required infor-mation is retained. In budgeted retention, these two objectives are in tension, and F1 captures their balance. 
+
+Budget occupancy. Budget occupancy measures the fraction of the available memory budget con-sumed by the retained subset: Occupancy t =  
+
+> P
+> i∈Atst,i
+> max( Bt,1)
+
+, macro-averaged over queries. High oc-cupancy is common for static scoring rules that greedily fill the budget, but does not necessarily indicate better retention quality. Learned policies that stop early when no remaining candidate ap-pears useful may yield lower occupancy while achieving higher precision and reward. Occupancy should therefore be interpreted together with precision and recall as a measure of budget efficiency rather than evidence correctness. 4.2 MAIN RESULTS 
+
+The proposed method OSL-MR substantially outperforms heuristics. Across LoCoMo and LongMemEval, OSL-MR achieves higher evidence F1 and reward than all heuristic baselines (Re-cency, GA, Mixed-Score) and BC-learner across all evaluated budgets. The relative improvement is most pronounced under tight budgets, where heuristics saturate memory capacity with low-utility items while OSL-MR retains a smaller, evidence-denser subset. For instance, on LoCoMo at budget 128 (Table 2), OSL-MR attains an F1 of 0.302 and a reward of 305.168, compared to 0.069 and 132.480 for Mixed-Score, and below 0.010 for GA variants. As the budget becomes looser, the per-formance gap between OSL-MR and the best baseline (typically BC-learner) narrows slightly. This is because baseline methods operate at near-saturated occupancy (filling almost the entire budget), while OSL-MR maintains lower occupancy—it deliberately discards memories of marginal utility, resulting in a cleaner but smaller retained set. Even under loose budgets, OSL-MR’s occupancy re-mains well below saturation (e.g., on LongMemEval budget 1024, OSL-MR occupancy is 0.337 vs. 10 Preprint Table 2: LoCoMo results across memory budgets. Occupancy denotes budget utilization. Rewards are shifted by C = 606 .134 so that the worst baseline (Recency at budget 128) is zero.                                                                                                                   
+
+> Budget Method Precision Recall F1 Occupancy Reward
+> 32 Recency 0.000 0.000 0.000 0.981 92.446 32 GA-heuristic 0.003 0.010 0.004 0.968 95.043 32 GA-LLM 0.002 0.006 0.003 0.964 94.409 32 Mixed-Score 0.024 0.070 0.035 0.979 110.795 32 BC-learner 0.097 0.083 0.081 0.657 137.067 32 OSL-MR 0.118 0.108 0.102 0.668 145.567 64 Recency 0.001 0.006 0.002 0.989 61.953 64 GA-heuristic 0.004 0.030 0.007 0.981 67.684 64 GA-LLM 0.002 0.012 0.004 0.984 63.684 64 Mixed-Score 0.033 0.156 0.052 0.992 112.406 64 BC-learner 0.223 0.241 0.206 0.763 196.832 64 OSL-MR 0.313 0.359 0.295 0.737 252.701 128 Recency 0.001 0.015 0.002 0.992 0.000 128 GA-heuristic 0.004 0.051 0.007 0.990 9.990 128 GA-LLM 0.003 0.040 0.006 0.991 6.402 128 Mixed-Score 0.039 0.338 0.069 0.996 132.480 128 BC-learner 0.230 0.444 0.256 0.790 260.913 128 OSL-MR 0.274 0.532 0.302 0.764 305.168
+
+0.370 for BC-learner), demonstrating that it continues to prioritize evidence quality over quantity. Importantly, reward improvements are strongly aligned with gains in precision and recall, confirm-ing that the optimization objective captures genuine retention quality rather than artifacts of cost calibration. Across all budgets and datasets, the reward rankings perfectly align with the rankings in F1 and precision, indicating that the learned policy optimizes for authentic evidence-based retention. 
+
+GA performance and the importance–evidence mismatch. Both GA variants achieve low ev-idence F1 despite capturing plausible notions of memory salience. The gap is particularly in-structive for GA-LLM: LLM-prompted importance scores reflect general memory noteworthiness (e.g., an emotional event), but the evaluation metric measures whether the memory is gold evi-dence for the current query—a query-conditional notion of utility. GA-heuristic occasionally out-performs GA-LLM because its rule-based heuristics correlate more closely with evidence member-ship in these benchmarks. This suggests that static importance scores are inherently misaligned with query-specific evidence needs. Therefore, we propose to learn evidence membership directly from supervision: OSL-MR trains an evidence learner using gold evidence labels, bypassing the need for a general-purpose importance oracle. 
+
+Direct evidence supervision outperforms behavior cloning. BC-learner improves over static heuristics but remains consistently weaker than OSL-MR. On LongMemEval at budget 256 (Ta-ble 3), BC-learner achieves an F1 of 0.230, whereas OSL-MR reaches 0.518—more than double. At budget 512, OSL-MR’s F1 is 0.385 versus BC-learner’s 0.235, a relative improvement of about 64%. These results confirm that gold evidence labels provide a better-aligned training target than teacher-imitated pseudo-labels for evidence-retention metrics. Moreover, OSL-MR uses budget more efficiently: on LongMemEval budget 256, occupancy is 0.711 for OSL-MR compared to 0.904 for BC-learner, and on LoCoMo budget 128, occupancy is 0.764 vs. 0.790. The higher reward of OSL-MR over BC-learner directly reflects its superior F1 and precision, not merely a different cost trade-off. 4.3 ABLATION STUDIES 
+
+Effect of mixed-score prior. To isolate the contribution of the mixed-score prior, we compare the full OSL-MR against a variant that removes this prior from the feature vector (OSL-MR (w/o prior)). Both models use the same online-safe evidence labels and architecture; only the presence of the scalar Mixed-Score prior in ϕt,i = [ ψon t,i ; MS t,i ] differs. Table 4 reports results on both benchmarks. 11 Preprint Table 3: LongMemEval results across memory budgets. Occupancy denotes budget utilization. Rewards are shifted by C = 5561 .920 .
+
+Budget Method Precision Recall F1 Occupancy Reward 
+
+256 Recency 0.003 0.009 0.003 0.990 629.973 256 GA-heuristic 0.007 0.029 0.008 0.989 653.013 256 GA-LLM 0.003 0.016 0.004 0.984 637.987 256 Mixed-Score 0.052 0.324 0.082 0.994 1062.120 256 BC-learner 0.203 0.381 0.230 0.904 1119.973 256 OSL-MR 0.529 0.681 0.518 0.711 1626.813 512 Recency 0.006 0.057 0.008 0.995 419.733 512 GA-heuristic 0.012 0.131 0.020 0.993 489.347 512 GA-LLM 0.009 0.105 0.014 0.991 461.747 512 Mixed-Score 0.047 0.477 0.078 0.997 1062.827 512 BC-learner 0.173 0.601 0.235 0.946 1187.933 512 OSL-MR 0.315 0.769 0.385 0.851 1585.867 1024 Recency 0.008 0.117 0.013 0.998 0.000 1024 GA-heuristic 0.014 0.232 0.024 0.996 117.067 1024 GA-LLM 0.010 0.168 0.017 0.996 44.227 1024 Mixed-Score 0.033 0.533 0.058 0.998 718.960 1024 BC-learner 0.616 0.572 0.515 0.370 1772.773 1024 OSL-MR 0.685 0.595 0.536 0.337 1957.933 
+
+Table 4: Mixed-score prior ablation across benchmarks. Rewards are shifted by C = 606 .134 
+
+(LoCoMo) and C = 5561 .920 (LongMemEval). 
+
+Dataset Method Precision Recall F1 Occupacy Reward 
+
+LoCoMo 
+
+Budget 32 
+
+OSL-MR 0.118 0.108 0.102 0.668 145.567 OSL-MR (w/o prior) 0.105 0.099 0.092 0.669 141.305 
+
+Budget 64 
+
+OSL-MR 0.313 0.359 0.295 0.737 252.701 OSL-MR (w/o prior) 0.290 0.331 0.271 0.740 236.704 
+
+Budget 128 
+
+OSL-MR 0.274 0.532 0.302 0.764 305.168 OSL-MR (w/o prior) 0.251 0.530 0.290 0.784 301.131 LongMemEval 
+
+Budget 256 
+
+OSL-MR 0.529 0.681 0.518 0.711 1626.813 OSL-MR (w/o prior) 0.421 0.669 0.443 0.804 1554.200 
+
+Budget 512 
+
+OSL-MR 0.315 0.769 0.385 0.851 1585.867 OSL-MR (w/o prior) 0.237 0.762 0.312 0.898 1538.720 
+
+Budget 1024 
+
+OSL-MR 0.685 0.595 0.536 0.337 1957.933 OSL-MR (w/o prior) 0.683 0.586 0.533 0.367 1912.907 
+
+Removing the prior consistently reduces precision while preserving recall, and increases budget occupancy. On LongMemEval at budget 256, precision drops from 0.529 to 0.421 (a relative de-crease of 20%), while recall remains nearly unchanged (0.681 vs. 0.669). Occupancy rises from 
+
+0.711 to 0.804 , indicating that the prior helps the learner avoid low-utility memories. On LoCoMo at budget 128, precision falls from 0.274 to 0.251 , recall stays almost identical (0.532 vs. 0.530), and occupancy increases from 0.764 to 0.784 . Rewards also decrease across all settings when the prior is removed. These results confirm that the Mixed-Score prior provides a strong inductive bias for selection efficiency without introducing additional supervision signals. The effect is especially pronounced on the more challenging LongMemEval dataset, where the prior improves precision by up to 20% at tight budgets. 12 Preprint 
+
+Figure 2: Reward sensitivity on LoCoMo (budget=64) when varying a single coefficient. αstore 
+
+is fixed at 1.0. Each curve changes one coefficient by multiplying its default value with m ∈{0.25 , 0.5, 0.75 , 1.0, 1.5, 2.0, 4.0}, keeping all other coefficients at their defaults. 
+
+Observability leakage diagnostic. Any policy that incorporates answer-derived or gold-evidence-derived features would operate with an unrealistic information advantage over deployable methods. Such a policy is not a fair online baseline and serves only as a leakage diagnostic, reinforcing the necessity of the strict observability separation. 4.4 ROBUSTNESS ANALYSIS 
+
+We conduct a sensitivity analysis by varying one reward or cost coefficient at a time while keeping all other coefficients fixed at their default values. The default coefficients are αhit = 4 .0, αfull = 64 .0,
+
+αmiss = 12 .0, αreacq = 6 .0, and αstale = 6 .0, with the storage cost fixed to αstore = 1 .0. For each coefficient, we apply a multiplier m ∈ { 0.25 , 0.5, 0.75 , 1.0, 1.5, 2.0, 4.0} while leaving the others unchanged. We report results under fixed memory budgets of 64 on LoCoMo and 512 on LongMemEval here; results for other budgets (LoCoMo 32, 128 and LongMemEval 256, 1024) are provided in the appendix. As shown in the sensitivity curves (Fig. 2 and Fig. 3), OSL-MR remains the top-performing non-oracle method across all multipliers. For the reward coefficients αhit and 
+
+αfull , its average reward increases or remains high as the corresponding reward becomes larger. For the penalty coefficients αmiss , αreacq , and αstale , the average reward decreases as expected, but OSL-MR consistently stays above the heuristic and learned baselines, showing robust performance under stronger cost penalties. 4.5 SUMMARY OF FINDINGS 
+
+The key takeaways from our experiments are as follows: • Heuristics are insufficient. Recency, Generative Agents, and Mixed-Score all saturate the budget with low-utility items, leading to poor evidence F1 under strict constraints. • Evidence-supervised learning is the primary driver. OSL-MR consistently outperforms all baselines across budgets and datasets, with the largest gains under tight budgets. • The Mixed-Score prior improves precision without sacrificing recall. Removing the prior reduces precision and increases occupancy while leaving recall unchanged, confirm-ing its role as a useful inductive bias. • Direct evidence supervision beats behavior cloning. BC-learner improves over heuristics but remains inferior to OSL-MR, demonstrating that learning from gold evidence labels is more effective than imitating a teacher. 13 Preprint 
+
+Figure 3: Reward sensitivity on LongMemEval (budget=512) when varying a single coefficient. 
+
+αstore is fixed at 1.0. Each curve changes one coefficient by multiplying its default value with 
+
+m ∈ { 0.25 , 0.5, 0.75 , 1.0, 1.5, 2.0, 4.0}, keeping all other coefficients at their defaults. • The optimization objective is well-defined. Reward rankings align perfectly with F1 and precision, validating that our reward function (which explicitly models hits, misses, reacquisition, and staleness) captures genuine retention quality. Together, these takeaways validate OSL-MR as an online-safe evidence learning framework for constrained memory retention. 
+
+# 5 CONCLUSION AND DISCUSSION 
+
+We have presented OSL-MR, a framework for memory retention in long-horizon language agents that explicitly treats retention as a sequential decision problem under budget constraints, delayed feedback, and partial observability. The key contribution is the formulation itself: to the best of our knowledge, this is the first work to formalize memory retention as a constrained stochastic optimization problem that accounts for evidence utility, reacquisition costs, stale risk, and a strict separation between online-observable features and offline-available supervision. Under this formu-lation, we propose a data-driven solution where a lightweight Mixed-Score heuristic provides a fully deployable cold-start baseline and an inductive prior, while an evidence learner trained from natural user-agent interaction logs approximates the optimal policy. Empirically, the learned policy con-sistently outperforms strong heuristic baselines (recency, Generative Agents, and the Mixed-Score itself) across LoCoMo and LongMemEval benchmarks, especially under tight budgets. The Mixed-Score prior further improves precision without sacrificing recall, and direct evidence supervision is the primary driver of performance gains. The strict observability separation ensures that all reported gains reflect generalization under realistic information constraints. Our framework complements recent advances in memory writing (Mem0), compression (MEM1), and retrieval-side optimization (MemRL). While those systems focus on other aspects of the memory lifecycle, OSL-MR is the first to formalize and optimize retention under hard budgets and observ-ability constraints. Future work includes automatically learning the feature groups and weights of the Mixed-Score prior, developing more principled freshness estimation beyond type-based decay, and scaling the approach to embodied or tool-augmented agents via more efficient optimization or amortized decision strategies. 14 Preprint 
+
+# REFERENCES 
+
+Chandra Vamsi Krishna Alla, Harish Naidu Gaddam, and Manohar Kommi. Budgetmem: Learning selective memory policies for cost-efficient long-context processing in language models, 2026. URL https:// arxiv.org/abs/2511.04919 .Anonymous. AdaGReS: Adaptive greedy selection for token-budgeted RAG. Under review , 2025. Hanxiang Chao et al. STALE: Can LLM agents know when their memories are no longer valid? arXiv preprint arXiv:2605.06527 , 2026. Prateek Chhikara, Dev Khant, Saket Aryan, Taranjeet Singh, and Deshraj Yadav. Mem0: Building production-ready ai agents with scalable long-term memory. arXiv preprint arXiv:2504.19413 , 2025. Payal Fofadiya and Sunil Tiwari. Novel memory forgetting techniques for autonomous ai agents: Balancing relevance and efficiency. arXiv preprint arXiv:2604.02280 , 2026. Submitted on 2 Apr 2026. Yuyang Hu, Shichun Liu, Yanwei Yue, Guibin Zhang, Boyang Liu, Fangyi Zhu, Jiahang Lin, Honglin Guo, Shihan Dou, Zhiheng Xi, et al. Memory in the age of ai agents. arXiv preprint arXiv:2512.13564 , 2025. Wei-Chieh Huang, Weizhi Zhang, Yueqing Liang, Yuanchen Bei, Yankai Chen, Tao Feng, Xinyu Pan, Zhen Tan, Yu Wang, Tianxin Wei, Shanglin Wu, Ruiyao Xu, Liangwei Yang, Rui Yang, Wooseong Yang, Chin-Yuan Yeh, Hanrong Zhang, Haozhen Zhang, Siqi Zhu, Henry Peng Zou, Wanjia Zhao, Song Wang, Wujiang Xu, Zixuan Ke, Zheng Hui, Dawei Li, Yaozu Wu, Langzhou He, Chen Wang, Xiongxiao Xu, Baixiang Huang, Juntao Tan, Shelby Heinecke, Huan Wang, Caiming Xiong, Ahmed A. Metwally, Jun Yan, Chen-Yu Lee, Hanqing Zeng, Yinglong Xia, Xiaokai Wei, Ali Payani, Yu Wang, Haitong Ma, Wenya Wang, Chenguang Wang, Yu Zhang, Xin Wang, Yongfeng Zhang, Jiaxuan You, Hanghang Tong, Xiao Luo, Xue Liu, Yizhou Sun, Wei Wang, Julian McAuley, James Zou, Jiawei Han, Philip S. Yu, and Kai Shu. Rethinking memory mechanisms of foundation agents in the second half: A survey, 2026. URL https://arxiv.org/abs/ 2602.06052 .Huiqiang Jiang, Qianhui Wu, Chin-Yew Lin, Yuqing Yang, and Lili Qiu. LLMLingua: Compressing prompts for accelerated inference of large language models. In Proceedings of EMNLP , 2023. Adyasha Maharana, Dong-Ho Lee, Sergey Tulyakov, Mohit Bansal, Francesco Barbieri, and Yuwei Fang. Evaluating very long-term conversational memory of llm agents, 2024. URL https://arxiv.org/ abs/2402.17753 .Charles Packer, Vivian Fang, Shishir G. Patil, Kevin Lin, Sarah Wooders, and Joseph E. Gonzalez. MemGPT: Towards LLMs as operating systems. arXiv preprint arXiv:2310.08560 , 2023. Joon Sung Park, Joseph O’Brien, Carrie Jun Cai, Meredith Ringel Morris, Percy Liang, and Michael S. Bern-stein. Generative agents: Interactive simulacra of human behavior. In Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology (UIST) , 2023. Y. Wang et al. Mem-α: Reinforcement learning for LLM agent memory management. Under review , 2025. Zilong Wang et al. CORAG: Cost-constrained retrieval-augmented generation with monte carlo tree search. 
+
+arXiv preprint arXiv:2411.00744 , 2024. Di Wu, Hongwei Wang, Wenhao Yu, Yuwei Zhang, Kai-Wei Chang, and Dong Yu. Longmemeval: Benchmark-ing chat assistants on long-term interactive memory, 2025. URL https://arxiv.org/abs/2410. 10813 .Yanwei Yue, Boci Peng, Xuanbo Fan, Jiaxin Guo, Qiankun Li, and Yan Zhang. Mem-t: Densifying rewards for long-horizon memory agents, 2026. URL https://arxiv.org/abs/2601.23014 .Haozhen Zhang, Haodong Yue, Tao Feng, Quanyu Long, Jianzhu Bao, Bowen Jin, Weizhi Zhang, Xiao Li, Jiaxuan You, Chengwei Qin, and Wenya Wang. Learning query-aware budget-tier routing for runtime agent memory, 2026a. URL https://arxiv.org/abs/2602.06025 .Shengtao Zhang, Jiaqian Wang, Ruiwen Zhou, Junwei Liao, Yuchen Feng, Zhuo Li, Yujie Zheng, Weinan Zhang, Ying Wen, Zhiyu Li, et al. Memrl: Self-evolving agents via runtime reinforcement learning on episodic memory. arXiv preprint arXiv:2601.03192 , 2026b. Yuxiang Zhang, Jiangming Shu, Ye Ma, Xueyuan Lin, Shangxi Wu, and Jitao Sang. Memory as action: Au-tonomous context curation for long-horizon agentic tasks, 2026c. URL https://arxiv.org/abs/ 2510.12635 .
+
+15 Preprint 
+
+Wanjun Zhong, Lianghong Guo, Qiqi Gao, He Ye, and Yanlin Wang. MemoryBank: Enhancing large language models with long-term memory. In Proceedings of the AAAI Conference on Artificial Intelligence , 2024. Y. Zhou et al. CSIM: Compressed step information memory for long-horizon agent tasks. Under review , 2025a. Zijian Zhou, Ao Qu, Zhaoxuan Wu, Sunghwan Kim, Alok Prakash, Daniela Rus, Jinhua Zhao, Bryan Kian Hsiang Low, and Paul Pu Liang. Mem1: Learning to synergize memory and reasoning for efficient long-horizon agents. arXiv preprint arXiv:2506.15841 , 2025b. 
+
+16 Preprint 
+
+# A APPENDIX 
+
+A.1 ROBUSTNESS ANALYSIS 
+
+We conduct a sensitivity analysis by varying one reward or cost coefficient at a time while keeping all other coefficients fixed at their default values. The default coefficients are αhit = 4 .0, αfull = 64 .0, αmiss = 12 .0,
+
+αreacq = 6 .0, and αstale = 6 .0, with the storage cost fixed to αstore = 1 .0. For each coefficient, we apply a multiplier m ∈ { 0.25 , 0.5, 0.75 , 1.0, 1.5, 2.0, 4.0} while leaving the others unchanged. We report results under fixed memory budgets of 64 on LoCoMo and 512 on LongMemEval in the main text (Figures 2 and 3). The results for budgets 32 and 128 on LoCoMo, and budgets 256 and 1024 on LongMemEval, are shown in the appendix (Figures 4, 5, 6, and 7). 
+
+Figure 4: Reward sensitivity on LoCoMo (budget=32) when varying a single coeffi-cient: each curve changes one coefficient by multiplying its default value with m ∈{0.25 , 0.5, 0.75 , 1.0, 1.5, 2.0, 4.0}, keeping all other coefficients at their defaults. αstore is fixed at 1.0.A.2 FRESHNESS PROXY AND RELATED HYPERPARAMETERS 
+
+Memory-type taxonomy and labeling. Each memory item i is assigned a fixed binary type type i ∈{‘stable’ , ‘temporary’ } at creation time. In offline data construction, types are produced by a LLM classifier DeepSeek-V4-Flash prompted with the target utterance and a local dialogue window of ±3 turns; the model out-puts a single JSON field memory type at temperature 0 with a maximum of 20 tokens. ‘stable’ covers long-valid content (identity, enduring preferences, settled relationships, facts that remain true), whereas ‘temporary’ covers short-horizon content (plans, greetings, transient moods, ongoing intents). When LLM labels are unavailable (online-safe evaluation), we instead apply a content-only heuristic: utterances matching planning/scheduling cues (e.g., plan , tomorrow , will , tonight ), short greetings ( < 100 characters), or present-tense state cues (e.g., 
+
+just , currently ) are labeled ‘temporary’; all others default to ‘stable’. A legacy 8-class schema (stable fact, pro-file trait, relationship state, activity event, opinion preference, temporary plan, ephemeral, other) is mapped to the binary taxonomy before decay is applied. 
+
+Decay dynamics. Let ∆ti = t − tstore  
+
+> i
+
+denote the number of interaction steps since item i was written. In implementation, this is computed as ∆ti = anchor step − item id, where anchor step is the global step index of the current interaction and item id is the step index when the memory was created. The time-scaling factor is 
+
+κ(∆ t) = 1 + log 
+
+
+
+1 + ∆tτ
+
+
+
+, τ = 10 ,
+
+and the effective decay rate and continuous freshness proxy are 
+
+γi = γbase (type i) · κ(∆ ti), fresh proxy t,i = exp( −γi∆ti).
+
+17 Preprint 
+
+Figure 5: Reward sensitivity on LoCoMo (budget=128) when varying a single coeffi-cient: each curve changes one coefficient by multiplying its default value with m ∈{0.25 , 0.5, 0.75 , 1.0, 1.5, 2.0, 4.0}, keeping all other coefficients at their defaults. αstore is fixed at 1.0.
+
+Figure 6: Reward sensitivity on LongMemEval (budget=256) when varying a single coef-ficient: each curve changes one coefficient by multiplying its default value with m ∈{0.25 , 0.5, 0.75 , 1.0, 1.5, 2.0, 4.0}, keeping all other coefficients at their defaults. αstore is fixed at 1.0.
+
+The type-specific base rates are γbase (‘stable’ ) = 0 .002 and γbase (‘temporary’ ) = 0 .15 , yielding a 75 × faster nominal decay for temporary memories. We also define stale risk t,i = 1 − fresh proxy t,i and treat an item as stale when fresh proxy t,i < θ stale with θstale = 0 .5. At tstore  
+
+> i
+
+, all items satisfy fresh proxy = 1 ; as ∆ti
+
+grows, temporary items decay rapidly toward 0, while stable items remain near-fresh over long horizons (e.g., at ∆ti=50 : fresh proxy ≈ 0.82 for ‘stable’ vs. ≈ 0 for ‘temporary’). Mixed-score modulation: the heuristic utility is 
+
+MS i =
+
+ P 
+
+> k
+
+wk ϕi,k 
+
+
+
+· fresh proxy t,i ,
+
+18 Preprint 
+
+Figure 7: Reward sensitivity on LongMemEval (budget=1024) when varying a single co-efficient: each curve changes one coefficient by multiplying its default value with m ∈{0.25 , 0.5, 0.75 , 1.0, 1.5, 2.0, 4.0}, keeping all other coefficients at their defaults. αstore is fixed at 1.0.
+
+where ϕi,k are linear relevance signals (recency ratio, question/answer overlap, entity overlap, session locality, speaker bonus, normalized cost) and the weights {wk } are selected on the development split from a 6-candidate grid (default prior: wr =0 .35 , wq =0 .40 , wa=0 .15 , we=0 .05 , ws=0 .03 , wu=0 .02 , wc=0 .05 ; e.g., dev-tuned on LongMemEval: wr =0 .22 , wq =0 .48 , wa=0 .08 , we=0 .12 , ws=0 .06 , wu=0 .02 , wc=0 .06 ). Note that the recency signal ϕi, rec = ( tstore  
+
+> i
+
++ 1) /(t + 1) is separate from the type-conditioned freshness multiplier. 
+
+# B LLM P ROMPTS FOR MEMORY ANNOTATION 
+
+We annotate each conversational turn (utterance) with a memory type and an importance score using a chat model at temperature 0. For both tasks, the model receives a context block : up to w turns before and after the target utterance (default w=3 ), formatted as [dia id] speaker: text , with the target line prefixed by >>> . Runtime placeholders are filled as follows: {context block }, {dia id }, {speaker }, and 
+
+{text }.
+
+B.1 MEMORY TYPE LABELING (S T A B L E VS . T E M P O R A R Y )
+
+Memory Type Labeling Prompt Template 
+
+## System Prompt 
+
+You are a memory freshness annotator. Output only valid JSON: {"memory type":"stable" } or 
+
+{"memory type":"temporary" }. Do not output any other fields. 
+
+## User Prompt 
+
+Assign one memory-type label to the target utterance using the dialogue context. 
+
+Labels (choose exactly one): 
+
+• stable : long-lasting and unlikely to become outdated (identity, long-term preferences, stable relationships, completed facts that still hold) • temporary : short-lived and likely to become outdated (plans or schedules, current emotions, small talk, ongoing events, unfulfilled intentions) 
+
+Context (several turns before and after the target): 
+
+{context block }
+
+Target utterance: 
+
+• dia id: {dia id }
+
+19 Preprint 
+
+• speaker: {speaker }
+
+• text: {text }
+
+Choose stable or temporary based only on the meaning of the target utterance in context. 
+
+## Expected Output 
+
+A single JSON object with one field, e.g. {"memory type":"stable" } or 
+
+{"memory type":"temporary" }. (max tokens = 20 )
+
+B.2 MEMORY IMPORTANCE LABELING (1–10) 
+
+Memory Importance Labeling Prompt Template 
+
+## System Prompt 
+
+You rate how important a conversational memory is for long-term recall. Return only valid JSON: 
+
+{"importance": <integer from 1 to 10> }. 1 = mundane routine, 10 = life-changing event. 
+
+## User Prompt 
+
+Rate the importance of the target utterance on a 1–10 scale. 
+
+Examples: 
+
+• “cleaning up the room” → 2• “asking your crush out on a date” → 8
+
+Context: 
+
+{context block }
+
+Target utterance: 
+
+• dia id: {dia id }
+
+• speaker: {speaker }
+
+• text: {text }
+
+Return JSON only. 
+
+## Expected Output 
+
+A single JSON object, e.g. {"importance": 7}, with the score clipped to [1 , 10] .(max tokens = 24 )
+
+20

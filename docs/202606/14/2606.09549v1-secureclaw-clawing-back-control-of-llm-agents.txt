@@ -1,0 +1,719 @@
+Title: SecureClaw: Clawing Back Control of LLM Agents
+
+URL Source: https://arxiv.org/pdf/2606.09549v1
+
+Published Time: Tue, 09 Jun 2026 02:25:24 GMT
+
+Number of Pages: 26
+
+Markdown Content:
+# SecureClaw: Clawing Back Control of LLM Agents 
+
+Yuhan Ma 1 Stefan Schmid 11TU Berlin 
+
+yuhan.ma@campus.tu-berlin.de stefan.schmid@tu-berlin.de 
+
+# Abstract 
+
+Tool-using large language model (LLM) agents face two distinct security failures: unauthorized external actions and exposure of sensitive plaintext inside the run-time before any final output check can intervene. Existing defenses usually pro-tect one boundary, either the planner/runtime or the action sink, and therefore do not by themselves secure both surfaces. We present SecureClaw, a dual-boundary architecture that places authorization at the effect sink and plaintext confinement at the read boundary. Sensitive reads pass through a trusted gateway that replaces raw values with opaque handles and, in the evaluated deployment, bounded sum-maries as an explicit declassification interface. Writes that change external state follow a PREVIEW →COMMIT protocol in which only a trusted executor may commit the exact canonical request authorized by policy. The runtime can still plan over summaries and symbolic references, but cannot directly dereference secrets or perform side effects. Across AgentDojo, AgentLeak, and Agent Se-curity Bench (ASB), SecureClaw is the only defense we evaluate in a common harness that simultaneously retains usable task utility and achieves 0% attack suc-cess rate (ASR) on ASB, 0.64% ASR on AgentDojo, and 3.23% overall leak on AgentLeak’s attacked parity lane, which measures final-output and internal-relay leakage. 
+
+# 1 Introduction 
+
+Tool-using language-model agents are moving from chat-style assistance to workflow automation. A single agent may read email threads, invoices, customer-support tickets, calendars, code reposito-ries, or medical intake forms, and then act on the outside world by sending messages, sharing files, updating records, or scheduling meetings. In these settings, a failure is not merely a poor answer: it can become an irreversible external effect or an exposure of sensitive data during execution. This threat model is well established [Yu et al., 2025]. Indirect prompt injection showed that attacker-controlled content can steer LLM-integrated systems by collapsing the boundary between data and instructions [Greshake et al., 2023]. AgentDojo and Agent Security Bench (ASB) show that tool-using agents remain vulnerable to prompt injection that redirects actions toward attacker-chosen outcomes [Debenedetti et al., 2024, Zhang et al., 2025]. More recent work broadens the attack surface to tool selection, web agents, and agent-mediated financial workflows [Shi et al., 2025, Evti-mov et al., 2025]. In parallel, AgentLeak shows that multi-agent systems introduce internal leakage paths that output-only auditing does not capture, especially inter-agent messages and shared mem-ory [Yagoubi et al., 2026]. These results point to two critical security questions. The first is effect authorization: whether the exact request that reaches an external sink is authorized for the current caller, session, inputs, and context. The second is runtime plaintext confinement: whether the untrusted runtime ever 
+
+> Preprint.
+> arXiv:2606.09549v1 [cs.CR] 8 Jun 2026
+
+receives directly sensitive data in usable form. These questions are related but not interchangeable. A boundary around effectful tools can stop an unauthorized commit, yet it does not help if the runtime has already read a secret and can relay it through internal channels. Conversely, runtime-local information-flow defenses can reduce some leakage, but they still leave substantial trust in planner state or runtime enforcement, whereas architectural or execution-time systems move control closer to the action or resource boundary [Zhong et al., 2025, Costa et al., 2025, Debenedetti et al., 2025, Li et al., 2025a, Shi et al., 2026, Palumbo et al., 2026, Sharma and Grossman, 2026]. SecureClaw is built around a simple systems claim: the untrusted agent runtime should control neither when external effects happen nor where raw protected values reside. SecureClaw therefore places authorization at the effect sink and plaintext confinement at the read boundary. On the read path, a trusted gateway returns an opaque handle, which is a high-entropy symbolic reference, plus a bounded summary only when limited natural language access is necessary for planning. On the write path, the runtime may only propose an effectful action. A trusted policy engine authorizes the exact request after canonicalization, meaning deterministic serialization of the sink-relevant fields, and a separate trusted executor is the only component that can commit the resulting external effect. 
+
+Running example. Consider an email-and-finance workflow in which the agent must inspect an invoice and then send it to the correct approver or draft a response. SecureClaw does not return the raw invoice body to the runtime; the gateway returns a handle and a bounded summary such as “invoice from vendor A, amount $4.2k, due Friday.” The runtime can reason over the summary and carry the handle through memory and later calls. If attacker-controlled invoice text asks the agent to send to attacker@evil.com , the runtime may still propose that send, but only the executor can commit a request authorized for the exact recipient, channel, session, and context. If denied, recovery can offer a safe continuation such as drafting for confirmation. The example highlights the split: sink control blocks external effects, while handle confinement limits internal plaintext relay. 
+
+In this architecture, the runtime still plans, searches, and composes tool calls, but it does so over sym-bolic references rather than ambient plaintext, and it cannot directly turn a proposal into a committed external action. The handle layer follows a capability-style design in which authority is carried by an unforgeable reference rather than by exposure to raw data [Saltzer and Schroeder, 1975, Watson et al., 2010]. When the runtime needs task-relevant information, the summary interface releases only a sanitized, policy-bounded summary D(v) of a sensitive value v. This interface is therefore an explicit declassification channel, meaning that it is an intentional and auditable exception to full confidentiality, rather than an accidental plaintext escape hatch [Sabelfeld and Sands, 2005]. The key design point is that these powers fail at different places: external effects become real at the sink, whereas plaintext fails as soon as a raw protected value enters an adversarial runtime. This predicts a concrete empirical pattern: sink-side enforcement should stop unauthorized commits without closing internal relay channels, while read-side confinement should close relay channels without authorizing commits. The ablation and bypass suite tests exactly this non-substitutability claim. This paper makes three contributions. • A security decomposition for agent systems. We identify two non-substitutable security requirements for tool-using agents: request-bound authorization of external effects and confinement of sensitive plaintext away from the untrusted runtime. • A practical dual-boundary architecture. We present SecureClaw, which mediates sen-sitive reads with opaque handles, effectful writes with a PREVIEW →COMMIT executor, and blocked actions with deny-aware recovery: a fixed-template safe-continuation path af-ter a denied commit. In the evaluated deployment, bounded summaries are treated as an explicit declassification interface rather than as plaintext. • A common-harness evaluation that separates the two surfaces. Across AgentDojo, AgentLeak, and ASB, SecureClaw is the only evaluated common-harness baseline that simultaneously reaches 0% ASR on ASB, 0.64% ASR on AgentDojo, and 3.23% over-all leak on AgentLeak’s attacked parity lane; the ablation and bypass suite then isolate why sink-side authorization and read-side confinement are complementary rather than in-terchangeable. 2Table 1: Two security surfaces, their control points, and their validation.     
+
+> Surface If left inside the runtime SecureClaw control point Main evidence
+> Effect surface A compromised or injected runtime can mutate recipients, channels, or context and still reach the external sink. Executor-side PREVIEW →COMMIT, re-quest binding, freshness checks, and replay protection. AgentDojo, ASB, bypass suite
+> Plaintext sur-face
+> A runtime that reads plaintext can relay it through internal channels such as inter-agent messages (C2) or memory (C5) even when a later commit is blocked. Gateway-side handles, sink-scoped dereference, and ex-plicit bounded summaries that prevent protected values from re-entering the runtime outside declared declassification inter-faces. AgentLeak, abla-tion
+
+# 2 Problem Setting and Scope 
+
+We consider a tool-using agent deployment with an LLM-driven runtime that plans and invokes tools; a trusted gateway on the read path; a trusted handle store for protected values; a policy engine that authorizes previewed requests; a trusted executor on the write path; and a user who may confirm high-risk actions. The policy engine may be a single service, with an optional distributed realization for deployments that also want transcript privacy against one evaluator (Appendix B.5). An action is effectful if it can change external state or send information to an external principal, for example by sending an email, sharing a file, updating a record, or initiating a payment. A value is 
+
+sensitive if exposing it to the runtime in plaintext would create a meaningful disclosure risk. SecureClaw targets two security surfaces. The effect surface asks whether the exact request that reaches an external sink was authorized for the current caller, session, inputs, and context. The 
+
+plaintext surface asks whether the untrusted runtime ever receives raw secrets that it can relay through user-visible outputs, inter-agent messages, memory, logs, or later tool calls. AgentLeak’s channel taxonomy is useful here: C1 denotes the final response, C2 inter-agent messages, C3/C4 tool I/O, C5 shared or persistent memory, C6 logs, and C7 skill or supply-chain ingress [Yagoubi et al., 2026]. For SecureClaw, C2 and C5 are especially important because they expose relay paths that remain invisible to output-only defenses [Kong et al., 2025]. We evaluate two adversaries. In the prompt-injection setting, attacker-controlled instructions ap-pear inside retrieved content and attempt to redirect downstream actions or induce disclosure, as in AgentDojo, AgentLeak, and ASB [Debenedetti et al., 2024, Yagoubi et al., 2026, Zhang et al., 2025]. In the compromised-runtime setting, the runtime is fully adversarial: it may fabricate re-quests, tamper with recipients or channels, replay prior authorizations, mix sessions, guess handles, or exploit implementation mistakes. The core boundary guarantees trust the gateway, the handle store, the policy engine, and the executor. Appendix B.5 states the extra assumptions for the op-tional distributed policy variant. The design further assumes complete mediation of effectful sinks and sensitive reads, correct protected-field classification, bounded clock drift, and crash-safe replay protection [Saltzer and Schroeder, 1975]. Our goals are request-bound effect authorization, confinement of raw sensitive plaintext outside declared declassification interfaces, and explicit bounded declassification through the summary in-terface. SecureClaw does not claim that every policy-allowed action is semantically correct for the user’s latent intent, nor does it survive compromise of the gateway or executor. By residual fail-ures , we mean failures that remain after the two target boundaries behave as specified, for example a policy-allowed action with the wrong principal or object because the policy is too coarse. We analyze those residuals explicitly in Section 4.4. Table 1 summarizes the two security surfaces, why they require different boundary placement, and how each one is validated empirically. 3Untrusted 
+
+Agent 
+
+Runtime 
+
+> Read Boundary
+
+Effectful 
+
+APIs / 
+
+Tools 
+
+> Effect sink
+
+External 
+
+Effects 
+
+> direct tool call /
+> execution
+> runtime can directly
+> trigger effects
+> effect
+
+Sensitive 
+
+Data Sources direct plaintext access 
+
+> plaintext visible to
+> runtime
+
+Unprotected Agent Architecture (a) Unprotected agent architecture. Untrusted 
+
+Agent 
+
+Runtime 
+
+Trusted 
+
+Gateway 
+
+Handle 
+
+Store 
+
+Trusted 
+
+Executor 
+
+External 
+
+Effects   
+
+> proposed effectful action
+> (intent, inputs)
+> opaque handles
+> bounded summaries
+> previewed request
+> commit candidate
+> stored protected
+> plaintext
+> trusted
+> dereference
+> effect
+
+Policy 
+
+Engine 
+
+> canonical request
+
+Effect sink Read Boundary 
+
+> authorization artifact
+
+SecureClaw 
+
+(b) SecureClaw architecture. 
+
+Figure 1: Comparison between an unprotected agent architecture and SecureClaw. 
+
+# 3 SecureClaw Design 
+
+SecureClaw imposes a simple design rule on every security surface. Effectful writes are mediated by a trusted executor, and sensitive reads are mediated by a trusted gateway. The runtime remains useful because it continues to plan, search, route handles, and compose tool calls, but it is no longer entrusted with plaintext or with committing external effects. 
+
+3.1 Design overview and component roles 
+
+SecureClaw separates planning from security enforcement. The runtime reasons, searches, and orchestrates tool calls, but it is untrusted for both authorization and confidentiality. The gateway 
+
+mediates sensitive reads, classifies returned data, mints handles, and canonicalizes effectful preview requests. The handle store retains protected plaintext and handle metadata outside runtime memory. The policy engine authorizes or denies the exact canonicalized request and returns an authorization artifact bound to its digest. The executor is the sole component that can reach an effectful sink: be-fore commit, it recomputes the request binding, verifies the authorization artifact, checks freshness and replay state, validates any required confirmation token, and enforces handle-resolution restric-tions. An execution therefore has two mediated phases. On the read path, the gateway returns an opaque handle and, when planning requires it, a bounded summary produced by a deterministic, schema-aware summary operator. On the write path, every effectful request remains a proposal until executor-side verification succeeds. The runtime remains useful because it can plan over symbolic references, but it cannot directly resolve protected plaintext or turn a proposal into a committed external action. 4Protocol 1 PREVIEW →COMMIT  
+
+> 1:
+
+The runtime proposes (intent , inputs ); the trusted gateway appends authenticated caller , session ,and ctx to form ρ. 
+
+> 2:
+
+The gateway canonicalizes ρ and computes the binding digest 
+
+h ← HMAC -SHA256( kbind , Canon( ρ)) ,
+
+where kbind is a secret key shared only by the trusted binding/verification components.  
+
+> 3:
+
+The gateway queries the policy engine and obtains an authorization artifact that binds the al-low/deny decision to the exact digest h. 
+
+> 4:
+
+The executor independently recomputes h, verifies the authorization artifact, checks freshness and replay state, validates any confirmation token, and enforces handle-resolution restrictions.  
+
+> 5:
+
+if all checks succeed then  
+
+> 6:
+
+The executor dereferences any required handles and commits the external effect.  
+
+> 7:
+
+else  
+
+> 8:
+
+The executor fails closed.  
+
+> 9:
+
+end if 3.2 Read path: opaque-handle confinement 
+
+The read path protects the plaintext surface. When a tool returns sensitive content, the gateway stores the plaintext in a protected handle table and returns an opaque handle to the runtime. A handle is a high-entropy symbolic reference associated with caller, session, time-to-live, object version, and the set of sinks at which dereference is allowed. In practice it can be generated from a fresh nonce and a secret handle key, e.g., hid = HMAC -SHA256( khandle , nonce ∥session ∥object ), and resolved by lookup in the trusted store. It is not a hash of the secret value itself. The runtime may route the handle through later computation, memory, or tool calls, but it cannot resolve the handle into plaintext. SecureClaw’s evaluated read interface is intentionally explicit: the runtime receives an opaque han-dle plus a bounded summary computed by a fixed schema-aware operator with explicit item and char-acter caps. That summary is treated as an explicit declassification interface rather than an incidental copy of the original value [Sabelfeld and Sands, 2005]. The handle layer therefore prevents fresh raw protected values from re-entering the runtime channels highlighted by AgentLeak: inter-agent messages and memory carry symbolic references rather than newly dereferenced secrets [Watson et al., 2010, Saltzer and Schroeder, 1975]. Any remaining content-dependent signal in the deployed system must originate from the authorized summary interface itself, not from a later fresh derefer-ence of trusted storage. 
+
+3.3 Write path: PREVIEW →COMMIT execution boundary 
+
+The write path protects the effect surface. The runtime may request an effectful action, but it cannot commit that action directly. The runtime proposes only the action family and runtime-visible inputs; the trusted gateway or surrounding deployment context appends authenticated caller, session, and sink-context fields before canonicalization. Thus every effectful request 
+
+ρ = ( intent , caller , session , inputs , ctx )
+
+passes through Protocol 1. Here intent is the action family, caller and session bind the principal and interaction, inputs contains tool arguments and handles, and ctx contains sink-relevant fields such as recipients, channels, object identifiers, provenance hashes, policy/schema versions, confirmation class, and object versions. The crucial property is that the executor is the only component that can reach the effectful sink. A compromised runtime may attempt to mutate the recipient, channel, or other fields after preview, but such changes alter the canonical request and therefore invalidate the bound authorization artifact. Theorem 1 formalizes this as request-bound authorization integrity. This distinction also clarifies why SecureClaw is stronger than argument filtering alone. If the run-time can still reach the effectful sink, checking arguments does not create a non-bypassable commit boundary. Zero-argument effectful tools make this explicit: there are no arguments to inspect. Du-ally, once unrestricted plaintext enters an adversarial runtime, downstream checks cannot prevent it 5from being re-encoded into another channel. SecureClaw therefore treats sink mediation and plain-text residency as separate first-class controls. 
+
+3.4 Deny-aware recovery 
+
+Fail-closed execution is necessary for security, but a denial should not force the workflow to termi-nate when a safe alternative exists. When the executor rejects a commit, it returns a structured denial drawn from a fixed template family with only a coarse action class, a reason code, and safe next-step hints that do not reveal dereferenced protected content, such as switching from “send” to “draft for confirmation” or requesting user approval. This recovery logic does not weaken the commit invariant; it preserves utility after blocked attacks. 
+
+Running example, continued. The invoice workflow instantiates both the protocol notation and the recovery path. On the read path, the gateway stores the raw invoice as object inv42 and returns a handle such as hid = HMAC -SHA256( khandle , nonce ∥session ∥object ), where khandle is a trusted gateway/store key, nonce is fresh randomness, session binds the current interaction, and object 
+
+names the stored invoice version. The runtime sees only hid and the bounded summary. If the run-time later proposes to send the invoice, it supplies only the SEND _EMAIL intent and visible inputs, such as the handle and draft body; the gateway constructs ρ = ( intent , caller , session , inputs , ctx )
+
+using authenticated deployment state for the caller/session and sink context. The context contains the recipient, channel, policy version, confirmation class, and invoice version. Canon( ρ) determin-istically serializes these sink-relevant fields, and h ← HMAC -SHA256( kbind , Canon( ρ)) binds the policy decision to those exact bytes. Changing the recipient after preview changes Canon( ρ), so the executor rejects the commit. Recovery may return only a coarse reason and a safe hint, such as drafting for confirmation, without dereferencing new plaintext. 
+
+3.5 Threat-to-mechanism summary and formal scope 
+
+Each SecureClaw mechanism protects a different failure mode. 
+
+Unauthorized external effects. The execution boundary and request binding protect the effect surface: an external side effect can commit only if the executor verifies authorization for the exact canonicalized request that reaches the sink. 
+
+Internal plaintext relay. The handle layer protects the plaintext surface: inter-agent messages, memory operations, and later tool calls carry symbolic references rather than raw sensitive values, except for content intentionally released through declared declassification interfaces. In the deployed system, any remaining runtime exposure occurs only through the bounded-summary read interface. 
+
+Formal scope. The appendix mirrors this decomposition. Theorem 1 formalizes request-bound au-thorization integrity for the commit path. Theorem 2 formalizes handle-only raw-plaintext confine-ment as a reference case. Theorem 3 then quantifies the additional distinguishing power introduced by the bounded-summary interface used in the experiments. Appendix B.5 states an optional policy-side privacy refinement, and Appendix B.6 summarizes the guarantees lost if trusted components are compromised. 
+
+# 4 Experiments 
+
+We evaluate SecureClaw against our central claim: securing tool-using agents requires protecting two distinct surfaces, the effect surface and the plaintext surface. The experiments ask whether SecureClaw (i) blocks unauthorized external effects, (ii) removes runtime-held plaintext from internal leakage channels, and (iii) keeps workflows usable after blocked actions without relaxing the commit invariant. We answer these questions with full-benchmark eval-uations on AgentDojo, AgentLeak, and ASB, a mechanism ablation, a compromised-runtime bypass suite, and targeted measurements of deny-aware recovery and overhead. 
+
+Baselines and setup. We compare against four common-harness baselines, meaning matched rows, model, scorer, temperature, and task protocol: Plain (no defense), IPIGuard [An et al., 6Table 2: Benchmark evaluation on same-harness baselines ( gpt-4o-mini ). ASR = attack success rate; Atk. Util = benchmark utility on attacked rows; Benign = benign-task success rate. 
+
+AgentDojo (n=629 ) AgentLeak (n=496 ) ASB (n=2000 )System ASR ↓ Attack. Utility ↑ Benign ↑
+
+Any leak ↓ C2 ↓ C5 ↓ ASR ↓ Util ↑
+
+Plain 31.48 47.22 70.10 93.95 92.74 51.61 91.65 0.85 IPIGuard 15.26 51.99 64.95 78.63 50.00 57.06 99.60 22.05 DRIFT 2.38 52.78 59.79 72.18 47.98 53.63 87.75 0.45 Faramesh 22.89 47.69 60.82 93.95 92.74 51.61 0.00 3.70 SecureClaw 0.64 56.60 60.82 3.23 0.20 0.00 0.00 88.90 
+
+Table 3: Mechanism ablation on a matched AgentLeak slice (24 attacked + 24 benign valid rows per configuration; C2/C5 leak rates are reported on attacked rows only).                     
+
+> Config Boundary Handles C2 Leak C5 Leak Full ✓✓0.0% 0.0%
+> −Boundary ×✓0.0% 0.0%
+> −Handles ✓×20.8% 8.3%
+> −Both ××25.0% 4.2%
+
+2025], DRIFT [Li et al., 2025b], and Faramesh [Fatmi, 2026]. Appendix A.2 specifies the prove-nance, adapter, and defense surface for each baseline. Architecturally related systems without di-rectly comparable public implementations are discussed qualitatively in Section 5. We report ASR, benchmark utility, and per-channel leak rates; SecureClaw’s mediated outputs are scored after alias resolution and required confirmation handling. All main runs use gpt-4o-mini-2024-07-18 
+
+with temperature 0 on AgentDojo [Debenedetti et al., 2024], AgentLeak [Yagoubi et al., 2026], and ASB [Zhang et al., 2025]. The main-table AgentLeak columns use the attacked parity lane because it jointly exposes final-output and internal-relay leakage. Appendix A.2 gives exact counts, confidence intervals, and small SecureClaw cross-model spot checks. 
+
+4.1 Main cross-benchmark results 
+
+Table 2 shows that, among the evaluated common-harness baselines in our study, SecureClaw is the only same-harness configuration that jointly drives unauthorized commits to zero/near-zero on the effect benchmarks and reduces AgentLeak’s attacked parity-lane leakage to 3.23% (16/496). On effectful benchmarks it reaches 0% ASR on ASB and 0.64% ASR on AgentDojo (4/629). On AgentLeak, the residual is C1-dominant rather than an internal-relay failure: 15/496 cases remain on C1, one isolated case appears on C2, and C5 stays at 0/496. Faramesh matches the effect boundary on ASB but leaves AgentLeak’s internal channels open because plaintext still lives inside the runtime. IPIGuard and DRIFT reduce some attack success rates, but their enforcement root remains runtime-local. 
+
+Utility under attack. SecureClaw retains 88.90% utility on ASB at 0% ASR. A separate recovery ablation (Appendix A.7) shows that safe continuation raises matched-sample ASB utility from 70% to 86% without increasing ASR. On the AgentLeak parity run, attack utility is 74 .6% and benign utility is 77 .0% (Table 12), so the low parity-lane leak rate is not achieved by collapsing the workflow into refusal. 
+
+4.2 Mechanism isolation: why both pillars are necessary 
+
+Table 3 isolates mechanisms on a matched 48-row AgentLeak slice. Removing handles raises attacked-row C2 leakage from 0/24 to 5/24 or 6/24 , and C5 leakage reappears ( 2/24 or 1/24 ). Removing the execution boundary while keeping handles leaves both C2 and C5 at 0/24 . The confi-dentiality gain therefore comes from handle confinement, not from the write boundary accidentally masking it. 7Table 4: Residual failures after SecureClaw closes the two target surfaces.        
+
+> Residual class Count Interpretation Foreign-principal/missing-contextual-bind
+> 3/629 The action family is permitted, but the target prin-cipal is attacker-chosen; richer principal and object binding is needed. Broader-scope workspace ac-tion
+> 1/629 A workspace mutation remains individually al-lowed yet wrong for the task; coarse allow bits are insufficient. Authorized declassification pressure
+> 16 /496 Fifteen cases remain on C1 and one on C2. The residual remains concentrated on the declassifica-tion plane rather than systematic internal relay.
+
+The converse appears when effectful sinks are stressed directly: handles do not stop a compromised runtime from attempting unauthorized commits. That role belongs to the executor-side boundary and is validated in the bypass suite. Together, the ablation and adversarial validation support the main system’s claim: the two pillars protect different surfaces, and neither subsumes the other. 
+
+Deny-aware recovery is the source of high blocked-attack utility. We measure recovery sepa-rately to show that SecureClaw’s usability does not come from weaker enforcement. On a matched ASB sample ( n=50 ), deny-aware recovery raises utility from 70% to 86% while preserving 0% ASR. On a matched AgentLeak sweep ( n=30 ), it raises utility from 40.0% to 66.7%, again with no ASR cost, while adding about 0.33 extra tool turns per task. SecureClaw stays usable because it offers safe next steps after denial, not because it relaxes the commit invariant. 
+
+4.3 Robustness under runtime compromise 
+
+Behavioral prompt-injection benchmarks are necessary but not sufficient because the formal claims also cover a fully adversarial runtime. We therefore add direct adversarial stress tests against the commit path. Across 29 bypass scenarios spanning authorization-artifact tampering, malformed authorization ma-terial, request-binding violations, session/caller mismatches, context-binding attacks, temporal re-play, and chained attacks, SecureClaw denies all 25 adversarial cases and accepts all 4 positive controls. In a payment case study, the executor blocks 4/4 unauthorized commits while allowing the legitimate transfer. These results show that the commit path respects the request-bound invariant even when the runtime constructs adversarial inputs. 
+
+4.4 Residual failures and overhead 
+
+The remaining failures show what is left once the two target surfaces are controlled. The dominant residual is no longer unauthorized execution or internal-channel plaintext relay, but authorized-yet-misaligned behavior inside the policy-allowed region. On AgentDojo, all 4/629 remaining attack successes stay within the allowed action space: three are foreign-principal or missing-contextual-bind failures, and one applies an allowed workspace action to the wrong object. On AgentLeak, 16/496 attacked parity-lane scenarios still leak: fifteen are C1 final-output cases and one is an iso-lated C2 hit. We observe no C5 leakage and no systematic reopening of internal relay, shifting the residual problem to policy-allowed misalignment and user-visible declassification pressure. The remaining failures are therefore pressure on the policy contract and explicit declassification plane, not bypasses of the core invariants. A stricter summary interface would reduce residual declas-sification pressure, while richer principal, object, and phase binding would strengthen authorization for the remaining AgentDojo failures. The core boundary cost is practical. Executor-side verification is sub-millisecond; single-service authorization adds about 15 ms, and the optional distributed two-evaluator variant adds about 149 ms in our local orchestration measurements. Relative to LLM inference latencies of 500–2000 ms, these costs are not dominant. 85 Additional Related Work 
+
+Benchmarks and runtime defenses. AgentDojo, ASB, AgentLeak, WASP, and tool-selection at-tacks have shifted evaluation from prompt classification toward dynamic agents that read untrusted content, call tools, and maintain state [Debenedetti et al., 2024, Zhang et al., 2025, Yagoubi et al., 2026, Evtimov et al., 2025, Shi et al., 2025]. Runtime-centric defenses such as IPIGuard and DRIFT make the planner more robust by isolating injected instructions or constraining tool depen-dencies [An et al., 2025, Li et al., 2025b]. SecureClaw uses such defenses as common-harness baselines when their public surface is comparable, but studies a different claim: an injected or com-promised runtime should not be the reference monitor for external effects or sensitive plaintext. 
+
+Execution control and agent authorization. Faramesh, Progent, PCAS, and AC4A move enforce-ment toward policy or capability checks at the agent action boundary [Fatmi, 2026, Shi et al., 2026, Palumbo et al., 2026, Sharma and Grossman, 2026]. SecureClaw is complementary, but separates two issues that action-boundary work can conflate. First, PREVIEW →COMMIT binds the policy decision to the exact canonical request later executed, closing the time-of-check/time-of-use gap between planner inspection and sink invocation. Second, sink-side authorization alone does not remove secrets already resident in planner state: a blocked commit cannot undo leakage through inter-agent messages or memory. This motivates coupling effect mediation with a separate read boundary. 
+
+Information flow, capabilities, and policy expressiveness. The read path draws on information-flow control, declassification, and capability systems [Zhong et al., 2025, Costa et al., 2025, Sabelfeld and Sands, 2005, Saltzer and Schroeder, 1975, Watson et al., 2010, Sabelfeld and My-ers, 2003]. Unlike settings where the protected computation is an enforceable program, LLM agents have opaque hidden state and natural-language channels. SecureClaw therefore makes raw pro-tected values unrepresentable in the runtime except through symbolic handles, and treats bounded summaries as explicit declassification rather than benign preprocessing. Handles are not ambient authorities for the model: dereference occurs only at trusted endpoints after caller, session, sink, and policy checks. Finally, practical authorization systems such as Zanzibar show that utility depends on expressive principal, object, and relation bindings [Pang et al., 2019]. SecureClaw’s remain-ing benign-utility loss fits this pattern: richer bindings, phase-specific capabilities, and more pre-cise declassification budgets can improve utility while preserving the request-binding and plaintext-residency invariants. 
+
+# 6 Limitations and broader impact 
+
+SecureClaw reduces unsafe agentic effects and plaintext exposure, but it does not guarantee semantic correctness within policy-allowed actions and still incurs benign-utility loss on AgentDojo. The residuals motivate stronger principal, object, and phase binding in the policy layer [Pang et al., 2019]. The main deployment risk is false assurance: if protected fields are misclassified or effectful sinks remain unmediated, the architecture’s boundary guarantees no longer apply. SecureClaw therefore should be deployed with explicit sink inventories, schema audits, and conservative confirmation policies for irreversible actions. Positively, the architecture can reduce unauthorized external effects and internal relay of sensitive values in high-stakes agent workflows without requiring the untrusted runtime to become a trusted security monitor. SecureClaw trusts the gateway, policy engine, and executor; Appendix B.6 details compromise effects, and the optional distributed policy variant relies on non-collusion. 
+
+# 7 Conclusion 
+
+SecureClaw is built on a simple claim: securing LLM agents requires separating control of exter-nal effects from access to sensitive plaintext. The executor-side PREVIEW →COMMIT boundary makes committed actions request-bound and non-bypassable, while the gateway-side opaque-handle layer keeps internal channels symbolic rather than plaintext-bearing. Across AgentDojo, AgentLeak, and ASB, SecureClaw is the only evaluated same-harness system in our study that drives unautho-rized effects to zero or near zero while remaining usable under attack through deny-aware recovery. The ablation and bypass results show that the gains are structural: the two mechanisms protect different failure modes, and high-stakes deployments need both. 9Acknowledgments and Disclosure of Funding 
+
+Research in part supported by the German Research Foundation (DFG), SPP 2378 - ReNO-2, grant 511099228, 2025-2029. 10 References 
+
+Hengyu An, Jinghuai Zhang, Tianyu Du, Chunyi Zhou, Qingming Li, Tao Lin, and Shouling Ji. IPIGuard: A novel tool dependency graph-based defense against indirect prompt injection in LLM agents. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing (EMNLP) , 2025. Manuel Costa, Boris Köpf, Aashish Kolluri, Andrew Paverd, Mark Russinovich, Ahmed Salem, Shruti Tople, Lukas Wutschitz, and Santiago Zanella-Béguelin. Securing ai agents with information-flow control, 2025. URL https://arxiv.org/abs/2505.23643 .Edoardo Debenedetti, Jie Zhang, Mislav Balunovic, Luca Beurer-Kellner, Marc Fischer, and Flo-rian Tramèr. Agentdojo: A dynamic environment to evaluate prompt injection attacks and de-fenses for LLM agents. In The Thirty-eight Conference on Neural Information Processing Sys-tems (NeurIPS) Datasets and Benchmarks Track , 2024. URL https://openreview.net/ forum?id=m1YYAQjO3w .Edoardo Debenedetti, Ilia Shumailov, Tianqi Fan, Jamie Hayes, Nicholas Carlini, Daniel Fabian, Christoph Kern, Chongyang Shi, Andreas Terzis, and Florian Tramèr. Defeating prompt injections by design, 2025. URL https://arxiv.org/abs/2503.18813 .Ivan Evtimov, Arman Zharmagambetov, Aaron Grattafiori, Chuan Guo, and Kamalika Chaudhuri. Wasp: Benchmarking web agent security against prompt injection attacks, 2025. URL https: //arxiv.org/abs/2504.18575 .Amjad Fatmi. Faramesh: A protocol-agnostic execution control plane for autonomous agent sys-tems, 2026. URL https://arxiv.org/abs/2601.17744 .Kai Greshake, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, Thorsten Holz, and Mario Fritz. Not what you’ve signed up for: Compromising real-world llm-integrated applications with indirect prompt injection. In Proceedings of the 16th ACM Workshop on Artificial Intelligence and Security , page 79–90, 2023. Dezhang Kong, Shi Lin, Zhenhua Xu, Zhebo Wang, Minghao Li, Yufeng Li, Yilun Zhang, Hujin Peng, Xiang Chen, Zeyang Sha, Yuyuan Li, Changting Lin, Xun Wang, Xuan Liu, Ningyu Zhang, Chaochao Chen, Chunming Wu, Muhammad Khurram Khan, and Meng Han. A survey of llm-driven ai agent communication: Protocols, security risks, and defense countermeasures, 2025. URL https://arxiv.org/abs/2506.19676 .Evan Li, Tushin Mallick, Evan Rose, William Robertson, Alina Oprea, and Cristina Nita-Rotaru. Ace: A security architecture for llm-integrated app systems, 2025a. URL https://arxiv. org/abs/2504.20984 .Hao Li, Xiaogeng Liu, CHIU Hung Chun, Dianqi Li, Ning Zhang, and Chaowei Xiao. DRIFT: Dynamic rule-based defense with injection isolation for securing LLM agents. In The Thirty-ninth Annual Conference on Neural Information Processing Systems (NeurIPS) , 2025b. URL 
+
+https://openreview.net/forum?id=oY1Xnt83oJ .Nils Palumbo, Sarthak Choudhary, Jihye Choi, Guy Amir, Prasad Chalasani, and Somesh Jha. For-mal policy enforcement for real-world agentic systems, 2026. URL https://arxiv.org/ abs/2602.16708 .Ruoming Pang, Ramon Caceres, Mike Burrows, Zhifeng Chen, Pratik Dave, Nathan Germer, Alexander Golynski, Kevin Graney, Nina Kang, Lea Kissner, Jeffrey L. Korn, Abhishek Parmar, Christina D. Richards, and Mengzhi Wang. Zanzibar: Google’s consistent, global authorization system. In 2019 USENIX Annual Technical Conference (USENIX ATC) , pages 33–46, 2019. Andrei Sabelfeld and Andrew C Myers. Language-based information-flow security. IEEE Journal on Selected Areas in Communications , 21(1):5–19, 2003. Andrei Sabelfeld and David Sands. Dimensions and principles of declassification. In Proceedings of the 18th IEEE Workshop on Computer Security Foundations , page 255–269, 2005. 11 Jerome H. Saltzer and Michael D. Schroeder. The protection of information in computer systems. 
+
+Proceedings of the IEEE , 63(9):1278–1308, 1975. doi: 10.1109/PROC.1975.9939. Reshabh K Sharma and Dan Grossman. Ac4a: Access control for agents, 2026. URL https: //arxiv.org/abs/2603.20933 .Jiawen Shi, Zenghui Yuan, Guiyao Tie, Pan Zhou, Neil Zhenqiang Gong, and Lichao Sun. Prompt injection attack to tool selection in llm agents, 2025. URL https://arxiv.org/abs/2504. 19793 .Tianneng Shi, Jingxuan He, Zhun Wang, Hongwei Li, Linyu Wu, Wenbo Guo, and Dawn Song. Progent: Securing ai agents with privilege control, 2026. URL https://arxiv.org/abs/ 2504.11703 .Robert N. M. Watson, Jonathan Anderson, Ben Laurie, and Kris Kennaway. Capsicum: practical capabilities for unix. In Proceedings of the 19th USENIX Conference on Security (USENIX Secu-rity) , 2010. Faouzi El Yagoubi, Godwin Badu-Marfo, and Ranwa Al Mallah. Agentleak: A full-stack bench-mark for privacy leakage in multi-agent llm systems, 2026. URL https://arxiv.org/ abs/2602.11510 .Miao Yu, Fanci Meng, Xinyun Zhou, Shilong Wang, Junyuan Mao, Linsey Pan, Tianlong Chen, Kun Wang, Xinfeng Li, Yongfeng Zhang, Bo An, and Qingsong Wen. A survey on trustworthy llm agents: Threats and countermeasures. In Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V.2 , page 6216–6226, 2025. Hanrong Zhang, Jingyuan Huang, Kai Mei, Yifei Yao, Zhenting Wang, Chenlu Zhan, Hongwei Wang, and Yongfeng Zhang. Agent security bench (ASB): Formalizing and benchmarking attacks and defenses in LLM-based agents. In The Thirteenth International Conference on Learning Representations , 2025. URL https://openreview.net/forum?id=V4y0CpX4hK .Peter Yong Zhong, Siyuan Chen, Ruiqi Wang, McKenna McCall, Ben L. Titzer, Heather Miller, and Phillip B. Gibbons. Rtbas: Defending llm agents against prompt injection and privacy leakage, 2025. URL https://arxiv.org/abs/2502.08966 .
+
+# A Extended Experimental Evidence 
+
+This appendix substantiates the main empirical claims with exact counts, uncertainty bounds, bench-mark breakdowns, and robustness checks. We keep only evidence that directly supports the pa-per’s core effect/plaintext decomposition. The evidence is consistent across the different evaluation blocks: the execution boundary closes the effect surface, opaque handles close the internal relay surface, and deny-aware recovery recovers substantial under-attack utility without reopening either one. 
+
+Statistical reporting. All reported rates are Bernoulli proportions. For the main comparisons we report exact counts, 95% confidence intervals, and two-sided Fisher exact tests where pairwise significance is informative. For zero-event rows, the appendix uses exact Clopper–Pearson upper bounds rather than asymptotic normal approximations. 
+
+A.1 Exact counts and selected uncertainty 
+
+Table 5 summarizes the most load-bearing empirical claims with exact counts and confidence in-tervals. It complements the percentage tables in the main paper and makes the evidentiary footing completely explicit. Table 5 makes clear that the core security results remain strong even under exact accounting. 12 Table 5: Selected exact counts, 95% exact confidence intervals, and exact tests. 
+
+Metric SecureClaw Comparator Two-sided Fisher p
+
+AgentDojo ASR 4/629 = 0.64% [0 .17 , 1.62] 
+
+DRIFT 15 /629 = 2.38% [1 .34 , 3.90] 1.83 × 10 −2
+
+AgentLeak parity-lane any leak 
+
+16 /496 = 3.23% [1 .85 , 5.19] 
+
+DRIFT 358 /496 = 72 .18% [68 .01 , 76 .08] 1.27 × 10 −128 
+
+ASB ASR 0/2000 = 0.00% [0 .00 , 0.18] 
+
+DRIFT 1755 /2000 =87 .75% [86 .23 , 89 .16] 
+
+< 10 −700 
+
+ASB utility 1778 /2000 = 88 .9% [87 .44 , 90 .24] 
+
+Faramesh 74 /2000 = 3 .7% [2 .92 , 4.63] 
+
+< 10 −700 
+
+Table 6: Baseline provenance and common-harness instantiation.         
+
+> System Source used in this study Modification scope Common-harness entry point Plain Benchmark no-defense configura-tion. No defense code or wrapper. Native benchmark runners and direct AgentLeak outputs. IPIGuard Authors’ upstream code used in this study. Harness-only patches for API compatibility, retries, resume, and benchmark integration; defense logic unchanged. IPIGuard AgentDojo runner, AgentLeak pipeline adapter, and ASB-style construct/traverse loop. DRIFT Authors’ upstream code used in this study. Harness-only patches for hosted-model access, retries, logging, and benchmark integration; defense logic unchanged. DRIFT pipeline, AgentLeak tool-execution loop, and DRIFT-provided ASB fork. Faramesh Upstream Faramesh core used in this study. Core runtime unchanged; our har-ness supplies benchmark adapters and policies. Local Faramesh server mediating AgentDojo, AgentLeak, and ASB-style tool calls.
+
+A.2 Evaluation methodology Model and inference settings. All primary comparisons use gpt-4o-mini-2024-07-18 
+
+through OpenRouter with temperature 0. Where the provider exposes a seed parameter, we request a fixed seed. Because API-hosted inference is not guaranteed to be perfectly deterministic, repeated runs are interpreted as stability checks rather than as bitwise replicas. SecureClaw is evaluated with the deployed bounded-summary interface throughout the benchmark results in the paper; the secu-rity appendix separately analyzes a handle-only reference case and measures the deployed summary operator’s confidentiality behavior. 
+
+Benchmark protocols. AgentDojo uses v1.1.2 with the important_instructions attack family, yielding 629 attacked rows and 97 benign rows across banking, slack, travel, and workspace. 
+
+AgentLeak uses its official split of 996 total scenarios: 500 benign and 496 attacked scenarios for the parity lane covering C1/C 2/C 5, plus channel-specific lanes for C3, C4, and C6. The main-paper “Any leak” number refers to the 496 attacked parity-lane scenarios. ASB is evalu-ated on five direct prompt-injection styles (naive, escape_characters , fake_completion ,
+
+context_ignoring , and combined_attack ) with 400 rows each, for 2000 total rows per baseline. 
+
+Baseline fidelity. Table 6 summarizes how each same-harness baseline is instantiated. 
+
+Mediated-interface accommodations. SecureClaw uses two evaluation accommodations that arise from mediated interfaces rather than from relaxed security: alias resolution and auto-confirmation . Alias resolution maps output handles such as EMAIL_REF_3 back to task-relevant literals before utility scoring, so that mediated read outputs are not punished merely for being sym-bolic. Auto-confirmation emulates a user click in non-interactive benchmark runners that otherwise provide no confirmation channel. It is applied only to requests that are already policy-allowed and remains bound to (a, p, h ), so it cannot convert a policy-denied attack proposal into an allowed commit. 13 Run-to-run variation. Hosted inference introduces provider-level nondeterminism, so we use two complementary stability checks. First, three completed banking/slack AgentDojo replications keep ASR at 0% on those completed suites while utility varies by only single-digit points; Table 7 gives the details. Second, a matched three-seed AgentLeak-style SecureClaw sweep ( n = 30 per seed) keeps ASR at 0.0% across all seeds with utility mean 64.4% and standard deviation 8.4, and an independent ASB rerun at n = 50 also preserves 0% ASR with 86.0% utility. The qualitative conclusion is stable: security is much less sensitive than utility to hosted-model nondeterminism. Table 7: Replication stability on AgentDojo banking + slack attack suites.                          
+
+> Banking ( n= 144 )Slack ( n= 105 )Run ASR Utility ASR Utility Run 1 (primary) 0.0% 56.3% 0.0% 57.1% Run 2 0.0% 52.1% 0.0% 49.5% Run 3 0.0% 51.4% 0.0% 48.6% Sample std. dev. 0 pp ±2.7pp 0 pp ±4.6pp
+
+Compute resources. All experiments were run on a local macOS workstation (Apple M4 CPU, 16 GB RAM) with API-hosted LLM inference. The gateway, handle store, executor, and policy-evaluation components execute locally; the reported latency numbers therefore reflect algorithmic and local orchestration overhead, not geographically distributed network round trips between sepa-rate servers. 
+
+Asset provenance and licenses. Table 8 lists the main third-party benchmark assets used in our experiments and their stated upstream licenses. Our same-harness baselines use upstream code or benchmark adapters as summarized in Table 6; retained third-party components keep their original LICENSE files and attribution metadata. Table 8: Main third-party benchmark assets used in this paper.          
+
+> Asset Citation / upstream source License Use in this paper AgentDojo [Debenedetti et al., 2024] / of-ficial benchmark repository MIT Prompt-injection evaluation AgentLeak [Yagoubi et al., 2026] / offi-cial benchmark repository MIT Internal-leakage evaluation ASB [Zhang et al., 2025] / official benchmark repository MIT Effect-side attack evaluation
+
+A.3 Cross-model spot checks 
+
+The main paper keeps all full-scale baseline comparisons on a single backbone to preserve a common harness. To test whether the security pattern is tied to that model, we also ran small SecureClaw-only spot replications on additional model families. We use these as transfer checks rather than as full cross-model baseline rerankings. Table 9: SecureClaw cross-model transfer checks.                   
+
+> Benchmark Model Rows Security result Utility ASB Claude Sonnet 4 50 ASR = 0 /50 = 0 .0% 94.0% ASB Claude 3.5 Haiku 50 ASR = 0 /50 = 0 .0% 86.0% AgentLeak slice Claude Sonnet 4 50 C1/C 2/C 5 = 0 /0/0100.0%
+
+These transfer checks preserve the qualitative security pattern off the primary backbone: Secure-Claw keeps ASR at zero on both non-primary ASB runs and remains clean on the Claude Sonnet 4 AgentLeak slice. We use these as transfer checks rather than as full cross-model baseline rerankings. 14 A.4 AgentLeak overview and per-channel leak rates 
+
+The main paper uses the attacked parity lane’s overall scenario-OR leak because it provides the clos-est single-number analogue to AgentDojo ASR and ASB ASR. Table 10 gives the parity-lane per-channel breakdown and Table 11 reports the remaining channel lanes C3/C 4/C 6. SecureClaw’s residual is C1-dominant: 15/496 parity-lane cases remain on C1, one isolated case appears on C2, and C5 stays at 0/496. Table 10: AgentLeak parity-lane per-channel leak rates (%) ↓ (n = 496 attacked rows).                   
+
+> System C1 Leak C2 Leak C5 Leak Plain 33.47 92.74 51.61 IPIGuard 56.25 50.00 57.06 DRIFT 51.21 47.98 53.63 Faramesh 33.47 92.74 51.61 SecureClaw 3.02 0.20 0.00
+
+Table 11: AgentLeak channel-lane results: attack leak rate (%) ↓ / benign allow rate (%) ↑.                                      
+
+> C3 C4 C6 System Leak ↓Allow ↑Leak ↓Allow ↑Leak ↓Allow ↑
+> Plain 100.0 100.0 100.0 100.0 100.0 100.0 IPIGuard 24.03 100.0 33.61 100.0 0.00 100.0 DRIFT 6.98 99.21 14.75 99.80 0.00 98.90 Faramesh 100.0 100.0 100.0 100.0 100.0 100.0 SecureClaw 0.00 100.0 0.00 100.0 0.00 99.90
+
+For completeness, Table 12 reports the official strict-evaluator utility counts underlying the main-text AgentLeak utility sentence. Table 12: AgentLeak parity-lane utility counts for SecureClaw.         
+
+> Slice Successes Rate Attacked rows 370 /496 74.6% Benign rows 385 /500 77.0% Overall 755 /996 75.8%
+
+These tables make the paper’s security decomposition concrete. Faramesh matches SecureClaw on ASB-style effect blocking but remains indistinguishable from Plain on C2 and C5 because it does not remove plaintext from the runtime. SecureClaw reduces C2 leakage to 1/496 and eliminates measured leakage on C3, C4, C5, and C6, while leaving C1 as the dominant residual channel. That is exactly the behavior predicted by the architecture. 
+
+A.5 Residual taxonomy 
+
+Residual analysis is most useful when it explains what remains, not when it simply repeats counts. Table 13 groups the observed residuals by security meaning. The residual profile is concentrated and interpretable. We do not claim that all 15 /496 surviving 
+
+C1 cases share the same cause; the evidence here supports only the narrower conclusion that the residual is concentrated on the final authorized-output plane rather than on reopened internal relay. 
+
+A.6 Ablation extended results 
+
+We report here the same matched slice used in the main paper after filtering rows with valid channel instrumentation: 48 valid rows per configuration (24 attack and 24 benign). This slice is mechanism-focused and is not intended to reproduce the full AgentLeak Plain distribution; in particular, the 
+
+−Both row should be read as a matched-slice internal control rather than as the Table 2 Plain baseline. 15 Table 13: Manual residual taxonomy from the full runs and targeted cross-checks.          
+
+> Evidence source Residual count Manual class Interpretation AgentDojo full attack run 3/629 foreign-principal/missing-contextual-bind The action family is allowed, but the target principal is attacker-chosen; richer principal and object binding is needed. AgentDojo full attack run 1/629 broader-scope workspace action A workspace mutation remains in-dividually allowed yet wrong for the task; coarse allow bits are in-sufficient. AgentLeak attacked parity lane 16/496 resid-uals authorized-output-dominant residual Fifteen cases remain on the final authorized output channel and one on C2; no C5 relay reappears.
+
+The point of the ablation is not to optimize utility. It is to identify the active mechanism behind the main-paper leakage reductions using a single denominator convention throughout. Table 14: Extended ablation on the matched AgentLeak slice. C2/C5 are reported on the 24 attacked rows; benign leak is reported on the 24 benign rows. 
+
+Config Boundary Handles C2 Leak C5 Leak Benign Leak Full ✓ ✓ 0/24 (0.0%) 0/24 (0.0%) 0/24 (0.0%) 
+
+−Boundary × ✓ 0/24 (0.0%) 0/24 (0.0%) 0/24 (0.0%) 
+
+−Handles ✓ × 5/24 (20.8%) 2/24 (8.3%) 4/24 (16.7%) 
+
+−Both × × 6/24 (25.0%) 1/24 (4.2%) 4/24 (16.7%) 
+
+Turning off the boundary while keeping handles leaves C2 and C5 at zero, which shows that those leak reductions do not come from the execution boundary. Turning off handles while keeping the boundary reopens C2 to 5/24 attacked rows and C5 to 2/24 attacked rows; removing both gives 
+
+6/24 and 1/24 respectively. The converse point is validated by the bypass suite: handles alone do not secure effectful sinks. On this small matched slice, the clearest statistical signal is on C2 (Full vs. 
+
+−Handles: two-sided Fisher p = 0 .0496 ; Full vs. −Both: p = 0 .0219 ), whereas the analogous C5
+
+counts are too small for a strong significance claim. We therefore interpret the ablation as evidence that handle confinement is necessary to suppress internal-relay leakage, not as a claim that every leakage column is independently significant at this sample size. 
+
+A.7 Recovery ablation details 
+
+Table 15: Recovery ablation on two matched sweeps. All configurations retain 0% ASR.                               
+
+> Benchmark Config nASR Utility Refusals Extra turns/task ASB recovery on 50 0.0% 86.0% 8.0% —ASB recovery off 50 0.0% 70.0% 30.0% —AgentLeak-style recovery on 30 0.0% 66.7% 66.7% 1.33 AgentLeak-style recovery off 30 0.0% 40.0% 60.0% 1.00
+
+The two sweeps are consistent. Recovery lifts utility by 16.0 points on ASB and 26.7 points on the matched AgentLeak-style subset, with no ASR cost in either case. On the instrumented subset it adds only about 0.33 extra tool turns per task, which is small relative to the LLM-driven workflows we target. 
+
+Per-attack breakdown. With recovery enabled, utility is 60% on naive, 80% on 
+
+escape_characters , 100% on fake_completion , 100% on context_ignoring ,and 90% on combined_attack . Without recovery, the largest drops occur on naive and 16 escape_characters , where the denial message helps the runtime restart from a cleaner plan. The key point is straightforward: SecureClaw’s high ASB utility comes from safe continuation after denial, not from weaker enforcement. 
+
+A.8 Latency details 
+
+Table 16: Authorization latency per action.             
+
+> Configuration Avg (ms) p50 (ms) p95 (ms) Distributed policy engine + executor 148.6 159.7 166.6 Single policy service + executor 15.4 12.8 32.2 Executor only 0.22 0.09 0.55
+
+These numbers support the main-paper claim that the current overhead is practical rather than domi-nant. The executor itself is essentially free; the distributed policy-engine instantiation is where most of the added latency lives. For LLM-driven workflows with 500–2000 ms inference latencies, this is a systems cost worth optimizing rather than a deployment blocker. 
+
+A.9 Commit-path bypass suite details 
+
+The bypass suite validates the implementation against the compromised-runtime threat model. It intentionally goes beyond prompt injection and directly mutates authorization artifacts, timestamps, request bindings, and replay state. The suite includes both core single-service cases and a small number of optional distributed-variant checks. This table is the empirical companion to Theorem 1: every mutated path that would have undermined request-bound authorization is denied, and every legitimate control path still succeeds. 
+
+A.10 Payment case-study details 
+
+The payment case study is not the paper’s only scenario, but it is a clean concrete illustration of the effect surface. Once commit authority moves to the executor, post-preview mutation of amount, recipient, or authorization state no longer changes the committed action. 
+
+# B Formal Security Guarantees 
+
+This appendix makes the paper’s formal contract explicit. It states the guarantees SecureClaw is designed to enforce, isolates the assumptions needed for each one, and calibrates the deployed sum-mary interface used in experiments. Throughout, the runtime is adversarial unless stated otherwise. The purpose is precision rather than breadth: the proofs justify the architecture under the stated trust boundary, while the experiments determine which component is responsible for the measured benchmark gains. 
+
+B.1 System model, notation, and interfaces 
+
+Let λ denote the implicit security parameter; concrete bounds below use the handle length κ and explicit oracle counts. SecureClaw has five logical roles: an untrusted runtime R, a trusted gateway 
+
+G, a trusted handle store S, a trusted policy engine P, and a trusted executor X . Appendix B.5 ana-lyzes an optional distributed realization in which the policy engine is instantiated as two evaluators 
+
+P0, P1. The threat model allows full corruption of R. The gateway, handle store, policy engine, and executor are trusted for the core authorization and confinement guarantees; Section B.6 makes explicit which guarantees fail if any of those components is compromised. For the per-evaluator transcript-privacy result stated later, we refine the policy assumption: in the distributed realization, each evaluator follows the protocol and the pair does not collude. 
+
+Canonical request and binding digest. An effectful request is the tuple 
+
+ρ = ( intent , caller , session , inputs , ctx ),
+
+17 Table 17: Commit-path bypass suite, including optional distributed-variant cases: 29/29 expected outcomes (25 attacks denied, 4 controls allowed). 
+
+Category Bypass attempt Expected Observed Authorization-share integrity Bit-flipped MAC in authorization share DENY DENY Wrong share version ( v = 2 ) DENY DENY Server-ID swap ( sid 0 = 1 ) DENY DENY Cross-commit mixup (mismatched authorization shares) DENY DENY Missing shares Missing second authorization share DENY DENY Empty commit (no authorization shares) DENY DENY Null policy entries DENY DENY Binding violations Request hash mismatch (text tamper) DENY DENY Recipient tampered after commit DENY DENY Channel tampered after commit DENY DENY Domain tampered after commit DENY DENY Action ID mismatch DENY DENY Session/caller Session ID mismatch DENY DENY Caller ID mismatch DENY DENY Cross-session replay DENY DENY Context binding External principal injection DENY DENY Delegation-token identifier (JTI) injection DENY DENY Context-hash injection DENY DENY Temporal Expired freshness window (past) DENY DENY Future-timestamped authorization DENY DENY Replay of consumed action_id DENY DENY Missing action_id (empty) DENY DENY Chained attacks Expired authorization + text tamper DENY DENY MAC flip + recipient change DENY DENY Confirm-gated: no user_confirm DENY DENY Positive controls Valid dual authorization (primary) ALLOW ALLOW Valid second request (different recipient) ALLOW ALLOW Valid third request (different text) ALLOW ALLOW Confirm-gated: with user_confirm ALLOW ALLOW 
+
+Table 18: Payment case study: the boundary blocks 4/4 unauthorized commits. 
+
+Scenario Attack vector Boundary on Boundary off Legitimate payment Valid authorization ALLOW ALLOW Amount manipulation $100 → $10,000 DENY ALLOW Recipient redirect → attacker@evil.com DENY ALLOW Forged authorization Bit-flip MAC DENY ALLOW Replay attack Replay prior commit DENY ALLOW 
+
+where ctx must contain every sink-relevant field needed to determine the realized external effect. Representative fields include recipient or attendee sets, channels, object identifiers, confirmation class, delegation identifiers, provenance hashes, policy/schema versions, and version identifiers for mutable referenced handles or objects. The gateway and executor serialize requests using the same deterministic canonicalization procedure 
+
+Canon (·). The binding digest is 
+
+h(ρ) := Bind kbind (ρ) := HMAC -SHA256( kbind , Canon (ρ)) .
+
+The security role of h(ρ) is narrow and important: it turns the executor’s question from “is this action type generally allowed?” into “is this exact canonical request the one that was authorized?” 
+
+Preview and commit interfaces. On preview, the gateway canonicalizes ρ, queries policy, and returns an action identifier a, a program identifier p, and an authorization artifact 
+
+π = ( meta , t ), t = Tag Kauth (Canon (meta )) ,
+
+18 where meta binds (a, p, h, τ, y ), τ is the freshness timestamp/window material, and y is the policy decision. The authentication key Kauth is distinct from the request-binding key kbind ; SecureClaw assumes key separation and domain separation between artifact authentication and request binding. On commit, the executor recomputes h(ρ) and accepts only if all of the following hold: 1. the authorization artifact carries a valid MAC under the policy-service authentication key; 2. the artifact binds the tuple (a, p, h );3. the recomputed digest equals the digest bound inside the artifact; 4. timestamps fall inside the freshness window; 5. the action identifier has not already been consumed by the replay guard; 6. the reconstructed policy result is allow ;7. if the action requires user confirmation, a confirmation token bound to (a, p, h ) is present; and 8. any required handle-resolution or sink-specific validation succeeds before the effectful sink is reached. Any failure is fail-closed. Appendix B.5 gives the optional distributed specialization that replaces π
+
+with two separately authenticated shares for the same digest. 
+
+Handles, dereference, and read interfaces. Sensitive values identified by the deployment schema or policy are stored in a trusted handle table. Under-classified sensitive fields are outside the handle-confinement claim. A handle record contains a fresh handle identifier hid together with caller, ses-sion, object version, time-to-live, and sink constraints. The runtime may carry, store, or transmit hid 
+
+as a symbol, but only trusted components may dereference it. The deployed read interface returns 
+
+hid together with an explicit bounded declassification D(v). For proof structure we also refer to a handle-only reference case in which the runtime receives only hid and non-sensitive metadata. All benchmark results in the paper use the bounded-summary interface because current public bench-marks require natural-language read access for many tasks. 
+
+Effectful sinks and explicit declassification. An effectful sink is any interface that can commit an irreversible or externally visible side effect. An explicit declassification event is any interface that intentionally releases information from a protected value to the runtime, including the read-summary interface and tightly scoped recovery messages. Everything else is treated as non-declassifying by default. 
+
+B.2 Assumption partition 
+
+Table 19 separates assumptions by the property they support. This partition matters because Secure-Claw is not a one-primitive story: the execution boundary, the handle layer, the summary interface, and the optional distributed policy-engine refinement rely on different technical premises. 
+
+Assumptions not made. The formal results do not assume an honest runtime, successful prompt filtering, or semantically perfect summaries. The runtime is adversarial throughout. Summary expo-sure is modeled explicitly through the operator D rather than assumed away. The transcript-privacy result for distributed policy evaluation is deliberately scoped to the non-colluding, single-evaluator-view setting stated below. 
+
+B.3 Request-bound authorization integrity Security game. The challenger samples the artifact-authentication key Kauth and request-binding key kbind and exposes a preview oracle Opv (ρ) and a commit oracle Ocm (ρ, π ). On preview input 
+
+ρ, Opv returns a fresh action identifier a, a program identifier p, a policy decision y, and a valid authorization artifact π, while recording (a, p, h (ρ), y, ρ ) in a set S. On commit input (ρ, π ), Ocm 
+
+runs the executor verification logic, including freshness and atomic replay check-and-mark, returns only accept/deny, and records accepted action identifiers. The adversary may adaptively query both oracles. For an accepting commit query, write the adversary-supplied input as (ρ⋆, π ⋆) and the 19 Property Security objective Assumptions 
+
+Execution bound-ary 
+
+No unauthorized side effects. MAC EUF-CMA; deterministic canon-icalization; bounded request-binding collision term εbind (qbind ) over all digest evaluations in the game; confirmation binding when required; bounded clock drift; atomic replay check-and-mark; complete mediation of effectful sinks. 
+
+Handle confine-ment 
+
+No plaintext reaches the runtime except through declared interfaces. Complete mediation of sensitive reads; correct classification of protected fields according to the deployment schema/policy; handle identifiers are sampled uniformly from {0, 1}κ with 
+
+κ ≥ 128 or generated pseudorandomly from a fresh nonce under a secret han-dle key with PRF loss εhid ; unsuccess-ful dereference attempts reveal only a generic denial bit; at most Nlive valid handles are outstanding at a time; deref-erence is allowed only at trusted end-points. 
+
+Bounded-summary inter-face 
+
+Quantified exposure from the deployed read interface. Fixed summary operator D for the eval-uated deployment; any optional post-processor depends only on D(v) and independent randomness; leakage to the runtime occurs only through metadata, handles, and authorized summaries. 
+
+Distributed policy evaluation 
+
+Single-evaluator transcript privacy. Two-server private information retrieval (PIR) security against one server; honest-but-curious secure multi-party com-putation (MPC) privacy; passive non-colluding servers; fixed-shape routing; transcript leakage is limited to Lpolicy .
+
+Table 19: Assumption partition by security property. accepted metadata as (a⋆, p ⋆, h ⋆). The adversary wins if any accepting commit query satisfies at least one of the following: 1. No authorization: there is no tuple (a⋆, p ⋆, h ⋆, allow , ρ ′) ∈ S matching the accepted authorization metadata. 2. Binding violation: there exists (a⋆, p ⋆, h ⋆, allow , ρ ′) ∈ S , but Canon (ρ⋆)̸ = Canon (ρ′)
+
+or the two requests realize different sink effects while both are accepted under the same bound digest. 3. Replay: an already consumed action identifier is accepted again. Let qbind denote the total number of canonical requests whose binding digest is ever evaluated in the game, including all adversarial commit candidates. 
+
+Theorem 1 (Request-bound authorization integrity) . Assume that (i) the MAC is EUF-CMA secure, (ii) Canon( ·) is deterministic, identical at the gateway and executor, uniquely decodable for au-thenticated metadata, and semantically complete for mediated sink effects: for requests reaching the same mediated sink, equal canonical strings imply the same realized external effect, (iii) ctx 
+
+includes all sink-relevant fields that can change the realized external effect, including version iden-tifiers for mutable referenced objects when applicable, (iv) the request-binding digest has bounded collision term εbind (qbind ) over distinct canonical byte strings, (v) any required confirmation token is bound to (a, p, h ), (vi) freshness checks are enforced, (vii) replay check-and-mark is atomic and crash-safe, and (viii) all effectful sinks are mediated by the executor. Then for any PPT adversary 
+
+20 A, there exists a MAC-forgery reduction B such that 
+
+Pr[ A wins ] ≤ Adv euf -cma  
+
+> MAC
+
+(B) + εbind (qbind ).
+
+Proof. We use a short sequence of games. 
+
+Game G0. This is the real authorization game. 
+
+Game G1. Abort if the executor accepts an authorization artifact for an authenticated message 
+
+Canon (meta ) that was not previously signed by the preview oracle. The change from G0 to G1 is bounded by 
+
+Adv euf -cma  
+
+> MAC
+
+(B).
+
+Game G2. In addition to the previous abort rule, abort if an accepting commit for ρ uses a bound digest that was previously recorded for a previewed request ρ′ with Canon( ρ)̸ = Canon( ρ′), or if two accepted commit requests have distinct canonical byte strings under the same bound digest. The change from G1 to G2 is at most εbind (qbind ). The case in which two requests have the same canonical string but different realized sink effects is ruled out by the semantic completeness premise for canonicalization, not by the digest-collision term. Conditioned on no abort in G2, every accepting commit query corresponds to a previously previewed authenticated artifact for the same bound digest and an allow decision. Because all sink-relevant fields appear in Canon (ρ), any post-preview mutation that changes the realized external effect in-duces a distinct canonical byte string unless it is absorbed by a MAC forgery, a binding collision, or an implementation bug in the stated canonicalization premise. Under the remaining operational premises, including freshness enforcement, replay-safe consumption, confirmation binding when re-quired, and complete mediation of effectful sinks, the executor can therefore accept only the exact previously previewed request once. None of the adversary’s winning conditions can occur. A union bound over the game hops gives the stated inequality. 
+
+Instantiating the binding term. The proof keeps εbind (qbind ) explicit because the architecture only needs a request-binding digest with negligible collision probability over the canonical request space. In the evaluated system, Bind is instantiated with HMAC-SHA256 over canonical bytes. Under the usual PRF-style heuristic for HMAC, εbind (qbind ) behaves like a standard collision term in the digest length; the theorem does not require a stronger, non-standard assumption. Theorem 1 captures unauthorized execution relative to the bound request. It does not claim that every policy-allowed request is semantically aligned with the user’s latent objective; wrong-principal or wrong-object actions inside the policy-allowed region therefore lie outside its scope. Freshness, replay safety, confirmation binding, and complete mediation are deployment premises rather than cryptographic loss terms. The bypass evaluation later in the appendix stress-tests these premises empirically. 
+
+Single-service scope and optional distributed variant. The theorem above states the core single-service guarantee used throughout the main paper. Appendix B.5 analyzes an optional distributed policy-evaluation refinement; it does not change the effect/plaintext split or the meaning of request binding. 
+
+B.4 Runtime confidentiality under opaque handles Security game. The challenger initializes the trusted handle store and gives the adversary full control of the runtime. The adversary may request protected reads, move handles across internal channels, and attempt guessed dereferences through any interface that is supposed to reject unknown or unauthorized handles. It wins if it distinguishes which of two challenger-chosen secret values is stored behind a protected handle with non-negligible advantage, without triggering an explicit declassification event. 
+
+Base leakage function. Let Lhandles include handle identifiers issued to the runtime, non-sensitive type metadata, TTL values, policy decision bits, and any declared recovery templates. It excludes all other functions of sensitive plaintext. 21 Theorem 2 (Handle-only confinement) . Assume the handle-only reference case: the runtime re-ceives only hid and non-sensitive metadata; handle identifiers are sampled independently and uni-formly from {0, 1}κ with κ ≥ 128 or generated by a PRF from a fresh nonce under a secret handle key, unsuccessful dereference attempts reveal only a generic denial bit, and at most Nlive valid han-dles are simultaneously outstanding in the runtime’s view. Let εhid = 0 for uniform handles and let 
+
+εhid be the PRF distinguishing loss for PRF-generated handles. Then for any adversary making at most qh online handle-guessing attempts, the runtime’s view is simulatable from Lhandles up to additive advantage 
+
+min 
+
+
+
+1, qhNlive 
+
+2κ
+
+
+
++ εhid .
+
+Proof. Construct a simulator that replaces every protected value with an independently sampled han-dle identifier and exposes only the metadata in Lhandles . If the implementation uses PRF-generated handles rather than direct uniform sampling, first replace those handles by uniform strings, incurring 
+
+εhid .Because the handle-only reference case never releases plaintext directly to the runtime, the simulated view and the real view are identical unless the adversary successfully guesses a live handle identifier that was not already issued to it and uses that guess to trigger a privileged dereference path. At any point there are at most Nlive valid targets in the handle namespace. A single uniform guess therefore succeeds with probability at most Nlive /2κ. By a union bound over qh online guesses, the probability of any successful hit is at most min(1 , q hNlive /2κ). Conditioned on no successful hit, ev-ery runtime-visible object is distributed exactly as in the simulator, so any additional distinguishing advantage would imply a plaintext flow outside the declared interface. 
+
+Interpretation. Theorem 2 is a statement about where plaintext can exist. It says that the handle-only reference case confines raw secret values to trusted components except through explicit declas-sification. It does not, by itself, authorize where a valid handle may be used; those sink restrictions belong to the executor-side authorization path. The original intuition behind handle unguessability is correct, but the correct bound depends on how many live handles the adversary could plausibly hit and, for PRF-generated identifiers, on the PRF loss. Making this factor explicit avoids overstating confidentiality while still preserving the intended negligible-security conclusion for realistic handle namespace sizes. 
+
+Bounded-summary interface. The deployed benchmark configuration uses a bounded-summary interface. For a protected value v, the runtime receives 
+
+(hid , D (v)) 
+
+on an authorized read. The relevant question is therefore not whether the runtime learns anything about v; it does by design. The question is how much additional distinguishing power the specific read interface introduces beyond base handle leakage. 
+
+Advantage definition. Let qr bound the number of authorized protected-read events available to the adversary. Consider a scoped execution trace with at most m ≤ qr authorized read events. For read event i, the challenger prepares a pair of secrets (v0,i , v 1,i ) with identical base leakage and, for a single hidden bit b ∈ { 0, 1} shared across the trace, returns one sample from D(vb,i ). Let 
+
+Adv sm ,D  
+
+> A
+
+({(v0,i , v 1,i )}mi=1 ) denote the adversary’s left-right distinguishing gap for that trace, i.e., the maximum difference in output-one probability between the two hidden-bit experiments. Under the alternative success-probability convention, the advantage over random guessing is one half of this quantity. 
+
+Theorem 3 (Quantitative exposure of the bounded-summary interface) . Assume the same handle conditions and εhid convention as in Theorem 2. Let D be the fixed deployed read interface. Consider a scoped trace in which each authorized read event i emits one sample from D(vb,i ) using fresh randomness and no secret-dependent cross-read state beyond the emitted summaries themselves. 
+
+22 Then for any sequence of read pairs {(v0,i , v 1,i )}mi=1 with m ≤ qr and any PPT adversary making at most qh handle guesses, 
+
+Adv sm ,D  
+
+> A
+
+({(v0,i , v 1,i )}mi=1 ) ≤ min 
+
+
+
+1,
+
+> m
+
+X
+
+> i=1
+
+∆( D(v0,i ), D (v1,i )) 
+
+
+
++ 2 
+
+
+
+min 
+
+
+
+1, qhNlive 
+
+2κ
+
+
+
++ εhid 
+
+
+
+,
+
+where ∆( ·, ·) denotes total variation distance between the per-read output distributions. Proof. Simulate the handle portion of the two left-right worlds as in Theorem 2. Under the left-right gap convention used here, the corresponding bad-event contribution is at most 
+
+2(min(1 , q hNlive /2κ) + εhid ).Now hybrid over the m authorized read events. At hybrid step i, switch the ith summary sample from D(v0,i ) to D(v1,i ) while keeping all other read events fixed. The distinguishing gap introduced by that single step is at most ∆( D(v0,i ), D (v1,i )) . Summing over all m read events yields the first term, truncated at 1. Adding the two-world handle-guessing term gives the result. The same hybrid argument extends to adaptively scheduled read events by conditioning each step on the preceding transcript and bounding only the increment introduced at the next authorized summary. 
+
+Uniform-∆ special case. If every read event in the trace is upper-bounded by the same worst-case distance ∆max , the theorem reduces immediately to 
+
+Adv sm ,D  
+
+> A
+
+≤ min(1 , q r ∆max ) + 2 
+
+
+
+min 
+
+
+
+1, qhNlive 
+
+2κ
+
+
+
++ εhid 
+
+
+
+,
+
+which recovers the simpler intuition used informally throughout the paper. 
+
+Post-processing cannot increase distinguishability. Suppose the deployment implements the vis-ible summary as D = P ◦ Dcore , where P is deterministic or randomized independently of the underlying secret conditional on Dcore (v). Then by the data-processing inequality, 
+
+∆( D(v0), D (v1)) ≤ ∆( Dcore (v0), D core (v1)) .
+
+This is why measuring the deterministic core of the deployed summary operator is the right conser-vative calibration target, provided the post-processor does not retrieve new secret-bearing context. 
+
+Reading the bound. If D is constant, then ∆ = 0 and the bounded-summary interface collapses to the handle-only reference case. If D is the identity, then ∆ = 1 and the confidentiality term becomes trivial. Practical deployments lie between those extremes. The point of the theorem is not to pretend the bounded-summary interface is secrecy-preserving in the same sense as the handle-only reference case; it is to quantify exactly where and how the read interface weakens confidentiality on a trace-by-trace basis.                   
+
+> Summary class Example output Typical ∆Interpretation Metadata only type, size, TTL, sink list 0No content-dependent dis-tinction by construction Structured schema aliased identifiers, dates, amounts, bounded entity sets 0 or small Depends on whether the field is content-carrying or fully symbolized Bounded natural-language sum-mary short subject/body/list excerpt up to 1 Useful for planning but may distinguish secrets di-rectly
+
+Table 20: Qualitative confidentiality behavior of summary-interface families. 23 Measurement protocol for the deployed summary operator. The deterministic core of the de-ployed summary interface uses item cap M =8 and character cap C=512 . We evaluate it on 
+
+N = 122 paired inputs spanning 19 secret-location categories representative of the tool outputs that arise in the benchmarked tasks. Each pair differs in exactly one sensitive location. Because the measured core is deterministic, each pair induces point distributions and therefore yields ∆ ∈ { 0, 1}
+
+depending on whether the two emitted summaries are byte-identical. The measurement includes the deployed hardening that resets alias state per read, because without that reset the independence premise of Theorem 3 would be materially weaker. The reported average ¯∆ = 0 .287 below is therefore a diagnostic over this 122-pair measurement suite. It is not a worst-case upper bound for arbitrary execution traces and should not be substituted for the theorem’s sum of per-read distances.                                                     
+
+> Secret-location category Pairs ∆
+> Identifier and structure-preserving categories Email sender swap 10 0.00
+> IBAN counterparty swap 60.00
+> URL swap 60.00
+> Domain swap 40.00
+> Participant list (emails) 80.00
+> IBAN counterparty, request-mentioned 60.00
+> Email counterparty, request-mentioned 60.00
+> Second-read alias index (multi-read turn) 60.00
+> Canonicalizable email/domain obfuscations 30.00
+> Residual in-window content categories Free-text body within C= 512 12 1.00
+> Subject line within preview cap 61.00
+> List items within M= 8 81.00
+> Plain-text transaction counterparty name 61.00
+> Ambiguously malformed identifier 31.00
+> Beyond-window or stripped-content categories Body content beyond C= 512 80.00
+> List items beyond index M= 8 80.00
+> Dict keys beyond index M= 8 60.00
+> Subject with suspicious markers (stripped) 40.00
+> Prompt-injection payload inside stripped tag 60.00
+> Overall (122 pairs, 19 categories) ¯∆ = 0 .287
+> Worst-case category 1.000
+
+Table 21: Per-category ∆ for the deployed deterministic summary core. 
+
+Why end-to-end C2/C5 closure is stronger than the ∆ table alone. Even when a read summary is distinguishing, two stronger structural facts continue to hold in the deployed system: 1. unauthorized commits still require executor-side authorization and are covered by Theo-rem 1; 2. internal channels such as C2 and C5 do not obtain newly dereferenced raw protected val-ues; any content-dependent information they may carry must already originate from the authorized summary interface; and 3. the read interface itself rate-limits exposure to one bounded summary per authorized read. The next proposition isolates that point. 
+
+Proposition 4 (Three-layer composition for high-∆ summary categories) . Let C be a summary category with ∆( D(v0), D (v1)) = 1 . Under the assumptions of Theorems 1, 2, and 3, an adversary controlling the runtime remains subject to three simultaneous constraints: 1. no unauthorized side effect can commit; 2. the internal relay channels C2 and C5 do not newly expose raw protected values beyond what was already released through the authorized bounded-summary interface; any resid-ual content-dependent signal must already have been released through that interface; and 
+
+24 3. disclosure through the read path is limited by the authorized, bounded summary interface itself. Therefore a high-∆ summary category weakens the per-read confidentiality term of Theorem 3, but it does not reopen unauthorized commit or a fresh raw-plaintext relay from trusted storage into C2/C5. Proof. Item 1 follows directly from Theorem 1, whose premises are independent of the read operator. Item 2 follows from the interface contract and trust split: C2 and C5 never trigger a fresh dereference of trusted storage; any content-dependent signal observed on those channels must already have been emitted by the authorized summary interface. Item 3 follows from the read API itself, which emits one bounded summary per authorized read. These constraints arise from different components and therefore coexist. 
+
+B.5 Distributed policy evaluation 
+
+Distributed policy evaluation is optional. Its purpose is to reduce plaintext concentration during policy evaluation. We write Lpolicy = ( LPIR , L MPC , L confirm , L time ) for the per-evaluator leakage summarized in Table 22. 
+
+Security game. We now state the scoped transcript-privacy result for the distributed policy-engine instantiation. The adversary outputs two single actions x0, x 1 such that Lpolicy (x0) = Lpolicy (x1).The challenger samples b ← { 0, 1}, executes xb through the gateway exactly once, and reveals the transcript visible to one policy evaluator Pσ . The adversary wins if it distinguishes which action was executed. The game is intentionally single-query and non-adaptive because that is the claim this distributed instantiation is designed to support.      
+
+> Component Contents
+> LPIR PIR endpoint class, bundle or database identifier, padded batch geometry, and public domain size
+> LMPC program identifier, public circuit-shape metadata, and batch geometry
+> Lconfirm whether confirmation is required and the coarse confirmation class
+> Ltime coarse timing bucket and fixed-shape schedule metadata
+
+Table 22: Per-evaluator leakage contract for the distributed policy engine. 
+
+Theorem 5 (Single-query per-evaluator transcript privacy for distributed policy evaluation) . Assume (i) the two-server PIR scheme is secure against one server, (ii) the MPC protocol is secure in the honest-but-curious model, (iii) the two policy evaluators do not collude, and (iv) routing is fixed-shape and consistent with the declared leakage function Lpolicy . Then for each evaluator σ there exists a PPT simulator Sim σ such that the single-query transcript visible to Pσ is computationally indistinguishable from Sim σ (Lpolicy ).Proof. Use a two-step hybrid argument. First replace the PIR-visible portion of the transcript with the simulator guaranteed by one-server PIR security. Then replace the MPC-visible portion with the simulator guaranteed by honest-but-curious MPC privacy. All remaining transcript fields are explicit functions of Lpolicy by construction. Therefore the complete single-evaluator transcript is simulatable from Lpolicy .Theorem 5 explains why distributing the policy engine can reduce policy-side plaintext concentra-tion without changing the main effect/plaintext split enforced elsewhere in SecureClaw. 
+
+B.6 Trusted-component compromise and guarantee degradation 
+
+Theorems 1, 2, and 3 are component-scoped: they assume the gateway, handle store, policy engine, and executor are trusted. This section makes explicit what fails if that assumption is violated. 25 Component compromised Guarantee impact Runtime R Still in scope. Request-bound authorization and handle confine-ment are designed to hold even when R is adversarial, except for information intentionally released through authorized summaries or policy-allowed actions. Gateway G Read confidentiality fails because the gateway can disclose plain-text directly. Canonicalization and preview formation may also become malicious, undermining the semantic meaning of request binding. Handle store S Confidentiality of protected plaintext fails. If handle metadata, ob-ject bindings, or version tags can be tampered with, dereference integrity may also fail unless separately protected. Policy engine P Effect authorization fails if policy incorrectly authorizes forbidden requests. Policy-input confidentiality to that service also fails. One evaluator in the optional distributed variant Per-evaluator transcript privacy fails for that evaluator’s own view. Request-bound authorization can still fail closed provided the ex-ecutor requires both valid shares and the second evaluator remains honest and non-colluding. Both evaluators in the optional distributed variant Effect authorization fails. The transcript-privacy claim also be-comes void. Executor X Effect authorization fails completely because the executor is the sole commit point. Since the executor dereferences handles at com-mit time, compromise of X may also expose protected plaintext needed for sink execution. 
+
+Table 23: Guarantee degradation under trusted-component compromise. 
+
+Operational implication. SecureClaw materially reduces trust in the runtime, but it does not elim-inate trust altogether. High-assurance deployments should therefore pair the architecture with hard-ening, audit logging, key isolation, and independent monitoring of the gateway, handle store, policy service, and executor. 26

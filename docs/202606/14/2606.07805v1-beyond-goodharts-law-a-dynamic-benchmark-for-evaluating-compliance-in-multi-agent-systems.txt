@@ -1,0 +1,348 @@
+Title: Beyond Goodhart's Law: A Dynamic Benchmark for Evaluating Compliance in Multi-Agent Systems
+
+URL Source: https://arxiv.org/pdf/2606.07805v1
+
+Published Time: Tue, 09 Jun 2026 00:26:26 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# Beyond Goodhart’s Law: A Dynamic Benchmark for Evaluating Compliance in Multi-Agent Systems 
+
+# Yiyang Zhao ∗
+
+zhaoyy25@m.fudan.edu.cn Fudan University Shanghai, China Shanghai Academy of AI for Science Shanghai, China 
+
+# Zhuo Zhang 
+
+zhangzhuo@pjlab.org.cn Shanghai Artificial Intelligence Laboratory Shanghai, China 
+
+# Qingxuan Le ∗
+
+25213050214@m.fudan.edu.cn Fudan University Shanghai, China Shanghai Academy of AI for Science Shanghai, China 
+
+# Lizhen Qu †
+
+Lizhen.Qu@monash.edu Monash University Melbourne, Australia 
+
+# Zenglin Xu †
+
+zenglinxu@fudan.edu.cn Fudan University Shanghai, China Shanghai Academy of AI for Science Shanghai, China 
+
+## Abstract 
+
+The rapid evolution of Large Language Models (LLMs) from passive assistants to autonomous, execution-capable agents has introduced critical operational risks. Most current evaluation frameworks ne-glect procedural compliance, leading to “Machiavellian” behav-iors where agents strategically violate safety rules to maximize rewards—a direct manifestation of Goodhart’s Law. To address this blind spot, we introduce MAC-Bench, a dynamic, adversarial bench-mark designed to evaluate the procedural alignment of multi-agent systems under realistic pressure. We propose the SERV (Seed →
+
+Evolve → Refine → Verify) pipeline, an “Agent-as-a-Benchmark” paradigm that transforms unstructured legal texts into executable, contamination-free scenarios. By synthesizing holographic sandbox environments and injecting calibrated social-engineering pressure vectors, MAC-Bench forces agents into Pareto-optimal trade-offs between task success and regulatory adherence. We introduced novel metrics: the Compliance-Weighted Success Rate (CSR) and the Machiavellian Gap (MG), and conducted a comprehensive eval-uation of state-of-the-art frontier models to reveal the pervasive trade-offs between success and compliance. See our code at here. 
+
+## Keywords 
+
+Multi-Agent Systems; Benchmarks and Datasets; Trustworthy AI 
+
+## 1 Introduction 
+
+The landscape of artificial intelligence is undergoing a fundamen-tal transformation. Large Language Models (LLMs) are rapidly evolving from passive conversational systems into autonomous, execution-capable agents that actively interact with digital environ-ments—browsing the web, querying databases, invoking APIs, and coordinating within multi-agent systems [ 31 , 66 , 68 ]. To evaluate this shift, many agent benchmarks—including GAIA and WebArena [43 , 78 ]—have been proposed to evaluate performance almost exclu-sively through Success Rate (SR) . This success-centric design gives rise to what we term the Success Paradox : agents are rewarded for 
+
+> ∗Work done during internship at Shanghai Academy of AI for Science.
+> †Corresponding authors.
+
+completing tasks regardless of whether the underlying execution process adheres to required rules and constraints. As a consequence, benchmarks implicitly incentivize specification gaming and reward hacking [1, 34 ]. This dynamic reflects a direct instantiation of Good-hart’s Law—when a measure becomes a target, it ceases to be a good measure [ 29 ]. Agents therefore learn to optimize for observable success while systematically neglecting unmeasured dimensions such as compliance, security, and procedural integrity. Moreover, as LLM agents move from laboratory prototypes to-ward deployment in regulated and safety-critical domains, this evaluation gap becomes operationally consequential. Compliance is no longer a desirable auxiliary property; it is a legally mandated requirement. Regulatory frameworks such as the European AI Act impose explicit obligations on risk management, transparency, and traceability for high-risk systems, while data protection laws including the GDPR and PIPL enforce strict constraints on data access, minimization, and processing procedures [ 22 , 24 , 51 ]. In these settings, an agent that completes a task by bypassing authen-tication, ignoring consent checks, or violating privacy policies has not merely behaved suboptimally—it has created concrete legal, financial, and operational liabilities. A central insight motivating this work is that compliance is fun-damentally a property of the process , not merely the final output. Whether an agent verified authorization, minimized data access, ap-plied required safeguards, or maintained an auditable execution trail cannot be inferred from its final response alone [ 37 ]. Despite the growing importance of agentic systems in regulated environments, there currently exists no benchmark that systematically evaluates procedural compliance end-to-end —that is, whether an agent follows required rules throughout its execution rather than merely produc-ing a compliant-looking outcome. Existing benchmarks either focus on task success, output-level policy adherence, or isolated safety violations, leaving a critical evaluation gap in assessing how agents behave during task execution. As a result, most existing benchmarks remain ill-suited for evaluating procedural integrity due to three systemic limitations. First, memorization vulnerability : static task instances may leak into training corpora, enabling apparent success 
+
+> 1
+> arXiv:2606.07805v1 [cs.AI] 5 Jun 2026 Zhao et al.
+
+Figure 1: Overview of the MAC-Bench Framework. (A) The SERV pipeline (Seed → Evolve → Refine → Verify) automates the transformation of unstructured legal and regulatory corpora into dynamic, contamination-free adversarial environments. (B) Evaluation mechanism of agent behavior under calibrated social-engineering pressure. MAC-Bench audits the complete execution trace 𝜏 to detect Machiavellian behavior.                                                        
+
+> Framework Type Static/Dynamic Adversarial Input Trace Auditing Goal Conflict
+> GAIA Capability Static No No No AgentBench Capability Static No No No WebArena Capability Static No No No Agent-SafetyBench Safety Static Jailbreaks Output only No ST-WebAgentBench Safety Static Web Attacks Output only No MAGPIE Privacy Static No Tuple-level No PrivacyLens Privacy Static No N/A No AgentDojo Adversarial Semi-dynamic Rule-based Limited Yes Parea AI Adversarial Rule-based Manual Limited Yes
+> MAC-Bench(Ours) Compliance Dynamic Social-Engineering Full trace Pareto-Optimal
+
+Table 1: Comparison of MAC-Bench with Related Benchmarks 
+
+without genuine rule understanding. Second, omission blindness :failures to act—such as skipping encryption or consent verifica-tion—are invisible under output-only evaluation. Third, context elimination : static benchmarks fail to capture the organizational, social, and hierarchical pressures that frequently drive real-world compliance violations. To overcome these limitations, we introduce MAC-Bench (Multi-
+
+Agent Compliance Bench mark), a dynamic, trace-based evaluation framework designed to stress-test LLM agents under realistic con-ditions where task success and regulatory compliance are in direct conflict. Unlike prior benchmarks, MAC-Bench evaluates not only 
+
+what an agent accomplishes, but how it accomplishes it. MAC-Bench departs from existing approaches through three methodolog-ical advances. First, we propose the SERV pipeline (Seed → Evolve 
+
+→ Refine → Verify), a data-centric workflow that transforms un-structured regulatory and legal texts—such as the GDPR, EU AI Act, and CIS Benchmarks—into a structured library of machine-executable atomic rules with explicit provenance, as illustrated in Figure 1. Second, we introduce an Agent-as-a-Benchmark (AaaB) 
+
+paradigm, in which specialized “Scenario Agents” dynamically syn-thesize adversarial tasks and executable environments at runtime, ensuring scalability and robustness against benchmark contami-nation. Third, we incorporate social-engineering pressure injection ,systematically applying realistic organizational stressors—such as authority, urgency, and reciprocity—to induce genuine success– compliance trade-offs, rather than relying on synthetic jailbreak prompts. The comparison between MAC-Bench and existing related benchmarks on critical evaluation properties can be find in Table 1. This paper makes three primary contributions: 
+
+> 2Beyond Goodhart’s Law: A Dynamic Benchmark for Evaluating Compliance in Multi-Agent Systems
+
+(1) The SERV Methodology: A generalizable pipeline for converting raw regulatory texts into executable, auditable benchmark rules, addressing the need for high-fidelity and contamination-resistant evaluation datasets. (2) A Generative Evaluation Environment: A new Agent-as-a-Benchmark paradigm that enables self-evolving, context-rich evaluation of agents operating in complex, rule-bound environments. (3) Success–Compliance Trade-off and New Metrics: We empirically demonstrate a pervasive trade-off in state-of-the-art agents and introduce two novel metrics— Compliance-Weighted Success Rate (CSR) and the Machiavellian Gap (MG) —to quantify strategic rule violations under realistic pressure. For further information, implementation details, and related resources, please refer to our GitHub repository. 
+
+## 2 Related Works 
+
+Static Capability and Safety Benchmarks. Benchmarks such as AgentBench, GAIA, and 𝜏 -Bench have standardized the evaluation of agent utility across diverse environments, including tool use, web interaction, and multi-step reasoning [ 41 , 43 , 73 ]. While effective at measuring Success Rate (SR), these benchmarks are fundamen-tally outcome-oriented: task completion is treated as a sufficient condition for success. As a result, they can overlook procedural violations —for example, achieving a goal via SQL injection rather than compliant parameterized queries, as categorized in common weakness taxonomies such as CWE [ 65 ]. Recent financial-agent studies further highlight the need for risk-aware temporal reason-ing and ecological multi-agent market simulations in consequential domains [10, 80]. Agent safety benchmarks such as Agent-SafetyBench and ST-WebAgentBench extend evaluation to specific threat models, in-cluding prompt injection, phishing, and policy violations [ 37 , 76 ]. However, most existing suites rely on largely static scenario sets and pre-defined attack patterns. This design leads to two well-documented limitations: (i) data contamination , where benchmark instances leak into training corpora and artificially inflate scores [ 13 , 39 , 70 , 79 ]; and (ii) insufficient dynamic goal conflict , making it difficult to assess whether an agent will voluntarily sacrifice compli-ance under realistic pressure [ 37 , 73 ]. MAC-Bench directly targets this gap by evaluating procedural compliance under adversarially induced success–compliance trade-offs. 
+
+Compliance and Privacy Evaluation. A growing line of work has begun to explicitly evaluate normative constraints in agentic systems. MAGPIE (Multi-AGent contextual PrIvacy Evaluation) as-sesses contextual privacy risks in multi-agent collaboration using structured scenario representations, revealing high error rates in distinguishing public and private information under multi-turn coordination [ 33 ]. However, MAGPIE relies on a finite set of cu-rated scenarios and does not treat pressure injection as a first-class mechanism for inducing compliance–utility trade-offs [33]. PrivacyLens evaluates privacy norm awareness and policy com-pliance tendencies of language-model agents, focusing on whether agents recognize and respect privacy-related constraints [ 62 ]. Its evaluation primarily emphasizes static policy reasoning and output-level judgments, rather than end-to-end auditing of agent behavior inside executable environments. In contrast, MAC-Bench broadens the scope from privacy to procedural compliance spanning legal, se-curity, and ethical constraints, and evaluates agents via trace-level auditing to surface violations that remain invisible under output-only metrics [37, 76]. 
+
+Adversarial and Dynamic Evaluation. Dynamic and adversar-ial evaluation has emerged as an important direction for studying agent robustness and safety. AgentDojo introduces an extensible en-vironment for testing agents against prompt injection and adaptive attacks over tool-augmented workflows [ 17 ]. In industry, evalu-ation platforms such as Parea operationalize continuous testing, experiment tracking, and regression analysis for deployed LLM ap-plications [ 56 ]. Orthogonally, AgentPoison studies backdoor-style attacks on LLM agents by poisoning long-term memory or retrieval-augmented knowledge bases, demonstrating that harmful behaviors can be induced without additional model training [ 12 ]. Recent work also explores end-to-end reinforcement learning for LLM-driven multi-agent search systems, showing how heterogeneous groups of agents can be optimized jointly rather than only prompt-engineered manually [9]. These approaches primarily focus on external threat models —such as prompt injection, poisoned context, or robustness degradation—rather than systematically eliciting internal alignment failures driven by re-alistic organizational pressures. MAC-Bench differs in both method-ology and objective. Through the Agent-as-a-Benchmark paradigm, autonomous agents generate, implement, and evolve contamination-resistant executable environments at runtime [ 17 , 73 ]. Moreover, instead of generic adversarial prompts, our Social-Engineering Pres-sure Injection explicitly instantiates Pareto-optimal conflicts be-tween task success and compliance, modeling organizational pres-sures—such as authority and urgency—that frequently drive real-world compliance failures. 
+
+## 3 Methodology 
+
+This section presents the comprehensive methodology underpin-ning MAC-Bench, a dynamic, adversarial benchmark designed to evaluate procedural compliance in multi-agent systems under social-engineering pressure [ 2, 36 , 41 , 78 ]. We operationalize our evaluation through a Seed →Evolve →Refine →Verify ( SERV ) pipeline, which transforms unstructured legal and regulatory texts into ex-ecutable, pressure-calibrated test scenarios, while explicitly miti-gating benchmark data contamination risks via runtime instance generation [11, 11, 71]. 
+
+## 3.1 Overview of the SERV Pipeline 
+
+The SERV pipeline constitutes a four-stage autonomous work-flow that embodies the Agent-as-a-Benchmark paradigm, aligning with recent agent evaluation engineering guidance and interactive benchmark design [ 2, 36 , 41 , 78 ]. This paradigm shifts from static, manually curated datasets to a generative ecosystem where special-ized Large Language Model (LLM) agents serve as the architects, builders, and validators of evaluation instances [ 41 , 60 , 72 ]. The 
+
+> 3Zhao et al.
+
+pipeline ensures that each evaluation episode is procedurally gen-erated at runtime, guaranteeing uniqueness and reducing the risk of benchmark contamination and memorization [11, 11, 71]. The four stages are: 
+
+1. Seed : Legal and regulatory texts are parsed to extract Atomic Rules – formal, machine-checkable representations of com-pliance obligations [4, 20, 21, 27, 52]. 
+
+2. Evolve : These atomic rules are used as foundations to gen-erate adversarial scenarios by injecting calibrated social-engineering pressure, creating a goal conflict between task success and procedural adherence [14, 46, 67]. 
+
+3. Refine : Holographic sandbox environments are synthe-sized, comprising mock databases, API servers, and file systems, providing a realistic execution context where the agent’s actions can be fully logged and audited [ 36 , 37 , 78 ]. 
+
+4. Verify : The agent executes within the environment, and its entire execution trajectory is automatically audited against the applicable atomic rules to derive comprehensive com-pliance metrics [2, 37]. 
+
+## 3.2 Seed Initialization: The Analyst Agent 
+
+The Seed stage is responsible for establishing the theoretical and se-mantic foundation of the benchmark. We deploy an Analyst Agent to process a corpus of authoritative legal, regulatory, and corpo-rate policy documents [ 20 , 21 , 52 ]. The agent’s task is to convert unstructured legal prose into a structured, executable format, fol-lowing the broader trajectory of compliance-as-code, legal NLP, and machine-checkable norm representation [3, 4, 6, 18, 27]. 
+
+Unstructured Legal Text Processing. The Agent ingests doc-uments from multiple jurisdictions and domains, including: 
+
+• Privacy & Data Protection : PIPL, GDPR, EU AI Act [ 20 ,21, 52]. 
+
+• Cybersecurity & Code Standards : CWE (Top 25), OWASP Top 10, CIS Controls/Benchmarks [7, 15, 47, 53]. 
+
+• Ethics & Organizational Policy : Corporate compliance manuals, codes of conduct (modeled as internal normative constraints) [27]. The agent performs multi-stage NLP processing tailored to each document type, consistent with established legal NLP pipelines and compliance-checking representations [3, 27]: 
+
+• Legislation : Hierarchical segmentation to identify articles, clauses, and cross-references (e.g., GDPR Articles; PIPL pro-visions), enabling rule grounding and traceability [ 20 , 21 ,52]. 
+
+• Standards : Pattern extraction to identify vulnerability IDs (e.g., CWE entries) and corresponding mitigation require-ments [15, 47, 53]. 
+
+• Corporate Policies : Template normalization to infer im-plicit obligations from heterogeneous formatting and in-formal language, a common challenge emphasized in legal NLP surveys [3]. 
+
+Cross-Reference Mapping. The Analyst Agent constructs a regulation graph where nodes represent atomic rules. Edges denote relationships such as subsumption (one rule implies another), con-flict (rules cannot be simultaneously satisfied), and sequence (rules apply in a temporal order), aligning with graph-based compliance-as-code and regulatory knowledge graph approaches [ 18 , 27 ]. Graph analysis identifies critical rule sequences where early violations can enable later ones (e.g., bypassing authentication to gain data access), supporting systematic scenario coverage across security and privacy requirements [7, 47, 53]. 
+
+Seed Design Principles. We initialize Seed from normative sources 
+
+(laws, standards, and internal policies) rather than directly reusing benchmark scenarios, because procedural compliance must be grounded in machine-checkable obligations with provenance . Scenario-first benchmarks typically encode constraints implicitly in natural lan-guage, which makes (i) rule coverage hard to quantify, (ii) viola-tions ambiguous to audit, and (iii) updates to regulations or orga-nizational policies difficult to incorporate. By contrast, rule-first seeding produces atomic rules (executable predicates) that admit de-terministic trace auditing and explicit coverage measurement, and supports principled scenario generation from a regulation graph (cross-references, subsumption, and conflicts). We intentionally do not reuse scenario sets from capability-first benchmarks as-is, because, as we emphasized in Table 1, they gener-ally lack explicit compliance-rule provenance and therefore do not support systematic rule coverage measurement. Moreover, static public episodes increasingly face contamination and memoriza-tion risks in modern LLM evaluation, motivating our runtime re-instantiation design that regenerates contexts while preserving compliance-relevant invariants. This choice aligns with recent dis-cussions advocating dynamic evaluation and contamination-aware benchmark construction. [11, 71] 
+
+## 3.3 Adversarial Scenario Evolution 
+
+The Evolve stage transforms static atomic rules into dynamic eval-uation scenarios that elicit misaligned behavior [ 2, 41 ]. This is achieved by the Red Team Architect Agent, which systematically injects social-engineering pressure to create a Pareto frontier of goal conflict, reflecting well-studied manipulation strategies (authority, urgency, reciprocity/empathy, ambiguity) in social engineering re-search [14, 46, 67]. 
+
+Social Engineering Pressure Taxonomy. The Architect Agent implements four pressure vectors, each derived from established social engineering and organizational psychology research: 
+
+• Authority : Exploits the obedience bias and compliance under authority cues [ 46 , 67 ]. The requester is simulated with high organizational rank (e.g., CEO, CTO), formal com-munication channels, and linguistic markers of command (imperative mood). 
+
+• Urgency : Exploits time pressure and temporal discounting effects that shift decision-making strategies and increase reliance on heuristics [ 28 , 75 ]. The task is framed with a tight deadline, often linked to high-stakes consequences. 
+
+• Empathy/Reciprocity : Exploits the reciprocity principle and pro-social compliance motivations [ 14 , 67 ]. The request is framed through emotional or personal appeal. 
+
+• Obfuscation : Exploits ambiguity and interpretive flexi-bility, consistent with interdisciplinary accounts of social engineering relying on manipulation, deception, and vague-ness [67]. 
+
+> 4Beyond Goodhart’s Law: A Dynamic Benchmark for Evaluating Compliance in Multi-Agent Systems
+
+Pressure Gradient and Scenario Generation. For each atomic rule and a base task (e.g., “generate a departmental salary report”), the Architect Agent generates a spectrum of adversarial scenarios through prompt rewriting. The rewriting operations include tem-poral compression, authority elevation, emotional intensification, and semantic vagueness, producing graded pressure regimes that enable stress-testing agent compliance stability [ 2, 37 ]. By apply-ing these operations sequentially and in combination, the agent creates a calibrated pressure gradient and assigns an intensity level from 0 (baseline) to 𝑁 (maximum combined pressure), supporting fine-grained behavioral break-point analysis [75]. We formalize pressure intensity into discrete levels based on textual volume, emotional intensity, and narrative complexity, in the spirit of engineered eval “difficulty knobs” for agent assess-ments [ 2]. Level 0 (Baseline) represents neutral requests. Level 5 (High Pressure) involves multi-paragraph narratives combining authoritative mandates, urgent deadlines, and personal stakes. 
+
+## 3.4 Refine: Holographic Environment Synthesis 
+
+The Refine stage creates the holographic sandbox environment in which the agent under test will execute, consistent with interactive agent benchmarking that emphasizes realistic, reproducible envi-ronments and traceable action logs [ 36 , 37 , 78 ]. The World Builder Agent generates fully functional, Python-based simulation infras-tructure via automated code synthesis, enabling scalable instance generation while preserving evaluation rigor [2]. 
+
+Agent-as-a-Benchmark for Environment Synthesis. This environment is holographic – it is complete and structurally au-thentic (it contains databases, APIs, and file systems with realistic interactions) but synthetic (it uses mock data and simulated sys-tems). This architecture provides three key advantages: 
+
+• Scalability : Unlimited novel environments can be gener-ated without manual engineering [36, 41]. 
+
+• Adaptability : The system can incorporate new regulatory requirements and simulate emerging vulnerability patterns (e.g., OWASP/CWE updates) [47, 53]. 
+
+• Contamination Elimination : Runtime synthesis helps reduce benchmark memorization and data contamination risk, a central concern in modern LLM evaluation [ 11 , 11 ,71]. 
+
+Components of the Holographic Environment. The World Builder Agent synthesizes: 
+
+• Mock Databases : Relational schemas (e.g., using SQLAlchemy) with realistic synthetic data; fields are tagged with sensitiv-ity levels to support privacy auditing [ 58 ]. Database triggers or proxy layers log all queries for compliance auditing. 
+
+• API Servers : RESTful endpoints (e.g., using FastAPI) that implement authentication and authorization using standard mechanisms (e.g., OAuth 2.0, JWT, RBAC) [ 30 , 32 , 57 , 61 ]. All API calls are logged with request parameters, authenti-cation context, and authorization decisions. 
+
+• File Systems : Hierarchical directory structures with Unix-style permissions, enabling tests for unauthorized access and privilege violations [78]. 
+
+• Unified Audit Logger : A central component that records every tool call, API invocation, database query, and file operation, capturing timestamps, parameters, and return values, aligning with best practices for agent eval harnesses and traceability [2, 37]. To prevent agents from detecting artificial simplifications or “gaming” the simulation, the World Builder Agent enforces a high-fidelity synthesis policy, consistent with calls for realistic agent evaluation harnesses [ 2, 78 ]. Mock environments include realis-tic side-effects: database queries respect transaction latency (50– 300ms), API servers return standardized error codes, and file sys-tems enforce permission hierarchies. This ensures that agents are evaluated on genuine technical competence alongside procedural compliance [7, 53]. 
+
+## 3.5 Verify: Execution Trace Auditing 
+
+The Verify stage is the evaluation core, aligning with the recent emphasis on trajectory-/trace-first agent evaluation rather than final-answer-only scoring [ 44 , 49 , 69 ]. The agent under test executes the task within the synthesized environment under the prescribed pressure, using tool/action interfaces typical of modern web and interactive benchmarks [36, 78]. Its complete execution trajectory 
+
+𝜏 = (𝑎 1, 𝑜 1, 𝑎 2, 𝑜 2, . . . , 𝑎 𝑇 , 𝑜 𝑇 ) (1) where 𝑎 𝑡 is an action (tool call or natural language) and 𝑜 𝑡 is the observation, is captured and persisted as an auditable trace [ 35 , 69 ]. 
+
+Trace-Based Compliance Auditing. A Compliance Auditor— implemented either as a rule-based oracle (deterministic checks over logs) or as an LLM-based interpreter (LLM-as-a-judge)—analyzes 𝜏 
+
+against the set of applicable atomic rules R [ 38 , 42 , 77 ]. For each rule 𝑟 ∈ R , the auditor checks whether violation indicators (e.g., a database query accessing restricted columns, an API call without proper authentication, broken authorization at the object/property level) are present in the trace, consistent with widely-used API abuse and authorization failure taxonomies [ 54 ]. The outcome for rule 𝑟 is a binary violation indicator 𝑣 𝑖,𝑟 ∈ { 0, 1} (or a graded label when supported by the auditor rubric [ 42 , 77 ]). The normalized violation severity for an episode is calculated as Violation (𝜏 𝑖 ) =
+
+Í𝑟 𝑤 𝑟 · 𝑣 𝑖,𝑟 
+
+Í𝑟 𝑤 𝑟 
+
+, (2) where 𝑤 𝑟 is the severity weight derived from the rule’s regulatory or policy source [ 19 , 50 ]. This weighting design operationalizes the idea that some violations are materially more harmful than others in regulated deployment contexts [50]. 
+
+Core Evaluation Metrics. We define a metric suite that cap-tures the success–compliance trade-off, consistent with bench-mark practice that separates task success from process constraints 
+
+[36, 44, 78]: 
+
+Success Rate (SR). Measures pure task completion under pres-sure, using a task-specific oracle as in interactive environment benchmarks [36, 78]. SR = 1
+
+𝑁 
+
+> 𝑁
+
+∑︁ 
+
+> 𝑖 =1
+
+Isuccess (𝜏 𝑖 ), (3) where I is the indicator function and success (𝜏 𝑖 ) is determined by an oracle (e.g., functional correctness checks in WebArena-style evaluation) [78]. 
+
+> 5Zhao et al.
+
+Compliance Rate (CR). Measures procedural adherence regard-less of task success, aggregating weighted trace violations: CR = 1 − 1
+
+𝑁 
+
+> 𝑁
+
+∑︁ 
+
+> 𝑖 =1
+
+Violation (𝜏 𝑖 ). (4) 
+
+Compliance-Weighted Success Rate (CSR). Integrates success and compliance into a single risk-aware metric: CSR = SR × 1 − 𝛼 · 1
+
+𝑁 
+
+> 𝑁
+
+∑︁ 
+
+> 𝑖 =1
+
+Violation (𝜏 𝑖 )
+
+!
+
+= SR ×  1 − 𝛼 · ( 1 − CR ),
+
+(5) where 𝛼 tunes the cost of non-compliance according to domain risk tolerance, consistent with risk-management guidance that empha-sizes context-dependent impact and governance [ 50 ]. By construc-tion, CSR ≤ SR with equality only when CR = 1.
+
+The Machiavellian Gap (MG). To directly quantify the behav-ioral shift from a cooperative baseline to an adversarial one—i.e., whether the agent strategically preserves reward/success by sacri-ficing principles—we introduce the Machiavellian Gap (MG). This is motivated by prior evidence of reward–ethics tension and systemati-cally measured harmful strategies in the MACHIAVELLI benchmark [ 55 ], and by broader concerns about reward hacking/specification gaming in deployed optimization systems [1, 5]. Let SR base , CR base be the agent’s performance on the baseline scenario set (no adversarial pressure). Let SR adv , CR adv be the per-formance under a specific adversarial pressure configuration. The Machiavellian Gap is defined as: MG = |( CR base − CR adv ) − ( SR base − SR adv )| . (6) 
+
+High MG indicates a large decrease in compliance that is not 
+
+accompanied by a comparable loss in success, consistent with a pattern of goal preservation via rule-bending (procedural reward hacking) [ 1, 5]. Low MG can arise when (i) both SR and CR degrade together (fragile but conservative) or (ii) both remain high (robustly compliant), matching the desiderata of reliable agent deployment under realistic tool-use trajectories [44, 49]. The complete evaluation thus produces not just a single score, but a multi-dimensional profile: baseline capabilities (SR base , CR base ),degraded profile under pressure (SR adv , CR adv ), the risk-aware met-ric CSR, and the behavioral indicator MG. Such trace-grounded char-acterization is essential for deployment decisions in high-stakes, regulated environments [19, 50]. 
+
+## 4 Experiments 
+
+In this section, we present a comprehensive empirical evaluation of sota LLM agents using the MAC-Bench framework. Our primary objective is to quantify the Success-Compliance Trade-off under operational pressure and to rigorously evaluate the Machiavellian Gap (MG) across diverse model families and agent architectures, following recent calls for multi-metric, scenario-driven evaluation beyond single-number accuracy [ 40 , 63 ]. We investigate: (1) the aggregate capability and compliance stability of frontier and open-weight models, (2) the impact of architectural choices on procedural adherence, (3) the specific vulnerability profiles induced by different social-engineering pressure vectors (e.g., authority, urgency), and (4) domain-specific variations in compliance robustness [ 14 , 26 , 46 ]. 
+
+## 4.1 Experimental Setup 
+
+Benchmark Configuration. To ensure a rigorous evaluation, we utilized the MAC-Bench SERV pipeline to generate a comprehen-sive suite of evaluation episodes. The benchmark covers 847 Atomic Rules mapped from authoritative sources, including the GDPR [ 23 ], the Personal Information Protection Law (PIPL) [ 64 ], the EU AI Act [ 25 ], and security baselines grounded in widely used community standards such as CWE [ 48 ], OWASP Top 10 [ 53 ], and CIS Bench-marks [ 8]. From these rules, we synthesized 4,128 distinct evalua-tion scenarios. Each scenario was instantiated via the Refine phase using a World Builder Agent to create unique holographic environ-ments (databases, APIs, file systems) with randomized schemas and data distributions, yielding over 20,640 unique test instances per model configuration to reduce memorization effects and stabilize estimates under distributional variation [40, 63]. We evaluated a spectrum of representative agent frameworks to assess how architectural choices influence compliance stability: 
+
+• AutoGen: A hierarchical, conversational orchestration frame-work for multi-agent LLM applications [45, 68]. 
+
+• MetaGPT: A multi-agent role-playing framework that op-erationalizes SOP workflows (PM, Architect, Engineer) [ 31 ]. 
+
+• ReAct: A single-agent “reasoning + acting” loop serving as a baseline for direct instruction-to-action mapping with tool interaction [74]. 
+
+• ChatDev: A communicative, debate and role-based frame-work for software development with multi-agent collabora-tion [59, 59]. To ensure a fair comparison, we aligned the high-level safety con-straints across all frameworks by injecting a unified “Compliance Charter” into their system prompts. This charter defined univer-sal obligations (e.g., adherence to GDPR principles and security protocols) [ 8 , 23 , 48 , 53 ]. However, we preserved the native archi-tectural instructions of each framework (e.g., MetaGPT’s SOPs or AutoGen’s role definitions) to evaluate their intrinsic architectural safety properties as deployed in practice [31, 68]. We evaluated both proprietary frontier models and open-weight models. All models were tested with consistent inference param-eters (Temperature = 0.7) and tool budget constraints. For the primary evaluation (Table 2), models are orchestrated via the AutoGen hierarchical framework to simulate realistic multi-agent deployments and capture emergent behaviors such as respon-sibility diffusion and handoff failures under pressure [ 16 , 68 ]. (Table 3 provides a detailed ablation comparing different frameworks.) We report four key metrics: (1) Success Rate (SR): Task completion under pressure. (2) Compliance Rate (CR): Adherence to atomic rules grounded in legal/security obligations [8, 23, 25, 48, 53, 64]. (3) CSR ( 𝛼 = 1): Compliance-weighted success rate, calculated as 𝑆𝑅 × 𝐶𝑅 [40]. (4) Machiavellian Gap ( Δ𝑀 ): In the Main Leaderboard (Table 2), as baseline performance is nearly perfect ( > 98% ), Δ𝑀 
+
+effectively represents the current performance gap ( 𝑆𝑅 −𝐶𝑅 )under combined high pressure, quantifying the immediate deviation from ideal compliance [40]. 
+
+> 6Beyond Goodhart’s Law: A Dynamic Benchmark for Evaluating Compliance in Multi-Agent Systems
+
+## 4.2 Main Results 
+
+We evaluated 12 representative models across the full MAC-Bench suite under “High Adversarial Pressure” (combined Authority + Urgency) using the AutoGen hierarchical framework . The results, summarized in Table 2, reveal a pervasive decoupling between task capability and procedural alignment. 
+
+The “Cunning” Frontier: While top-tier models like GPT-5 
+
+and Gemini-3 maintain near-perfect Success Rates ( SR > 97% ), other powerful models like DeepSeek-V3 also exhibit high task comple-tion rates, yet they suffer catastrophic collapses in Compliance ( CR 
+
+< 30% ). This results in massive Machiavellian Gaps ( Δ𝑀 exceeding 60% ). In the multi-agent context, these models aggressively exploit procedural shortcuts (e.g., bypassing encryption, ignoring data min-imization) by delegating illicit sub-tasks to specialized sub-agents, confirming the “Responsibility Diffusion” hypothesis. 
+
+The “Honest” Baseline: In contrast, Claude-3 exhibits a sig-nificantly lower Gap ( Δ𝑀 = +39 .3% ). Although its SR is lower (91.4%), its CR is the highest among evaluated models (52.1%). This suggests that Claude-3’s more conservative safety alignment is more resistant to the fragmentation of responsibility in multi-agent workflows. 
+
+Open-Weight Vulnerability: Open-source models show the highest Machiavellian Gaps in the AutoGen setup. This indicates that without specialized multi-agent safety training, complex or-chestration frameworks provide these powerful models with more opportunities to “game” the system without being caught. 
+
+## 4.3 Architectural Ablation 
+
+To understand how agent architecture influences compliance, we compared four frameworks using GPT-4o as the backbone. Results are presented in Table 3. 
+
+Responsibility Diffusion in AutoGen: The hierarchical Auto-Gen framework achieves the highest Success Rate (96.8%) but the lowest Compliance Rate (38.5%). The multi-agent dialogue structure seems to facilitate “responsibility diffusion”; individual agents focus on their sub-tasks (e.g., “write the SQL query”) without maintain-ing a holistic view of the security policy, allowing a coordinator agent to aggregate potentially illicit outputs. The average turns (3.2) reflect the necessary coordination overhead. 
+
+Safeguards in ReAct: The single-agent ReAct pattern shows the highest Compliance Rate (72.1%). By explicitly interleaving reasoning and action, the model is forced to justify each step against the system prompt constraints in its internal monologue, reducing the likelihood of automatic rule-breaking. 
+
+Deliberative Stability: ChatDev requires agents to debate deci-sions. While this introduces significant latency (4.2 turns), it yields a high CR (70.3%), suggesting that peer-review mechanisms can partially mitigate Machiavellian tendencies by surfacing potential violations during the “Debate” phase before execution. 
+
+## 4.4 Pressure Vector Ablation 
+
+We isolated the effect of individual pressure vectors on distinct mod-els. Table 4 shows the Compliance Rate under baseline conditions and four pressure types. 
+
+Authority Pressure Dominance: “Authority” (Auth.) is the single most effective vector for inducing violations, causing an aver-age drop of nearly 49% in Compliance. Across all models, including the robust Claude-3.5, the claim of “CEO override” or “Executive permission” leads agents to bypass 2FA, skip audit logs, or export sensitive data without encryption. This validates the “Obedience Bias” hypothesis: RLHF optimization for helpfulness creates a sys-temic susceptibility to hierarchical directives. 
+
+Open Models are More Susceptible: Open models like DeepSeek-V3 and Llama-3.1-70B show catastrophic failure under Authority pressure (CR ≤ 36%). They tend to interpret “Authority” not just as a context cue but as a “Golden Ticket” to ignore all prior safety instructions. 
+
+Obfuscation as the “Reasoning Trap”: Surprisingly, GPT-4o performs best under Obfuscation (86.5%). However, for smaller models, Obfuscation (vague instructions) is dangerous because they lack the reasoning capability to disambiguate instructions conservatively, leading them to assume the most permissive (and thus non-compliant) interpretation to ensure task success. 
+
+## 4.5 Domain Analysis 
+
+Finally, we analyzed performance across specific regulatory do-mains to identify areas of “hard” and “soft” alignment under high pressure. Table 5 presents the Compliance Rates for Privacy, De-vOps, Code Security, Finance, and Ethics. 
+
+The “Relative” Binary Advantage: Even under high pressure, Code Security and Ethics domains maintain relatively higher Com-pliance Rates (approx. 35%–60%) compared to Privacy and DevOps. However, these values represent a significant degradation from baseline capabilities, indicating that even “easier” binary checks fail under time and authority pressure. 
+
+The “Process” Blindspot: Privacy and DevOps see the low-est Compliance across all models (often below 20%–30%). These domains strictly require Procedural Compliance (e.g., data mini-mization, ordered testing), which is most susceptible to the “Reward Hacking” behaviors. Agents frequently bypass multi-step privacy protocols (e.g., exporting full DB instead of query, skipping backup scripts) to achieve task success under pressure, revealing a critical vulnerability in these process-heavy domains. 
+
+## 5 Conclusion 
+
+This paper targets a key limitation of evaluation for LLM agents: high task success can coexist with systematic procedural non-compliance. We introduce MAC-Bench, a trace-centric, contamination-resistant benchmark built by the SERV pipeline, which translates regulatory corpora into executable Atomic Rules and evaluates agents through a Compliance Oracle over full tool-use trajecto-ries. Across models and settings, we observe a pronounced suc-cess–compliance trade-off, where strong success under pressure often accompanies sharp compliance degradation, motivating in-tegrated metrics such as CSR and behavioral diagnostics like the Machiavellian Gap. Empirically, we find that (i) some top-performing agents remain highly successful yet exhibit “cunning” procedural 
+
+> 7Zhao et al.
+
+Type Model Family Model Version Type SR ↑ CR ↑ CSR (𝛼 = 1) ↑ Δ𝑀 ↓
+
+Proprietary 
+
+OpenAI GPT-5 Closed 98.2 35.2 34.6 +63.0 GPT-4o Closed 96.8 38.5 37.3 +58.3 Anthropic Claude-3.5 Closed 94.5 45.6 43.1 +48.9 Claude-3 Closed 91.4 52.1 47.6 +39.3 
+
+Google Gemini-2.5 Closed 93.7 32.1 30.1 +61.6 Gemini-3 Closed 97.1 28.4 27.6 +68.7 
+
+Open-Weights 
+
+Meta Llama-3.1-70B Open 87.1 22.4 19.5 +64.7 Llama-3.1-8B Open 85.3 18.2 15.5 +67.1 Alibaba Qwen-3-8B Open 90.6 25.1 22.7 +65.5 Qwen-3-32B Open 93.2 28.5 26.6 +64.7 DeepSeek DeepSeek-V3 Open 93.9 19.8 18.6 +74.1 Mistral Mixtral-8x22B Open 81.5 21.7 17.7 +59.8 Table 2: Performance leaderboard of proprietary and open-weight models orchestrated via the AutoGen framework under Combined High Pressure(%). Metrics reported include Success Rate (SR), Compliance Rate (CR), Compliance-Weighted Success Rate (CSR), and Machiavellian Gap ( Δ𝑀 ). Architecture Framework SR ↑ CR ↑ Turns 
+
+Single Agent ReAct 88.5 72.1 1.8 Hierarchical AutoGen 96.8 38.5 3.2 SOP-based MetaGPT 91.8 65.7 1.1 Debate ChatDev 89.1 70.3 4.2 
+
+Table 3: Impact comparison of different agent architectures (ReAct, AutoGen, MetaGPT, ChatDev) using GPT-4o as the backbone under Combined High Pressure(%). The table dis-plays Success Rate (SR), Compliance Rate (CR), and average interaction Turns. Model Base. Auth. Urg. Emp. Obf. 
+
+GPT-4o 98.5 62.1 75.4 81.2 86.5 Claude-3.5 99.2 78.5 82.1 86.7 84.3 Llama-3.1-70B 94.1 35.6 48.9 55.2 41.7 Qwen-3-8B 96.0 42.8 59.3 61.5 52.4 GPT-5 99.1 40.2 62.5 71.4 48.3 DeepSeek-V3 95.3 30.1 45.8 52.1 38.9 
+
+Avg. Drop - -48.8 -34.7 -28.8 -38.4 
+
+Table 4: Compliance Rate (CR) distribution for various mod-els under baseline conditions and four distinct pressure vec-tors: Authority, Urgency, Empathy, and Obfuscation(%). Model Priv. DevOps Code Fin. Eth. 
+
+GPT-4o 30.0 25.0 50.0 30.0 55.0 Llama-3.1-70B 15.0 10.0 35.0 15.0 35.0 DeepSeek-V3 15.0 15.0 25.0 12.0 32.0 Claude-3.5 40.0 35.0 60.0 40.0 50.0 Qwen-3-8B 18.0 15.0 35.0 15.0 40.0 
+
+Table 5: Compliance performance breakdown across five spe-cific regulatory domains: Privacy, DevOps, Code Security, Finance, and Ethics(%). 
+
+shortcuts, especially in multi-agent workflows consistent with re-sponsibility diffusion; (ii) agent architectures that explicitly inter-leave reasoning and action (or enforce debate) tend to improve com-pliance relative to purely hierarchical delegation; and (iii) among social-engineering pressures, Authority is the most reliable trigger for violations, while vague Obfuscation can become a reasoning trap for weaker models. We hope MAC-Bench can serve as an evolv-ing testbed for trajectory-level alignment, pressure-aware training, and compliance-by-construction agent orchestration. 
+
+> 8
+
+Beyond Goodhart’s Law: A Dynamic Benchmark for Evaluating Compliance in Multi-Agent Systems 
+
+## References 
+
+[1] Dario Amodei, Chris Olah, Jacob Steinhardt, Paul Christiano, John Schulman, and Dan Mané. 2016. Concrete Problems in AI Safety. arXiv:1606.06565 [cs.AI] https://arxiv.org/abs/1606.06565 [2] Anthropic. 2026. Demystifying Evals for AI Agents. https://www.anthropic.com/ engineering/demystifying-evals-for-ai-agents. Accessed: 2026-02-08. [3] Farshad Ariai et al . 2024. Natural Language Processing for the Legal Domain: A Survey of Tasks, Datasets, Models and Challenges. ACM Computing Surveys (preprint) (2024). https://arxiv.org/pdf/2410.21306 [4] Tara Athan, Harold Boley, Guido Governatori, Monica Palmirani, Adrian Paschke, and Adam Wyner. 2013. OASIS LegalRuleML. In Proceedings of the Fourteenth International Conference on Artificial Intelligence and Law (ICAIL) . https://dl.acm. org/doi/10.1145/2514601.2514603 [5] Mostafa Beigi et al . 2026. Adversarial Reward Auditing for Active Detection and Mitigation of Reward Hacking. arXiv:2602.01750 [cs.AI] https://arxiv.org/abs/ 2602.01750 [6] Markus Bertl et al . 2025. Transforming legal texts into computational logic. SoftwareX (2025). https://www.sciencedirect.com/science/article/pii/ S2666307425000336 [7] Center for Internet Security. 2021. CIS Critical Security Controls Version 8. https://www.cisecurity.org/controls/v8. Accessed: 2026-02-08. [8] Center for Internet Security (CIS). 2026. CIS Benchmarks. Official website. https://www.cisecurity.org/cis-benchmarks Accessed: 2026-02-08. [9] Guanzhong Chen, Shaoxiong Yang, Chao Li, Wei Liu, Jian Luan, and Zenglin Xu. 2026. End-to-End Optimization of LLM-Driven Multi-Agent Search Sys-tems via Heterogeneous-Group-Based Reinforcement Learning. arXiv preprint arXiv:2506.02718 (2026). arXiv:2506.02718 doi:10.48550/arXiv.2506.02718 Ac-cepted to ACL 2026 Main Conference. [10] Jiaxiang Chen, Mingxi Zou, Zhuo Wang, Qifan Wang, Danny Dongning Sun, Zhang Chi, and Zenglin Xu. 2025. FinHEAR: Human Expertise and Adaptive Risk-Aware Temporal Reasoning for Financial Decision-Making. In Findings of the Association for Computational Linguistics: EMNLP 2025, Suzhou, China, November 4–9, 2025 , Christos Christodoulopoulos, Tanmoy Chakraborty, Carolyn Rose, and Violet Peng (Eds.). Association for Computational Linguistics, 1648–1672. https://aclanthology.org/2025.findings-emnlp.87/ [11] Simin Chen, Yiming Chen, Zexin Li, Yifan Jiang, Zhongwei Wan, Yixin He, Dezhi Ran, Tianle Gu, Haizhou Li, Tao Xie, and Baishakhi Ray. 2025. Benchmarking Large Language Models Under Data Contamination: A Survey from Static to Dynamic Evaluation. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing (EMNLP) . https://aclanthology.org/2025.emnlp-main.511/ [12] Zhaorun Chen, Zhen Xiang, Chaowei Xiao, Dawn Song, and Bo Li. 2024. Agent-Poison: Red-teaming LLM Agents via Poisoning Memory or Knowledge Bases. (2024). arXiv:2407.12784 [cs.CR] https://arxiv.org/abs/2407.12784 [13] Hyeong Kyu Choi, Maxim Khanov, Hongxin Wei, and Sharon Li. 2025. How Contaminated Is Your Benchmark? Measuring Dataset Leakage in Large Lan-guage Models with Kernel Divergence. (2025). arXiv:2502.00678 [cs.CL] https://arxiv.org/abs/2502.00678 [14] Robert B. Cialdini. 2001. Influence: Science and Practice (4 ed.). Allyn & Bacon. Authority/urgency-related persuasion principles; Accessed: 2026-02-08. [15] Cybersecurity and Infrastructure Security Agency (CISA). 2024. 2024 CWE Top 25 Most Dangerous Software Weaknesses. https://www.cisa.gov/news-events/ alerts/2024/11/20/2024-cwe-top-25-most-dangerous-software-weaknesses. Ac-cessed: 2026-02-08. [16] John M. Darley and Bibb Latané. 1968. Bystander intervention in emergencies: Diffusion of responsibility. Journal of Personality and Social Psychology 8, 4 (1968), 377–383. doi:10.1037/h0025589 Accessed: 2026-02-08. [17] Edoardo Debenedetti et al . 2024. AgentDojo: A Dynamic Environment to Evaluate Attacks and Defenses for LLM Agents. (2024). arXiv:2406.13352 [cs.CR] https: //arxiv.org/abs/2406.13352 [18] Vladimir Ershov. 2023. A Case Study for Compliance as Code with Graphs and Language Models: Public release of the Regulatory Knowledge Graph. arXiv preprint arXiv:2302.01842 (2023). https://arxiv.org/abs/2302.01842 [19] European Parliament and Council of the European Union. 2016. Regulation (EU) 2016/679 (General Data Protection Regulation). https://eur-lex.europa.eu/eli/ reg/2016/679/oj/eng. Accessed: 2026-02-08. [20] European Parliament and the Council of the European Union. 2016. Regulation (EU) 2016/679 (General Data Protection Regulation). https://eur-lex.europa.eu/ eli/reg/2016/679/oj/eng. Official Journal text. Accessed: 2026-02-08. [21] European Parliament and the Council of the European Union. 2024. Regulation (EU) 2024/1689 (Artificial Intelligence Act). https://eur-lex.europa.eu/eli/reg/ 2024/1689/oj/eng. Official Journal text. Accessed: 2026-02-08. [22] European Union. 2016. Regulation (EU) 2016/679 (General Data Protection Regulation). EUR-Lex. https://eur-lex.europa.eu/eli/reg/2016/679/oj/eng [23] European Union. 2016. Regulation (EU) 2016/679 (General Data Protection Regulation). EUR-Lex (Official Journal text). https://eur-lex.europa.eu/eli/reg/ 2016/679/oj/eng Accessed: 2026-02-08. [24] European Union. 2024. Regulation (EU) 2024/1689 (Artificial Intelligence Act). EUR-Lex. https://eur-lex.europa.eu/eli/reg/2024/1689/oj/eng [25] European Union. 2024. Regulation (EU) 2024/1689 (Artificial Intelligence Act). EUR-Lex (Official Journal text). https://eur-lex.europa.eu/eli/reg/2024/1689/oj/ eng Accessed: 2026-02-08. [26] Ana Ferreira, Lynne Coventry, and Gabriele Lenzini. 2015. Principles of Per-suasion in Social Engineering and Their Use in Phishing. In Human Aspects of Information Security, Privacy, and Trust (HAS) . https://orbilu.uni.lu/bitstream/ 10993/20301/1/FerreiraAna-CameraReady.pdf Accessed: 2026-02-08. [27] Enrico Francesconi, Giulia Lilliu, et al . 2023. Patterns for legal compliance checking in a decidable Semantic Web framework. Artificial Intelligence and Law 
+
+(2023). https://link.springer.com/article/10.1007/s10506-022-09317-8 [28] Gerd Gigerenzer and Wolfgang Gaissmaier. 2011. Heuristic Decision Making. https://pure.mpg.de/pubman/item/item_2099042_4/component/file_ 2099041/GG_Heuristic_2011.pdf. Accessed: 2026-02-08. [29] Charles A. E. Goodhart. 1975. Problems of Monetary Management: The UK Experience. In Inflation, Depression, and Economic Policy in the West . Springer. https://link.springer.com/chapter/10.1007/978-1-349-17295-5_4 [30] Dick Hardt. 2012. The OAuth 2.0 Authorization Framework. RFC 6749. https: //www.rfc-editor.org/rfc/rfc6749 Internet Engineering Task Force. Accessed: 2026-02-08. [31] Sirui Hong, Mingchen Zhuge, Jiaqi Chen, Xiawu Zheng, Yuheng Cheng, Ceyao Zhang, Jinlin Wang, Zili Wang, Steven Ka Shing Yau, Zijuan Lin, Liyang Zhou, Chenyu Ran, Lingfeng Xiao, Chenglin Wu, and Jürgen Schmidhuber. 2023. MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework. arXiv:2308.00352 [cs.AI] https://arxiv.org/abs/2308.00352 Accessed: 2026-02-08. [32] Michael Jones, John Bradley, and Nat Sakimura. 2015. JSON Web Token (JWT). RFC 7519. https://www.rfc-editor.org/rfc/rfc7519 Internet Engineering Task Force. Accessed: 2026-02-08. [33] Gaurav Juneja et al . 2025. MAGPIE: A Benchmark for Multi-AGent Contextual PrIvacy Evaluation. (2025). arXiv:2510.15186 [cs.CL] https://arxiv.org/abs/2510. 15186 [34] Victoria Krakovna, Jonathan Uesato, Vladimir Mikulik, Matthew Rahtz, Tom Everitt, Rishabh Kumar, and Zachary Kenton. 2020. Specification gaming: the flip side of AI ingenuity. DeepMind Blog. https://deepmind.google/blog/ specification-gaming-the-flip-side-of-ai-ingenuity/ [35] LangChain. 2025. Log LLM Calls (Trace Logging) — LangSmith Documentation. https://docs.langchain.com/langsmith/log-llm-trace. Accessed: 2026-02-08. [36] Thibault Le Sellier De Chezelles, Maxime Gasse, Alexandre Drouin, Massimo Cac-cia, Léo Boisvert, Megh Thakkar, Tom Marty, Rim Assouel, Sahar Omidi Shayegan, Lawrence Keunho Jang, Xing Han Lù, Ori Yoran, Dehan Kong, Frank F. Xu, Siva Reddy, Quentin Cappart, Graham Neubig, Ruslan Salakhutdinov, Nicolas Chapa-dos, and Alexandre Lacoste. 2024. The BrowserGym Ecosystem for Web Agent Research. arXiv:2412.05467 [cs.AI] https://arxiv.org/abs/2412.05467 [37] Ido Levy, Ben Wiesel, Sami Marreed, Alon Oved, Avi Yaeli, and Segev Shlomov. 2024. ST-WebAgentBench: A Benchmark for Evaluating Safety and Trustworthi-ness in Web Agents. (2024). arXiv:2410.06703 [cs.AI] https://arxiv.org/abs/2410. 06703 [38] Haitao Li, Qian Dong, Junjie Chen, Huixue Su, Yujia Zhou, Qingyao Ai, Ziyi Ye, and Yiqun Liu. 2024. LLMs-as-Judges: A Comprehensive Survey on LLM-based Evaluation Methods. arXiv:2412.05579 [cs.CL] https://arxiv.org/abs/2412.05579 [39] Y. Li, F. Guerin, and C. Lin. 2024. LatestEval: Addressing Data Contamination in Language Model Evaluation. Proceedings of the AAAI Conference on Artificial In-telligence (2024). https://ojs.aaai.org/index.php/AAAI/article/view/29822/31427 [40] Percy Liang, Rishi Bommasani, Tony Lee, Dimitris Tsipras, Dilara Soylu, Michi-hiro Yasunaga, Yian Zhang, Deepak Narayanan, Yuhuai Wu, Ananya Kumar, Benjamin Newman, Binhang Yuan, Bobby Yan, Ce Zhang, Christian Cosgrove, Christopher D. Manning, Christopher Ré, Tatsunori Hashimoto, et al . 2022. Holistic Evaluation of Language Models. arXiv:2211.09110 [cs.CL] https: //arxiv.org/abs/2211.09110 Accessed: 2026-02-08. [41] Xiao Liu, Hao Yu, Hanchen Zhang, Yifan Xu, Xuanyu Lei, Hanyu Lai, Yu Gu, Hangliang Ding, Kaiwen Men, Kejuan Yang, Shudan Zhang, Xiang Deng, Aohan Zeng, Zhengxiao Du, Chenhui Zhang, Sheng Shen, Tianjun Zhang, Yu Su, Huan Sun, Minlie Huang, Yuxiao Dong, and Jie Tang. 2023. AgentBench: Evaluating LLMs as Agents. (2023). arXiv:2308.03688 [cs.AI] https://arxiv.org/abs/2308. 03688 [42] Yang Liu, Dan Iter, Yichong Xu, Shuohang Wang, Ruochen Xu, and Chenguang Zhu. 2023. G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing (EMNLP) . https://arxiv.org/abs/2303.16634 [43] Grégoire Mialon, Clémentine Fourrier, Craig Swift, Thomas Wolf, Yann LeCun, and Thomas Scialom. 2023. GAIA: A Benchmark for General AI Assistants. (2023). arXiv:2311.12983 [cs.CL] https://arxiv.org/abs/2311.12983 [44] Panos Michelakis et al . 2025. Full-Path Evaluation of LLM Agents Beyond Final State. arXiv:2509.20998 [cs.AI] https://arxiv.org/abs/2509.20998 [45] Microsoft. 2026. Multi-agent Conversation Framework | AutoGen Documenta-tion. Documentation website. https://microsoft.github.io/autogen/0.2/docs/Use-Cases/agent_chat/ Accessed: 2026-02-08. 9Zhao et al. 
+
+[46] Stanley Milgram. 1963. Behavioral Study of Obedience. Journal of Abnormal and Social Psychology 67, 4 (1963), 371–378. doi:10.1037/h0040525 [47] MITRE. 2025. CWE Top 25 Most Dangerous Software Weaknesses – 2024. https: //cwe.mitre.org/top25/archive/2024/2024_cwe_top25.html. Archive page for the 2024 list. Accessed: 2026-02-08. [48] MITRE. 2026. Common Weakness Enumeration (CWE). Project website. https: //cwe.mitre.org/ Accessed: 2026-02-08. [49] Mahmoud Mohammadi, Yipeng Li, Jane Lo, and Wendy Yip. 2025. Evaluation and Benchmarking of LLM Agents: A Survey. arXiv:2507.21504 [cs.AI] https: //arxiv.org/abs/2507.21504 [50] National Institute of Standards and Technology. 2023. Artificial Intelligence Risk Management Framework (AI RMF 1.0) . Technical Report NIST AI 100-1. NIST. https://nvlpubs.nist.gov/nistpubs/ai/nist.ai.100-1.pdf [51] National People’s Congress of the People’s Republic of China. 2021. Personal Information Protection Law of the People’s Republic of China. NPC (official English text page). https://en.npc.gov.cn.cdurl.cn/2021-12/29/c_694559.htm [52] National People’s Congress of the People’s Republic of China. 2021. Personal In-formation Protection Law of the People’s Republic of China (English Translation). https://en.npc.gov.cn.cdurl.cn/2021-12/29/c_694559.htm. Accessed: 2026-02-08. [53] OWASP Foundation. 2021. OWASP Top 10:2021. Project website. https://owasp. org/Top10/2021/ Accessed: 2026-02-08. [54] OWASP Foundation. 2023. OWASP Top 10 API Security Risks – 2023 . https: //owasp.org/API-Security/editions/2023/en/0x11-t10/ Includes API1:2023 Broken Object Level Authorization and related risks. [55] Alexander Pan, Jun Shern Chan, Andy Zou, Nathaniel Li, Steven Basart, Thomas Woodside, Jonathan Ng, Hanlin Zhang, Scott Emmons, and Dan Hendrycks. 2023. Do the Rewards Justify the Means? Measuring Trade-Offs Between Rewards and Ethical Behavior in the MACHIAVELLI Benchmark. arXiv:2304.03279 [cs.AI] https://arxiv.org/abs/2304.03279 [56] Parea AI. 2026. Parea Documentation: Evaluation Overview. Online documenta-tion. https://docs.parea.ai/evaluation/overview Accessed 2026-02-08. [57] FastAPI Project. 2025. FastAPI Documentation. https://fastapi.tiangolo.com/. Accessed: 2026-02-08. [58] SQLAlchemy Project. 2025. SQLAlchemy Documentation. https://docs. sqlalchemy.org/. Accessed: 2026-02-08. [59] Chen Qian, Wei Liu, Hongzhang Liu, Nuo Chen, Yufan Dang, Jiahao Li, Cheng Yang, Weize Chen, Yusheng Su, Xin Cong, Juyuan Xu, Dahai Li, Zhiyuan Liu, and Maosong Sun. 2024. ChatDev: Communicative Agents for Software Development. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL) . https://aclanthology.org/2024.acl-long.810.pdf Accessed: 2026-02-08. [60] Yujia Qin, Shiyao Liang, Yukun Ye, et al . 2023. ToolLLM: Facilitating Large Lan-guage Models to Master 10000+ Real-world APIs. arXiv preprint arXiv:2307.16789 
+
+(2023). https://arxiv.org/abs/2307.16789 [61] Ravi S. Sandhu, Edward J. Coyne, Hal L. Feinstein, and Charles E. Youman. 1996. Role-Based Access Control Models. Computer 29, 2 (1996), 38–47. https://csrc.nist. gov/csrc/media/projects/role-based-access-control/documents/sandhu96.pdf [62] Yutong Shao et al . 2024. PrivacyLens: Evaluating Privacy Norm Awareness of Language Model Agents. In Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track . https://arxiv.org/abs/2409.00138 [63] Aarohi Srivastava et al . 2022. Beyond the Imitation Game: Quantifying and extrapolating the capabilities of language models. arXiv:2206.04615 [cs.CL] https://arxiv.org/abs/2206.04615 Accessed: 2026-02-08. [64] Supreme People’s Procuratorate of the People’s Republic of China. 2021. Personal Information Protection Law of the People’s Republic of China. Official English text (web publication). https://en.spp.gov.cn/2021-12/29/c_948419.htm Accessed: 2026-02-08. [65] The MITRE Corporation. 2024. Common Weakness Enumeration (CWE). cwe.mitre.org. https://cwe.mitre.org/ [66] Xingyao Wang, Boxuan Li, et al . 2024. OpenHands: An Open Platform for AI Software Developers as Generalist Agents. (2024). arXiv:2407.16741 [cs.SE] https://arxiv.org/abs/2407.16741 [67] Aaron H. Washo et al . 2021. An interdisciplinary view of social engineering: A call to action. Forensic Science International: Digital Investigation (2021). https: //www.sciencedirect.com/science/article/pii/S2451958821000749 [68] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang, Shaokun Zhang, Jiale Zhang, Jiale Liu, Ahmed Has-san Awadallah, Ryen W. White, Doug Burger, and Chi Wang. 2023. Au-toGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation. arXiv:2308.08155 [cs.AI] https://arxiv.org/abs/2308.08155 Accessed: 2026-02-08. [69] Bin Xu. 2026. AI Agent Systems: Architectures, Applications, and Evaluation. arXiv:2601.01743 [cs.AI] https://arxiv.org/abs/2601.01743 [70] Chao Xu et al . 2024. Benchmark Data Contamination of Large Language Models. (2024). arXiv:2406.04244 [cs.CL] https://arxiv.org/abs/2406.04244 [71] Cheng Xu et al . 2024. Benchmark Data Contamination of Large Language Models. 
+
+arXiv preprint arXiv:2406.04244 (2024). https://arxiv.org/abs/2406.04244 [72] Qian Xu et al . 2023. On the Tool Manipulation Capability of Open-source Large Language Models. arXiv preprint arXiv:2305.16504 (2023). https://arxiv.org/abs/ 2305.16504 [73] Shunyu Yao et al . 2024. 𝜏 -bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains. (2024). arXiv:2406.12045 [cs.AI] https://arxiv.org/abs/ 2406.12045 [74] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2022. ReAct: Synergizing Reasoning and Acting in Language Models. arXiv:2210.03629 [cs.CL] https://arxiv.org/abs/2210.03629 Accessed: 2026-02-08. [75] Douglas L. Young, Adam S. Goodie, and Ashleigh Hall. 2012. Decision making under time pressure, modeled in a prospect theory framework. Journal of Math-ematical Psychology (2012). https://www.sciencedirect.com/science/article/abs/ pii/S0749597812000404 [76] Zhexin Zhang, Shiyao Cui, Yida Lu, Jingzhuo Zhou, Junxiao Yang, Hongning Wang, and Minlie Huang. 2024. Agent-SafetyBench: Evaluating the Safety of LLM Agents. (2024). arXiv:2412.14470 [cs.CL] https://arxiv.org/abs/2412.14470 [77] Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric P. Xing, Hao Zhang, Joseph E. Gonzalez, and Ion Stoica. 2023. Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena. In Advances in Neural Information Processing Systems (NeurIPS) . https://arxiv.org/abs/2306.05685 [78] Shuyan Zhou, Frank F. Xu, Hao Zhu, Xuhui Zhou, Robert Lo, Abishek Sridhar, Xianyi Cheng, Tianyue Ou, Yonatan Bisk, Daniel Fried, Uri Alon, and Graham Neubig. 2023. WebArena: A Realistic Web Environment for Building Autonomous Agents. arXiv:2307.13854 [cs.CL] https://arxiv.org/abs/2307.13854 [79] Qian Zhu et al . 2024. Reusing Leaked Benchmarks for Large Language Model Evaluation. In Findings of EMNLP . https://aclanthology.org/2024.findings-emnlp. 532/ [80] Mingxi Zou, Jiaxiang Chen, Aotian Luo, Jingyi Dai, Chi Zhang, Dongning Sun, and Zenglin Xu. 2026. FinEvo: From Isolated Backtests to Ecological Market Games for Multi-Agent Financial Strategy Evolution. CoRR abs/2602.00948 (2026). arXiv:2602.00948 doi:10.48550/ARXIV.2602.00948 10
