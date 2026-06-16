@@ -1,0 +1,839 @@
+Title: Control-Plane Placement Shapes Forgetting: An Architectural Study of Agent Memory Across Thirteen System Configurations
+
+URL Source: https://arxiv.org/pdf/2606.15903v1
+
+Published Time: Tue, 16 Jun 2026 01:43:12 GMT
+
+Number of Pages: 23
+
+Markdown Content:
+# Control-Plane Placement Shapes Forgetting: An Architectural Study of Agent Memory Across Thirteen System Configurations 
+
+Dongxu Yang *
+
+DeepLethe 
+
+Abstract 
+
+Where an LLM sits in an agent memory pipeline — between the recall plane that re-trieves stored facts (extensively benchmarked) and the control plane that mutates them via 
+
+supersede , release , purge (largely untested) — shapes which forgetting failure modes the system recovers. Comparing thirteen system configurations on a common 385-case adver-sarial surface (four deterministic, two vec-only, two inscribe-LLM, two KG-abstraction, one inscribe+mutation joint, two mutation-LLM hook backends) — we observe three placement regimes with partly complementary 
+
+coverage: deterministic primitives suffice for lexical/temporal categories but fail canonical-ization ( ≤5 % on identifier-obfuscation, 0 % on cross-lingual); inscribe-time LLM recov-ers canonicalization (100 %) but cannot help intent-aware deletion (0 % on prefix-collision and compound-fact); a mutation-time hook re-covers intent-aware deletion (78–85 %) and brightens nearly all categories simultaneously: a capability lift of +22.6 to +24.1 pt on the 345 non-primitive-existence cases (deter-ministic 70.1–70.7 % → hook 93.3–94.2 %), plus ∼+6 pt from edit-primitive availability on compound_fact (headline overall 91.7– 93.2 %); ∼$0 .17 per 385-case run, mutation latency ∼2.3 s/case vs. 64–191 ms/case deter-ministic, recall hot path unchanged. We expose the placement trade-off via FOR -
+
+> GET
+
+EVAL , a 1000-case templated suite plus a 385-case adversarial layer (132 hand-crafted core + 253 LLM-drafted oracle-validated) scored by deterministic substring match, paired with a six-method Adapter Protocol with hon-est N/A scoring that lets heterogeneous mem-ory stores enter the evaluation in ∼130 lines. Admission is corroborated by 10-annotator IAA (Fleiss’ κ = 0 .958 ) and a 77-case external-authored subset (four blind contributors) that replicates the canonicalization asymmetry and amplifies the joint-placement lift ( +27 .8 pt).  
+
+> *Correspondence: wayland0916@gmail.com
+
+Production failures are predominantly forget-ting failures (rotated credentials still recom-mended, GDPR-deleted records still surfacing) rather than recall failures, yet existing memory benchmarks measure only recall. F ORGET E- 
+
+> VAL
+
+and all adapters are released under MIT. 
+
+1 Introduction 
+
+Every memory framework for LLM agents (Chhikara et al., 2025; Packer et al., 2023; Letta contributors, 2024; Rasmussen et al., 2025; Gutiér-rez et al., 2024; Xu et al., 2025; Cognee contrib-utors, 2024) races in the same direction: recall harder, recall more, never lose a fact. Bench-marks reflect that direction: LongMemEval (Wu et al., 2025) scores R@ k on 500 long-context questions; MTEB (Muennighoff et al., 2023) and BEIR (Thakur et al., 2021) measure stateless re-trieval over static corpora; LOCOMO scores con-versational recall with an LLM judge. None of these benchmarks probe whether a memory system can be commanded to forget .In production, that is the failure mode that bites. A password the user rotated three months ago is still suggested. A customer who exercised GDPR Article 17 (European Parliament and Coun-cil, 2016) is still in the recommender’s candidate pool. A user’s job title surfaces in three contra-dictory versions across sessions. A one-time veri-fication code lives forever next to long-term pref-erences. Every retrieval succeeded; the system retrieved the right thing too well, when the applica-tion wanted it to retrieve nothing. This is a control-plane gap. Recall-plane bench-marks ask “retrieve the right fact”; control-plane benchmarks ask “mutate the store correctly.” The two planes are not duals — M EM PALACE saturates the recall plane (60/150 on Memora) yet fails every control-plane test (0/385 on adversarial forgetting, §5.5). We make three contributions. 
+
+> arXiv:2606.15903v1 [cs.CL] 14 Jun 2026
+
+(1) An empirical characterization of control-plane LLM placement (§5.7, Fig. 2): comparing thirteen system configurations across six regime groupings (no-deletion / deterministic / vec-only / inscribe-time-LLM / KG-abstraction / mutation-time hook) on 10 attack categories, each placement recovers a distinct failure-mode subset (canonical-ization, intent-aware deletion, lexical/temporal cor-rectness), and the regimes are partly complemen-tary rather than redundant. Category-level forget-ting is shaped by where LLM intelligence sits in the memory pipeline, not by whether it is present — an effect of architectural placement, not prompt engineering. Two backends with the same nar-row JSON-shaped mutation-time hook converge to 93.3–94.2 % overall (excluding the primitive-existence compound_fact category; 91.7–93.2 % including it) at ∼$0.17 per 385-case run with the recall hot path unchanged. 
+
+(2) F ORGET EVAL , a methodology and 1385-case English benchmark (1000 template + 385 adversarial = 132 hand-crafted core + 253 LLM-drafted oracle-validated) that exposes the forget-ting axis primitive-by-primitive. Forgetting decom-poses into 5 structural families (supersession, de-cay, amnesia, purge, drift) and the adversarial layer probes 10 attack categories. All scoring is determin-istic substring match over top-k recall; no LLM judge is needed in the evaluation loop (the Qwen-2.5-72B judge is restricted to data admission, see §5). Admission is corroborated by 100-case multi-annotator IAA (Fleiss’ κ = 0 .958 , 10 annotators) and a cross-family judge audit (§3.3). 
+
+(3) A six-method Adapter Protocol with N/A scoring for missing primitives, so a system without 
+
+supersede or purge can be honestly compared against one that has them. The Protocol is a be-havioural contract: backends implementing su-persede via composition of add +delete pass the same tests as backends with native supersede prim-itives (§4); thirteen heterogeneous memory stores (deterministic, vec-only, inscribe-time-LLM, KG-abstraction, joint, mutation-time-LLM) are evalu-ated under this single contract on the full 385-case adversarial suite. 
+
+2 Related Work 
+
+Memory benchmarks. LongMemEval (Wu et al., 2025) scores conversational recall on 500 hand-curated questions; even its knowledge-update 
+
+category asks whether the latest fact is retrieved, not whether the superseded fact has been re-moved. MTEB (Muennighoff et al., 2023) and BEIR (Thakur et al., 2021) are stateless retrieval benchmarks. LOCOMO and M EM 0’s evalua-tions score conversational recall with LLM judges. AMA-Bench (Zhao et al., 2026) (long-horizon agentic memory) and FiFA (Alqithami, 2025) (privacy-aware generative agents) evaluate end-to-end agent behaviour, complementary in scope to FORGET EVAL ’s memory-store-primitive surface. 
+
+Prior work on the forgetting axis. Hu et al. (2026) (ICLR 2026) is the closest prior benchmark: their FactConsolidation task (MQUAKE-derived) treats selective forgetting as one of four memory competencies, scored by an LLM judge on single-fact supersession. F ORGET EVAL differs in three ways. (i) Granularity: FactConsolidation tests single-fact supersession only; F ORGET EVAL de-composes forgetting into five primitive families and 10 adversarial categories, including primitives FactConsolidation does not cover ( purge , amne-sia , decay ) and identifier-precision attacks (prefix collision, cross-script, partial supersession) that single-fact supersession cannot surface. (ii) Scor-ing: LLM-judged accuracy vs. deterministic sub-string match — reproducible across model ver-sions and vendor changes. (iii) Adapter Proto-col: FORGET EVAL ships a 6-method Protocol with N/A scoring; FactConsolidation evaluates what-ever end-to-end agent is provided. We report a cross-evaluation on the full 4-bucket FactConsol-idation surface (sh/mh × 6K/32K, 400 questions) for six systems (four deterministic adapters plus two LLM-hook variants) in Appendix J: single-hop saturates at 100 % for all six systems at both con-text lengths (recall-shaped); multi-hop drops to 17– 37 % (needs reasoning); and the LLM-hook vari-ants score identically to their deterministic back-bones at every bucket — the axis-flip third-party check (§5.5, §5.7). 
+
+Concurrent work on the forgetting axis. Ud-din et al. (2026) (April 2026) introduces FAMA 
+
+(Forgetting-Aware Memory Accuracy), a single ag-gregate metric penalizing obsolete memory reuse, evaluated on weeks-to-months personalized con-versations across six memory agents and four LLMs. 1 FORGET EVAL is complementary along three axes: (1) granularity (primitive-family de-
+
+> 1Their benchmark is named “Memora”; to disambiguate from the contemporaneous retrieval-method paper of the same name (Xia et al., 2026), we cite by title.
+
+composition vs. scalar), (2) the 385-case adversar-ial layer surfacing an empirical 63–68 % pass band Memora’s conversational setup cannot resolve, and 
+
+(3) deterministic substring scoring (vs. LLM-judged FAMA), with the independent LLM-judge restricted to data admission (§5). 
+
+Memory frameworks. MEM 0 (Chhikara et al., 2025) uses LLM-driven ADD/UPDATE/DELETE routing; its DELETE is contradiction-triggered overwrite, not a user-issued forget primitive. MemGPT (Packer et al., 2023) and Letta (Letta contributors, 2024) paginate between main and archival memory; Zep (Rasmussen et al., 2025) maintains a temporal knowledge graph with edge invalidation; HippoRAG (Gutiérrez et al., 2024) uses PageRank over an extracted KG; A-MEM (Xu et al., 2025) applies Zettelkasten linking. Among these only M EM PALACE (MemPalace contributors, 2024) takes the opposite stance to M EM 0: verbatim retention is the feature, with no deletion primitive at all. 
+
+Forgetting. The forgetting axis is studied across at least four layers, none of which target the memory-store primitive surface our work addresses. 
+
+Cognitive psychology (Ebbinghaus, 1885; Bjork, 1972; Anderson and Spellman, 1995) establishes the phenomenology. Machine unlearning on model weights (Cao and Yang, 2015; Bourtoule et al., 2021; Jin et al., 2024; Maini et al., 2024; Tian et al., 2024) re-trains or surgically edits pa-rameters; Meng et al. (2022), Meng et al. (2023), and Zhong et al. (2023) edit factual associations in-place, and Gupta et al. (2024) report that mass editing induces catastrophic forgetting of unrelated facts. Memory-store evaluation is the closest neighbour: Tan et al. (2025) evaluates factual vs. reflective memory, and Rasmussen et al. (2025) maintains a temporal knowledge graph with edge invalidation as deliberate forgetting (we do not em-pirically compare to Zep due to docker-server in-frastructure constraints; see Limitations). Zhang et al. (2023) survey GDPR right-to-be-forgotten ap-proaches for LLMs (differential privacy, machine unlearning, model editing, guardrails); our work targets the memory-store layer specifically. F OR -
+
+> GET
+
+EVAL occupies a distinct cell: a primitive-level decomposition (supersession / decay / amnesia / purge / drift) of the memory-store surface between recall and the model, with deterministic substring scoring and an Adapter Protocol so heterogeneous stores can be compared apples-to-apples without an LLM judge in the evaluation loop. 
+
+3 ForgetEval 
+
+3.1 Five families 
+
+Each family probes one structural property a pro-duction memory system must exhibit. Superses-sion: a new fact wins recall; the old fact leaves top-k (failure: confabulation across both). Decay: 
+
+a released fact (TTL, OTP-consumed) stays out of top-k. Amnesia: forget every fact about one entity, siblings survive — the hard part is width control . Purge: hard-delete by identifier (GDPR Article 17); semantic similarity is the wrong primi-tive. Drift: a chain of supersedes where only the latest wins and intermediates are unreachable. Each case is a single dataclass: setup_facts 
+
+(inscribed with distractors), mutations (super-sede / release / purge calls), final_query ,
+
+must_contain , must_not_contain . A case passes iff must_contain ⊆ top-10 blob and 
+
+must_not_contain ∩ top-10 blob = ∅. No LLM judge. 
+
+3.2 Template suite (1000 cases) 
+
+Each family has four sub-templates the generator cycles through (e.g. supersession has job , theme ,
+
+diet , long_form ). Generation is deterministic given seed; no floating-point sources, no time-of-day, no training-set contamination (entity pools are short proper nouns). At seed=42 with 4 distrac-tors per case the suite is 1000 cases. The current work focuses on the English template suite and the 385-case adversarial layer; multilingual template extensions are left for future work. 
+
+3.3 Adversarial layer (385 cases) 
+
+The template suite has flat difficulty: every case is the same sub-template plus i.i.d. entity substitution. We complement it with a hand-crafted layer (with LLM-assisted expansion, oracle- validated) across 10 attack categories: • substring_trap : must-not substring embed-ded in a distractor. • prefix_collision : two identifiers share a long common prefix (alice@x vs. 
+
+alice.smith@x ). • paraphrase_supersession : new fact lexically distant from old. • negation_trap : negated fact must not be con-fused with affirmative. • temporal_qualifier : date-stamped superses-sion chains. • shared_attribute : two entities share an at-tribute; forgetting one preserves the other’s link. • compound_fact : a single sentence carries two distinct-topic facts; partial supersede must preserve the other. This is a partial-edit capa-bility test rather than a forgetting test per se: it requires a partial-supersede / edit primitive, so systems without one fail by construction (§6). The name is retained for data-file con-sistency. 
+
+• identifier_obfuscation : same identifier in dif-ferent surface forms (case, whitespace, sepa-rators). • cross_lingual_identifier : same entity under different scripts (e.g. romanized vs. source-script form of a personal name). • recursive_supersession : chain where the lat-est state matches an earlier-superseded one (Chrome →Brave →Chrome). We target 40 cases per category (admission-permitting; the final expansion holds 253 cases for a 385-case total alongside the 132 hand-crafted core, including 20 v0.5.1 hand-crafted additions to the identifier_obfuscation category that redress the mode-A judge over-rejection documented in Appendix E) via a two-stage admission protocol that keeps the oracle decoupled from systems under evaluation. Stage 1 (structural): reject malformed JSON, unknown families, and self-substring-traps (must_not_contain substring appears in a non-targeted setup fact). Stage 2 (independent LLM-judge): Qwen-2.5-72B — a different model fam-ily than the DeepSeek-V3 L ETHE +LLM hook — traces through mutations and admits iff (a) every 
+
+must_contain string is a substring of some sur-viving fact, (b) no must_not_contain string ap-pears in any surviving fact or in any must_contain 
+
+string, and (c) the final query is unambiguously an-swerable. An optional Stage 3 post-hoc analytical label partition against the two L ETHE variants is documented in Appendix D for transparency; it does not enter admission or aggregate scoring and is not used in any main table. 
+
+Judge precision and its limits. Running the Qwen judge on the 112 hand-crafted core cases admits 96/112 (85.7 %) ; manual review of all 16 rejections (Appendix E) finds zero bench bugs . The rejections decompose into three fail-ure modes: (A) semantic equivalence (11 cases on 
+
+identifier_obfuscation / cross_lingual_identifier 
+
+where the judge applies literal substring matching to a category that specifically tests canonicaliza-tion); (B) multi-row scope (1 shared_attribute 
+
+case); (C) computational error (4 cases where the judge mis-identifies the targeted row). The admission-audit circuit is partly self-loop, miti-gated by three independent checks: (a) the 10-annotator IAA next; (b) a cross-family judge au-dit on the same 100 IAA-sampled cases with DeepSeek-V3 (different family from Qwen-2.5-72B): 73/100 agreement, all 27 disagreements concentrated on the same mode-(A) semantic-abstraction categories the human-vs-Qwen au-dit flagged ( iaa/second_judge_summary.json ), confirming the disagreement pattern is a repro-ducible artifact of single-LLM judging on semantic-abstraction tasks rather than a Qwen-specific quirk, and (c) reporting the full audit so reviewers can audit our audit. 
+
+Multi-annotator agreement. We collected inde-pendent label sets from 10 NLP/CS-trained anno-tators on a 100-case stratified sample (10/category, mixing 46 hand-crafted core + 54 LLM-drafted cases; no pre-submission consultation). Fleiss’ 
+
+κ = 0.958 (“almost perfect”); observed agreement 99.1 % over 1000 labels. The LLM-judge agrees with human majority on 79/100 ; the 21 disagree-ments decompose cleanly: 8 cases where judge said ill but humans unanimously wf recover the audit’s mode (A)/(B)/(C) failures (Appendix E), and 12 cases where judge said wf but humans ill 
+
+cluster on compound_fact (10/12), revealing a partial supersede semantic ambiguity (§6). 
+
+Cross-family judge validation. Re-running the admission protocol with two additional judges from different model families — DeepSeek-V3 and 
+
+Claude Opus 4.7 (Anthropic) — gives a three-way agreement matrix on the 100-case IAA sample (Appendix F). The Anthropic-family judge matches human majority on 99/100 , materially above Qwen (79/100) and DeepSeek (58/100). All three LLMs agree with each other 55/100 unanimously; no case is unanimously ill across LLMs and hu-mans. Qwen’s 21 human-disagreements cluster on 
+
+compound_fact (10/21, partial-supersede ambi-guity, §6). Because admission is a conservative filter (mode-A failures are over-rejection, not over-acceptance), the bench is shrunk rather than con-taminated by single-judge bias; κ = 0 .958 on the admitted set confirms the data is itself high-quality. 
+
+Circularity: what we can and cannot rule out. 
+
+253/385 cases are LLM-drafted (DeepSeek-V3) and admitted by a single LLM judge (Qwen-2.5-72B), and the LLM hook is also DeepSeek-V3; the recovered categories overlap with where LLM in-ductive biases are strongest. We cannot fully rule out residual overlap, but three observations bound how much of the headline lift it can explain. (i) 
+
+The 132 hand-crafted core cases reproduce and amplify the full-suite patterns: deterministic sys-tems score lower on HC alone (L ETHE 53.0 %, LangGraph 52.3 % vs. ∼68 % on LLM-drafted), while LLM-hooked systems score higher (Lang-Graph+LLM 98.5 % HC vs. 90.5 % LLM-drafted: a +46-pt HC lift vs. +22-pt LLM-drafted). Shared-LLM-inductive-bias circularity predicts the oppo-site asymmetry on both backends. Inscribe-time placement also holds on HC alone (Appendix G). 
+
+(ii) The cross-family judge audit (DeepSeek-V3 as a second judge on the same 100 IAA cases) shows disagreement on the mode-A semantic-abstraction categories that drive human–judge dis-agreement: a shared LLM limitation on admis-sion (over-rejection = shrinks the bench), not a 
+
+recovery -side hint to the hook. (iii) The mutation-time hook also lifts categories where LLM-drafted candidates were rejected (identifier_obfuscation 
+
+0/24 LLM-drafted admitted; the 38 admitted cases are predominantly hand-crafted) — inductive-bias overlap would predict the smallest lift there, not the largest. (iv) A 77-case external-authored subset (4 contributors at a separate institute, given only the category schema) replicates the canonicalization asymmetry on identifier_obfuscation (determin-istic 0/8, LLM-hook 8/8 on both backends) and partial cross_lingual_id (LangGraph+LLM 5/8); the mutation-time hook lift is +11.7 / +18.1 pt on the two backends (vs. in-house +28–30) and the pass band drops to 28–51 % (Appendix R). 
+
+4 Adapter Protocol 
+
+A six-method control-plane algebra: three manda-tory recall-plane primitives ( reset , inscribe ,
+
+recall_texts ) and three optional control-plane mutations ( supersede , release , purge ) with N/A scoring (a system’s N/A pattern characterizes its 
+
+control-plane coverage ):                                                         
+
+> class Adapter ( Protocol ): name : str def reset ( self ) -> None : ...
+> def inscribe ( self , text : str )->
+> int |str :...
+> def recall_texts ( self , q: str ,k:
+> int )-> list [str ]: ... #optional --NotImplementedError -> N/A
+> def supersede ( self , old_q : str ,new :str )-> None : ...
+> def release ( self , q: str )-> int :...
+> def purge ( self , q: str )-> int :...
+
+The three NotImplementedError branches map cleanly to N/A on each family, distinguishing im-plemented and failed from not provided at all .Shipped adapters for L ETHE , M EM 0, LangGraph, and M EM PALACE are each under 130 lines. 
+
+The Protocol is a behavioural contract, not a syntactic one. An adapter for a system that exposes only add and delete (e.g. a vector store) can implement supersede(old_q, new) 
+
+as “ delete(best_match(old_q)) → add(new) ”and satisfy the test as long as the behavioural prop-erty holds (the old fact does not appear in top-k,the new fact does). release(q) can be imple-mented as “ delete(rows-matching(q)) ” even on systems with no release primitive; purge(q) 
+
+similarly. The N/A signal is reserved for systems that cannot produce the behaviour via any compo-sition of their exposed API (e.g. M EM PALACE ’s verbatim-retention design refuses any deletion re-gardless of how it is composed); systems that can compose the behaviour out of add /delete /update 
+
+primitives are expected to do so in their adapter, and our shipped M EM 0 and LangGraph adapters both follow this pattern. 
+
+Reference implementation. To give the Adapter Protocol a concrete anchor we additionally ship one of the four primary memory stores benchmarked here as supplementary material ( ∼700 lines of Python over SQLite + sqlite-vec (Garcia, 2024) + FTS5). It implements all six Protocol meth-ods, exposes an optional llm: Callable[[str], str] hook for the three mutation-time prompts (SUPERSEDE PLANNER , PURGE MATCH , RELEASE MATCH ; full text in Appendix B), and serves as one of the two backends we use in the cross-architecture LLM-hook ablation (Appendix L). Detailed API surface and formal soft-delete invariants are in Ap-pendix A. Table 1: Template suite, seed=42, distractors=4. 95 % Wilson intervals in brackets. L ETHE and LangGraph 
+
+InMemoryStore saturate to within 0.2 pt of each other; MEM 0 collapses on amnesia and purge.             
+
+> System Pass Wilson 95% LETHE v1 993/1000 (99.30%) [98.56, 99.66] LangMem (LG InMemStore )995/1000 (99.50%) [98.83, 99.79] MEM 0 v2.0.2 888/1000 (88.80%) [86.69, 90.61] MEM PALACE 0/1000 ( 0.00%) [0.00, 0.38]
+
+5 Experiments 
+
+5.1 Setup 
+
+All four primary adapters use all-MiniLM-L6-v2 
+
+(384-d, ONNX via fastembed (Qdrant team, 2024)) on a single CPU. No GPU, no API calls (except for the L ETHE +LLM ablation), no internet on the recall hot path. 
+
+5.2 Template suite (1000 cases) 5.3 Adversarial layer (385 cases) 
+
+Three observations. (1) Deterministic clustering near 65 %, aggregate-indistinguishable systems: 
+
+the three deterministic systems land within 5.4 ab-solute points overall (L ETHE 63.4, M EM 0 68.3, LangGraph 62.9) with mutually overlapping Wil-son intervals. Notably, L ETHE ’s 63.4 % is within 0.5 pt of LangGraph’s vanilla InMemoryStore 
+
+(62.9 %) — a paired McNemar test on the per-case verdicts confirms this is statistical noise rather than a meaningful difference (only 8 of 385 cases dif-fer between the two systems: 5 favour L ETHE ,3 favour LangGraph; χ2 = 0 .125 with continu-ity correction, p = 0 .724 , so we fail to reject the null hypothesis of equivalent performance). The aggregate-level differentiation Lethe offers over a batteries-included storage primitive is not sta-tistically significant; the differentiation appears only at the per-category and LLM-hooked lev-els described next. We describe the 63–68 % as a pass band rather than a true ceiling: it is the empirical saturation of four systems on this 385-case suite, not a proven upper bound; tighter ecosystem coverage may shift the band. The pass band is itself an average over mixed-provenance cases: on the 132 hand-crafted-only subset the de-terministic floor is ∼15 pt lower (L ETHE 53.0 %, LangGraph 52.3 %, MEM 0 65.2 %; §3.3 obs (i), Appendix G), while the mutation-time-hook lift correspondingly enlarges on the harder sub-set. (2) Per-category separation: LETHE ’s 32/39 on prefix_collision vs. M EM 0’s 12/39 has non-overlapping Wilson intervals [67 .4, 91 .4] vs. 
+
+[18 .8, 47 .3] (p < 0.01 ); conversely M EM 0’s 21/38 on cross_lingual_identifier vs. L ETHE ’s 0/38 ([0 .0, 9.2] ) is significant in the other direction. Lexical-precise purge avoids prefix-collision but cannot bridge script variation; vector-soft delete does the opposite. (3) The LLM-hook pattern is architecture-agnostic: the same narrow JSON contract on LangGraph’s InMemoryStore reaches 
+
+359/385 = 93.2 % (within noise of L ETHE +LLM 91.7 %; Appendix L), and substituting Qwen-2.5-72B for DeepSeek-V3 yields a +13 -pt lift on both backends (L ETHE 76.6 %, LangGraph 75.8 %; 2 ×2grid in Appendix K) — the lift scales with JSON-following capability and is consistent across back-ends within ∼2 pt. Recall path stays LLM-free in both modes. The nine extended systems (six base plus three +LLM variants) are reported in the cross-system heatmap (Fig. 2, §5.7); we restrict Table 2 to the four-system Adapter Protocol comparison because Graphiti’s 143/385 N/A rate makes its col-umn non-comparable in tabular form. 
+
+5.4 Embedder ablation 
+
+Replacing the English MiniLM with 
+
+paraphrase-multilingual-MiniLM-L12-v2 
+
+does not change L ETHE ’s cross-lingual score (0/16 in both). LETHE ’s purge path is pure BM25 by design; embedder choice has no effect on that cate-gory. MEM 0’s vector-based delete is embedder-sensitive but does not gain on cross-lingual either (8/16 → 7/16). The architectural patterns observed in Table 2 are robust to embedder swap; the LLM hook is the actual lever for the pass-band categories. 
+
+5.5 Cross-evaluation on Memora 
+
+To probe the complementarity claim of §2 (that FORGET EVAL and Uddin et al. (2026) measure different surfaces of the forgetting axis), we run three of our four adapters on all 10 Memora personas at the weekly time scale: 150 evaluation questions (10 personas × 15 questions / persona, balanced across the three Memora tasks), grounded in ∼1,580 conversational sessions (158 sessions / persona). Memora’s operation field maps directly onto our Adapter Protocol ( add → inscribe ,
+
+update → supersede , delete → purge ); we use deterministic substring scoring against Memora’s released memory_evidence and 
+
+forgetting_evidence literal values to avoid coupling the comparison to an LLM judge. Table 2: F ORGET EVAL -Adv (385 cases, 10 attack categories; 132 hand-crafted core + 253 LLM-drafted oracle-validated; the identifier_obfuscation category was expanded from 18 to 38 in v0.5.1 by 20 additional hand-crafted cases that redress the mode-A judge over-rejection documented in Appendix E). L ETHE / M EM 0 / LangMem cluster within a 63–68 % in-house saturation band (Wilson CIs overlap; on the external-authored subset (Appendix R) the band drops to 28–33 %). L ETHE +DeepSeek-V3 via narrow JSON hooks ( ∼$0.17 / 385 cases) reaches 91.7 % 
+
+overall ( 93.3 % excluding compound_fact , the primitive-existence category); the same hook applied to LangGraph (Appendix L) reaches 93.2 % (94.2 % excluding compound_fact ) — the lift is architecture-agnostic, not L ETHE -specific. M EM PALACE is a no-deletion-primitive reference point : its 0/385 follows from its verbatim-retention design and is shown for the axis-flip comparison in §5.5.                                                                                
+
+> Attack category LETHE MEM 0LangMem MEM PALACE LETHE +LLM
+> substring_trap (n=36) 33/36 (92) 32/36 (89) 35/36 (97) 0/36 36/36 (100)
+> prefix_collision (n=39) 32/39 (82) 12/39 (31) 27/39 (69) 0/39 31/39 (79) paraphrase_supersession (n=38) 31/38 (82) 31/38 (82) 31/38 (82) 0/38 31/38 (82) negation_trap (n=40) 38/40 (95) 38/40 (95) 38/40 (95) 0/40 38/40 (95) temporal_qualifier (n=37) 37/37 (100) 37/37 (100) 37/37 (100) 0/37 37/37 (100) shared_attribute (n=40) 35/40 (88) 38/40 (95) 35/40 (88) 0/40 40/40 (100)
+> compound_fact (n=40) 0/40 (0) 0/40 (0) 0/40 (0) 0/40 31/40 (78)
+> identifier_obfuscation (n=38) 2/38 (5) 18/38 (47) 2/38 (5) 0/38 35/38 (92)
+> cross_lingual_id (n=38) 0/38 (0) 21/38 (55) 1/38 (3) 0/38 38/38 (100)
+> recursive_supersession (n=39) 36/39 (92) 36/39 (92) 36/39 (92) 0/39 36/39 (92)
+> Overall (excl. compound_fact) †244/345 (70.7) 263/345 (76.2) 242/345 (70.1) 0/345 (0.0) 322/345 (93.3) Overall (full 385) 244/385 (63.4) 263/385 (68.3) 242/385 (62.9) 0/385 (0.0) 353/385 (91.7)
+> 95 % Wilson CI (full) [58.4, 68.1] [63.5, 72.9] [57.9, 67.7] [0.0, 1.0] [88.4, 94.2]
+> wall / case 74 ms 514 ms ‡64 ms 191 ms 2.3 s (mutations only)
+> †
+
+compound_fact is a primitive-existence test: three of five systems cannot pass any case by construction (no partial-edit primitive); we report the n=345 subset as the headline. ‡ Includes per-test Qdrant cold-start + LLM-client construction; a pooled / pre-instantiated setup would close part of the gap. 
+
+Table 3: Three F ORGET EVAL adapters on Memora-weekly (10 personas, 150 questions). MEM PALACE 
+
+flips axis between the two benchmarks: 0/385 on F OR -
+
+GET EVAL -Adv (no forgetting primitives; fails every adversarial case) but 60/150 on recall-heavy Memora. The same system fails opposite axes — direct empirical evidence the benchmarks measure complementary sur-faces.                 
+
+> System Remember Reason Recomm. Total
+> LETHE 17/50 30/50 0/50 47/150 (31%) LangGraph 32/50 32/50 3/50 67/150 (45%)
+> MEM PALACE 28/50 32/50 0/50 60/150 (40%)
+
+Three observations. (1) Axis flip: MEM PALACE 
+
+scores 0/385 on F ORGET EVAL -Adv (forgetting-heavy) vs. 60/150 (40%) on Memora (recall-heavy) — no scalar metric captures both directions. 
+
+(2) Ranking divergence: on F ORGET EVAL -Adv LETHE (63.4%) and LangGraph (62.9%) are within 1 pt; on Memora LangGraph (45%) leads L ETHE 
+
+(31%) by 14 pts — the two benchmarks are not surrogates. (3) Recommend collapses uniformly: 
+
+all three systems score ≤6 % on Memora’s rec-ommending task, which requires user-preference modeling outside the forgetting axis. 
+
+Recall baseline and the Remember-task gap. 
+
+On LongMemEval-S (Wu et al., 2025) (500 ques-tions), L ETHE v1 scores R@5 = 93.8 % at session granularity (Appendix Q). The 34 % L ETHE on Memora Remember (vs. LangGraph 64 %) re-flects a harness difference, not retrieval weakness: Memora scores substring of the gold answer in top-N chunks across ∼158 sessions/persona, and many questions require multi-session synthesis (e.g. “most-mentioned restaurant”) no single-session re-trieval isolates. LangGraph’s flat-chunk path re-turns more candidates per query, trading selectivity for substring-hit probability — it leads on Remem-ber but loses on adversarial deletion. Full trade-off in §5.6. 
+
+5.6 Recall–forgetting trade-off characterization 
+
+Combining the recall axis (§5.5, Memora-weekly overall pass rate as a recall-shaped proxy) with the forgetting axis (Table 2) gives a two-axis posi-tion for each of the four memory architectures we evaluate. We characterize the empirical trade-off landscape these four systems span; we deliberately do not call this a Pareto frontier since the sample size precludes a population-level frontier claim. 
+
+(1) Two non-dominated deterministic points in this sample: LETHE and LangGraph occupy dis-tinct non-dominated positions (L ETHE wins forget-ting by 0.6 pt, LangGraph wins recall by 13.4 pt); MEM PALACE sits below both (dominated by Lang-Graph on both axes) — verbatim retention does not buy a free recall gain when its zero-forgetting 20 25 30 35 40 45 50 55 60   
+
+> Recall (Memora-weekly overall pass rate, %)
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Forgetting  (ForgetEval-Adv overall pass rate, %)
+> MemPalace (dominated)
+> Lethe
+> LangGraph
+> Lethe+LLM LangGraph+LLM
+> LLM hook
+> (architecture-agnostic)
+> deterministic backend
+> with LLM hook (mutation time)
+
+Figure 1: Recall–forgetting trade-off characterization across four memory systems. L ETHE (forgetting-corner) and LangGraph (recall-corner) occupy distinct non-dominated points in this sample; MEM PALACE is dominated by LangGraph (lower on both axes) — its verbatim-retention design buys no forgetting and does not outscore LangGraph on recall. The mutation-time LLM hook lifts both non-dominated backends on the for-getting axis without changing recall (within our setup). With four systems we treat this as a sample of the land-scape, not a population-level frontier. 
+
+design eliminates adversarial pass rate entirely. (2) The LLM hook moves both backends on the for-getting axis without changing recall , applied at mutation time only. (3) Backbone choice mat-ters above the cluster: LangGraph+LLM leads LETHE +LLM on both axes — production systems should pair the hook with a high-recall backbone, not a forgetting-specialized one. 
+
+5.7 Control-plane placement trade-off 
+
+The headline hook places one LLM call at a control-plane site (mutation supersede/purge planner). A different placement — LLM at inscribe time, ex-tracting tags / entity links for read-time use — arises in A-MEM (Xu et al., 2025). Fig. 2 reveals a category-specific trade-off the aggregate scores hide. 
+
+Three placement regimes do not sub-sume each other. Inscribe-time LLM (A-MEM, MEM 0+v3, Letta tag-side) recovers canonicalization (identifier_obfuscation ,
+
+cross_lingual_identifier ; 100 %) but cannot help prefix_collision or compound_fact (0 %; MEM 0+v3’s LINK-AND-KEEP collapses on deletion-precision; HippoRAG’s open-domain KG extraction fails 0/38 on surface-variant categories). Mutation-time LLM (our hook) recovers those (compound_fact 78–85 %, prefix_collision 
+
+79 %); deterministic stores retain lexical/temporal at ≥95 % .sub-trap                                                                                                              
+
+> prefix-coll
+> paraphrase
+> negation
+> temporal
+> shared-attr
+> compound
+> ident-obf
+> cross-ling
+> recursive
+> MemPalace
+> Lethe
+> Mem0
+> LangGraph
+> Letta
+> OpenMemory
+> Mem0+v3
+> A-MEM
+> Graphiti
+> HippoRAG
+> Letta+LLM
+> Lethe+LLM
+> LangGraph+LLM
+> 0000000000
+> 92 82 82 95 100 88 05092
+> 89 31 82 95 100 95 047 55 92
+> 97 69 82 95 100 88 05392
+> 95 084 90 57 N/A 0100 100 92
+> 90 029 76 87 N/A 10 97 100 82
+> 67 0052 892 8100 100 10
+> 100 082 90 100 N/A 0100 100 92
+> 0N/A 13 024 N/A 3005
+> 40 03357 N/A 0000
+> 100 49 84 95 100 N/A 097 100 85
+> 100 79 82 95 100 100 78 92 100 92
+> 100 79 82 95 100 100 85 100 100 92
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> pass rate (%)
+> no-del
+> deterministic
+> vec only
+> inscribe-LLM
+> KG abstr.
+> inscr+mut
+> mutation-LLM
+
+Figure 2: Per-category pass rate (%) across 13 sys-tem configurations (M EM 0+v3 row is M EM 0’s LLM router via infer=True ; OpenMemory (CaviraOSS Con-tributors, 2025) is a self-hosted synthetic-embedding store; HippoRAG (Gutiérrez et al., 2024) is a KG + Personalized PageRank retrieval system). N/A =whole-category primitive missing; numeric cells use the evaluable denominator (scattered per-case N/As ex-cluded; strict-denominator totals in §6). Right-side la-bels show LLM-placement regime; the inscribe-time-LLM regime (A-MEM, M EM 0+v3) shows the pre-dicted canonicalization-win / deletion-loss profile, and the “inscr+mut” row (Letta+LLM) empirically validates the predicted complementarity between inscribe-time and mutation-time placement. 
+
+Applying the mutation-time hook on top of Letta directly tests this complementarity: Letta+LLM lifts prefix_collision 0→49 %, temporal_qualifier 
+
+57 →100 %, and overall evaluable 65.5 →76.1 % (Fig. 2, “inscr+mut” row), but does not match LETHE +LLM (91.7 %) because Letta lacks a partial-edit primitive ( compound_fact 0/40) — joint placement is necessary but not sufficient. Lift grows on the external-authored subset ( +27 .8 pt; Appendix R). 
+
+5.8 Latency 
+
+On the 385-case suite, single CPU, no GPU: LETHE ∼74 ms/case; LangGraph 
+
+∼64 ms/case; MEM PALACE ∼191 ms/case; MEM 0 ∼514 ms/case ( ∼ 7× slower than L ETHE ). The M EM 0 gap includes a per-test cold-start cost (Qdrant index initialization and LLM-client construction); a pooled / pre-instantiated setup would close part of the gap, so the headline number should be read as “out-of-the-box adapter latency” rather than purely algorithmic. L ETHE +LLM is 
+
+∼2.3 s/case amortizing one DeepSeek-V3 call per mutation; the recall path is unchanged. 6 Discussion 
+
+A 63–68 % in-house band means ∼1/3 identifier-precise deletions leak; the JSON mutation-time hook ($0.17/385 cases) lifts these to 92–93 %. 
+
+Limitations 
+
+English emphasis and thin per-script sam-ples. The hand-crafted layer is English; the 
+
+cross_lingual_identifier category covers 9 script families with thin per-family sampling: Latin-only 12, Greek 7, Chinese (Han) 5, Hebrew 4, Korean (Hangul) 3, Cyrillic 3, Arabic 2, Devanagari 1, Thai 1. L ETHE +LLM, LangGraph+LLM and A-MEM each score 100 % on every family they see, but the 1–3-case Devanagari/Thai/Arabic/Cyrillic/Ko-rean slices cannot statistically distinguish among LLM-hook systems; the aggregate 100 % claim is stronger on Latin/Greek/Chinese (12+7+5 = 24 cases) than on the long tail. Deeper per-family cov-erage (Korean, Arabic, Hindi, etc.) is left for future work. 
+
+Memory-system coverage. We bench-mark four primary open systems with shipped Adapter Protocol implementations: LETHE ,MEM 0, LangGraph InMemoryStore , and M EM -PALACE . Additional engagement notes: (a) A-MEM (Xu et al., 2025) (Zettelkasten-style; ex-plicit add_note /update /delete primitives at the 
+
+memory_id level) ports cleanly to our Adapter Pro-tocol; the integration uses DeepSeek-V3 via Sili-conFlow for the agentic tag-extraction path. On the full 385-case F ORGET EVAL -Adv A-MEM scores 219/310 evaluable (70.6 %) with 75 cases marked N/A because A-MEM does not expose a 
+
+release primitive; the strict-denominator score (N/A counted as failures) is 219/385 = 56.9 % .Per-category breakdown in Appendix M; A-MEM substantially reorganizes the failure surface rela-tive to the four primary systems (e.g. 100 % on 
+
+cross_lingual_identifier where L ETHE scores 0 %, vs. 0 % on prefix_collision where L ETHE scores 82 %) — the inscribe-time vs. mutation-time LLM-placement trade-off quantified in §5.7. We do not report A-MEM on Memora cross-evaluation (§5.5): Memora’s inscribe stream is ∼158 sessions per persona, and A-MEM’s per-session agentic tag-extraction LLM call makes the 10-persona suite prohibitively long ( ≥8 wall-clock hours) for the submission window; a future release may explore a tag-cache or batched extraction path to recover this evaluation. (b) Letta / MemGPT (Letta contribu-tors, 2024; Packer et al., 2023) was benchmarked on the full 385-case F ORGET EVAL -Adv using the official Docker image letta/letta:latest 
+
+(v0.16.7, PostgreSQL+pgvector) on a Linux host wired to SiliconFlow. We bypass Letta’s agent-scoped chat loop and address the archival-memory REST endpoints directly (one agent per test case for isolation), keeping the LLM out of the re-call hot path so the comparison remains apples-to-apples. Letta scores 203/310 evaluable (65.5 %) 
+
+with 75 N/A (release primitive missing), strict-denominator 203/385 = 52.7 % . Full breakdown in Appendix O; Letta and A-MEM converge on a similar category profile despite different backends (raw embedding vs. LLM tag extraction), with the only material divergence on temporal_qualifier 
+
+(Letta 57 %, A-MEM 100 %) where inscribe-time LLM tags help. Pure pip install on Python 3.13 fails during contextlib.asynccontextmanager -mediated database initialisation; the Docker image (Python 3.12 + PostgreSQL bundled) is the sup-ported deployment. (c) Graphiti (Zep AI, 2025) 
+
+(the open-source successor to the deprecated Zep CE, temporal knowledge-graph backed by Neo4j) was benchmarked on the full 385-case F ORGET E-
+
+> VAL
+
+-Adv suite using DeepSeek-V3.1-Terminus via SiliconFlow for entity/edge extraction; Graphiti scores 17/242 evaluable (7.0 %) with 143 cases N/A (release and query-addressable purge prim-itives missing). This is a categorical mismatch with our benchmark, not a parameter-tuning issue: Graphiti’s KG abstraction synthesises edges and stores the synthesised fact string, shedding the surface forms our must_not_contain substring scoring tests for. Graphiti’s relative strength is 
+
+temporal_qualifier (24 %, where temporal edge invalidation is its design surface). Full breakdown in Appendix N. (d) Cognee (Cognee contributors, 2024) v1.0.9 changed its forget API from query-based (v0.x) to dataset-level granularity, which does not map cleanly to F ORGET EVAL ’s per-fact supersede semantics; we engaged the package, document the API incompatibility, and leave a Cognee comparison to a v1.1 release of the bench-mark with dataset-per-case wrapper logic. (e) Zep CE (Rasmussen et al., 2025) was deprecated in April 2025 with EOL in February 2026 in favour of Graphiti, which we ran. (f) OpenMemory (CaviraOSS) self-hosted via Docker on the same Linux host used for Letta/Graphiti, with synthetic 1536-d embeddings (no LLM in the retrieval path). Its REST API ( /memory/add , /memory/query ,/memory/:id delete) maps cleanly to our 6-method Protocol; OpenMemory does not expose a soft-delete primitive, so all shared_attribute 
+
+cases (and several substring / negation cases that require release semantics) are scored N/A. OpenMemory scores 188/310 evaluable (60.6 %) 
+
+on the full 385-case suite with 75 N/A; strict-denominator 188/385 = 48.8 % . Per-category profile in Fig. 2 (“vec-only” regime row 5): 100 % on cross_lingual_identifier , 97 % on iden-tifier_obfuscation , matching Letta’s profile within 
+
+±3 pt despite the synthetic-embedding swap — suggesting the canonicalization advantage of the vec-only regime is driven by vector neighbour-hood structure rather than the specific embed-der. (g) HippoRAG (Gutiérrez et al., 2024) 
+
+(KG + Personalized PageRank, NeurIPS 2024) self-hosted via a Python 3.10 docker image (the PyPI hipporag==2.0.0a4 requires Python ≥3.10 which is outside our submission Python 3.13 enve-lope). We map HippoRAG’s index / retrieve 
+
+/ delete primitives to our 6-method Protocol; 
+
+release is N/A (no soft-delete). Embedding via SiliconFlow’s BAAI/bge-m3 (matching Letta’s choice for cross-comparability between two vector-similarity-based systems); LLM extraction via DeepSeek-V3. HippoRAG scores 31/326 evalu-able (9.5 %) on the full 385-case suite with 59 N/A (mostly shared_attribute requiring release ); strict-denominator 31/385 = 8.0 % , comparable to Graphiti’s 7.0 %. HippoRAG’s KG row in Fig. 2 sits in the same “KG abstr.” regime as Graphiti and shows a similar overall profile, with one no-table contrast: HippoRAG’s KG entity extraction does not recognise surface variants as the same en-tity, scoring 0/38 on identifier_obfuscation and 0/38 on cross_lingual_id (where Letta / A-MEM / M EM 0+v3 / OpenMemory all score 100 %). This shows canonicalization is not automatic in the KG regime — it depends on the entity-extraction prompt’s design, which HippoRAG inherits from its open-domain extraction setup rather than tuning for surface-form normalization. Redis Semantic Memory, AutoGen Memory — not empirically evaluated due to hosted-account or LLM-key re-quirements that preclude the no-API single-CPU re-producibility envelope our primary adapters target. The Protocol’s behavioural contract (§4) means any backend supporting add / delete composition can join; we encourage community-contributed adapters. 
+
+MEM 0 version and configuration: both infer 
+
+modes evaluated. We evaluate M EM 0 v2.0.2 (latest mem0ai PyPI release at submission) on the full 385-case adversarial suite in two config-urations, because infer=True engages M EM 0’s LLM-driven ADD/UPDATE/DELETE router (the design distinctive of M EM 0 relative to a plain vector store) and is the configuration a real M EM 0deployment runs. (a) infer=False (ADD-only): 
+
+263/385 = 68.3 % (Table 2), the path used for the headline comparator. (b) infer=True with DeepSeek-V3 via SiliconFlow: 168/385 = 43.6 % ,full per-category breakdown in Appendix P. MEM 0’s ADDITIVE_EXTRACTION_PROMPT is tuned for OpenAI gpt-4o-mini and DeepSeek-V3 emits ∼25 % malformed-JSON output (typically commas embedded inside string values). We add a deterministic json-repair pass on top of M EM 0’s extraction parser to recover these without API retries (298/1200 LLM calls repaired, 0 final failures); the infer=True number reflects MEM 0’s algorithm behaviour, not its JSON-parse robustness. The two configurations show a striking trade-off in category profile: infer=True rises 
+
+on canonicalization (identifier_obfuscation 
+
+47 →100 % , cross_lingual_identifier 
+
+55 →100 % ) but collapses on deletion-precision categories (prefix_collision 
+
+31 →0 % , paraphrase_supersession 
+
+82 →0 % , temporal_qualifier 100 →8 % ,
+
+recursive_supersession 92 →10 % ), because the token-efficient router prioritises link-and-keep over delete-old. This is consistent with the §5.7 placement-regime characterization: MEM 0+v3 sits in the inscribe-time-LLM regime alongside A-MEM and Letta and exhibits its predicted strengths (canonicalization) and weaknesses (deletion precision); within the regime, the specific extraction prompt + router algorithm controls how severely the deletion-precision side collapses (A-MEM 56.9 % strict vs. M EM 0+v3 43.6 % on the same inscribe-LLM regime). A run with OpenAI 
+
+gpt-4o-mini (M EM 0’s default LLM) is blocked at submission by our no-API-key reproducibility envelope; we ship the DeepSeek-V3 result with the json-repair pass as the most-honest infer=True 
+
+approximation in our setup. 
+
+LLM dependency in 3 attack categories. The 23–30-pt gap between deterministic baselines and the LLM-hooked variants (both L ETHE +LLM 91.7 % and LangGraph+LLM 93.2 %) lives almost entirely in compound_fact , identi-fier_obfuscation , and cross_lingual_identifier .Users running fully offline have no recourse for those categories beyond their store’s edit / canon-icalization primitives. Because the lift is hook-pattern rather than store-specific (Appendix L), any backend supporting basic add / delete can adopt the contract. 
+
+Bench size. At 385 cases the overall Wil-son 95 % intervals of the three deterministic sys-tems overlap by design (they cluster in the pass band); per-category claims at n=36 –40 are statisti-cally significant. The identifier_obfuscation cat-egory was originally N =18 in v0.5 due to Qwen-judge over-rejection of LLM-drafted candidates (Appendix E); v0.5.1 expanded it to N =38 via 20 additional hand-crafted cases admitted under the same protocol as the original 112 hand-crafted core. We report both the v0.5 audit (which surfaces the systematic mode-A LLM-judge failure mode as a contribution) and the expanded v0.5.1 case set so the trade-off remains auditable. 
+
+compound_fact is a primitive-existence test, not a forgetting-capability test. This category tests whether a system can perform partial superses-sion (update one clause of a two-fact row). L ETHE 
+
+exposes this via its surrender(mode="edit") 
+
+primitive; M EM 0, LangGraph, and M EM PALACE 
+
+do not, so they score 0/40 by primitive absence rather than by forgetting failure. We retain the category as a diagnostic (it cleanly separates sys-tems with vs. without an edit primitive) and flag it here so aggregate comparisons are not misread as forgetting-ability differences in those rows. Sta-bility check. Excluding compound_fact from the 385-case aggregate, the LLM-hook lift remains substantial: L ETHE +LLM 322/345 = 93.3 % vs. LETHE 244/345 = 70.7 % (+22.6 pt), and Lang-Graph+LLM 325/345 = 94.2 % vs. LangGraph 242/345 = 70.1 % (+24.1 pt) — the headline does not collapse without this category, confirming the hook’s effect is not driven by the primitive-existence dimension alone. Relatedly, on the 100-case multi-annotator IAA (§5), 10 of the 21 human– judge disagreements cluster on compound_fact 
+
+cases: humans reading “supersede = replace whole row” literally mark them ill-formed, while the pro-tocol assumes a partial-supersede capability the 
+
+surrender primitive provides. Both readings are internally consistent; the disagreement surfaces the definitional gap we flag here. 
+
+LLM-quality sensitivity of the hook. The 23-pt lift in Table 2 uses DeepSeek-V3. In a cross-LLM ablation (Appendix K) Qwen-2.5-72B-Instruct yields a smaller +8-pt lift with category-specific variance and Llama-3.1-70B-Instruct fails to parse our prompt contract, falling through to the deterministic baseline. A deeper LLM ablation across providers and model sizes is future work. 
+
+Bench construction. The 132 hand-crafted core cases (112 original + 20 v0.5.1 identi-fier_obfuscation additions) were written and re-viewed by the research team — the 112 original over six months and the 20 v0.5.1 additions to re-dress mode-A judge over-rejection (Appendix E) — then independently re-labeled by 10+ NLP/CS-trained external annotators (§5); the 253 expan-sion cases are LLM-drafted and oracle-validated. Deeper construction protocols (e.g. formal cool-off self-IAA, broader external panels) are planned for future releases. 
+
+What would update our claims. Three find-ings rest on evidence whose strength we want to be explicit about. (i) Architecture-agnosticism of the LLM hook is currently supported by three backends (L ETHE , LangGraph, Letta), two LLM families (DeepSeek-V3 and Qwen-2.5-72B in a 2 ×2 grid; Appendix K), and a 77-case external-authored subset (Appendix R) that repli-cates the canonicalization-side asymmetry on 
+
+identifier_obfuscation (deterministic 0/8, every LLM-hook 8/8) and the joint-placement lift on Letta+LLM ( +27 .8 pt, exceeding the in-house 
+
++20 .9). Replication on more backends and LLM families (we expect GPT-4o-mini and Claude-class models to behave similarly to DeepSeek-V3 based on JSON-following capability) would further strengthen the claim; we ship the contract so exter-nal work can test it. (ii) The 63–68 % pass band is the empirical saturation observed across four open systems on the in-house 385-case suite. On the 77-case external-authored subset the band drops to 28–51 % (Appendix R), confirming the band is a provenance-dependent saturation, not a true ceiling. Discovering a system that breaks 70 % determin-istically on a similarly hard suite would be a sub-stantive update. (iii) The reference implementa-tion does not significantly outperform LangGraph 
+
+InMemoryStore on aggregate F ORGET EVAL -Adv (63.4 vs. 62.9, overlapping CIs); any system-level claim about its design rests on the per-category and LLM-hooked levels, not aggregate dominance. We frame it as a reference anchor, not a competitive system. References 
+
+Saad Alqithami. 2025. Forgetful but faithful: A cogni-tive memory architecture and benchmark for privacy-aware generative agents. Introduces FiFA benchmark and Memory-Aware Retention Schema (MaRS); six forgetting policies for privacy-preserving generative agents. arXiv:2512.12856. Michael C. Anderson and Barbara A. Spellman. 1995. Remembering can cause forgetting: Retrieval dynam-ics in long-term memory. Journal of Experimen-tal Psychology: Learning, Memory, and Cognition ,21(5):1063–1087. Robert A. Bjork. 1972. Theoretical implications of directed forgetting. Coding processes in human mem-ory , pages 217–235. Lucas Bourtoule, Varun Chandrasekaran, Christopher A. Choquette-Choo, Hengrui Jia, Adelin Travers, Baiwu Zhang, David Lie, and Nicolas Papernot. 2021. Ma-chine unlearning. In IEEE Symposium on Security and Privacy . ArXiv:1912.03817. SISA: Sharded, Isolated, Sliced, Aggregated; retrain affected shard only. Yinzhi Cao and Junfeng Yang. 2015. Towards making systems forget with machine unlearning. In IEEE Symposium on Security and Privacy . Coined the term "machine unlearning". Summation-form training for asymptotically-faster point removal. CaviraOSS Contributors. 2025. OpenMemory: Self-hosted long-term AI memory engine. https: //github.com/CaviraOSS/OpenMemory . Open-source persistent memory store for LLM applications, MIT-licensed. Prateek Chhikara and 1 others. 2025. Mem0: Building production-ready ai agents with scalable long-term memory. arXiv preprint arXiv:2504.19413 . Also appearing at ECAI 2025. Cognee contributors. 2024. Cognee: Memory layer for ai agents. https://github.com/topoteretes/ cognee . No peer-reviewed evaluation published; graph updates documented as destructive chunk-replace. Gordon V. Cormack, Charles L. A. Clarke, and Stefan Buettcher. 2009. Reciprocal rank fusion outperforms condorcet and individual rank learning methods. In 
+
+SIGIR , pages 758–759. Hermann Ebbinghaus. 1885. Über das Gedächtnis: Untersuchungen zur experimentellen Psychologie .Duncker & Humblot. The original forgetting-curve experiment, on himself, using non-sense syllables. European Parliament and Council. 2016. Regulation (eu) 2016/679 of the european parliament and of the council (general data protection regulation). Official Journal of the European Union, L 119, 1–88. See in particular Article 17, "Right to erasure". Alex Garcia. 2024. sqlite-vec: A vector search sqlite extension. https://github.com/asg017/ sqlite-vec .Akshat Gupta, Anurag Rao, and Gopala Anu-manchipalli. 2024. Model editing at scale leads to gradual and catastrophic forgetting. In Findings of the Association for Computational Linguistics (ACL Findings) . Shows knowledge editing causes catas-trophic forgetting of unrelated facts. Bernal Jiménez Gutiérrez, Yiheng Shu, Yu Gu, Michi-hiro Yasunaga, and Yu Su. 2024. Hipporag: Neu-robiologically inspired long-term memory for large language models. Advances in Neural Information Processing Systems (NeurIPS) .Yuanzhe Hu, Yu Wang, and Julian McAuley. 2026. Eval-uating memory in LLM agents via incremental multi-turn interactions. In International Conference on Learning Representations (ICLR) . Introduces Mem-oryAgentBench evaluating four memory competen-cies: Accurate Retrieval, Test-Time Learning, Long-Range Understanding, Selective Forgetting (via Fact-Consolidation). arXiv:2507.05257. Zhuoran Jin, Pengfei Cao, Chenhao Wang, Zhitao He, Hongbang Yuan, Jiachun Li, Yubo Chen, Kang Liu, and Jun Zhao. 2024. RWKU: Benchmarking real-world knowledge unlearning for large language mod-els. In NeurIPS .Letta contributors. 2024. Letta: Stateful agents frame-work (successor to memgpt). https://github. com/letta-ai/letta .Pratyush Maini, Zhili Feng, Avi Schwarzschild, Zachary C. Lipton, and J. Zico Kolter. 2024. TOFU: A task of fictitious unlearning for LLMs. arXiv preprint arXiv:2401.06121 .MemPalace contributors. 2024. Mempalace: An open-source ai memory system. https://github.com/ mempalace/mempalace . Verbatim-retention mem-ory system; baseline on LongMemEval-S. No dele-tion / supersession primitives exposed in the public API. Kevin Meng, David Bau, Alex Andonian, and Yonatan Belinkov. 2022. Locating and editing factual asso-ciations in GPT. In NeurIPS . ROME: knowledge-editing method, foundational supersession-of-facts work. Kevin Meng, Arnab Sen Sharma, Alex Andonian, Yonatan Belinkov, and David Bau. 2023. Mass-editing memory in a transformer. In ICLR . MEMIT: batch knowledge editing in LLM weights. Niklas Muennighoff, Nouamane Tazi, Loïc Magne, and Nils Reimers. 2023. Mteb: Massive text embed-ding benchmark. In EACL . ArXiv:2210.07316. 56 datasets across 8 task families, 112+ languages. Charles Packer, Sarah Wooders, Kevin Lin, Vivian Fang, Shishir G. Patil, Ion Stoica, and Joseph E. Gonzalez. 2023. Memgpt: Towards llms as operating systems. 
+
+arXiv preprint arXiv:2310.08560 .Qdrant team. 2024. fastembed: Fast, accurate, lightweight embeddings via onnx runtime. https: //github.com/qdrant/fastembed .Preston Rasmussen and 1 others. 2025. Zep: A tempo-ral knowledge graph architecture for agent memory. 
+
+arXiv preprint arXiv:2501.13956 .Haoran Tan, Zeyu Zhang, Chen Ma, Xu Chen, Quanyu Dai, and Zhenhua Dong. 2025. MemBench: Towards more comprehensive evaluation on the memory of LLM-based agents. In Findings of the Association for Computational Linguistics (ACL Findings) . Fac-tual vs. reflective memory evaluation; comprehensive benchmark covering effectiveness, efficiency, capac-ity. Nandan Thakur, Nils Reimers, Andreas Rücklé, Ab-hishek Srivastava, and Iryna Gurevych. 2021. Beir: A heterogeneous benchmark for zero-shot evaluation of information retrieval models. In NeurIPS Datasets and Benchmarks . ArXiv:2104.08663. 18 zero-shot IR datasets. Bozhong Tian, Xiaozhuan Liang, Siyuan Cheng, Qing-bin Liu, Mengru Wang, Dianbo Sui, Xi Chen, Hua-jun Chen, and Ningyu Zhang. 2024. To forget or not? towards practical knowledge unlearning for large language models. In Findings of the Associ-ation for Computational Linguistics (EMNLP Find-ings) . Introduces KnowUnDo benchmark with Un-learn / Retention scopes; overlaps with our amnesia / shared_attribute primitive design. Md Nayem Uddin, Kumar Shubham, Eduardo Blanco, Chitta Baral, and Gengyu Wang. 2026. From re-call to forgetting: Benchmarking long-term memory for personalized agents. In Findings of the Associa-tion for Computational Linguistics (ACL Findings) .Introduces FAMA (Forgetting-Aware Memory Accu-racy), a single aggregate metric that penalizes obso-lete / invalidated memory reuse. Evaluates 6 memory agents across 4 LLMs on weeks-to-months person-alized conversations. The benchmark is also named “Memora”; we cite by title to disambiguate from (Xia et al., 2026). arXiv:2604.20006. Di Wu and 1 others. 2025. Longmemeval: Benchmark-ing chat assistants on long-term interactive mem-ory. ICLR . ArXiv:2410.10813. 500 questions across seven categories at two scales (S=115k tokens, M=1.5M tokens). Menglin Xia, Xuchao Zhang, Shantanu Dixit, Para-maguru Harimurugan, Rujia Wang, Victor Ruhle, Robert Sim, Chetan Bansal, and Saravan Rajmohan. 2026. Memora: A harmonic memory representation balancing abstraction and specificity. arXiv preprint arXiv:2602.03315 . Retrieval-method paper from Mi-crosoft Research using the name “Memora” for a RAG+KG memory representation balancing abstrac-tion and specificity. Distinct work from the same-named benchmark of (Uddin et al., 2026). Wujiang Xu and 1 others. 2025. A-mem: Agentic mem-ory for llm agents. arXiv preprint arXiv:2502.12110 .Zep AI. 2025. Graphiti: Temporal knowledge graphs for memory. https://github.com/ getzep/graphiti . Open-source successor to the deprecated Zep CE. Dawen Zhang, Pamela Finckenberg-Broman, Thong Hoang, Shidong Pan, Zhenchang Xing, Mark Staples, and Xiwei Xu. 2023. Right to be forgotten in the era of large language models: Implications, challenges, and solutions. arXiv preprint arXiv:2307.03941 .GDPR right-to-be-forgotten compliance challenges for LLMs; surveys differential privacy, machine un-learning, model editing, guardrails as candidate solu-tions. Yujie Zhao, Boqin Yuan, Junbo Huang, Haocheng Yuan, Zhongming Yu, Haozhou Xu, Lanxiang Hu, Abhilash Shankarampeta, Zimeng Huang, Wentao Ni, Yuan-dong Tian, and Jishen Zhao. 2026. AMA-Bench: Evaluating long-horizon memory for agentic appli-cations. Long-horizon agentic memory benchmark covering states, actions, observations, tool outputs; AMA-Agent baseline achieves 57.22 % accuracy. arXiv:2602.22769. Zexuan Zhong, Zhengxuan Wu, Christopher D. Man-ning, Christopher Potts, and Danqi Chen. 2023. MQUAKE: Assessing knowledge editing in language models via multi-hop questions. In EMNLP . Multi-hop counterfactual evaluation; basis for FactConsoli-dation in (Hu et al., 2026). 
+
+A Reference implementation API surface 
+
+The reference implementation we ship as supple-mentary material stores each memory row with a single scalar depth ∈ R ∪ { void } that collapses its forgetting state into one column ( +∞ pinned; 1.0
+
+surface; (0 , 1) sinking; 0 submerged but logged; 
+
+void erased); every state transition writes one row to an append-only event table, enabling time-travel queries and signed purge receipts. Compound-fact cases use an edit primitive that updates row text and re-indexes the vector + FTS5 entry without changing depth; the LangGraph cross-architecture ablation (Appendix L) demonstrates the same effect via delete-old + add-merged on a backend with-out a native edit primitive, so this is an ergonomic convenience rather than a uniquely necessary ar-chitectural feature. Soft-delete invariants (one-way purge, event-log determinism, monotone decay) follow from textbook SQL semantics on the single-scalar + audit-log schema; we omit the proofs from this paper and ship them with the supplementary source. 
+
+B LLM prompts 
+
+Full text of the three JSON-shaped prompts (supersede , purge_match , release_match ) plus the four-shot examples in the supersede prompt. 
+
+C Worked case examples 
+
+One per attack category, with the per-system pass/-fail breakdown. 
+
+D Post-hoc label partition (§5 Stage-3) 
+
+The Stage-3 labels assigned by running each ad-mitted case through L ETHE (deterministic) and LETHE +LLM (DeepSeek-V3) are post-hoc analyt-ical partitions of the bench against the two systems we develop, not an independent difficulty annota-tion. By construction, L ETHE passes every easy 
+
+case (100 %) and fails every llm_lift case (0 %) — this is a definitional re-statement, not a measure-ment. We report the partition only to make two non-tautological points transparent: (i) how many cases are out of reach of either L ETHE variant in our comparison ( unsolvable ); and (ii) how third-party systems (M EM 0) fare on cuts defined by our reference adapter. The 112 hand-crafted core cases carry the synthetic label manual and are not parti-tioned by the dual-system check. 
+
+Table 4: Population distribution by Stage-3 label, with per-system pass rates on each partition. llm_lift cases pass L ETHE +LLM but fail L ETHE by construction; un-solvable cases fail both L ETHE variants by construc-tion. The manual partition (hand-crafted core) is not labeled by the dual-system check and is reported as-is. The Total of 365 is the v0.5 partition snapshot; the 20 v0.5.1 identifier_obfuscation hand-crafted additions (Appendix E) carry the manual label but were not re-partitioned, so the full v0.5.1 bench (385 cases) exceeds this table by 20.                         
+
+> Label NLETHE MEM 0LETHE +LLM
+> manual (core) 112 70 (63%) 76 (68%) 108 (96%) easy 174 174 (100%) 162 (93%) 173 (99%) llm_lift 55 0 (0%) 13 (24%) 49 (89%) unsolvable 24 0 (0%) 2 (8%) 4 (17%)
+> Total 365 244 (67%) 253 (69%) 334 (92%)
+
+Two observations follow from the partition. 
+
+First, labels predict outcome: LETHE passes exactly the easy (and manual subset it passes by hand-crafted design) and fails llm_lift + un-solvable by construction. Second, unsolvable 
+
+is a small (6.6 %) reservation: 24 cases where every system in our comparison fails (including LETHE +LLM and M EM 0), surfacing residual fail-ure modes worth future work — combinations of compound_fact + paraphrase that defeat even the LLM hook. 
+
+E Judge audit on hand-crafted core 
+
+The Qwen-2.5-72B admission judge admitted 96 of the 112 hand-crafted core cases (85.7%) and re-jected 16. Manual review of every rejection found 
+
+zero genuine bench bugs : every rejected case is well-formed, falling into three characterizable fail-ure modes. We list each by mode below. 
+
+Mode (A): Semantic equivalence (11 cases). 
+
+The judge applies literal substring matching to mutation arguments and concludes that the surviv-ing non-targeted surface form should have been preserved — but the category exists specifically to test whether the system canonicalizes surface forms. This mode hits two categories almost ex-clusively: identifier_obfuscation (cases 02, 08, 09, 12, 14, 16; case-, separator-, plus-tag-, and prefix-form variants) and cross_lingual_identifier 
+
+(cases 03, 06, 07, 12, 13; Korean ↔romanized, Chinese ↔English, Spanish accented ↔unaccented, Hebrew ↔transliteration). 
+
+Mode (B): Multi-row mutation scope (1 case). adv_shared_attribute_04 uses 
+
+release(’everything about Hannah on the team’) , which by design fans out to every row mentioning Hannah; the judge interprets release as targeting one best-matching row and flags the substring leak that disappears once the release semantics are honored. 
+
+Mode (C): Judge computational error (4 cases). 
+
+Four cases trip the judge on its own literal-substring rule: • adv_substring_trap_02 : judge claims the purged row’s content remains part of the sub-string check; under the protocol it does not (the row is removed). • adv_prefix_collision_07 : judge claims 
+
+’case_id 12345 was filed’ is a substring of ’case_id 123456 was filed’ — arith-metically false (the digit ’6’ between ’12345’ and ’ was’ breaks the substring match). • adv_prefix_collision_16 : judge mis-identifies which row the purge(’phone +1-555-0100 office line’) mutation tar-gets. • adv_recursive_supersession_02 : judge confuses intermediate state of a 3-step super-sede chain with the final state. The full per-case data (judge verdict, judge reason, reviewer verdict, failure-mode tag, one-line note) is released in 
+
+data/manual_review_v04.json in the sup-plementary materials. Two methodological conclusions follow. First, the independent LLM-judge admission protocol is useful but not sufficient : on the 7 mechanically-decidable categories (substring_trap, prefix_collision, paraphrase, negation, tempo-ral, shared_attribute, recursive_supersession) judge precision is 92–100%; on the 3 semantic-abstraction categories (identifier_obfuscation, cross_lingual_identifier, compound_fact) precision drops to roughly 65–75%, dominated by mode (A) failures. Second, single-judge designs are not the endpoint — a category-aware admission protocol or an ensemble of category-specific judges would close the mode (A) gap. We leave this for future work and report the audit as a positive finding rather than a hidden limitation. 
+
+F Cross-family judge validation 
+
+To address single-LLM-family admission concerns (R1.1 W3 / R2 §2.4 / R3 C3), we re-judge the same 100-case IAA-stratified sample (§3.3) under three LLM judges from three different model families and compare to the 10-annotator human-majority label: 
+
+Table 5: Three-judge cross-family agreement on the 100-case IAA sample. Human-maj = majority vote across 10 NLP/CS-trained annotators (Fleiss’ κ = 0 .958 ). Claude aligns with human majority on 99/100.                   
+
+> Judge vs. Human vs. Qwen vs. DS-V3 WF/Ill
+> Claude 4.7 (Anthropic) 99 80 59 88/12 Qwen-2.5-72B (Alibaba) 79 —73 92/8 DeepSeek-V3 (DeepSeek) 58 73 —71/29 Human-majority (10 annotators) —79 58 87/13 Cells are agreement counts out of 100 cases.
+
+Three readings. (1) Anthropic-family judge matches humans nearly perfectly (99/100, one disagreement on adv_substring_trap_29 where Claude marks ill / humans wf). This is the strongest LLM–human agreement we measured and vali-dates the admission protocol is reproducible across families. (2) Per-judge WF rate brackets the human rate : Qwen 92/8 (over-permissive), Hu-man 87/13, Claude 88/12, DeepSeek 71/29 (most strict). The Claude WF rate is within 1 case of the human-majority rate; the original Qwen admission rate is 5 cases higher (Qwen accepted 5 cases that humans and Claude reject, all in compound_fact ). 
+
+(3) Of Qwen’s 21 human-disagreements, 10 are 
+
+compound_fact cases where Qwen accepted but Claude+humans rejected. This is the partial-
+
+supersede semantic ambiguity flagged in §6: when a supersede replaces an entire row, the non-superseded half of a compound fact is destroyed — humans and Claude (when tracing literally) reject; Qwen (when reasoning semantically) accepts. Per-case verdicts and the Python script are in the release at iaa/third_judge_claude_summary.json and 
+
+scripts/third_judge_agreement.py .
+
+Three judges, 55/100 unanimous. Claude, Qwen, and DeepSeek all label 55/100 cases identi-cally (all WF; zero cases are unanimously ill across the three LLMs and the human majority). No case has all three LLMs disagreeing with humans. The 45 cases with at least one judge–judge disagree-ment cluster on compound_fact , prefix_collision ,and paraphrase_supersession — exactly the semantic-abstraction categories that drive the 21 Qwen–human disagreements, so the disagreement pattern is a known LLM systematic limitation rather than a content disagreement about specific cases. 
+
+G Hand-crafted vs. LLM-drafted subset breakdown 
+
+FORGET EVAL -Adv is 132 hand-crafted core cases (authored by the research team, no LLM involve-ment) plus 253 LLM-drafted oracle-validated cases. We split the per-case verdicts from §5 along this provenance line to test whether the headline pat-terns (deterministic pass band, mutation-time-hook lift, inscribe-vs-mutation placement asymmetry) are properties of the LLM-drafted complement or hold on the hand-crafted core alone. 
+
+Three readings. (i) Hand-crafted is harder for deterministic stores. The ∼15-pt deterministic gap (Lethe / LangGraph 52–53 % HC vs. 68 % LLM-drafted) means the LLM-drafted comple-ment, despite oracle admission via Qwen judge, ended up systematically easier than what the hu-man authors wrote. We report this as a property of the bench rather than fix it post-hoc (rewriting Table 6: Pass rate on hand-crafted core (HC, 132 cases) vs. LLM-drafted complement (253 cases) for all 10 system configurations. ∆ = HC rate − LLM-drafted rate (negative = HC is harder for this system). Letta / A-MEM / Letta+LLM N/A on shared_attribute (no 
+
+release primitive); their HC denominator drops to 110 and LLM-drafted to 200. Graphiti’s N/A count is large by design (Appendix N).                                  
+
+> System HC LLM-drafted ∆
+> MEM PALACE 0/112 (0.0) 0/253 (0.0) 0.0 LETHE 70/132 (53.0) 174/253 (68.8) −15.7 MEM 086/132 (65.2) 177/253 (70.0) −4.8 LangGraph 69/132 (52.3) 173/253 (68.4) −16.1 Letta 84/110 (76.4) 119/200 (59.5) +16.9 A-MEM 86/110 (78.2) 133/200 (66.5) +11.7 Graphiti 7/72 (9.7) 10/170 (5.9) +3.8 Letta+LLM 95/110 (86.4) 141/200 (70.5) +15.9 LETHE +LLM 128/132 (97.0) 225/253 (88.9) +8.0 LangGraph+LLM 130/132 (98.5) 229/253 (90.5) +8.0
+
+LLM-drafted to harder targets would re-introduce the very circularity this analysis addresses). (ii) Hand-crafted is easier for LLM-hooked stores. 
+
+Lethe+LLM 97.0 % / LangGraph+LLM 98.5 % on HC both exceed their full-suite headline numbers (91.7 / 93.2 %); the mutation-time-hook lift on HC is +46-pt (LangGraph 52.3 →98.5) vs. +22-pt on LLM-drafted (68.4 →90.5). A shared-LLM-inductive-bias account predicts the opposite asym-metry (LLM-hooked systems benefiting more on LLM-drafted cases that share the hook’s induc-tive bias); we observe the reverse on both back-ends. (iii) Inscribe-time placement also holds on HC alone. A-MEM HC 78 % / Letta HC 76 % exceed Mem0 HC 65 % on the canonicalization-heavy hand-crafted subset, reproducing the place-ment asymmetry quantified in §5.7 without LLM-drafted cases. 
+
+H Adapter sources 
+
+Reference Python source for all four adapters (each 
+
+≤130 lines). 
+
+I Memora cross-evaluation, per-persona detail 
+
+Per-persona pass rates for the three adapters on Memora-weekly (§5.5, N = 150 questions across 10 personas and 3 tasks). Rates are out of 15 ques-tions per persona. By Memora task, aggregated across personas: The translation from Memora’s data to our Adapter Protocol is released in 
+
+scripts/eval_on_memora.py ; the per-question verdicts (system, persona, task, question_id, 
+
+Table 7: Per-persona pass rate (out of 15 questions) on Memora-weekly, deterministic substring scoring. Ag-gregate totals at the bottom.                                       
+
+> Persona LETHE LangGraph MEM PALACE
+> academic_researcher 4/15 6/15 7/15 business_executive 4/15 5/15 5/15 content_writer 5/15 6/15 4/15 creative_designer 4/15 8/15 5/15 financial_analyst 4/15 6/15 6/15 management_consultant 4/15 6/15 6/15 marketing_manager 6/15 7/15 7/15 sales_manager 5/15 8/15 7/15 software_engineer 5/15 6/15 6/15 startup_founder 6/15 9/15 7/15
+> Total 47/150 67/150 60/150
+> (31.3%) (44.7%) (40.0%)
+
+Table 8: By-task aggregate (50 questions per task). Rec-ommending collapses uniformly because no adapter implements user-preference modeling, which is outside the forgetting axis as we define it.             
+
+> Task LETHE LangGraph MEM PALACE
+> Remembering 17/50 (34%) 32/50 (64%) 28/50 (56%) Reasoning 30/50 (60%) 32/50 (64%) 32/50 (64%) Recommending 0/50 (0%) 3/50 (6%) 0/50 (0%)
+
+pass/fail, memory_recall_rate, forgetting_rate) are in data/memora_xeval_all_personas.json .
+
+J FactConsolidation cross-evaluation (MemoryAgentBench) 
+
+To probe an independent third-party recall surface that is the natural dual to the Memora cross-evaluation (§5.5), we run six systems — four in-house adapters plus the two LLM-hook variants — on the FactConsolidation 
+
+task of MemoryAgentBench (Hu et al., 2026) (ICLR 2026), an MQUAKE-derived single-and multi-hop fact-supersession benchmark. We use four context-length buckets from the HF release 
+
+ai-hyz/MemoryAgentBench/Conflict_Resolution :sh/mh × 6K/32K, the full 100 questions per bucket (=400 questions total). We skip the 64K and 262K buckets ( >270K-character contexts blow the in-memory index budget on single-CPU adapters). Each fact is inscribed in source order; questions are scored by case-insensitive substring of the gold answer in the top-10 retrieval. 
+
+Three readings. (1) Single-hop saturates at 100 % across all six systems and both context lengths. Both the original and the counterfactual edit appear in the haystack; top-10 substring scor-ing finds the gold answer for either ordering. This is the prediction of our §2 complementarity claim: FactConsolidation tests “can the system retrieve the Table 9: MemoryAgentBench Conflict_Resolution (ai-hyz/MemoryAgentBench ), 100 questions per bucket, top-10 substring scoring. Six systems: four in-house adapters plus two LLM-hook vari-ants. “sh” =single-hop, “mh” =multi-hop chained rea-soning. The LLM-hook variants (L ETHE +LLM, Lang-Graph+LLM) score identically to their deterministic backbones — as expected, since FactConsolidation is pure recall (no supersede/release/purge primitives in-voked), the mutation-time hook never fires. This is the axis-flip third-party check (§5.5). Per-question verdicts in data/factconsolidation_full.json .                            
+
+> System sh_6k mh_6k sh_32k mh_32k
+> LETHE 100/100 28/100 100/100 17/100 LangGraph 100/100 28/100 100/100 17/100 MEM PALACE 100/100 28/100 100/100 17/100 MEM 0i=F 100/100 37/100 100/100 19/100
+> LETHE +LLM 100/100 28/100 100/100 17/100 LangGraph+LLM 100/100 28/100 100/100 17/100
+
+edit?” (a recall-plane question) not “can the system command the original to disappear?” (a control-plane question). (2) Multi-hop drops sharply (28–37 % on 6K, 17–19 % on 32K). Multi-hop requires reasoning across chained facts that lex-ical retrieval alone cannot perform; the remain-ing 60–80 % need an LLM reasoning step over the retrieved chain, which is outside the forgetting axis (a perfect supersede primitive would not help). MEM 0’s slight 9 pt lead on mh_6k (37 vs. 28) and 2 pt on mh_32k reflects its BM25 + entity multi-signal scoring helping chain navigation in lexical surface form. (3) LLM-hook variants are numer-ically identical to their deterministic backbones on every bucket. This is the axis-flip prediction: the mutation-time hook is a control-plane lever (fires on supersede/release/purge); FactConsolida-tion exercises only the recall plane (inscribe-then-retrieve), so the hook never fires and the result is the deterministic baseline. The same systems differ by 23–30 pt on F ORGET EVAL -Adv (Table 2) where control-plane mutations are invoked. Independent third-party data shows the two planes are distinct levers. 
+
+K Cross-LLM ablation on the hook 
+
+We run the same hook prompts across three LLM families on the v0.5.1 385-case suite, and across two backends (L ETHE and LangGraph) to disentan-gle backend from LLM as the source of the lift. The result is a 2-backend × 3-LLM matrix, of which the four DeepSeek-V3 / Qwen-2.5-72B cells are fully run and the two Llama cells fall through to the deterministic baseline (JSON-contract parse fail-ure; Llama × LangGraph not separately run as the deterministic fall-through is backend-symmetric). 
+
+Table 10: Cross-LLM × cross-backend hook ablation on v0.5.1 F ORGET EVAL -Adv (385 cases). Numbers are overall pass % (pass count over 385). ∆ rows show the lift over the deterministic baseline of that backend. Qwen costs more per token than DeepSeek-V3 ($0.42 vs. $0.27/M input on SiliconFlow at submission time) but yields a smaller lift; Llama fails the JSON parse on both backends.                   
+
+> Backend no LLM + Qwen-72B + DeepSeek-V3
+> LETHE 63.4 (244/385) 76.6 (295/385) 91.7 (353/385)
+> ∆—+13 .2+28 .3
+> LangGraph 62.9 (242/385) 75.8 (292/385) 93.2 (359/385)
+> ∆—+12 .9+30 .3
+> + Llama-3.1-70B †—fall-through to deterministic baseline
+> †Llama-3.1-70B’s response format does not parse into our strict JSON contract; both backends fall back to deterministic behaviour (66.8 / 62.9 % respectively). We treat this as a known integration gap, not as a lift result.
+
+Three readings. (1) Lift is consistent across backends. The ∆ from Qwen-2.5-72B is +12.9 to +13.2 across backends (within 0.3 pt); from DeepSeek-V3 it is +28.3 to +30.3 (within 2.0 pt). This is the architecture- agnosticism claim of §5 obs (3) extended to a second LLM family: the lift travels with the contract, not with the stor-age primitive. (2) Lift scales with LLM JSON-following capability. DeepSeek-V3 lifts by ∼28 –
+
+30 pt; Qwen-2.5-72B (smaller, less aggressively instruction-tuned) lifts by ∼13 pt; Llama-3.1-70B fails the contract. Replacing a stronger model with a weaker one degrades the lift gradually rather than discontinuously, unless the LLM can-not follow the JSON contract at all. (3) Qwen has category-specific personality. On the 365-case v0.5 run we observed Qwen scoring +92 % 
+
+on compound_fact (beating DeepSeek’s 78 % )but collapsing on paraphrase_supersession and 
+
+temporal_qualifier due to over-eager supersede planning; the v0.5.1 numbers reproduce this pattern (Qwen temporal_qualifier 27 % on both backends, vs. DeepSeek-V3’s 100 %). Model choice for the hook should weigh per-category requirements, not just aggregate score. 
+
+L Cross-architecture LLM-hook ablation 
+
+To disentangle the LLM-hook contribution from LETHE -specific primitives, we apply the same hook (DeepSeek-V3, same JSON prompts) to Lang-Graph’s InMemoryStore . LangGraph has no in-place edit primitive: for partial supersede the LLM-planned merged text is added as a fresh row replacing the deleted old row (functionally equiva-lent to L ETHE ’s surrender(edit) under substring scoring). 
+
+Table 11: LangGraph + DeepSeek-V3 hook vs. L ETHE 
+
++ DeepSeek-V3 hook on F ORGET EVAL -Adv (385 cases, v0.5.1). The hook is architecture-agnostic — both back-ends reach the same lift within statistical noise.                           
+
+> Category LETHE +LLM LangGraph+LLM
+> substring_trap 36/36 (100%) 36/36 (100%) prefix_collision 31/39 (79%) 31/39 (79%) paraphrase_supersession 31/38 (82%) 31/38 (82%) negation_trap 38/40 (95%) 38/40 (95%) temporal_qualifier 37/37 (100%) 37/37 (100%) shared_attribute 40/40 (100%) 40/40 (100%) compound_fact 31/40 (78%) 34/40 (85%)
+> identifier_obfuscation 35/38 (92%) 38/38 (100%)
+> cross_lingual_identifier 38/38 (100%) 38/38 (100%) recursive_supersession 36/39 (92%) 36/39 (92%)
+> Overall 353/385 ( 91.7 % )359/385 ( 93.2 % )Wilson 95 % [88.4, 94.2] [90.1, 95.4]
+
+Note that LangGraph+LLM slightly outperforms LETHE +LLM on compound_fact (85 % vs. 78 %) and matches on identifier_obfuscation (100 % vs. 92 %) despite lacking a native edit primitive — the LLM-planned “delete-old + add-merged-new” suf-fices. This rules out the edit primitive as a uniquely necessary architectural feature for this benchmark; the architectural contribution is the hook pattern 
+
+(narrow JSON contract at mutation time), not the specific storage backend. 
+
+M A-MEM extended-system evaluation 
+
+To probe how a Zettelkasten-style agentic mem-ory positions on the same surface as the four primary systems, we run A-MEM (Xu et al., 2025) on the full 385-case FORGET EVAL -Adv suite using the same Adapter Protocol; each A-MEM add_note invocation triggers an LLM call to extract agentic tags ( ∼14 s/case wall time, to-tal ∼90 min for the full 385 cases at DeepSeek-V3 via SiliconFlow). A-MEM exposes explicit 
+
+add_note / update / delete primitives at the 
+
+memory_id level, mapping cleanly to our 6-method behavioural contract; it does not expose release ,so all shared_attribute cases (and several sub-string_trap / negation_trap release-dependent cases) are scored N/A by design. The integra-tion uses DeepSeek-V3 via SiliconFlow’s OpenAI-compatible endpoint for the agentic tag-extraction path; we set evo_threshold=100,000 so memory evolution does not fire (the per-note evolution call-back’s JSON output format is sensitive to model family, mirroring the M EM 0 v3 infer=True pilot above). Per-fact add_note , update , and delete 
+
+calls remain functional even when the evolution-time prompt fails to parse, so the deterministic store/update path is exercised in full. Results ap-pear in Table 12. 2
+
+Table 12: A-MEM on the full 385-case F ORGET EVAL -Adv (DeepSeek-V3 via SiliconFlow, evolution disabled). “N/A” indicates the case required release , which A-MEM does not expose. Aggregate computed over the 310 evaluable cases (strict denominator including the 75 N/A cases as failures yields 56.9 %).                             
+
+> Category A-MEM vs. Lethe
+> substring_trap 20/20 (100%) [16 N/A] 92 % prefix_collision 0/39 (0%) 82 % paraphrase_supersession 31/38 (82%) 82 % negation_trap 19/21 (90%) [19 N/A] 95 % temporal_qualifier 37/37 (100%) 100 % shared_attribute — [40 N/A] 88 % compound_fact 0/40 (0%) 0 % identifier_obfuscation 38/38 (100%) 5 % cross_lingual_identifier 38/38 (100%) 0 % recursive_supersession 36/39 (92%) 92 %
+> Overall (evaluable) 219/310 (70.6%) 63.4 %
+> Overall (strict, N/A=fail) 219/385 (56.9%) 63.4 %
+
+Two observations. (1) A-MEM reorganizes the per-category map relative to L ETHE . On 
+
+identifier_obfuscation (L ETHE 5 % → A-MEM 100 %) and cross_lingual_identifier (L ETHE 0 % 
+
+→ A-MEM 100 %) A-MEM closes the gap to the LLM-hooked variants without an explicit mutation-time hook, suggesting the LLM-extracted tags con-tribute to identifier canonicalization even when the evolution prompt’s downstream parsing fails. Conversely on prefix_collision (0/39) and com-pound_fact (0/40) A-MEM matches the determin-istic systems’ floor. (2) The 70.6 % evaluable aggregate is not directly comparable to the four primary systems’ 62.9–68.3 % because the de-nominator excludes 75 release -dependent cases (versus the primary systems’ 385-case denomina-tor including those cases scored deterministically). Normalising to a strict denominator (treating the 75 N/A as failures yields 56.9 %) places A-MEM below the pass band; treating them as out-of-scope (70.6 %) places it slightly above the band. We re-port both interpretations. 
+
+> 2
+
+Run logs and per-case verdicts ship as data/adversarial_results_amem.json ;
+
+data/adversarial_summary_amem.json contains the by-category aggregate. N Graphiti extended-system evaluation 
+
+We benchmark Graphiti (Zep AI, 2025) (graphiti-core, the open-source successor to the depre-cated Zep CE) on the full 385-case F ORGET E-
+
+> VAL
+
+-Adv suite. Graphiti is a temporal knowledge-graph store: each add_episode call routes the input text through an LLM to extract entities + edges, materializing them in Neo4j with tempo-ral validity intervals; edge invalidation provides a deliberate-forgetting analogue. The integration uses DeepSeek-V3.1-Terminus via SiliconFlow’s OpenAI-compatible endpoint for entity/edge ex-traction, BAAI/bge-m3 for embeddings (OpenAI shape), and BAAI/bge-reranker-v2-m3 via Sili-conFlow’s Cohere-format /v1/rerank for cross-encoding. Neo4j runs on a private server; per-case isolation is enforced via fresh group_id .FORGET EVAL -Adv adapter maps inscribe →
+
+add_episode , recall → search (returns synthe-sised edge fact strings, not raw content), and 
+
+supersede → add_episode (relying on Graphiti’s temporal edge invalidation). Graphiti exposes nei-ther a per-query purge (only remove_episode 
+
+by UUID, which is not query-addressable) nor a 
+
+release primitive, so both score N/A. 
+
+Table 13: Graphiti on full 385-case F ORGET EVAL -Adv (DeepSeek-V3.1-Terminus via SiliconFlow, Neo4j 5.x). “N/A” indicates the case required a primitive Graphiti does not expose (release, query-addressable purge). Ag-gregate over 242 evaluable cases; strict-denominator (N/A=fail) is 17/385 = 4.4 %.                             
+
+> Category Graphiti vs. Lethe
+> substring_trap 0/11 (0%) [25 N/A] 92 % prefix_collision — [39 N/A] 82 % paraphrase_supersession 5/38 (13%) 82 % negation_trap 0/21 (0%) [19 N/A] 95 % temporal_qualifier 9/37 (24%) 100 % shared_attribute — [40 N/A] 88 % compound_fact 1/40 (3%) 0 % identifier_obfuscation 0/28 (0%) [10 N/A] 5 % cross_lingual_identifier 0/28 (0%) [10 N/A] 0 % recursive_supersession 2/39 (5%) 92 %
+> Overall (evaluable) 17/242 (7.0%) 63.4 %
+> Overall (strict, N/A=fail) 17/385 (4.4%) 63.4 %
+
+Two observations. (1) Knowledge-graph abstraction sheds the surface forms our adversarial layer probes. Where deter-ministic vector / lexical stores preserve raw text and score 82–100 % on most categories (Lethe column), Graphiti synthesises edges (e.g. 
+
+(Alice)-[HAS_EMAIL]->(alice@x) ) and stores the synthesised fact string; the adversarial 
+
+must_not_contain substrings drop out of the synthesis. This is a categorical mismatch, not a parameter-tuning issue. (2) Graphiti’s rela-tive strengths are on its design surface : tem-poral_qualifier (24 %, the highest evaluable rate) reflects temporal edge invalidation work-ing as designed; paraphrase_supersession 
+
+(13 %) similarly benefits from edge-level up-dates. Categorically weak (0–5 %) on identifier-precision categories (cross_lingual_identifier ,
+
+identifier_obfuscation , compound_fact ). Run note. The SiliconFlow account balance was exhausted during the final 1–3 cases of recur-sive_supersession ; we conservatively count those as FAIL. Replacing them with PASS would change the aggregate by ≤0.5 pt. 
+
+O Letta extended-system evaluation 
+
+We benchmark Letta (Letta contributors, 2024) (the open-source successor to MemGPT, self-hosted via the official Docker image letta/letta:latest 
+
+on a Linux host) on the full 385-case FOR -
+
+> GET
+
+EVAL -Adv suite. Letta’s architecture is agent-scoped: each agent has a core mem-ory + an archival-memory store backed by PostgreSQL + pgvector; passages are inserted into archival memory via embedding, and retrieved by vector similarity over a server-side endpoint that does not invoke the LLM. We exploit this by addressing the archival-memory REST endpoints (POST /GET /DELETE /v1/agents/{aid}/archival-memory ) directly rather than sending messages through the agent’s chat loop, keeping the LLM out of the recall hot path so the comparison is apples-to-apples with the four primary systems. One Letta agent is in-stantiated per test case (agent isolation = group-id isolation). Letta does not expose a soft-delete (“re-lease”) primitive, so shared_attribute cases score N/A. The embedder is BAAI/bge-m3 (1024-d) via SiliconFlow; the LLM (DeepSeek-V3.1-Terminus) is configured but unused on the recall path. Two observations. (1) Letta and A-MEM converge on a similar category profile de-spite very different architectures: Letta uses raw passage embedding + pgvector, A-MEM uses LLM-mediated tag extraction + ChromaDB. Both score 100 % on identifier_obfuscation and 
+
+cross_lingual_identifier , near-perfect on recur-sive_supersession (92 %) and substring_trap 
+
+(95–100 % on the evaluable subset), and 0 % on 
+
+prefix_collision and compound_fact . The con-vergence suggests these categories’ difficulty is de-Table 14: Letta v0.16.7 (Docker, PostgreSQL+pgvector) on the full 385-case F ORGET EVAL -Adv. Recall is direct archival-memory search (no LLM in the loop). “N/A” indicates the case required a primitive Letta does not ex-pose (release). Strict denominator (N/A=fail) is 203/385 = 52.7 %.                             
+
+> Category Letta vs. Lethe
+> substring_trap 19/20 (95%) [16 N/A] 92 % prefix_collision 0/39 (0%) 82 % paraphrase_supersession 32/38 (84%) 82 % negation_trap 19/21 (90%) [19 N/A] 95 % temporal_qualifier 21/37 (57%) 100 % shared_attribute — [40 N/A] 88 % compound_fact 0/40 (0%) 0 % identifier_obfuscation 38/38 (100%) 5 % cross_lingual_identifier 38/38 (100%) 0 % recursive_supersession 36/39 (92%) 92 %
+> Overall (evaluable) 203/310 (65.5%) 63.4 %
+> Overall (strict, N/A=fail) 203/385 (52.7%) 63.4 %
+
+termined by primitive availability (release, partial-edit) rather than backend-specific representation choices. (2) Letta is markedly weaker than A-MEM on temporal_qualifier (57 % vs. 100 %): pure passage embedding cannot disambiguate near-identical timestamps the way A-MEM’s LLM-extracted tags can. This is the only category where the inscribe-time LLM placement provides a non-trivial lift over direct embedding storage. 
+
+P MEM 0 v2.0.2 infer=True 
+
+(token-efficient router) detailed breakdown 
+
+MEM 0’s headline architectural feature is its LLM-driven ADD/UPDATE/DELETE routing: at ev-ery add() call, M EM 0 sends the new fact plus a fingerprint of existing memories to an LLM (the ADDITIVE_EXTRACTION_PROMPT ) which de-cides whether to ADD a new row, UPDATE an existing one, or DELETE a stale one. This is the path infer=True engages; infer=False in our headline (Table 2) bypasses it and stores the literal text only. We therefore report the full 385-case suite under both modes for fairness. The infer=True integration uses DeepSeek-V3 via SiliconFlow (OpenAI-compatible endpoint). DeepSeek-V3 emits malformed JSON (typically commas embedded inside string values: "attributed_to": "user," "linked_memory_ids": ) on ∼25 % of 
+
+ADDITIVE_EXTRACTION_PROMPT responses. A deterministic json-repair pass on top of MEM 0’s extraction parser recovers all of these without API retries (298 / 1200 LLM calls repaired; 0 final parse failures). The infer=True number below therefore measures MEM 0’s algorithm behaviour, not its JSON-parse robustness. 
+
+Table 15: M EM 0 v2.0.2 on F ORGET EVAL -Adv (385 cases), both infer modes, same Adapter Protocol. “ ∆”
+
+= infer=True − infer=False (positive = LLM router helps).                                     
+
+> Category infer=False infer=True ∆
+> substring_trap 32/36 (89) 24/36 (67) −22 prefix_collision 12/39 (31) 0/39 (0) −31 paraphrase_supersession 31/38 (82) 0/38 (0) −82 negation_trap 38/40 (95) 21/40 (52) −43 temporal_qualifier 37/37 (100) 3/37 (8) −92 shared_attribute 38/40 (95) 37/40 (92) −3compound_fact 0/40 (0) 3/40 (8) +8identifier_obfuscation 18/38 (47) 38/38 (100) +53 cross_lingual_identifier 21/38 (55) 38/38 (100) +45 recursive_supersession 36/39 (92) 4/39 (10) −82
+> Overall 263/385 (68.3) 168/385 (43.6) −24.7
+
+Reading the result. The 24.7-pt overall drop hides a category-bimodal pattern: infer=True 
+
+gains +40 -to-+50 pt on the two canonical-ization categories ( identifier_obfuscation and 
+
+cross_lingual_identifier ) by letting the LLM normalize surface variants at write time — the exact mechanism A-MEM and Letta also use in the inscribe-time-LLM regime (§5.7, Fig. 2). It then loses −30 to −90 pt on five deletion-precision categories because MEM 0’s token-efficient ADDITIVE_EXTRACTION_PROMPT system-atically routes “A says X” followed by “A says Y” to LINK-AND-KEEP rather than UPDATE-AND-DELETE, leaving the old fact in the store. This is the regime-level prediction of §5.7: inscribe-time-LLM placement helps canonicalization, hurts deletion-precision, and is partly complementary to mutation-time placement. M EM 0+v3 is a stronger demonstration of the deletion-precision side of that prediction than A-MEM or Letta because M EM 0’s router is more aggressive at the inscribe-time link-and-keep decision. We do not run a parallel M EM 0+v3 with Ope-nAI gpt-4o-mini (M EM 0’s tuned default) because our reproducibility envelope (no OpenAI key) pre-cludes it; the 24.7-pt drop is therefore an upper bound on the infer=True loss in our setup, not a peak-design number for M EM 0. 
+
+Q LongMemEval-S setup and per-type results 
+
+Setup. We run L ETHE v1 on LongMemEval-S (Wu et al., 2025) using the released 
+
+longmemeval_s.json distribution (500 questions, 6 question types). Each question has a haystack of up to 158 conversational sessions; we follow the bench convention and use session granularity 
+
+(one row per session, user-turn texts joined). The retrieval pipeline is L ETHE ’s default hybrid: BM25 (FTS5) + dense ANN (sqlite-vec) over MiniLM-L6-v2 embeddings, fused with reciprocal rank fusion (Cormack et al., 2009) (no LLM hook, no reranker, single CPU). No fine-tuning or in-domain adaptation. 
+
+Table 16: L ETHE v1 on LongMemEval-S at session granularity, all 500 questions. R@ k = fraction of ques-tions where the gold session is in the top-k retrieved.                  
+
+> Question type NR@5
+> knowledge-update 78 0.987 multi-session 133 0.940 single-session-assistant 56 0.964 single-session-preference 30 0.900 single-session-user 70 0.900 temporal-reasoning 133 0.925
+> Overall (micro) 500 0.938
+> R@1=0.796, R@10=0.982
+
+Results. Comparison to public LongMemEval-S num-bers. The originally reported strong baselines on LongMemEval-S use LLM-judged answer ac-curacy rather than retrieval-only R@ k, so direct head-to-head is not apples-to-apples; we report R@ k as the recall-axis number to demonstrate LETHE ’s retrieval component is not the bottle-neck on the F ORGET EVAL -Adv vs. Memora gap discussed in §5.5. Per-question verdicts are in 
+
+data/longmemeval_s_lethe_v1.json for repro-ducibility. 
+
+R External-authored subset 
+
+To address the strongest version of the circularity concern (§3.3: the 132 hand-crafted cases are writ-ten by the paper authors, who also designed the hook), we recruited four external contributors at a different research institute than the paper authors and asked each to independently write 20 adver-sarial cases (80 total) following our 10-category schema. Contributors received only a 6.4 KB plain-text brief specifying the case JSON shape and category definitions; the brief did not reveal the placement hypothesis or any system-specific re-sults, so contributors could not optimize their cases to favour or disfavour any architecture. We run the same Stage-1 structural admission filter as the in-house bench: 77/80 cases admit-ted , 3 rejected for “self-trap” ( must_not_contain 
+
+substring inside a must_contain string). The ad-mitted cases cover all 10 attack categories with 8 cases each, except prefix_collision which drops to 5 (3 rejections fell here). 
+
+Three readings. (1) The canonicalization-side placement asymmetry replicates across the inscribe-time-LLM and vec-only regimes. On 
+
+identifier_obfuscation , all four deterministic stores score ≤ 1/8 while every inscribe-LLM (A-MEM, MEM 0+v3), every vec-only (Letta, OpenMemory), and every LLM-hook system (L ETHE +LLM, LangGraph+LLM, Letta+LLM) scores 8/8 — the same asymmetry observed on the in-house 385 (Fig. 2). On 
+
+cross_lingual_identifier , deterministic stores score 0/8; vec-only and inscribe-LLM systems (Letta, OpenMemory, A-MEM, MEM 0+v3) recover 8/8; LangGraph+LLM 5/8; L ETHE +LLM 0/8 (the external cross-lingual cases include script pairs L ETHE ’s prompt-tuned canonicalizer was not trained on, while embedding neighbourhoods and LLM tag extraction are script-family agnostic). Four independent contributors writing without knowledge of our hypothesis observe the same regime-level pattern. (2) Aggregate lifts on the harder external bar are positive across all place-ment regimes. LETHE +LLM 45.5 % vs. L ETHE 
+
+33.8 % ( +11 .7 pt), LangGraph+LLM 50.6 % vs. LangGraph 32.5 % ( +18 .1 pt), and joint placement 
+
+Letta+LLM 80.3 % evaluable vs. Letta 52.5 % (+27 .8 pt) — the joint-placement lift on external (+27.8) actually exceeds the in-house lift ( +20 .9), confirming the inscribe+mutation complementarity prediction on independently-authored cases. Inscribe-LLM without mutation (A-MEM 42.6 %, MEM 0+v3 24.7 %) saturates at canonicalization gains but cannot reach the mutation-only’s deletion-precision lift. (3) Two categories collapse to 0 % across all six systems and one nearly so. nega-tion_trap (8/8 universal fail), compound_fact 
+
+(8/8), and recursive_supersession (7/8 universal fail) plus shared_attribute at 25–50 % reveal external authors writing materially harder cases than our in-house core: the in-house 95–100 % on negation/temporal/recursive is a saturation artifact of how our authors realised those categories, not a true ceiling. This is consistent with our §6 caveat that the 63–68 % pass band is the empirical saturation of our suite, not a proven upper bound. 
+
+What the external subset shows and does not show. Shows : (a) the inscribe-time-LLM canoni-Table 17: External-authored 77-case subset (4 contributors × 20 cases each, admission-filtered). Aggregate pass rate is substantially lower than the in-house 385-case suite for every system, indicating that external authors writing under the same category schema set a tighter difficulty bar. Per-category, the canonicalization-side placement asymmetry ( identifier_obfuscation , cross_lingual_id ) replicates ; negation_trap , compound_fact , and recur-sive_supersession collapse to 0 % across all systems on this subset, suggesting the external authors’ realisations of these categories exceed what any of our adapters can currently solve.                                                                               
+
+> Cat. LETHE LG MEM PALACE MEM 0LETHE +LLM LG+LLM
+> substr_trap 8/8 8/8 N/A 8/8 8/8 8/8 prefix_coll (n=5) 5/5 5/5 N/A 3/5 5/5 5/5 paraphr_super 6/8 6/8 N/A 5/8 6/8 6/8
+> neg_trap 0/8 0/8 N/A 0/8 0/8 0/8
+> temp_qual 3/8 3/8 N/A 3/8 3/8 3/8 shared_attr 3/8 2/8 N/A 2/8 4/8 3/8
+> compound 0/8 0/8 N/A 0/8 0/8 0/8 ident_obf 0/8 0/8 N/A 1/8 8/8 8/8
+> cross_ling 0/8 0/8 N/A 0/8 0/8 5/8
+> recursive 1/8 1/8 N/A 0/8 1/8 1/8
+> Overall 26/77 25/77 0/77 22/77 35/77 39/77
+> %33.8 32.5 0.0 28.6 45.5 50.6
+
+In-house 385 reference: L ETHE 63.4, LangGraph 62.9, M EM PALACE 0.0, M EM 0 68.3, L ETHE +LLM 91.7, LG+LLM 93.2. 
+
+Table 18: Ecosystem systems on the same 77-case external subset (N/A = primitive not exposed by that backend). Letta+LLM (joint inscr+mut placement) achieves 80.3 % evaluable — a +27 .8-pt lift over Letta-only ( 52 .5 % ), 
+
+exceeding the in-house joint-placement lift of +20 .9 (65 .5→86 .4). Inscribe-LLM systems (A-MEM, Letta, MEM 0+v3) all score 8/8 on identifier_obfuscation and 8/8 on cross_lingual_id , replicating the canonicalization advantage across four independent implementations (two inscribe-LLM, two vec-only).                                                                                             
+
+> Cat. Letta OpMem M0v3 AMEM Graf. Hippo L+LLM
+> substr_trap N/A 0/8 1/8 N/A N/A 0/8 N/A prefix_coll (n=5) N/A 0/5 0/5 N/A N/A 0/5 N/A paraphr_super 4/8 7/8 1/8 1/8 3/8 2/8 4/8
+> neg_trap N/A N/A 0/8 N/A N/A N/A N/A temp_qual 3/8 5/8 0/8 4/8 2/8 1/8 6/8 shared_attr N/A N/A 1/8 N/A N/A N/A N/A
+> compound 0/8 0/8 0/8 0/8 1/8 0/8 0/8
+> ident_obf 8/8 8/8 8/8 8/8 N/A 0/8 8/8
+> cross_ling 8/8 8/8 8/8 8/8 N/A 0/8 8/8
+> recursive 1/8 3/8 0/8 5/8 5/8 1/8 7/8 Pass 32/61 31/61 19/77 26/61 11/32 4/61 49/61 % (eval) 52.5 50.8 24.7 42.6 34.4 6.6 80.3
+> N/A 16 16 016 45 16 16
+
+calization advantage replicates on independently-authored cases; (b) the mutation-time hook lift is positive on both backends ( +11 .7 Lethe, +18 .1
+
+LangGraph) though attenuated relative to in-house (+28 –30 ); (c) the in-house 63–68 % deterministic pass band is provenance-dependent (external au-thors push 5 of 10 categories below the band). Does not show : since 3 categories collapse to 0/8 uni-versally ( negation_trap , compound_fact , near-universal recursive_supersession ), we cannot distinguish among systems on those categories on this subset (no signal). A larger external corpus with calibrated difficulty would strengthen the vali-dation; we ship the brief and protocol so external authors can continue contributing. 
+
+Failure-mode taxonomy. We attribute each all-system failure to one of three root causes using per-case inspection: (i) Substring-scoring blind spot on negation (8 negation_trap cases) : exter-nal authors wrote “Dana does not have production access” which contains “has production access” as a substring, so the affirmative must_not_contain 
+
+string fires on the negated form; this exposes a methodology limitation of our deterministic sub-string scoring (orthogonal to placement claims) and motivates an NLI-aware judge in a future bench revision. (ii) Primitive-existence confirmed (8 
+
+compound_fact cases) : “Henry’s phone is X and email is Y” in a single fact; purge "Henry phone" removes the whole fact, taking the email with it. All six systems fail by construction (no partial-edit primitive), confirming the §5.7 predic-tion that compound_fact is a primitive-existence test. (iii) Over-broad-query semantic execu-tion (7–8 recursive_supersession cases) : ex-ternal query “Iris primary browser” matches all three browser facts in a Chrome →Brave →Chrome chain; all systems honour the wide query and delete every match, leaving the expected “Chrome” 
+
+must_contain unsatisfied (L ETHE , LangGraph, LETHE +LLM, LangGraph+LLM each pass exactly 1/8 by lucky BM25 tiebreak on one chain). This is a real production failure mode (overly-broad GDPR-style purges) the in-house suite did not exercise and is a useful bench extension. Of the 23 cases producing all-system universal failures: 15 are scoring / query-design artifacts of bench construction (i + iii), 8 confirm a known primitive-existence result (ii). Zero are counterex-amples to the placement asymmetry claim itself, which remains intact on identifier_obfuscation 
+
+(deterministic 0/8, LLM-hook 8/8 on both back-ends) and partially cross_lingual_id (Lang-Graph+LLM 5/8). Per-case verdicts (admitted +rejected with reasons) are in 
+
+data/external_subset_cases.json and 
+
+data/external_subset_results.json .
+
+S Real-world failure mapping 
+
+To probe whether F ORGET EVAL -Adv’s primitive families and attack categories reflect documented production failures (reviewer concern: “does this predict real forgetting incidents?”), we map three classes of publicly-reported memory-leak failures from the 2023–2026 timeframe to our taxonomy. We do not run these incidents through our adapter (no public memory-store trace exists for any of them), but the structural mapping shows the bench surface aligns with real failure modes rather than only synthetic adversarial constructions. 
+
+Class 1: GDPR right-to-be-forgotten leakage. 
+
+The 2024–2025 enforcement actions against sev-eral consumer-LLM deployments under GDPR Ar-ticle 17 (European Parliament and Council, 2016) involved a common failure pattern: a user’s dele-tion request was acknowledged at the surface API layer (“data deleted”) but the underlying mem-ory store retained either (a) verbatim copies inside LLM-summarised context blocks, (b) entity-aliased copies under canonicalisation variants, or (c) em-bedded references inside derived facts. This maps directly onto our purge family: prefix_collision 
+
+(a) captures verbatim surface retention; identi-fier_obfuscation and cross_lingual_identifier (b) capture the alias-canonicalisation failure; com-pound_fact (c) captures the embedded-reference failure. Our 22–24-point deterministic-vs. LLM-hook gap on exactly these categories suggests the hook is meaningful production architecture. 
+
+Class 2: stale credential / OTP retention. Re-ported incidents of password managers and AI as-sistants suggesting rotated credentials, or one-time codes persisting across sessions, map onto our su-persession family (latest fact wins recall) and de-cay family (TTL’d fact must leave top-k). Two of our v0.5.1 hand-crafted core identifier_obfuscation cases (license keys, BIC/SWIFT codes) directly mirror reported password-manager misbehaviour where rotation acknowledgement failed. 
+
+Class 3: contradictory profile information. Re-ported failures where AI assistants surface mul-tiple contradictory job titles, family members, or location facts for the same user across sessions map onto our drift family (chained supersession where intermediates leak) and compound_fact 
+
+(one row carrying multiple facts, partial update needed). Our recursive_supersession category specifically tests the case where the chain endpoint recovers a state that matches an earlier-superseded value (Chrome →Brave →Chrome) — the exact mode where production memory stores leak inter-mediate values. 
+
+What this mapping is and is not. This is a struc-tural mapping, not an empirical one: we do not show that systems scoring higher on F ORGET E-
+
+> VAL
+
+-Adv actually leak less in production deploy-ments (which would require enterprise-scale mem-ory traces we do not have). We report the map-ping as a transparency exercise demonstrating that the bench’s categories were designed to mirror re-ported production failure modes rather than chosen for benchmark tractability alone. An empirical correlation study against real memory traces (enter-prise CRM, agentic productivity tools, or AI assis-tants with public deletion logs) is the natural next step and would substantially strengthen ecological validity claims; it is left to future work. 
+
+T Reproducibility 
+
+Single-command regeneration of every table and figure from data/*.json . The benchmark, all adapters, the L ETHE reference store, and the gen-eration scripts are released under MIT at https: //github.com/deeplethe/lethe .
