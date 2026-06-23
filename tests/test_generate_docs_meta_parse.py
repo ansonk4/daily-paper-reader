@@ -210,11 +210,11 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             captured["messages"] = messages
             captured["kwargs"] = kwargs
             return {
-                "tldr": "这是一段足够长的中文速览摘要，用于覆盖研究背景、核心方法和主要贡献。",
-                "motivation": "这是一段研究动机说明。",
-                "method": "这是一段方法说明。",
-                "result": "这是一段结果说明。",
-                "conclusion": "这是一段结论说明。",
+                "tldr": "This overview explains the problem, method, result, and contribution in concise English for the paper page.",
+                "motivation": "The paper targets a concrete research gap.",
+                "method": "The method follows the approach described in the abstract.",
+                "result": "The results indicate a measurable improvement.",
+                "conclusion": "The work offers a reusable direction for follow-up research.",
             }
 
         fallback_client = object()
@@ -232,9 +232,10 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         self.assertIs(captured["client"], fallback_client)
         self.assertEqual(captured["kwargs"]["max_tokens"], 16 * 1024)
         prompt = captured["messages"][2]["content"]
-        self.assertIn("150-220个中文字符", prompt)
-        self.assertIn("30-70个中文字符", prompt)
-        self.assertIn("问题背景→核心方法→关键结果→贡献意义", prompt)
+        self.assertIn("90-140 English words", prompt)
+        self.assertIn("18-45 English words", prompt)
+        self.assertIn("problem setting -> core method -> key result -> contribution/significance", prompt)
+        self.assertIn("All values must be English", prompt)
         self.assertNotIn("每个字段一句话概括", prompt)
 
     def test_generate_glance_uses_explicit_client(self):
@@ -245,11 +246,11 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         def fake_call_llm_structured_json(client, messages, **kwargs):
             captured["client"] = client
             return {
-                "tldr": "这是一段足够长的中文速览摘要，用于覆盖研究背景、核心方法和主要贡献。",
-                "motivation": "这是一段研究动机说明。",
-                "method": "这是一段方法说明。",
-                "result": "这是一段结果说明。",
-                "conclusion": "这是一段结论说明。",
+                "tldr": "This overview explains the problem, method, result, and contribution in concise English for the paper page.",
+                "motivation": "The paper targets a concrete research gap.",
+                "method": "The method follows the approach described in the abstract.",
+                "result": "The results indicate a measurable improvement.",
+                "conclusion": "The work offers a reusable direction for follow-up research.",
             }
 
         original_client = self.mod.LLM_CLIENT
@@ -272,8 +273,9 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
 
         def fake_call_llm_structured_json(client, messages, **kwargs):
             captured["client"] = client
+            captured["messages"] = messages
             captured["kwargs"] = kwargs
-            return {"title_zh": "中文标题", "abstract_zh": "中文摘要"}
+            return {"title_zh": "廣東話標題", "abstract_zh": "廣東話摘要"}
 
         original_client = self.mod.LLM_CLIENT
         original_call = self.mod.call_llm_structured_json
@@ -289,10 +291,14 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             self.mod.LLM_CLIENT = original_client
             self.mod.call_llm_structured_json = original_call
 
-        self.assertEqual(title_zh, "中文标题")
-        self.assertEqual(abstract_zh, "中文摘要")
+        self.assertEqual(title_zh, "廣東話標題")
+        self.assertEqual(abstract_zh, "廣東話摘要")
         self.assertIs(captured["client"], explicit_client)
         self.assertEqual(captured["kwargs"]["max_tokens"], 16 * 1024)
+        prompt_text = "\n".join(message["content"] for message in captured["messages"])
+        self.assertIn("written Cantonese", prompt_text)
+        self.assertIn("Traditional Chinese characters", prompt_text)
+        self.assertIn("avoid Simplified Chinese", prompt_text)
 
 
 if __name__ == "__main__":

@@ -1193,7 +1193,7 @@ window.PrivateDiscussionChat = (function () {
       messages.push({
         role: 'system',
         content:
-          '你是学术讨论助手，负责围绕当前论文内容进行深入分析与讨论。请使用中文回答，并使用 Markdown + LaTeX 表达公式。',
+          'You are an academic discussion assistant. Analyze and discuss the current paper in depth. Answer in English, using Markdown and LaTeX for formulas.',
       });
       // 使用全文上下文（优先 .txt 抽取结果），不再做 8000 字截断
       if (paperContent) {

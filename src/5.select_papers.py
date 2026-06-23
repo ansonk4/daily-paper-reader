@@ -425,15 +425,15 @@ def build_scored_papers(papers: List[Dict[str, Any]], llm_ranked: List[Dict[str,
         tldr_cn = str(item.get("tldr_cn") or "").strip()
         tldr_en = str(item.get("tldr_en") or "").strip()
         legacy = str(item.get("evidence") or "").strip()
-        canonical_evidence = evidence_cn or evidence_en or legacy
-        # 优先保存中英双语；同时保留 llm_evidence 作为“默认展示”字段（优先中文）
+        canonical_evidence = evidence_en or evidence_cn or legacy
+        # Keep compatibility fields, but default displayed evidence/TLDR to English.
         paper["llm_evidence_en"] = evidence_en or legacy
         paper["llm_evidence_cn"] = evidence_cn or (evidence_en or legacy)
-        paper["llm_evidence"] = paper["llm_evidence_cn"]
+        paper["llm_evidence"] = paper["llm_evidence_en"] or paper["llm_evidence_cn"]
         paper["canonical_evidence"] = canonical_evidence
         paper["llm_tldr_en"] = tldr_en
         paper["llm_tldr_cn"] = tldr_cn or tldr_en
-        paper["llm_tldr"] = paper["llm_tldr_cn"]
+        paper["llm_tldr"] = paper["llm_tldr_en"] or paper["llm_tldr_cn"]
         tags = normalize_tags(item.get("tags"))
         matched_query_tag = str(item.get("matched_query_tag") or "").strip()
         if matched_query_tag and matched_query_tag not in tags:

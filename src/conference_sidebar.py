@@ -174,15 +174,15 @@ def build_conference_paper_route(paper: Dict[str, Any], conference: str, years: 
 def get_evidence(ranked_item: Dict[str, Any]) -> str:
     return norm_text(
         ranked_item.get("canonical_evidence")
-        or ranked_item.get("evidence_cn")
         or ranked_item.get("evidence_en")
-        or ranked_item.get("tldr_cn")
+        or ranked_item.get("evidence_cn")
         or ranked_item.get("tldr_en")
+        or ranked_item.get("tldr_cn")
     )
 
 
 def get_tldr(ranked_item: Dict[str, Any]) -> str:
-    return norm_text(ranked_item.get("tldr_cn") or ranked_item.get("tldr_en"))
+    return norm_text(ranked_item.get("tldr_en") or ranked_item.get("tldr_cn"))
 
 
 def ensure_sentence(value: str) -> str:
@@ -191,7 +191,7 @@ def ensure_sentence(value: str) -> str:
         return ""
     if text[-1] in ".。！？!?":
         return text
-    return text + "。"
+    return text + "."
 
 
 def first_sentence(value: str) -> str:
@@ -203,24 +203,24 @@ def first_sentence(value: str) -> str:
 
 
 def build_glance_fields(paper: Dict[str, Any], ranked_item: Dict[str, Any]) -> Dict[str, str]:
-    title = norm_text(paper.get("title")) or "该论文"
+    title = norm_text(paper.get("title")) or "this paper"
     evidence = get_evidence(ranked_item)
     tldr = get_tldr(ranked_item) or evidence
     query_text = norm_text(ranked_item.get("matched_query_text"))
     return {
-        "tldr": ensure_sentence(tldr or f"{title} 是一篇会议检索命中的相关论文"),
+        "tldr": ensure_sentence(tldr or f"{title} is a relevant paper matched by the conference retrieval pipeline"),
         "motivation": ensure_sentence(
-            norm_text(ranked_item.get("motivation_cn")) or evidence or "本文关注会议检索需求中的相关研究问题"
+            norm_text(ranked_item.get("motivation_cn")) or evidence or "The paper addresses a research problem related to the conference retrieval request"
         ),
         "method": ensure_sentence(
-            norm_text(ranked_item.get("method_cn")) or "方法细节请参考摘要与 OpenReview 原文"
+            norm_text(ranked_item.get("method_cn")) or "Method details should be checked in the abstract and OpenReview original"
         ),
         "result": ensure_sentence(
-            norm_text(ranked_item.get("result_cn")) or tldr or evidence or "结果与实验结论请参考摘要与原文"
+            norm_text(ranked_item.get("result_cn")) or tldr or evidence or "Results and experimental conclusions should be checked in the abstract and original paper"
         ),
         "conclusion": ensure_sentence(
             norm_text(ranked_item.get("conclusion_cn"))
-            or (f"该论文与检索需求“{query_text}”相关" if query_text else "该论文与当前会议检索需求相关")
+            or (f"The paper is relevant to the retrieval request \"{query_text}\"" if query_text else "The paper is relevant to the current conference retrieval request")
         ),
     }
 
@@ -245,23 +245,23 @@ def build_conference_summary_lines(
         "",
         "## 论文详细总结（自动生成）",
         "",
-        "### 1. 检索相关性",
-        ensure_sentence(evidence or "该论文由会议检索链路召回，具体相关性可结合检索需求和原文进一步判断"),
+        "### 1. Retrieval Relevance",
+        ensure_sentence(evidence or "This paper was recalled by the conference retrieval pipeline; judge its exact relevance against the retrieval request and original text"),
         "",
-        "### 2. 核心内容",
-        ensure_sentence(tldr or first_sentence(abstract) or "核心内容请参考摘要与 OpenReview 原文"),
+        "### 2. Core Content",
+        ensure_sentence(tldr or first_sentence(abstract) or "Core content should be checked in the abstract and OpenReview original"),
         "",
-        "### 3. 对应检索需求",
-        ensure_sentence(query_text or "当前结果未记录具体命中的检索需求"),
+        "### 3. Matched Retrieval Request",
+        ensure_sentence(query_text or "This result did not record the specific matched retrieval request"),
         "",
-        "### 4. 来源与原文",
+        "### 4. Source and Original Text",
     ]
     if source:
         lines.append(f"- Source：{source}")
     if link:
         lines.append(f"- OpenReview：[{link}]({link})")
     if not source and not link:
-        lines.append("- 来源信息未记录。")
+        lines.append("- Source information was not recorded.")
     lines.append("")
     return lines
 
@@ -344,6 +344,8 @@ def ensure_conference_media(
 def is_generated_deep_summary(text: str) -> bool:
     summary = norm_text(text)
     if not summary:
+        return False
+    if "### 1. Retrieval Relevance" in summary[:500] and "### 4. Source and Original Text" in summary[:1500]:
         return False
     if "### 1. 检索相关性" in summary[:500] and "### 4. 来源与原文" in summary[:1500]:
         return False

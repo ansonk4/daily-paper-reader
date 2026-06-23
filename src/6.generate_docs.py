@@ -303,16 +303,18 @@ def translate_title_and_abstract_to_zh(
         return "", ""
 
     system_prompt = (
-        "你是一名熟悉机器学习与自然科学论文的专业翻译，请将英文标题和摘要翻译为自然、准确的中文。"
-        "保持学术风格，尽量保留专有名词，不要额外添加评论。"
+        "You are a professional translator for machine learning and natural science papers. "
+        "Translate the English title and abstract into natural written Cantonese, using Traditional Chinese characters "
+        "and Hong Kong written style. Keep the academic meaning precise, preserve necessary technical terms, "
+        "avoid Simplified Chinese, and do not add commentary."
     )
     payload = {"title": title, "abstract": abstract}
     user_text = json.dumps(payload, ensure_ascii=False)
 
     user_prompt = (
-        "请将上面的 JSON 中的 title 与 abstract 翻译成中文，并严格输出 JSON：\n"
+        "Translate the title and abstract from the JSON above into written Cantonese, and return strict JSON:\n"
         "{\"title_zh\": \"...\", \"abstract_zh\": \"...\"}\n"
-        "要求：只输出 JSON，不要输出任何其它说明文字。\n"
+        "The JSON keys must stay title_zh and abstract_zh for compatibility, but the values must be written Cantonese.\n"
         "Output must be strict JSON only, no markdown, no fences, no extra text."
     )
     messages = [
@@ -555,21 +557,21 @@ def generate_deep_summary(
             paper_txt_content = f.read()
 
     system_prompt = (
-        "你是一名资深学术论文分析助手，请使用中文、以 Markdown 形式，"
-        "对给定论文做结构化、深入、客观的总结。"
+        "You are a senior academic paper analysis assistant. Write in English and use Markdown "
+        "to produce a structured, in-depth, objective summary of the given paper."
     )
     user_prompt = (
-        "请基于下面提供的论文内容，生成一段详细的中文总结，要求按照如下要点依次展开：\n"
-        "1. 论文的核心问题与整体含义（研究动机和背景）。\n"
-        "2. 论文提出的方法论：核心思想、关键技术细节、公式或算法流程（用文字说明即可）。\n"
-        "3. 实验设计：使用了哪些数据集 / 场景，它的 benchmark 是什么，对比了哪些方法。\n"
-        "4. 资源与算力：如果文中有提到，请总结使用了多少算力（GPU 型号、数量、训练时长等）。若未明确说明，也请指出这一点。\n"
-        "5. 实验数量与充分性：大概做了多少组实验（如不同数据集、消融实验等），这些实验是否充分、是否客观、公平。\n"
-        "6. 论文的主要结论与发现。\n"
-        "7. 优点：方法或实验设计上有哪些亮点。\n"
-        "8. 不足与局限：包括实验覆盖、偏差风险、应用限制等。\n\n"
-        "请用分层标题和项目符号（Markdown 格式）组织上述内容，语言尽量简洁但信息要尽量完整。\n"
-        "要求：最后单独输出一行“（完）”作为结束标记。"
+        "Based on the paper content below, generate a detailed English summary that covers these points in order:\n"
+        "1. The core problem and overall meaning, including motivation and background.\n"
+        "2. The proposed methodology: core idea, key technical details, formulas, or algorithm flow in prose.\n"
+        "3. Experimental design: datasets, scenarios, benchmarks, and compared methods.\n"
+        "4. Resources and compute: summarize GPU type, count, training time, or other compute details if mentioned; explicitly say if the paper does not specify them.\n"
+        "5. Number and sufficiency of experiments: roughly how many experiment groups were run, and whether they appear sufficient, objective, and fair.\n"
+        "6. Main conclusions and findings.\n"
+        "7. Strengths in the method or experimental design.\n"
+        "8. Weaknesses and limitations, including coverage, bias risk, and application constraints.\n\n"
+        "Use hierarchical Markdown headings and bullet points. Keep the language concise but information-rich.\n"
+        "Requirement: end with a standalone line containing exactly \"(done)\"."
     )
 
     messages = [{"role": "system", "content": system_prompt}]
@@ -588,20 +590,20 @@ def generate_deep_summary(
             last = summary
             if os.getenv("DPR_DEBUG_STEP6") == "1":
                 log(f"[DEBUG][STEP6] deep_summary attempt={attempt} len={len(summary)} tail={summary[-20:]!r}")
-            if "（完）" in summary:
+            if "(done)" in summary or "（完）" in summary:
                 return summary
             # 续写一次：避免输出被截断
             cont_messages = [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": "你上一次的总结可能被截断了，请从中断处继续补全，不要重复已输出内容。"},
-                {"role": "user", "content": f"上一次输出如下：\n\n{summary}\n\n请继续补全，最后以一行“（完）”结束。"},
+                {"role": "user", "content": "Your previous summary may have been truncated. Continue from the interruption point without repeating existing content."},
+                {"role": "user", "content": f"Previous output:\n\n{summary}\n\nContinue and finish with a standalone line containing exactly \"(done)\"."},
             ]
             cont = call_llm_text(active_client, cont_messages, temperature=0.3, max_tokens=2048)
             cont = (cont or "").strip()
             merged = f"{summary}\n\n{cont}".strip()
             if os.getenv("DPR_DEBUG_STEP6") == "1":
                 log(f"[DEBUG][STEP6] deep_summary_cont attempt={attempt} len={len(cont)} merged_tail={merged[-20:]!r}")
-            if "（完）" in merged:
+            if "(done)" in merged or "（完）" in merged:
                 return merged
         except Exception as e:
             log(f"[WARN] 精读总结失败（第 {attempt} 次）：{e}")
@@ -624,16 +626,16 @@ def generate_glance_overview(
         log("[WARN] 未配置 LLM_CLIENT，跳过速览生成。")
         return None
 
-    system_prompt = "你是论文速览助手，请用中文生成信息密度高、但不冗长的论文速览。"
+    system_prompt = "You are a paper overview assistant. Generate information-dense but concise paper overviews in English."
     payload = {"title": title, "abstract": abstract}
     user_text = json.dumps(payload, ensure_ascii=False)
     user_prompt = (
-        "请基于上面的 JSON 中的 title 和 abstract，输出一个中文速览摘要，严格返回 JSON（不要输出任何其它文字）：\n"
+        "Based on the title and abstract in the JSON above, output an English paper overview as strict JSON:\n"
         "{\"tldr\":\"...\",\"motivation\":\"...\",\"method\":\"...\",\"result\":\"...\",\"conclusion\":\"...\"}\n"
-        "要求：\n"
-        "- tldr：150-220个中文字符，不是一句话口号；通常写成3-4个短句，按“问题背景→核心方法→关键结果→贡献意义”的顺序组织\n"
-        "- motivation/method/result/conclusion：每个字段30-70个中文字符，通常一句话；对标论文页速览卡片，简洁但必须包含具体信息\n"
-        "- 不要把英文句子放进中文字段；可保留必要英文术语或模型名\n"
+        "Requirements:\n"
+        "- tldr: 90-140 English words, not a slogan; usually 3-4 short sentences organized as problem setting -> core method -> key result -> contribution/significance.\n"
+        "- motivation/method/result/conclusion: each field should be 18-45 English words, usually one concrete sentence suitable for a paper-page overview card.\n"
+        "- All values must be English; preserve necessary technical terms and model names.\n"
         "Output must be strict JSON only, no markdown, no fences, no extra text."
     )
 
@@ -678,11 +680,11 @@ def generate_glance_overview(
                 continue
             return "\n".join(
                 [
-                    f"**TLDR**：{ensure_single_sentence_end(tldr)} \\",
-                    f"**Motivation**：{ensure_single_sentence_end(motivation)} \\",
-                    f"**Method**：{ensure_single_sentence_end(method)} \\",
-                    f"**Result**：{ensure_single_sentence_end(result)} \\",
-                    f"**Conclusion**：{ensure_single_sentence_end(conclusion)}",
+                    f"**TLDR**: {ensure_single_sentence_end(tldr)} \\",
+                    f"**Motivation**: {ensure_single_sentence_end(motivation)} \\",
+                    f"**Method**: {ensure_single_sentence_end(method)} \\",
+                    f"**Result**: {ensure_single_sentence_end(result)} \\",
+                    f"**Conclusion**: {ensure_single_sentence_end(conclusion)}",
                 ]
             )
         except Exception as e:
@@ -709,7 +711,7 @@ def build_glance_fallback(paper: Dict[str, Any]) -> str:
     """
     abstract = str(paper.get("abstract") or "").strip()
     tldr = (
-        str(paper.get("llm_tldr_cn") or paper.get("llm_tldr") or paper.get("llm_tldr_en") or "").strip()
+        str(paper.get("llm_tldr_en") or paper.get("llm_tldr") or paper.get("llm_tldr_cn") or "").strip()
     )
     evidence = str(paper.get("canonical_evidence") or "").strip()
 
@@ -724,10 +726,10 @@ def build_glance_fallback(paper: Dict[str, Any]) -> str:
         tldr = first_sentence(abstract)
     if not tldr and evidence:
         tldr = evidence
-    tldr = ensure_single_sentence_end(tldr or "基于摘要生成的速览信息。")
+    tldr = ensure_single_sentence_end(tldr or "Overview generated from the abstract.")
 
     motivation = ensure_single_sentence_end(
-        first_sentence(evidence) or "本文关注一个具有代表性的研究问题，并尝试提升现有方法的效果或可解释性。"
+        first_sentence(evidence) or "The paper addresses a representative research problem and aims to improve current methods or their interpretability."
     )
 
     method_hint = ""
@@ -735,24 +737,24 @@ def build_glance_fallback(paper: Dict[str, Any]) -> str:
         m = re.search(r"(we (?:propose|present|introduce|develop)[^\\.]{0,200})\\.", abstract, re.I)
         if m:
             method_hint = m.group(1).strip()
-    method = ensure_single_sentence_end(method_hint or "方法与实现细节请参考摘要与正文。")
+    method = ensure_single_sentence_end(method_hint or "Method and implementation details should be checked in the abstract and full text.")
 
     result_hint = ""
     if abstract:
         m = re.search(r"(experiments? (?:show|demonstrate)[^\\.]{0,200})\\.", abstract, re.I)
         if m:
             result_hint = m.group(1).strip()
-    result = ensure_single_sentence_end(result_hint or "结果与对比结论请参考摘要与正文。")
+    result = ensure_single_sentence_end(result_hint or "Results and comparison conclusions should be checked in the abstract and full text.")
 
-    conclusion = ensure_single_sentence_end("总体而言，该工作在所述任务上展示了有效性，并提供了可复用的思路或工具。")
+    conclusion = ensure_single_sentence_end("Overall, the work shows effectiveness on the described task and offers reusable ideas or tools.")
 
     return "\n".join(
         [
-            f"**TLDR**：{tldr} \\",
-            f"**Motivation**：{motivation} \\",
-            f"**Method**：{method} \\",
-            f"**Result**：{result} \\",
-            f"**Conclusion**：{conclusion}",
+            f"**TLDR**: {tldr} \\",
+            f"**Motivation**: {motivation} \\",
+            f"**Method**: {method} \\",
+            f"**Result**: {result} \\",
+            f"**Conclusion**: {conclusion}",
         ]
     )
 
@@ -934,52 +936,52 @@ def build_daily_brief_summary(
     run_status: str,
 ) -> str:
     if total_count == 0:
-        return "> 今日无新推荐，系统未产出可展示论文。"
+        return "> No new recommendations today; the system did not produce papers to display."
 
     def _format_preview_item(paper_id: str, title: str, tags: List[Tuple[str, str]]) -> str:
         name = ((title or "").strip() or paper_id)
         score = _entry_score_text(tags)
-        return f"《{name}》（{score}）" if score else f"《{name}》"
+        return f"{name} ({score})" if score else name
 
     deep_preview = [_format_preview_item(paper_id, title, tags) for paper_id, title, tags in deep_entries[:2] if (title or paper_id)]
     quick_preview = [_format_preview_item(paper_id, title, tags) for paper_id, title, tags in quick_entries[:3] if (title or paper_id)]
     highlight = []
     if deep_preview:
-        highlight.append(f"- 精读：{', '.join(deep_preview)}")
+        highlight.append(f"- Deep reads: {', '.join(deep_preview)}")
     if quick_preview:
-        highlight.append(f"- 速读：{', '.join(quick_preview)}")
+        highlight.append(f"- Quick reads: {', '.join(quick_preview)}")
     if not highlight:
         return (
-            f"- 状态：{run_status}。\n"
-            f"- 已完成今日生成，共收录 {total_count} 篇（精读 {len(deep_entries)} 篇，速读 {len(quick_entries)} 篇）。"
+            f"- Status: {run_status}.\n"
+            f"- Generation completed with {total_count} papers ({len(deep_entries)} deep reads, {len(quick_entries)} quick reads)."
         )
 
     fallback = (
-        f"- 今日共生成 {total_count} 篇推荐（精读 {len(deep_entries)} 篇，速读 {len(quick_entries)} 篇）\n"
+        f"- Generated {total_count} recommendations today ({len(deep_entries)} deep reads, {len(quick_entries)} quick reads).\n"
         + "\n".join(highlight)
-        + "\n- 这些结果覆盖了当下较热的方向，建议先看精读区论文的关键问题与方法。"
+        + "\n- Start with the deep-read papers to review the key problems and methods first."
     )
 
     if LLM_CLIENT is None:
         return fallback
 
     system_prompt = (
-        "你是日报编辑，请输出 3 句以内、吸引人、简洁但具体的中文总结。"
-        "内容必须基于给定的推荐数据，不要编造论文信息。"
+        "You are a daily paper digest editor. Write an engaging, concise, specific English summary in no more than 3 sentences. "
+        "Use only the provided recommendation data and do not invent paper details."
     )
     user_prompt = (
-        f"日报日期：{date_label}\n"
-        f"状态：{run_status}\n"
-        f"总数：{total_count} 篇\n"
-        f"精读：{len(deep_entries)} 篇\n"
-        f"速读：{len(quick_entries)} 篇\n"
-        f"精读列表（含分数）：{json.dumps(deep_preview, ensure_ascii=False)}\n"
-        f"速读列表（含分数）：{json.dumps(quick_preview, ensure_ascii=False)}\n\n"
-        "请按以下格式输出：\n"
-        "1) 一句概括今天做了什么，适合标题感官。\n"
-        "2) 一句给出最值得看的 1~2 个方向/结论。\n"
-        "3) 一句给出下步建议（面向普通读者）。\n"
-        "直接输出 1-3 行文本，不要 Markdown 标题，也不要 JSON。"
+        f"Daily date: {date_label}\n"
+        f"Status: {run_status}\n"
+        f"Total papers: {total_count}\n"
+        f"Deep reads: {len(deep_entries)}\n"
+        f"Quick reads: {len(quick_entries)}\n"
+        f"Deep-read list with scores: {json.dumps(deep_preview, ensure_ascii=False)}\n"
+        f"Quick-read list with scores: {json.dumps(quick_preview, ensure_ascii=False)}\n\n"
+        "Output format:\n"
+        "1. One sentence summarizing what was generated today.\n"
+        "2. One sentence naming the 1-2 most worth-reading directions or takeaways.\n"
+        "3. One sentence giving a next-step recommendation for a general reader.\n"
+        "Output 1-3 lines of plain English text only, with no Markdown heading and no JSON."
     )
     try:
         content = call_llm_text(
@@ -1024,7 +1026,7 @@ def build_latest_report_section(
     paper_evidence_by_id: Dict[str, str],
 ) -> str:
     effective_label = (date_label or "").strip() or format_date_str(date_str)
-    run_status = "成功" if recommend_exists else "未产出 recommend 文件（视为无结果）"
+    run_status = "success" if recommend_exists else "no recommend file produced (treated as no result)"
     total = len(deep_entries) + len(quick_entries)
     summary = build_daily_brief_summary(
         date_label=effective_label,
@@ -1035,15 +1037,15 @@ def build_latest_report_section(
     )
 
     lines: List[str] = []
-    lines.append(f"- 最新运行日期：{effective_label}")
-    lines.append(f"- 运行时间：{generated_at}")
-    lines.append(f"- 运行状态：{run_status}")
-    lines.append(f"- 本次总论文数：{total}")
-    lines.append(f"- 精读区：{len(deep_entries)}")
-    lines.append(f"- 速读区：{len(quick_entries)}")
+    lines.append(f"- Latest run date: {effective_label}")
+    lines.append(f"- Run time: {generated_at}")
+    lines.append(f"- Run status: {run_status}")
+    lines.append(f"- Total papers: {total}")
+    lines.append(f"- Deep reads: {len(deep_entries)}")
+    lines.append(f"- Quick reads: {len(quick_entries)}")
     if summary:
         lines.append("")
-        lines.append("### 今日简报（AI）")
+        lines.append("### Daily Brief (AI)")
         lines.append(summary)
     if RANGE_DATE_RE.match(date_str):
         report_href = build_docsify_id_href(f"{date_str}/README")
@@ -1051,31 +1053,31 @@ def build_latest_report_section(
         ym = date_str[:6]
         day = date_str[6:]
         report_href = build_docsify_id_href(f"{ym}/{day}/README")
-    lines.append(f"- 详情：[{report_href}]({report_href})")
+    lines.append(f"- Details: [{report_href}]({report_href})")
     lines.append("")
-    lines.append("### 精读区论文标签")
+    lines.append("### Deep-Read Paper Tags")
     if deep_entries:
         for idx, (paper_id, title, tags) in enumerate(deep_entries, start=1):
             safe_title = (title or "").strip() or paper_id
             evidence = (paper_evidence_by_id.get(str(paper_id).strip(), "") or "").strip()
             lines.append(f"{idx}. [{safe_title}]({build_docsify_id_href(paper_id)})  ")
-            lines.append(f"   标签：{_format_entry_tags(tags)}")
+            lines.append(f"   tags: {_format_entry_tags(tags)}")
             if evidence:
-                lines.append(f"   evidence：{evidence}")
+                lines.append(f"   evidence: {evidence}")
     else:
-        lines.append("- 本次无精读推荐。")
+        lines.append("- No deep-read recommendations this run.")
     lines.append("")
-    lines.append("### 速读区论文标签")
+    lines.append("### Quick-Read Paper Tags")
     if quick_entries:
         for idx, (paper_id, title, tags) in enumerate(quick_entries, start=1):
             safe_title = (title or "").strip() or paper_id
             evidence = (paper_evidence_by_id.get(str(paper_id).strip(), "") or "").strip()
             lines.append(f"{idx}. [{safe_title}]({build_docsify_id_href(paper_id)})  ")
-            lines.append(f"   标签：{_format_entry_tags(tags)}")
+            lines.append(f"   tags: {_format_entry_tags(tags)}")
             if evidence:
-                lines.append(f"   evidence：{evidence}")
+                lines.append(f"   evidence: {evidence}")
     else:
-        lines.append("- 本次无速读推荐。")
+        lines.append("- No quick-read recommendations this run.")
     lines.append("")
     return "\n".join(lines)
 
@@ -1323,9 +1325,9 @@ def build_markdown_content(
     score = paper.get("llm_score")
     evidence = str(paper.get("canonical_evidence") or "").strip()
     tldr = (
-        paper.get("llm_tldr_cn")
+        paper.get("llm_tldr_en")
         or paper.get("llm_tldr")
-        or paper.get("llm_tldr_en")
+        or paper.get("llm_tldr_cn")
         or ""
     ).strip()
     abstract_en = (paper.get("abstract") or "").strip()
@@ -1838,7 +1840,7 @@ def build_day_report_markdown(
     effective_label = (date_label or "").strip() or format_date_str(date_str)
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     total = len(deep_entries) + len(quick_entries)
-    run_status = "成功" if recommend_exists else "未产出 recommend 文件（视为无结果）"
+    run_status = "success" if recommend_exists else "no recommend file produced (treated as no result)"
     summary = build_daily_brief_summary(
         date_label=effective_label,
         deep_entries=deep_entries,
@@ -1848,49 +1850,49 @@ def build_day_report_markdown(
     )
 
     lines: List[str] = []
-    lines.append(f"# 日报 · {effective_label}")
+    lines.append(f"# Daily Report · {effective_label}")
     lines.append("")
-    lines.append(f"- 生成时间：{generated_at}")
-    lines.append(f"- 当次推荐总数：{total}")
-    lines.append(f"- 精读区：{len(deep_entries)}")
-    lines.append(f"- 速读区：{len(quick_entries)}")
+    lines.append(f"- Generated at: {generated_at}")
+    lines.append(f"- Total recommendations: {total}")
+    lines.append(f"- Deep reads: {len(deep_entries)}")
+    lines.append(f"- Quick reads: {len(quick_entries)}")
     if summary:
         lines.append("")
-        lines.append("## 今日简报（AI）")
+        lines.append("## Daily Brief (AI)")
         lines.append(summary)
     lines.append("")
 
     if not recommend_exists:
-        lines.append("> 本次未找到 recommend 结果文件。")
+        lines.append("> No recommend result file was found for this run.")
         lines.append("")
     elif total == 0:
-        lines.append("> 本次触发没有产出可推荐论文。")
+        lines.append("> This run did not produce recommended papers.")
         lines.append("")
 
-    lines.append("## 精读区")
+    lines.append("## Deep Reads")
     if deep_entries:
         for idx, (paper_id, title, _tags) in enumerate(deep_entries, start=1):
             safe_title = (title or "").strip() or paper_id
             score = _entry_score_text(_tags)
-            suffix = f"（{score}）" if score else ""
+            suffix = f"({score})" if score else ""
             lines.append(f"{idx}. [{safe_title}]({build_docsify_id_href(paper_id)}) {suffix}")
     else:
-        lines.append("- 本次无精读推荐。")
+        lines.append("- No deep-read recommendations this run.")
     lines.append("")
 
-    lines.append("## 速读区")
+    lines.append("## Quick Reads")
     if quick_entries:
         for idx, (paper_id, title, _tags) in enumerate(quick_entries, start=1):
             safe_title = (title or "").strip() or paper_id
             score = _entry_score_text(_tags)
-            suffix = f"（{score}）" if score else ""
+            suffix = f"({score})" if score else ""
             lines.append(f"{idx}. [{safe_title}]({build_docsify_id_href(paper_id)}) {suffix}")
     else:
-        lines.append("- 本次无速读推荐。")
+        lines.append("- No quick-read recommendations this run.")
     lines.append("")
 
     lines.append("---")
-    lines.append("使用键盘方向键可在日报/论文之间快速切换。")
+    lines.append("Use the keyboard arrow keys to move between the daily report and papers.")
     lines.append("")
     return "\n".join(lines)
 

@@ -56,8 +56,8 @@ class ConferenceSidebarTest(unittest.TestCase):
                 {
                     "paper_id": "openreview-icml-2025-abc123",
                     "score": 9,
-                    "canonical_evidence": "命中 ICML 会议检索需求。",
-                    "title_zh": "会议论文中文标题",
+                    "canonical_evidence": "Matches the ICML conference retrieval request.",
+                    "title_zh": "會議論文廣東話標題",
                     "matched_query_tag": "query:rl:composite",
                 }
             ],
@@ -88,7 +88,7 @@ class ConferenceSidebarTest(unittest.TestCase):
                 {
                     "paper_id": paper_id,
                     "score": 9,
-                    "canonical_evidence": "命中会议检索需求。",
+                    "canonical_evidence": "Matches the conference retrieval request.",
                     "matched_query_tag": tag,
                 }
             ],
@@ -123,7 +123,7 @@ class ConferenceSidebarTest(unittest.TestCase):
             paper_md = tmp_path / "docs" / "conference" / "icml-2025" / "openreview-icml-2025-abc123-a-conference-paper.md"
             self.assertTrue(paper_md.exists())
             md_text = paper_md.read_text(encoding="utf-8")
-            self.assertIn("title_zh: 会议论文中文标题", md_text)
+            self.assertIn("title_zh: 會議論文廣東話標題", md_text)
             self.assertIn("pdf: \"https://openreview.net/pdf?id=abc123\"", md_text)
             self.assertIn("source: ICML-2025-Accepted", md_text)
             self.assertIn('tags: ["query:rl"]', md_text)
@@ -132,14 +132,14 @@ class ConferenceSidebarTest(unittest.TestCase):
             self.assertIn("selection_source: conference_retrieval", md_text)
             self.assertIn("motivation:", md_text)
             self.assertIn("method:", md_text)
-            self.assertIn("method: 方法细节请参考摘要与 OpenReview 原文。", md_text)
+            self.assertIn("method: Method details should be checked in the abstract and OpenReview original.", md_text)
             self.assertNotIn("method: This paper proposes", md_text)
             self.assertIn("result:", md_text)
             self.assertIn("conclusion:", md_text)
             self.assertIn("## Abstract", md_text)
             self.assertIn("## 论文详细总结（自动生成）", md_text)
-            self.assertIn("### 1. 检索相关性", md_text)
-            self.assertIn("### 4. 来源与原文", md_text)
+            self.assertIn("### 1. Retrieval Relevance", md_text)
+            self.assertIn("### 4. Source and Original Text", md_text)
             self.assertNotIn("# A Conference Paper", md_text)
             self.assertNotIn("## 命中理由", md_text)
 
