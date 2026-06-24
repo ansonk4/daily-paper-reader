@@ -1302,14 +1302,32 @@ window.PrivateDiscussionChat = (function () {
       if (!resp.body) {
         // 回退：如果不支持流，则按一次性响应处理
         const data = await resp.json();
-        const answer =
+        const message =
           data &&
           data.choices &&
           data.choices[0] &&
-          data.choices[0].message &&
-          data.choices[0].message.content
-            ? data.choices[0].message.content
-            : '（模型未返回内容）';
+          data.choices[0].message
+            ? data.choices[0].message
+            : {};
+        const normalizeMessageText = (value) => {
+          if (typeof value === 'string') return value;
+          if (Array.isArray(value)) {
+            return value
+              .map((part) => normalizeMessageText(part))
+              .filter(Boolean)
+              .join('\n');
+          }
+          if (value && typeof value === 'object') {
+            return value.text || value.content || value.output_text || value.reasoning || '';
+          }
+          return '';
+        };
+        const answer =
+          normalizeMessageText(message.content) ||
+          normalizeMessageText(message.reasoning) ||
+          normalizeMessageText(message.reasoning_content) ||
+          normalizeMessageText(message.thinking) ||
+          '（模型未返回内容）';
         answerBuffer = answer;
         scheduleRender();
       } else {
@@ -1342,7 +1360,7 @@ window.PrivateDiscussionChat = (function () {
                 : null;
             const delta = choice ? choice.delta || {} : {};
             const reasoning =
-              delta.reasoning_content || delta.thinking || '';
+              delta.reasoning || delta.reasoning_content || delta.thinking || '';
             const contentPiece = delta.content || '';
 
             if (reasoning) {

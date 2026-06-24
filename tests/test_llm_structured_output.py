@@ -71,6 +71,20 @@ class LlmStructuredOutputTest(unittest.TestCase):
 
         self.assertEqual(mock_post.call_args.kwargs["json"]["max_tokens"], 8192)
 
+    @patch.dict("llm.os.environ", {}, clear=False)
+    @patch("llm.requests.post")
+    def test_chat_does_not_apply_deepseek_v4_window_to_openrouter(self, mock_post):
+        mock_post.return_value = self._mock_success_response({"content": "ok"})
+        client = LLMClient(
+            api_key="test-key",
+            model="openrouter/owl-alpha",
+            base_url="https://openrouter.ai/api/v1",
+        )
+
+        client.chat(messages=[{"role": "user", "content": "hello"}])
+
+        self.assertNotIn("max_tokens", mock_post.call_args.kwargs["json"])
+
     @patch("llm.requests.post")
     def test_chat_structured_prefers_json_object_for_deepseek(self, mock_post):
         mock_post.return_value = self._mock_success_response({"content": '{"answer":"ok"}'})

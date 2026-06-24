@@ -104,6 +104,22 @@ class LlmBaseUrlTest(unittest.TestCase):
             "https://api.openai.com/v1/chat/completions",
         )
 
+    @patch("llm.requests.post")
+    def test_chat_uses_openrouter_versioned_endpoint(self, mock_post):
+        mock_post.return_value = self._mock_response()
+        client = LLMClient(
+            api_key="test-key",
+            model="openrouter/owl-alpha",
+            base_url="https://openrouter.ai/api/v1",
+        )
+
+        client.chat([{"role": "user", "content": "hello"}])
+
+        self.assertEqual(
+            mock_post.call_args.args[0],
+            "https://openrouter.ai/api/v1/chat/completions",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

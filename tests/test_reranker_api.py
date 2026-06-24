@@ -61,7 +61,10 @@ class FakeSession:
             }
         )
         if self.responses:
-            return self.responses.pop(0)
+            response = self.responses.pop(0)
+            if isinstance(response, Exception):
+                raise response
+            return response
         return FakeResponse()
 
 
@@ -156,6 +159,36 @@ class RerankerApiTest(unittest.TestCase):
         self.assertEqual(result["results"][0]["index"], 1)
         self.assertEqual(len(session.calls), 2)
         self.assertEqual(reranker.stats("Qwen/Qwen3-Reranker-0.6B")["api_calls"], 2)
+
+    def test_siliconflow_reranker_retries_timeout(self):
+        session = FakeSession([requests.Timeout("read timed out"), FakeResponse()])
+        reranker = self.api_mod.SiliconFlowReranker(
+            api_key="test-key",
+            base_url="https://example.test/v1/rerank",
+            max_retries=1,
+            retry_delay_seconds=0,
+            session=session,
+        )
+
+        result = reranker.rerank(
+            query="graph neural networks",
+            documents=["doc a", "doc b"],
+            top_n=2,
+            model="Qwen/Qwen3-Reranker-0.6B",
+        )
+
+        self.assertEqual(result["results"][0]["index"], 1)
+        self.assertEqual(len(session.calls), 2)
+        self.assertEqual(reranker.stats("Qwen/Qwen3-Reranker-0.6B")["api_calls"], 2)
+
+    def test_public_zwwen_default_request_cap_is_smaller(self):
+        reranker = self.api_mod.SiliconFlowReranker(
+            api_key="test-key",
+            base_url="https://zwwen.online/rerank",
+            session=FakeSession(),
+        )
+
+        self.assertEqual(reranker.max_documents_per_request, 32)
 
     def test_siliconflow_reranker_requires_key(self):
         with patch.dict("os.environ", {}, clear=True):

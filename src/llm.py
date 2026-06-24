@@ -10,17 +10,46 @@ import requests
 统一的 LLM 客户端封装。
 
 提供商/模型命名规则：'provider/model'，provider 大小写不敏感，model 保留大小写与路径。
-当前运行链路仅支持 DeepSeek；本地 reranker 不走 LLM API。
+当前运行链路支持 OpenAI 兼容的 Chat Completions API；内置 DeepSeek 与 OpenRouter 默认端点。
 """
 
 # 单次实验级别的全局 token 统计（需由调用方在实验开始前手动 reset）
 DEFAULT_MAX_OUTPUT_TOKENS = 393216
+DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
-def resolve_max_output_tokens(default: int = DEFAULT_MAX_OUTPUT_TOKENS) -> int:
+def _normalize_text(value: Any) -> str:
+    return str(value or "").strip()
+
+
+def infer_chat_api_provider(base_url: str | None = None, model: str | None = None) -> str:
+    url = _normalize_text(base_url).lower()
+    model_name = _normalize_text(model).lower()
+    if "deepseek" in url or model_name.startswith("deepseek-"):
+        return "deepseek"
+    if "openrouter.ai" in url or model_name.startswith("openrouter/"):
+        return "openrouter"
+    return "llm"
+
+
+def is_deepseek_v4_model(model: str | None) -> bool:
+    model_name = _normalize_text(model).lower()
+    return model_name in {"deepseek-v4-flash", "deepseek-v4-pro"}
+
+
+def resolve_max_output_tokens(
+    default: int | None = None,
+    *,
+    base_url: str | None = None,
+    model: str | None = None,
+) -> int | None:
     raw = os.getenv("DPR_LLM_MAX_OUTPUT_TOKENS") or os.getenv("LLM_MAX_OUTPUT_TOKENS")
     if not raw:
-        return default
+        if default is not None:
+            return default
+        if infer_chat_api_provider(base_url, model) == "deepseek" and is_deepseek_v4_model(model):
+            return DEFAULT_MAX_OUTPUT_TOKENS
+        return None
     try:
         return max(1, int(raw))
     except Exception:
@@ -94,7 +123,7 @@ class LLMClient:
         # 实例级别的累计耗时（秒）
         self._cum_time_seconds: float = 0.0
         self.kwargs: Dict[str, Any] = {
-            'max_tokens': resolve_max_output_tokens(),
+            'max_tokens': resolve_max_output_tokens(base_url=self.base_url, model=self.model),
             'temperature': 0.6,
             'top_p': 0.3,
             'top_k': 50,
@@ -144,16 +173,7 @@ class LLMClient:
         return attempts
 
     def _provider_name(self, base_url: str | None = None) -> str:
-        try:
-            url = (base_url or self.base_url or '').lower()
-            model = str(self.model or '').strip().lower()
-            if 'deepseek' in url:
-                return 'deepseek'
-            if model.startswith('deepseek-'):
-                return 'deepseek'
-        except Exception:
-            pass
-        return 'llm'
+        return infer_chat_api_provider(base_url or self.base_url, self.model)
 
     @staticmethod
     def _is_authentication_error(exc: Exception) -> bool:
@@ -521,15 +541,19 @@ class LLMClient:
         }
         if isinstance(self.kwargs, dict):
             for k, v in self.kwargs.items():
-                if k in allowed_keys:
+                if k in allowed_keys and v is not None:
                     payload[k] = v
         if response_format is not None:
             payload['response_format'] = response_format
 
         # 对输出 token 上限做保护；DeepSeek V4 支持更长输出，默认按 384K 预留。
         try:
-            max_output_tokens = resolve_max_output_tokens()
-            if isinstance(payload.get('max_tokens'), int) and payload['max_tokens'] > max_output_tokens:
+            max_output_tokens = resolve_max_output_tokens(base_url=self.base_url, model=self.model)
+            if (
+                isinstance(max_output_tokens, int)
+                and isinstance(payload.get('max_tokens'), int)
+                and payload['max_tokens'] > max_output_tokens
+            ):
                 payload['max_tokens'] = max_output_tokens
         except Exception:
             pass
@@ -646,7 +670,7 @@ class LLMClient:
                 last_error = e
                 if self._is_authentication_error(e):
                     print(
-                        "LLM 鉴权失败：当前 API Key 无效或无权限，请在本地配置中更新 DeepSeek API Key 后重试。"
+                        "LLM 鉴权失败：当前 API Key 无效或无权限，请在本地配置中更新 LLM API Key 后重试。"
                     )
                     if hasattr(e, "response") and e.response is not None:
                         try:
@@ -778,6 +802,11 @@ class DeepSeekClient(LLMClient):
         super().__init__(api_key=api_key, model=model, base_url=base_url)
 
 
+class OpenRouterClient(LLMClient):
+    def __init__(self, api_key: str, model: str, base_url: str = DEFAULT_OPENROUTER_BASE_URL):
+        super().__init__(api_key=api_key, model=model, base_url=base_url)
+
+
 def parse_provider_model(model_str: str) -> Tuple[str, str]:
     """
     解析模型字符串为 (provider, model)。
@@ -785,9 +814,10 @@ def parse_provider_model(model_str: str) -> Tuple[str, str]:
     规则：第一个 '/' 之前为提供商（大小写不敏感），之后的全部为模型名（大小写敏感，允许包含 '/').
     示例：
     - "deepseek/deepseek-v4-flash" -> ("deepseek", "deepseek-v4-flash")
+    - "openrouter/openrouter/owl-alpha" -> ("openrouter", "openrouter/owl-alpha")
     """
     if not isinstance(model_str, str) or '/' not in model_str:
-        raise ValueError("缺少模型提供商：请使用 'deepseek/model' 格式，例如 'deepseek/deepseek-v4-flash'")
+        raise ValueError("缺少模型提供商：请使用 'provider/model' 格式，例如 'deepseek/deepseek-v4-flash'")
     provider, model = model_str.split('/', 1)
     return provider.lower(), model
 
@@ -806,7 +836,7 @@ class ClientFactory:
         """
         model_env = (os.getenv('LLM_MODEL') or '').strip()
         if not model_env:
-            raise ValueError("缺少必要环境变量: LLM_MODEL（格式为 'deepseek/model'）")
+            raise ValueError("缺少必要环境变量: LLM_MODEL（格式为 'provider/model'）")
 
         provider, model = parse_provider_model(model_env)
         api_key = (os.getenv('LLM_API_KEY') or '').strip() or None
@@ -815,7 +845,14 @@ class ClientFactory:
         if provider == 'deepseek':
             base_url = base_url or DEFAULT_DEEPSEEK_BASE_URL
             return DeepSeekClient(api_key=api_key or os.getenv('DEEPSEEK_API_KEY', ''), model=model, base_url=base_url)
-        raise ValueError(f"当前仅支持 DeepSeek API，请使用 'deepseek/模型名'，当前 provider={provider}")
+        if provider == 'openrouter':
+            base_url = base_url or os.getenv('OPENROUTER_BASE_URL') or DEFAULT_OPENROUTER_BASE_URL
+            return OpenRouterClient(
+                api_key=api_key or os.getenv('OPENROUTER_API_KEY', ''),
+                model=model,
+                base_url=base_url,
+            )
+        raise ValueError(f"当前仅支持 DeepSeek/OpenRouter API，当前 provider={provider}")
 
     @staticmethod
     def from_config(_config: dict | None = None):

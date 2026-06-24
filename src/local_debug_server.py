@@ -60,6 +60,12 @@ def build_secret_env(secret: dict[str, Any] | None) -> dict[str, str]:
         env["LLM_PRIMARY_BASE_URL"] = base_url
         env["SUMMARY_MODEL"] = model
         env["DEEPSEEK_MODEL"] = model
+        provider = secret.get("llmProvider") if isinstance(secret.get("llmProvider"), dict) else {}
+        provider_type = norm_text(provider.get("type") or provider.get("provider")).lower()
+        if provider_type == "openrouter" or "openrouter.ai" in base_url.lower():
+            env["OPENROUTER_API_KEY"] = api_key
+            env["OPENROUTER_BASE_URL"] = base_url
+            env["OPENROUTER_MODEL"] = model
 
     reranker = secret.get("rerankerLLM") if isinstance(secret.get("rerankerLLM"), dict) else {}
     rerank_profile = norm_text(reranker.get("profile"))

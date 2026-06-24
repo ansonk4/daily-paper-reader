@@ -7,6 +7,7 @@ const {
   resolveChatModels,
   resolveSummaryLLM,
   inferProviderType,
+  getChatProviderPreset,
   getDeepSeekPreset,
   inferChatApiProfile,
   resolveJsonResponseMode,
@@ -89,11 +90,11 @@ function testInferProviderType() {
     inferProviderType({
       summarizedLLM: {
         apiKey: 'sk',
-        baseUrl: 'https://example.com/v1',
-        model: 'other-model',
+        baseUrl: 'https://openrouter.ai/api/v1',
+        model: 'openrouter/owl-alpha',
       },
     }),
-    'deepseek',
+    'openrouter',
   );
 }
 
@@ -111,6 +112,15 @@ function testGetDeepSeekPreset() {
   assert.equal(getDeepSeekPreset('other-b'), null);
   assert.equal(getDeepSeekPreset('other-c'), null);
   assert.equal(getDeepSeekPreset('other-d'), null);
+  assert.deepEqual(
+    getChatProviderPreset('openrouter'),
+    {
+      key: 'openrouter',
+      label: 'OpenRouter',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      models: ['openrouter/owl-alpha'],
+    },
+  );
 }
 
 function testInferChatApiProfile() {
@@ -119,7 +129,10 @@ function testInferChatApiProfile() {
     'deepseek',
   );
   assert.equal(inferChatApiProfile('https://example.com/v1', 'other-model'), 'unsupported');
-  assert.equal(inferChatApiProfile('https://example.com/v1', 'other-model'), 'unsupported');
+  assert.equal(
+    inferChatApiProfile('https://openrouter.ai/api/v1', 'openrouter/owl-alpha'),
+    'openrouter',
+  );
 }
 
 function testResolveJsonResponseMode() {
@@ -160,8 +173,8 @@ function testResolveMaxOutputTokens() {
   );
   assert.equal(
     resolveMaxOutputTokens({
-      baseUrl: 'https://example.com/v1',
-      model: 'other-model',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      model: 'openrouter/owl-alpha',
     }),
     null,
   );
@@ -196,6 +209,19 @@ function testBuildStreamingChatPayload() {
       messages: [{ role: 'user', content: 'hi' }],
       stream: true,
       max_tokens: 393216,
+    },
+  );
+
+  assert.deepEqual(
+    buildStreamingChatPayload({
+      baseUrl: 'https://openrouter.ai/api/v1',
+      model: 'openrouter/owl-alpha',
+      messages: [{ role: 'user', content: 'hi' }],
+    }),
+    {
+      model: 'openrouter/owl-alpha',
+      messages: [{ role: 'user', content: 'hi' }],
+      stream: true,
     },
   );
 

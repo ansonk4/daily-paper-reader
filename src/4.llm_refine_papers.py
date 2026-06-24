@@ -641,9 +641,11 @@ def recover_filter_results(
     )
 
 
-def _make_filter_client(api_key: str, model: str, max_output_tokens: int) -> DeepSeekClient:
+def _make_filter_client(api_key: str, model: str, max_output_tokens: int | None) -> DeepSeekClient:
     client = DeepSeekClient(api_key=api_key, model=model, base_url=DEFAULT_DEEPSEEK_BASE_URL)
-    client.kwargs.update({"temperature": 0.1, "max_tokens": max_output_tokens})
+    client.kwargs.update({"temperature": 0.1})
+    if max_output_tokens is not None:
+        client.kwargs["max_tokens"] = max_output_tokens
     return client
 
 
@@ -973,7 +975,7 @@ def main() -> None:
     parser.add_argument(
         "--max-output-tokens",
         type=int,
-        default=resolve_max_output_tokens(),
+        default=resolve_max_output_tokens(base_url=DEFAULT_DEEPSEEK_BASE_URL, model=DEFAULT_FILTER_MODEL),
         help="max tokens for model output.",
     )
     parser.add_argument(

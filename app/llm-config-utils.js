@@ -12,15 +12,26 @@
     'deepseek-v4-flash',
     'deepseek-v4-pro',
   ];
+  const DEFAULT_OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+  const DEFAULT_OPENROUTER_CHAT_MODELS = [
+    'openrouter/owl-alpha',
+  ];
   const DEEPSEEK_V4_MAX_OUTPUT_TOKENS = 393216;
-  const DEEPSEEK_PRESETS = Object.freeze({
+  const LLM_PROVIDER_PRESETS = Object.freeze({
     deepseek: Object.freeze({
       key: 'deepseek',
       label: 'DeepSeek 官方',
       baseUrl: 'https://api.deepseek.com',
       models: Object.freeze(['deepseek-v4-flash', 'deepseek-v4-pro']),
     }),
+    openrouter: Object.freeze({
+      key: 'openrouter',
+      label: 'OpenRouter',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      models: Object.freeze(['openrouter/owl-alpha']),
+    }),
   });
+  const DEEPSEEK_PRESETS = LLM_PROVIDER_PRESETS;
 
   const normalizeText = (value) => String(value || '').trim();
 
@@ -113,15 +124,23 @@
     const safeSecret = secret && typeof secret === 'object' ? secret : {};
     const llmProvider = safeSecret.llmProvider || {};
     const explicit = normalizeText(llmProvider.type || llmProvider.provider || '').toLowerCase();
-    if (explicit === 'deepseek') {
-      return 'deepseek';
+    if (explicit === 'deepseek' || explicit === 'openrouter') {
+      return explicit;
+    }
+    const summary = resolveSummaryLLM(safeSecret);
+    const profile = inferChatApiProfile(
+      summary && summary.baseUrl,
+      summary && summary.model,
+    );
+    if (profile === 'openrouter') {
+      return 'openrouter';
     }
     return 'deepseek';
   };
 
-  const getDeepSeekPreset = (key) => {
+  const getChatProviderPreset = (key) => {
     const presetKey = normalizeText(key).toLowerCase();
-    const preset = DEEPSEEK_PRESETS[presetKey];
+    const preset = LLM_PROVIDER_PRESETS[presetKey];
     if (!preset) return null;
     return {
       key: preset.key,
@@ -130,6 +149,7 @@
       models: [...preset.models],
     };
   };
+  const getDeepSeekPreset = getChatProviderPreset;
 
   const inferChatApiProfile = (baseUrl, model) => {
     const normalizedBaseUrl = normalizeBaseUrlForStorage(baseUrl || '').toLowerCase();
@@ -139,6 +159,12 @@
     }
     if (normalizedModel.startsWith('deepseek-')) {
       return 'deepseek';
+    }
+    if (/\/\/openrouter\.ai(?:$|\/)/i.test(normalizedBaseUrl)) {
+      return 'openrouter';
+    }
+    if (normalizedModel.startsWith('openrouter/')) {
+      return 'openrouter';
     }
     return 'unsupported';
   };
@@ -199,6 +225,9 @@
   return {
     DEFAULT_DEEPSEEK_BASE_URL,
     DEFAULT_DEEPSEEK_CHAT_MODELS,
+    DEFAULT_OPENROUTER_BASE_URL,
+    DEFAULT_OPENROUTER_CHAT_MODELS,
+    LLM_PROVIDER_PRESETS,
     DEEPSEEK_PRESETS,
     normalizeText,
     normalizeBaseUrlForStorage,
@@ -207,6 +236,7 @@
     resolveChatModels,
     resolveSummaryLLM,
     inferProviderType,
+    getChatProviderPreset,
     getDeepSeekPreset,
     inferChatApiProfile,
     resolveJsonResponseMode,

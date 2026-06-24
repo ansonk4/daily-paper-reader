@@ -89,6 +89,12 @@ def _env_int(name: str, default: int) -> int:
     return default
 
 
+def _default_max_documents_per_request(base_url: str) -> int:
+  if str(base_url or "").strip().lower().startswith("https://zwwen.online/"):
+    return 32
+  return 64
+
+
 class SiliconFlowReranker:
   """Small adapter matching src/3.rank_papers.py's reranker interface."""
 
@@ -132,7 +138,10 @@ class SiliconFlowReranker:
       int(
         max_documents_per_request
         if max_documents_per_request is not None
-        else _env_int("RERANK_MAX_DOCUMENTS_PER_REQUEST", 64)
+        else _env_int(
+          "RERANK_MAX_DOCUMENTS_PER_REQUEST",
+          _default_max_documents_per_request(self.base_url),
+        )
       ),
       1,
     )
@@ -208,15 +217,29 @@ class SiliconFlowReranker:
     for attempt in range(self.max_retries + 1):
       self._wait_for_rate_limit()
       started = time.perf_counter()
-      response = self.session.post(
-        self.base_url,
-        headers={
-          "Authorization": f"Bearer {self.api_key}",
-          "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=self.timeout,
-      )
+      try:
+        response = self.session.post(
+          self.base_url,
+          headers={
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+          },
+          json=payload,
+          timeout=self.timeout,
+        )
+      except (requests.Timeout, requests.ConnectionError) as exc:
+        self._last_request_at = time.perf_counter()
+        elapsed = self._last_request_at - started
+        self.call_count += 1
+        self.total_latency_seconds += elapsed
+        self.latencies_seconds.append(elapsed)
+        if attempt < self.max_retries:
+          time.sleep(min(self.retry_delay_seconds, 5.0))
+          continue
+        raise requests.Timeout(
+          f"Rerank API request timed out after {attempt + 1} attempts: {exc}"
+        ) from exc
+
       self._last_request_at = time.perf_counter()
       elapsed = self._last_request_at - started
       self.call_count += 1

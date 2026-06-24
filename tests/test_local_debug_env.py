@@ -44,6 +44,25 @@ class LocalDebugEnvTest(unittest.TestCase):
         self.assertEqual(env["RERANK_PROFILE"], "public-zwwen-rerank")
         self.assertEqual(env["PUBLIC_RERANK_API_KEY"], "")
         self.assertEqual(env["PUBLIC_RERANK_API_BASE_URL"], "https://zwwen.online/rerank")
+        self.assertNotIn("OPENROUTER_API_KEY", env)
+
+    def test_build_secret_env_maps_openrouter_aliases(self):
+        env = self.mod.build_secret_env(
+            {
+                "llmProvider": {"type": "openrouter"},
+                "summarizedLLM": {
+                    "apiKey": "sk-or-key",
+                    "baseUrl": "https://openrouter.ai/api/v1",
+                    "model": "openrouter/owl-alpha",
+                },
+            }
+        )
+
+        self.assertEqual(env["SUMMARY_API_KEY"], "sk-or-key")
+        self.assertEqual(env["DEEPSEEK_BASE_URL"], "https://openrouter.ai/api/v1")
+        self.assertEqual(env["OPENROUTER_API_KEY"], "sk-or-key")
+        self.assertEqual(env["OPENROUTER_BASE_URL"], "https://openrouter.ai/api/v1")
+        self.assertEqual(env["OPENROUTER_MODEL"], "openrouter/owl-alpha")
 
     def test_update_env_file_replaces_old_keys_preserves_comments_and_clears_stale_key(self):
         with tempfile.TemporaryDirectory() as tmp:
