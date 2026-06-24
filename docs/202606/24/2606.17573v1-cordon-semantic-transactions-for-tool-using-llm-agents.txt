@@ -1,0 +1,744 @@
+Title: Cordon: Semantic Transactions for Tool-Using LLM Agents
+
+URL Source: https://arxiv.org/pdf/2606.17573v1
+
+Published Time: Wed, 17 Jun 2026 00:36:18 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# Cordon: Semantic Transactions for Tool-Using LLM Agents 
+
+## Zheng Chen 
+
+zheng-chen@mail.tsinghua.edu.cn 
+
+Tsinghua University Beijing, China 
+
+## Hanqing Liu 
+
+hanqingliu@sjtu.edu.cn 
+
+Shanghai Jiao Tong University Shanghai, China 
+
+## Duling Xu 
+
+xuduling@ruc.edu.cn 
+
+Renmin University of China Beijing, China 
+
+## Dong Dong 
+
+dongd@tsinghua.edu.cn 
+
+Tsinghua University Beijing, China 
+
+## Jialin Li 
+
+jialin-li@tsinghua.edu.cn 
+
+Tsinghua University Beijing, China 
+
+## Bangzheng Pu 
+
+bzpu@aetherheart.com 
+
+AetherHeart Tech Co., Ltd. Shanghai, China 
+
+## Jidong Zhai 
+
+zhaijidong@tsinghua.edu.cn 
+
+Tsinghua University Beijing, China 
+
+## Abstract 
+
+Tool-using LLM agents are shifting the unit of computation from explicit human-issued commands to model-driven tasks with stateful consequences. Yet today’s agent runtimes still expose tools as isolated RPCs. This interface gives runtimes a convenient integration point, but it lacks a task-scoped execution boundary for commit, rollback, recovery, and au-dit across multi-step agent workflows. We argue that this mismatch calls for a runtime containment boundary rather than another per-call guardrail. This paper introduces Cordon, a transactional runtime system for staging and validating irreversible agent effects before commit. A semantic transaction is a task-level execu-tion boundary that binds tool intents and runtime-tracked result lineage to reversible local state, staged external effects, delegated authority, and audit metadata. Cordon implements this abstraction with a transaction manager that tracks de-rived result objects, executes reversible mutations in shadow state, stages outward-facing actions in an effect outbox, and records recovery metadata. The runtime then validates the composed execution flow before it commits state or releases external effects. Our evaluation across adversarial and benign workflows shows that Cordon exposes cross-step violations missed by existing defenses. It also reduces irreversible-effect failures while preserving benign task completion with mod-est approval and latency overhead. 
+
+CCS Concepts: • Software and its engineering → Run-time environments ; • Computer systems organization 
+
+→ Dependable and fault-tolerant systems and networks ;
+
+• Security and privacy → Systems security .
+
+Keywords: LLM agents, semantic transactions, transactional containment, side-effect staging, sandboxing, recovery Isolated RPC view: every call looks safe           
+
+> derived summary
+> external effect
+> Cordon view: one semantic transaction
+> Semantic transaction boundary
+> r1: log read secret taint
+> r2: failure summary derived from r1
+> validates the composed fl ow before release
+> Commit
+> promote + dispatch
+> Rollback
+> discard + audit
+> API key in logs
+> Read logs Summarize failures Write note Send Slack
+> violation is invisible per call
+> Cordon
+> lineage + authority + effects
+> Slack draft Shadow note
+> necessary routine durable expected
+
+Figure 1. A semantic transaction gives agent runtimes a com-mit boundary over result lineage, staged mutations, pending effects, and authority. 
+
+## 1 Introduction 
+
+We are at a crossroads in which the primary operator of computing systems is beginning to shift from humans is-suing explicit commands to LLM-driven agents acting on their behalf [ 38 , 46 ]. Equipped with tools, these agents have already delivered substantial productivity gains across soft-ware development [ 44 ], office and enterprise workflows [ 18 ], scientific research [ 8, 9], and engineering design [ 29 ]. This progress has been driven in large part by the aggressive in-tegration of external tools into agent systems. At the same time, these agents remain model-driven systems that act under uncertainty. This creates a new systems challenge around how runtimes mediate irreversible side effects across long-running multi-step tasks. Today’s agent runtimes typically expose tools through an RPC-like request/response abstraction. In this model, the runtime treats each tool request as an independent opera-tion. It checks or approves the request, executes the tool directly against the underlying system, and loads the result into the agent’s memory for subsequent steps. This interface 
+
+1 
+
+> arXiv:2606.17573v1 [cs.OS] 16 Jun 2026 EuroSys ’27, April 19–24, 2027, Rabat, Morocco Zheng Chen, Hanqing Liu, Duling Xu, Dong Dong, Jialin Li, Bangzheng Pu, and Jidong Zhai
+
+is convenient for tool integration, but it gives the runtime the wrong execution boundary for long-running agent tasks. Approving an action or recovering from a failure often de-pends on the composed execution flow rather than on any single call. When the runtime records only isolated tool calls, these relationships remain implicit. Consider an incident-response agent asked to diagnose an outage, as shown in Figure 1. It reads application logs that contain an API key, runs commands to summarize failures, writes a remediation note, and prepares a Slack notifica-tion for the on-call channel. Each individual tool call can be justified: reading logs is necessary, shell commands are routine, and notifying the team is expected. The problematic behavior appears only in the composed task flow, where a secret-bearing result is transformed into a derived summary and then used by an external effect. We propose Cordon, a transactional execution runtime 
+
+for tool-using agents. Rather than validating each tool call in isolation, Cordon represents each agent task as a semantic transaction and delays irreversible effects until task-level val-idation becomes possible. A semantic transaction establishes a commit and recovery boundary over result objects, spec-ulative local mutations, pending external effects, delegated authority, and audit metadata. We use the term operationally to describe a task-scoped runtime commit boundary rather than a formal semantic execution model. As tools execute, Cordon materializes result objects and records the lineage through which later operations derive state or effects from earlier results. This execution model lets Cordon enforce 
+
+runtime containment properties over flow containment, commit discipline, rollback correctness, boundary mediation, and audit completeness before effects become durable or externally visible. Operationally, Cordon interposes at the tool-dispatch boundary and executes tool effects transactionally rather than immediately. A transaction manager translates tool calls into task-scoped intents and attaches each result object to the active transaction context. Reversible local mutations ex-ecute speculatively in shadow state , while outward-facing actions are staged in an effect outbox and transaction meta-data is appended to a recovery log. At validation time, Cor-don evaluates lineage, authority, staged state, and pending effects as one composed execution flow before releasing external actions. After validation, Cordon either commits ap-proved shadow state atomically or aborts staged mutations and effects. For effects that cross an external boundary after release, Cordon records the boundary state needed for audit, compensation, and recovery. We evaluate Cordon on 45 risk-bearing multi-tool work-flows, five deterministic rollback trajectories, and two stan-dard benign agent benchmarks across coding, incident re-sponse, document, office, support, and data tasks. Plain exe-cution commits policy-violating effects in 45/45 risk-bearing workflows; strategy adapters derived from existing defense boundaries intercept only 14/45 before commit and leave 31/45 policy-violating or post-hoc-only, while Cordon in-tercepts 45/45 before commit. With approval wait excluded, transaction-mediated execution reduces mean task time by 24.6–27.9% relative to plain execution, reduces token use by 23.6–28.4%, provides 4.17ms median rollback latency with 15/15 resume checks passing, and preserves standard-benchmark task correctness within measurement variance. We summarize our contributions as follows: 1. New insight. We identify a missing transaction boundary between model-driven tool use and durable side effects. This boundary helps explain why per-call defenses can miss failures that arise only across result lineage, local mutations, external effects, and delegated authority. 2. Runtime abstraction. We introduce semantic transac-tions over result objects as a task-level validation and commit unit for tool-using agents. The abstraction groups tool intents, lineage, reversible state, staged effects, ap-provals, and audit metadata into transaction-scoped vali-dation rules. 3. New system. We build Cordon, a transactional execution runtime that implements this abstraction around tool dis-patch. Cordon combines a transaction manager, shadow state, an effect outbox, and a recovery log to stage, validate, commit, abort, and audit agent effects. 
+
+## 2 Agent Tool Execution and Effect Boundaries 
+
+2.1 Problem Definition Execution history. We model an agent as producing a long-running execution history: 
+
+𝐻 = ⟨𝑒 1, 𝑒 2, . . . ⟩. (1) Each event 𝑒 𝑖 is an observation, decision, tool invocation, result production, state change, approval, validation decision, or external effect produced as the agent interacts with the system and the outside world. 
+
+Dependency semantics. For events 𝑒 𝑖 and 𝑒 𝑗 in 𝐻 , we write 
+
+𝑒 𝑖 {𝐻 𝑒 𝑗 when information or state produced by 𝑒 𝑖 influ-ences the argument, payload, decision, mutation, validation outcome, or sink of 𝑒 𝑗 . Let {∗ 
+
+> 𝐻
+
+denote the transitive closure of this dependency relation. For a side effect 𝑠 , its dependency set is: 
+
+Dep 𝐻 (𝑠 ) = {𝑒 𝑖 | 𝑒 𝑖 {∗ 
+
+> 𝐻
+
+𝑠 }. (2) A cross-step semantic side effect is a side effect whose com-mit decision depends on evidence distributed across Dep 𝐻 (𝑠 ),not on 𝑠 or any single prior event alone. Secret-derived mes-sages, untrusted-input-to-configuration writes, and rollback-sensitive multi-file edits are all examples: the relevant evi-dence is composed flow, not an isolated tool call. 
+
+Commit semantics. We write commit (𝑠, 𝑡 ) when a side ef-fect 𝑠 becomes durable or externally visible at time 𝑡 , beyond 
+
+> 2
+
+Cordon: Semantic Transactions for Tool-Using LLM Agents EuroSys ’27, April 19–24, 2027, Rabat, Morocco 
+
+the runtime’s automatic rollback boundary. A local muta-tion commits when it is promoted to the real workspace. An external effect commits when it is dispatched to a service, user, network endpoint, or API. The constraints governing commits may change over time: 
+
+𝐶 𝑡 = (𝐼 𝑡 , 𝐴 𝑡 , 𝑃 𝑡 ), (3) where 𝐼 𝑡 is the user’s current intent, 𝐴 𝑡 is the authority granted to the agent, and 𝑃 𝑡 is system policy. An execu-tion history violates the effect boundary if it commits a side effect that does not satisfy those constraints: 
+
+∃𝑠, 𝑡 : commit (𝑠, 𝑡 ) ∧ ¬ Allowed (𝑠, 𝐶 𝑡 ). (4) 
+
+Boundary projections. An enforcement mechanism ob-serves only a projection of the execution history. For mech-anism 𝑀 , let 𝜋 𝑀 (𝐻 ≤𝑡 ) denote the view of the prefix of 𝐻 
+
+visible to 𝑀 at time 𝑡 . Two histories are indistinguishable to 
+
+𝑀 when their projections are equal: 
+
+𝐻 ≡𝑀 𝐻 ′ ⇐⇒ 𝜋 𝑀 (𝐻 ) = 𝜋 𝑀 (𝐻 ′). (5) If a boundary-violating history 𝐻 and a valid history 𝐻 ′ are indistinguishable under 𝜋 𝑀 , then 𝑀 cannot reliably decide whether the corresponding side effect should commit. The classification below describes existing mechanisms by where they place the effect boundary and which projection of the agent execution they observe. 
+
+2.2 Execution Projections and Boundaries 
+
+Tool-using LLM agents turn model outputs into concrete system actions that read private state, run commands, edit files, call APIs, and send messages. To understand where current mechanisms succeed and where gaps remain, we surveyed work on agent safety [ 4, 15 ], prompt-injection re-sistance [ 15 , 43 ], tool mediation [ 28 , 34 , 39 ], runtime contain-ment [ 1 , 17 ], output filtering [ 36 , 37 ], recovery [ 11 , 31 ], and skill or plugin supply-chain security [ 26 , 40 , 41 ]. Existing mechanisms provide useful projections of agent execution, but none makes the composed task flow available as a com-mit and recovery unit. We describe these projections along two dimensions: 
+
+• Commit-boundary placement. This dimension locates when a mechanism decides whether an agent-produced effect may become durable or externally visible. We orga-nize existing mechanisms into five stages: pre-planning 
+
+defenses, tool-dispatch gates, execution-time confine-ment, pre-release checks, and post-effect recovery or au-dit. Early stages can block effects before damage, whereas later stages can inspect more realized behavior but may no longer prevent irreversible effects. 
+
+• Observed execution projection. This dimension iden-tifies the portion of the execution history a mechanism observes when it evaluates agent behavior. We classify pro-jections as linguistic evidence , operational evidence ,or semantic-effect evidence . These projections range Commit-boundary placement      
+
+> Observed execution projection
+> Before commit
+> Before execution After effect
+> Prompt / text Tool call Task effects / transaction
+> Move from local checks to transaction context
+> Model refusal
+> Instruction hierarchy
+> Prompt-injection detector
+> Intent is inferred, not observed
+> Output fi lters
+> DLP scan Misses derived leakage
+> Approval lacks lineage
+> HITL approval
+> Permission prompts
+> Tool allowlists
+> Schema checks
+> Sees one call, not the fl ow
+> OS sandbox
+> Containers
+> Contains process, not semantics
+> Snapshot rollback
+> Audit logs
+> Restores fi les, not external effects Effect already escaped
+> AgentDojo
+> ToolHijacker
+> Lineage monitors
+> Trace review
+> Cordon
+> Semantic transactions
+> This work
+> validate before commit
+
+Figure 2. Existing mechanisms observe different projections of agent execution, while Cordon adds a task-level transac-tion boundary before irreversible commit. from prompts and model outputs to operation traces. A transaction-level projection further includes composed re-sult objects, dependencies, local mutations, and pending effects produced by a task. 
+
+2.3 Mapping Existing Boundaries 
+
+Figure 2 positions representative mechanisms by the bound-ary they provide and the execution projection they observe before commit. 
+
+Model and prompt defenses. One line of work hardens the planner against malicious or lower-priority instructions. Alignment and instruction-hierarchy methods train models to follow intended policies and privileged instructions [ 6,35 , 43 ], while prompt-injection defenses separate or classify untrusted prompts and responses before tool use [ 12 , 24 , 25 ]. These defenses act early over a planning or text projection, before concrete result objects, mutations, and effects exist. 
+
+Tool-call gates and human approval. Many current agents and agent frameworks, such as the OpenAI Agents SDK [ 34 ], LangChain [28], Codex CLI [33], Claude Code [5], and Her-mes Agent [ 32 ], mediate actions at the tool-call boundary. They use allowlists, schema checks, permission prompts, and human-in-the-loop approval to decide whether a requested invocation should proceed. This boundary is easy to integrate because tool calls are where model text becomes a system action. However, an invocation projection rarely contains the lineage, rollback scope, pending effect set, or approval context needed to decide whether the composed task should commit. 
+
+Runtime containment. Sandboxing executes agent com-mands and tools inside an isolated environment instead of di-rectly in the user’s local workspace. Docker seccomp profiles and similar OS isolation mechanisms can restrict syscalls, filesystem access, and network behavior [ 17 ]. The Inspect Sandboxing Toolkit applies this idea to scalable agent eval-uation [ 1 ]. This process and isolation projection protects the host from high-risk execution, but it does not define which sandboxed outputs should be promoted, which effects 
+
+3EuroSys ’27, April 19–24, 2027, Rabat, Morocco Zheng Chen, Hanqing Liu, Duling Xu, Dong Dong, Jialin Li, Bangzheng Pu, and Jidong Zhai 
+
+should be released, or how derived result objects influence later commits. 
+
+Output filters and data loss prevention. Data loss preven-tion (DLP) systems aim to detect and block sensitive informa-tion before it leaves a protected boundary. Guardrail systems and scanners apply this idea to agents by inspecting model outputs or outbound payloads before they leave the agent boundary. NeMo Guardrails provides programmable rails for LLM applications [ 37 ], and LLM Guard scans prompts and responses for risks such as prompt injection, secrets, and sensitive data [ 36 ]. This payload projection can catch literal leaks, but it is fragile against summarization, encoding, multi-turn context, and other derived disclosures because it lacks transaction-level lineage. 
+
+Supply-chain scanning. As agents gain third-party skills, plugins, and MCP servers, installation-time trust becomes an-other boundary. ToxicSkills documents malicious agent skills in the wild [ 41 ], while Snyk Agent Scan and mcp-scan in-spect agent components and MCP servers before use [ 26 , 40 ]. This installation-time boundary reduces the risk of importing malicious capabilities, but it does not validate the composed behavior of a task after trusted tools begin executing. 
+
+Recovery mechanisms. Storage recovery mechanisms show how systems record, restore, and reason about state after failures [ 11 , 31 ]. They are central to any transactional execu-tion substrate, but filesystem snapshots alone do not model result-object lineage or staged external effects. For agent runtimes, this state recovery projection must be coupled to the same commit boundary that decides which mutations and effects are allowed to become visible. 
+
+Summary. Taken together, these mechanisms provide useful boundaries around prompts, individual tools, processes, pay-loads, components, and post-effect recovery. Our analysis highlights three remaining systems challenges. First, deci-sions made before execution often lack the realized evidence needed to validate cross-step semantic side effects. Second, decisions made after a single operation see only a fragment of the dependency chain that led to a mutation or effect. Third, recovering from committed external effects can be costly or impossible. These observations motivate a runtime boundary that treats tool intents, result dependencies, local mutations, staged effects, authority, and audit metadata as one transaction-level execution flow. 
+
+## 3 Semantic Transaction Model 
+
+3.1 Transaction Abstraction 
+
+Existing mechanisms observe useful projections of agent exe-cution, but do not expose the composed task flow as a commit and recovery unit. A semantic transaction provides that unit. It is a task-level transaction scope that groups model-driven tool use, semantic results, reversible state, staged effects, delegated authority, and audit evidence into a validation contract. The model draws on transaction processing and Agent task         
+
+> Semantic transaction T
+> Local state External effects Policy audit
+> Semantic commit protocol
+> prepare validate abort path commit path if valid
+> tool intents
+> stage W,D
+> ready
+> stage E
+> ready
+> G,A,E,Ct
+> valid( T,Ct) = false
+> rollback
+> block
+> seal record
+> promote / release
+
+Figure 3. Semantic commit protocol for a task-level transac-tion boundary. recovery, but adapts the boundary to agent execution where effects may be semantic, cross-step, and external [ 20 , 23 , 31 ]. Figure 3 presents the model as a semantic commit protocol over abstract domains. The protocol has three phases: 
+
+• Prepare. The transaction accepts tool intents, records re-versible local mutations in 𝑊 ∪ 𝐷 , and places external effects in 𝐸 without releasing them. 
+
+• Validate. The transaction evaluates lineage 𝐺 , authority 𝐴 ,staged effects 𝐸 , and the constraint tuple 𝐶 𝑡 as one commit unit, deriving valid (𝑇 , 𝐶 𝑡 ).
+
+• Commit/abort. If valid (𝑇 , 𝐶 𝑡 ) holds, the transaction pro-motes recoverable state and releases approved effects. Oth-erwise, it rolls back 𝑊 ∪ 𝐷 , blocks 𝐸 , and seals an audit record. The lifelines define semantic domains that participate in the commit decision without prescribing an implementa-tion architecture. Formally, a semantic transaction can be represented as: 
+
+𝑇 = ⟨𝑠𝑐𝑜𝑝𝑒, 𝑖𝑛𝑡𝑒𝑛𝑡𝑠, 𝑅,𝑊 , 𝐷, 𝐸, 𝑂, 𝐺, 𝐴, 𝑠𝑡𝑎𝑡𝑢𝑠 ⟩. (6) The scope identifies the delegated task whose effects are evaluated together. intents denotes the typed operations re-quested during that scope. 𝑅 contains anchors read or ob-served during execution. 𝑂 contains semantic result objects. 
+
+𝐺 records dependencies among observations, results, muta-tions, and effects. 𝑊 and 𝐷 contain recoverable writes and deletes. 𝐸 contains external effects that remain staged until commit. 𝐴 represents delegated authority and approval obli-gations. status records the lifecycle state of the transaction. A transaction may span several model turns, intermediate artifacts, retries, and derived prompts when those steps serve the same delegated task. Conversely, a new task or a change in delegated authority creates a new transaction scope. An active transaction may move to validation, commit, abort, or compensation. Committed external effects cannot later be treated as ordinary recoverable state. The transaction  
+
+> 4Cordon: Semantic Transactions for Tool-Using LLM Agents EuroSys ’27, April 19–24, 2027, Rabat, Morocco
+
+Table 1. Semantic transaction fields.                     
+
+> Role Field Model meaning
+> Boundary scope Task-level transaction boundary.
+> Boundary intents Typed operations within the task scope.
+> Evidence 𝑅 Anchors read or observed during execution.
+> Lineage 𝑂 Tool-returned or derived semantic objects.
+> Lineage 𝐺 Dependencies across results, state, and effects.
+> State 𝑊 , 𝐷 Recoverable local writes and deletes.
+> Effects 𝐸 External effects staged until commit.
+> Authority 𝐴 Delegated authority and approval obligations.
+> Lifecycle status Active, validating, committed, aborted, compensated.
+
+therefore defines both the unit of local rollback and the unit of evidence for external accountability. 
+
+3.2 Object Semantics 
+
+The model distinguishes three object classes. A result object 
+
+is any value returned to or derived within agent execution, including file contents, tool outputs, command stdout or stderr, summaries, temporary artifacts, encoded data, and final-response candidates. A mutation is a local write, delete, configuration change, or persistence change over an anchor in 𝑊 ∪ 𝐷 . Mutations are recoverable only within the trans-action scope that contains them. An effect object is an action whose commit makes information or behavior externally visible, such as a message, network request, issue tracker update, API call, or final output to the user. This distinction separates state that can be rolled back from effects that must be delayed, audited, or compensated. Local mutations have rollback semantics because the trans-action can restore their pre-transaction anchors. External effects have commit semantics because their release may cross an irreversible boundary. The model does not require all effects to be dangerous. It requires the commit decision to know whether an effect is still staged, whether it has authority, and whether its derivation is valid. 
+
+3.3 Lineage Semantics 
+
+The lineage graph 𝐺 records semantic dependency. An edge 
+
+𝑜 𝑖 → 𝑜 𝑗 means that result object 𝑜 𝑗 was computed from, summarized from, decoded from, or otherwise influenced by 𝑜 𝑖 . An edge 𝑜 → 𝑤 or 𝑜 → 𝑑 means that result object 
+
+𝑜 justifies a local mutation. An edge 𝑜 → 𝑒 means that result object 𝑜 influences the payload, destination, decision, or authorization context of effect object 𝑒 . Lineage is broader than string containment. A result may be secret-derived even if it no longer contains an exact secret literal. Lineage edges are typed by the object classes they connect. Edges from 𝑅 to 𝑂 record observations that entered the task. Edges within 𝑂 record transformations such as summariza-tion, extraction, decoding, synthesis, or formatting. Edges from 𝑂 to 𝑊 ∪ 𝐷 and 𝐸 record how earlier results justify lo-cal mutations or external effects. This typed graph gives the commit rule a semantic dependency structure rather than a bag of tool logs. 
+
+Example mapping. The incident-response example maps to a compact lineage path: 𝑜 log → 𝑜 summary → 𝑒 slack . Here 
+
+𝑜 log ∈ 𝑂 is secret-bearing, 𝑜 summary is derived, 𝑒 slack ∈ 𝐸 
+
+is pending, and 𝐴 determines whether the external sink is authorized. The commit decision depends on this path, not on the Slack payload or any single tool call alone. 
+
+3.4 Commit and Recovery Semantics 
+
+The commit decision uses the constraint tuple: 
+
+𝐶 𝑡 = (𝐼 𝑡 , 𝐴 𝑡 , 𝑃 𝑡 ), (7) where 𝐼 𝑡 is the user’s current intent, 𝐴 𝑡 is the authority granted to the agent, and 𝑃 𝑡 is policy. A transaction 𝑇 is valid when it satisfies the validation contract under the cur-rent constraints: 
+
+valid (𝑇 , 𝐶 𝑡 ). (8) The model admits commit only after the transaction is valid, external effects are still staged, and reversible state has a recovery boundary: 
+
+commit (𝑇 ) ⇒ valid (𝑇 , 𝐶 𝑡 )∧ staged (𝐸 )∧ recoverable (𝑊 , 𝐷 ).
+
+(9) Commit promotes recoverable local state and releases ap-proved staged effects. Abort discards recoverable local mu-tations and prevents staged effects from becoming visible. Rollback returns 𝑊 ∪ 𝐷 to the pre-transaction scope. Re-covery preserves enough durable evidence to distinguish committed, aborted, pending, and compensated effects after a failure. The model gives ACID-like rollback semantics only for recoverable local state. External effects in 𝐸 are differ-ent: they are delayed until validation and commit, assigned idempotency and audit metadata for release, and treated as audit or compensation cases once their external boundary has been crossed [20]. 
+
+3.5 Transactional Containment Invariants 
+
+The invariants in Table 2 define the commit-validity contract for a semantic transaction. They specify what must hold be-fore transaction state or effects may commit. The invariants fall into three groups: lineage flow, commit discipline, and authority/accountability. The invariant suite is not a complete theory of agent safety. It defines transaction-level conditions for deciding whether  
+
+> 5EuroSys ’27, April 19–24, 2027, Rabat, Morocco Zheng Chen, Hanqing Liu, Duling Xu, Dong Dong, Jialin Li, Bangzheng Pu, and Jidong Zhai
+
+Table 2. Transactional containment invariants. 
+
+ID Group Invariant Commit-condition reading I1 Flow Secret-derived sink flow No path in 𝐺 connects secret-bearing or secret-derived 𝑂 to an unauthorized external sink. 
+
+I7 Flow Lineage preservation Lineage follows every transformation that preserves semantic dependence across intermediate objects. 
+
+I2 Commit Untrusted sensitive mutation Untrusted inputs cannot justify sensitive local mutations unless 𝐶 𝑡 
+
+validates the transaction. 
+
+I3 Commit Pre-commit irreversible effect Each 𝑒 ∈ 𝐸 remains staged until validation succeeds and the transaction commits. 
+
+I4 Commit Rollback correctness Abort, denial, timeout, or rollback restores every reversible anchor in 
+
+𝑊 ∪ 𝐷 .
+
+I5 Commit Boundary completeness Every side-effecting operation is represented in 𝑇 before commit or recorded as a boundary violation. 
+
+I6 Authority Least-privilege authority Granted authority remains within the transaction’s intent, resource, sink, capability, and time scope. 
+
+I8 Authority Scoped human approval Approval binds to one transaction object, action, sink, and time window. 
+
+I9 Authority Audit completeness Commit decisions, effect transitions, approvals, violations, and recovery actions leave durable metadata. 
+
+agent-produced state and effects may commit. I1 and I7 cap-ture semantic result flow. I2 through I5 capture commit dis-cipline for reversible and irreversible effects. I6 through I9 bind privileges, approvals, and accountability to the transac-tion object. These invariants also define violation oracles for workloads that test transaction-level containment. The model-to-system mapping is direct but separate from the semantics. In Cordon, the transaction object maps to a runtime transaction context; staged effects map to an ef-fect outbox; recoverable writes map to shadow state; lineage maps to durable metadata; and authority obligations map to approval and validation machinery. This mapping is a real-ization choice, not part of the semantic validity definition. 
+
+## 4 Runtime Architecture 
+
+Cordon realizes the semantic transaction model by inserting a transactional control plane between the agent planner and side-effecting tools. The architecture is operational: it binds tool calls to task transactions, materializes runtime evidence, executes local changes speculatively, stages external effects, validates the composed transaction, and records enough state for crash recovery and audit. 
+
+4.1 Runtime Overview 
+
+Figure 4 shows the runtime path for one incident-response task with four tool calls. The agent reads logs, summarizes the result, writes a remediation note, and prepares a Slack message. Cordon places a mediation layer at the tool-dispatch boundary, where tool arguments are concrete but side effects have not yet committed. A transaction manager creates or resumes the active transaction for the task and attaches each mediated operation to that context. 
+
+Table 3. Cordon runtime mechanisms and the model prop-erties they preserve.        
+
+> Design challenge Runtime mechanism Model property preserved
+> Task binding Mediation layer and transaction manager bind calls to a task context. Transaction scope and complete intent set.
+> Evidence materialization
+> Object handles and metadata records are appended online. Lineage graph and validation evidence.
+> Speculative state
+> Shadow-state engine executes local writes outside the real workspace. Recoverable 𝑊 , 𝐷 and no uncommitted visibility.
+> External effects Effect outbox holds sink, payload, lineage, and release status. Staged 𝐸 , idempotence, and scoped approval.
+> Failure handling
+> Recovery log records commits, aborts, releases, and boundary crossings. Recoverability, auditability, and compensation state.
+
+The center of the figure is the runtime transaction con-text. It is the concrete carrier for the model state defined in Section 3: operation intents, object handles, lineage edges, speculative local state, pending external effects, scoped au-thority, and recovery records. These entries are maintained as the task runs rather than reconstructed from the final prompt or final output. The validation engine consumes this accumulated context and produces a transaction outcome. Commit promotes approved local state and releases approved effects. Abort discards speculative local state and cancels pending effects. Approval holds a scoped action without broadening authority. Audit and recovery records preserve crossed-boundary evidence.  
+
+> 6Cordon: Semantic Transactions for Tool-Using LLM Agents EuroSys ’27, April 19–24, 2027, Rabat, Morocco
+
+Agent task τ 1
+
+same task / same transaction T 1   
+
+> 1234
+> Tool-dispatch boundary Transaction manager
+
+Semantic transaction context T1       
+
+> Intents:
+> i1 read i2 summarize i3 write i4 external
+> Lineage:
+> r_log (secret) r_sum (derived)
+> derived external
+> Validation gate
+> e_slack blocked until review
+> read_log
+> →r_log
+> summarize
+> →r_sum
+> write_note
+> →w_note
+> send_slack
+> →e_slack
+> w_note (reversible)
+> e_slack (pending)
+> Slack review required append-only evidence
+> Shadow: Outbox: Authority: Log:
+> Commit:
+> promote + release
+> record boundary
+> Audit/ Recovery:
+> hold Slack
+> Approval:
+> Abort:
+> discard + cancel
+> lineage + authority + staged effects
+
+Figure 4. Cordon runtime architecture. 
+
+4.2 Tool-Dispatch Interposition 
+
+Cordon interposes where the agent runtime dispatches tool calls. This point has concrete tool names, arguments, re-sources, and destinations, but it precedes real filesystem mutations, network sends, and service updates. The medi-ation layer parses each call into a runtime operation and asks the transaction manager for the active task context. Side-effecting operations must carry a transaction identi-fier before they execute. Unsupported tools, opaque plugins, and calls that cannot describe their resources or effects are rejected or recorded as boundary violations. Interposition also stabilizes task identity across the messy execution patterns of agents. An agent may issue calls over several turns, retry failed operations, or interleave reads with speculative writes. The transaction manager stores the active transaction binding with the task context and requires later calls to reuse that binding. This prevents an operation that consumes earlier task results from appearing as an unrelated action at validation time. Read-only operations can execute with low overhead, but their returned handles enter the transaction context once later operations derive state or effects from them. 
+
+4.3 Online Transaction Construction 
+
+Cordon constructs transaction evidence incrementally while the task executes. When a tool returns, the runtime assigns a handle to the result and records the handle in the transac-tion context. When a later operation summarizes that result, passes it to a command, writes it into local state, or uses it to build an external payload, the metadata layer appends the corresponding dependency edge. The validation engine therefore sees the concrete execution history that produced the pending state and effects. This online construction avoids treating the model’s mem-ory as the source of truth. Command stdout, file contents, summaries, artifacts, and candidate final responses can all be-come tracked objects even when the model later paraphrases them. The context stores handles and edges, not model ra-tionales. As a result, validation can inspect the task’s oper-ational history without replaying the model’s reasoning or trusting a final payload to reveal every dependency. 
+
+4.4 Shadow-State Engine 
+
+Local mutations execute through a shadow-state engine. File writes, deletes, command-produced changes, and supported configuration updates are applied to a transaction-scoped view rather than the real workspace. Subsequent reads con-sult this view, so the agent can observe its speculative work while uncommitted changes remain invisible outside the transaction. At commit, the engine promotes approved writes and deletes to the real workspace. At abort, denial, timeout, or rollback, it discards the shadow view and restores the pre-transaction anchors. The shadow-state boundary gives Cordon ACID-like be-havior only for local state that the engine can mediate. Tools that mutate state through unsupported channels cannot re-ceive ordinary rollback semantics. For those operations, the mediation layer either blocks execution or records the unsup-ported boundary as recovery evidence. This choice keeps the runtime honest: an operation is either inside the recoverable state boundary or explicitly treated as a crossed boundary. 
+
+4.5 Effect Outbox 
+
+External actions enter an effect outbox instead of dispatching immediately. Each outbox entry records the sink, payload handle, lineage handle, authority state, idempotency key, and release status. The validation engine evaluates these entries together with the transaction context. If validation succeeds and the required authority is present, commit re-leases approved entries and records their dispatch state. If validation fails, abort cancels entries that remain pending. If user approval is required, the outbox holds only the scoped action under review. The commit protocol separates local promotion from ex-ternal release. Local state can be promoted atomically within the mediated workspace. External effects require dispatch tracking because the runtime cannot physically undo the external world after release. The outbox therefore records  
+
+> 7EuroSys ’27, April 19–24, 2027, Rabat, Morocco Zheng Chen, Hanqing Liu, Duling Xu, Dong Dong, Jialin Li, Bangzheng Pu, and Jidong Zhai
+
+whether an effect is pending, released, aborted, or manually recovered. Idempotency keys prevent duplicate dispatch dur-ing crash recovery, while release records let audit distinguish a blocked effect from an effect that crossed the boundary. 
+
+4.6 Commit and Recovery Protocol 
+
+Cordon treats commit as a two-part protocol over mediated state and staged effects. Before commit, the runtime writes a commit manifest that names the staged local changes, sched-uled deletes, pending effects, validation token, and target promotion scope. The manifest is the recovery point for the interval between validation success and durable transaction completion. Local promotion and effect release are then re-solved separately. Local state is promoted only if the manifest still matches the staged state, while external effects remain in the outbox until the commit path marks them ready for release. Crash recovery is driven by the transaction state recorded before the crash. A prepared transaction with no durable execution receipts can abort automatically. An executing transaction with partial receipts requires manual review be-cause the runtime cannot prove how far command execution progressed. A validating transaction returns to validation because no commit decision has become durable. A precom-mit transaction is reconciled from its manifest: if staged files and targets are still consistent, Cordon completes promotion and finalizes the transaction; if they are inconsistent, Cordon rolls back from the recorded recovery boundary. Committed, aborted, and rolled-back transactions are treated as terminal except for unfinished outbox effects. The protocol is conservative for effects that may have crossed an external boundary. Pending or ready effects re-main pending after recovery. Cancelled effects remain can-celled. Dispatched effects are not resent unless the runtime has idempotency evidence that the previous dispatch did not complete. Otherwise, the transaction reaches an audit or compensation state that records the sink, payload lineage, au-thority state, and observed dispatch status. This distinction lets Cordon provide automatic recovery for mediated local state without pretending that irreversible external behavior can always be physically undone. 
+
+## 5 Implementation 
+
+We implement Cordon as a research prototype with roughly 14.4 KLOC of handwritten runtime code and a 3.9 KLOC benchmark driver. Most of the runtime is written in Python, including the adapter, validation service, operation service, and shared transaction contracts. The cross-process interface is specified in a small protobuf/gRPC IDL, which generates Python client and server stubs. For command containment, the prototype links against a Rust-backed nono sandbox through its Python bindings. 
+
+RPC interface. We use gRPC [ 22 ] to separate framework-facing adapters from the local service that owns durable state and side-effect mediation. The protobuf file exposes two services. The validation-facing service provides compile, validate, result-evaluation, lineage-query, and status RPCs. The operation-facing service provides prepare, execute, com-mit, approval, effect-acknowledgement, rollback, recovery, query, and status RPCs. All RPCs carry a JSON envelope that contains serialized transaction contract objects. This choice keeps the interface stable while the transaction con-tract evolves and localizes field-level validation in the Python contract layer. 
+
+State management. We use ZODB FileStorage [ 48 ] as the transactional metadata store. This lets the prototype per-sist Python objects directly while still using explicit commit and abort operations around each state transition. Large artifacts are kept out of the object database. Snapshots, sand-box directories, shadow files, and commit manifests live as files under the Cordon data root, while ZODB stores object identifiers, paths, content digests, status fields, and recovery records. The idempotency table stores one response per RPC operation and idempotency key. This makes retries safe for prepare, execute, commit, rollback, approval resolution, ef-fect acknowledgement, and recovery after client or daemon restarts. 
+
+Shadow filesystem. We implement shadow state as an application-level manifest system. Each committed turn has a directory of staged file contents and a JSON manifest map-ping absolute workspace paths to staged files or delete tomb-stones. Task and session views are rebuilt by replaying or-dered turn manifests into aggregate manifests. For command execution, we materialize a temporary runtime directory by copying the real working tree and then overlaying task and session shadow entries. This userspace design runs across macOS and Linux. Command startup is proportional to the materialized workspace size. To keep the cost manageable, sandbox snapshots exclude common high-churn directories such as .git , node_modules , __pycache__ , and Python byte-code files. We canonicalize all paths before anchoring them and acquire resource locks in sorted anchor order to avoid deadlock during concurrent promotion. 
+
+Sandbox backend. We build command containment on top of a nono-style sandbox backend [ 2]. The wrapper constructs a capability set for each command. It grants read access to required system paths, grants read-write access only to the materialized runtime directory, and blocks network access by default. When a tool declaration requires network ac-cess, the wrapper starts a local proxy with an allowed-host list and credential routes. Proxy audit events are converted into egress records. After execution, the sandbox snapshot manager reports created, modified, permission-changed, and deleted paths. The wrapper maps those runtime paths back to the observed workspace, hashes stdout and stderr, stores  
+
+> 8Cordon: Semantic Transactions for Tool-Using LLM Agents EuroSys ’27, April 19–24, 2027, Rabat, Morocco
+
+an execution trace, and converts changed files into staged writes. 
+
+Framework integration. The framework-facing code is intentionally small. The adapter layer contains an SDK, an async RPC client, a task runtime, a server manager, an in-terceptor, and one host-runtime bridge. The bridge leaves the model loop unchanged. It replaces the normal tool invo-cation function with a wrapper that records the tool name, arguments, task identifier, working directory, and authority context before forwarding the call through Cordon. Porting Cordon to another Python agent framework requires imple-menting the same wrapper plus a capability-spec mapping from framework tools to declared reads, writes, effects, and approval requirements. The middleware uses tool-call meta-data and capability specifications as its integration contract. 
+
+Engineering tradeoffs. Several implementation choices fa-vor portability and observability over raw performance. The JSON-envelope RPC interface keeps schema evolution in the Python contract layer. The manifest-based shadow filesystem runs entirely in userspace and materializes command views by copying files. The object database gives crash-consistent metadata updates for the prototype. High-throughput dis-tributed deployment would require a storage backend de-signed for remote coordination. The sandbox wrapper inher-its the platform coverage of the underlying nono backend and reports backend availability during startup. These trade-offs match the current goal: a concrete prototype that ex-poses the transaction boundary precisely enough to evaluate containment, rollback, audit, and integration cost. 
+
+## 6 Evaluation 
+
+We evaluate Cordon as a transaction boundary for agent tool side effects. The evaluation measures whether Cordon con-tains cross-step semantic risks, preserves practical usability, maintains practical system performance, and provides cor-rect transaction behavior under rollback and crash recovery. 
+
+6.1 Experimental Setup Benchmark suites. We use two benchmark suites with the same runtime configuration, tool interfaces, policy configura-tion, and transaction logging format. The shared correlated-risk suite contains 45 risk-bearing multi-tool workflows con-structed as the cross product of nine defense-boundary cat-egories and five transaction-level risk families. The work-loads span six agent domains—coding, incident response, document processing, office workflows, customer support, and data-analysis tasks—and cover sensitive writes, exec-mediated sensitive writes, session-secret external effects, derived-secret exec egress, and high-fanout deletes. The workflows are constructed from task patterns and opera-tional structures commonly used in existing agent bench-marks and evaluations for software engineering and knowledge-work agents [ 4 , 15 , 18 , 39 , 44 ]. We use this suite both for con-tainment and for performance, where the same workflows run under plain execution and three transaction-mediated approval policies: approve, reject, and mixed. The rollback suite contains five deterministic failed-agent trajectories that execute a bad agent step, roll it back, and run a resume check. We additionally use 𝜏 -bench [ 45 ] and Terminal-Bench [ 30 ]as benign task-completion sanity checks. 
+
+Metrics. For containment, we report pre-commit intercep-tion and policy-violating effects. For performance, we report task and total wall time, token usage, LLM calls, and approval events. For rollback, we report rollback latency, total recov-ery time, residual deltas, and resume success. For standard benign benchmarks, we report the official task success or correctness score. 
+
+Baselines. We compare Cordon against six baselines, each corresponding to a missing transaction capability and a com-mon control point in current agent systems: 
+
+• Plain Agent: no semantic transaction mediation, commit boundary, or recovery protocol. 
+
+• Per-Tool Policy: static rules over tool names and argu-ments, without result-object lineage or composed-task validation. 
+
+• Human Approval: tool-level approval, without scoped transaction approvals over objects, sinks, and time win-dows [28, 34]. 
+
+• Sandbox Only: command/process containment, without commit semantics, staged effects, or lineage-aware promo-tion [1, 2]. 
+
+• Snapshot Rollback: filesystem or Git snapshot recovery, without staged external effects or transaction-level effect acknowledgments [20, 23, 31]. 
+
+• Output Filter: regex, secret scanner, or DLP-style out-bound filtering, without lineage across transformations and turns [25, 36, 37]. We run each baseline on the suites where it has meaning-ful semantics. For example, output filtering applies to con-tainment and usability but has no rollback protocol, while snapshot rollback applies to local recovery but cannot retract a dispatched external effect. 
+
+Platform and measurement. We integrate Cordon into a commercial tool-using agent runtime, which we refer to as Agent-H . All large-model calls in the experiments use DeepSeek-V4-Pro [ 16 ]. Unless stated otherwise, decoding parameters, tool set, and Cordon policy remain fixed across systems. Each run records a transaction trace with tool calls, result labels, lineage edges, staged effects, approvals, recov-ery events, and terminal state. 
+
+> 9
+
+EuroSys ’27, April 19–24, 2027, Rabat, Morocco Zheng Chen, Hanqing Liu, Duling Xu, Dong Dong, Jialin Li, Bangzheng Pu, and Jidong Zhai                                                         
+
+> Strategy adapters
+> Cordon
+> 14 26 5
+> 45 pre-commit
+> Boundary Write Exec Session Egress Delete Cordon
+> Prompt
+> Tool IPI
+> Harm
+> Metadata
+> Sandbox
+> DLP
+> Post-hoc
+> Privacy
+> Skill
+> PPUUP5/5
+> UUUUU5/5
+> PPUPP5/5
+> PPUUU5/5
+> PUUUU5/5
+> UUUUU5/5
+> HHHHH5/5
+> PUUPU5/5
+> PPUUU5/5
+> P: prevented U: unsafe H: post Cordon
+
+Figure 5. Security detection results across all correlated-risk cases. 
+
+6.2 Security and Containment Case-level containment result. Plain execution commits the risky effect in all 45 cases. Strategy adapters derived from existing defense boundaries prevent 14 cases before commit, miss 26 cases, and detect 5 cases only after commit. Cordon intercepts all 45 cases before commit. Figure 5 shows both the aggregate result and the case-level structure. Each matrix cell is one benchmark case. Rows correspond to the defense boundary exposed to the strategy adapter; columns correspond to the transaction-level risk exercised by the case. 
+
+Failure modes. The matrix shows three recurring failure modes. Local-view defenses, such as prompt-level guards, tool metadata checks, and harmful-action guards, prevent some direct or visibly dangerous writes, but they become unstable when the write is framed as routine workflow meta-data or when the sensitive mutation occurs through an al-lowed command. Effect-boundary defenses, such as sandbox policies and output guardrails, protect useful local bound-aries, yet they do not see the full relation between an ap-proved secret read and a later message, command upload, or workspace mutation. Post-hoc trace monitors identify the risky execution after it happens, but the irreversible effect has already crossed the boundary. 
+
+Case studies. Figure 6 shows an exec-mediated sensitive-write case. The agent reads a setup note and runs a routine-looking helper command while triaging a checkout issue. The unsafe behavior is not visible in the abstract tool request: the command appends data to an SSH configuration path. A tool-observation boundary sees a setup note and a helper command, while Cordon materializes the command’s write effect as a staged transaction mutation and blocks it before commit. Figure 7 shows a high-fanout deletion case. The cleanup command stays inside an allowed workspace, so a sandbox-style boundary can treat the command as locally permit-ted. The transaction view exposes the operation as a staged 
+
+> Tool-observation view
+> setup note
+> helper exec
+> hidden write
+> .ssh/config
+> mutation commits
+> risky target appears only inside command effects
+> Transaction view
+> exec intent
+> 𝑊
+> staged write
+> sensitive path rule
+> block before commit
+> write target matches sensitive directory
+> command effects are materialized as transaction mutations
+
+Figure 6. A routine helper command becomes unsafe when its hidden write effect targets a sensitive configuration path.     
+
+> Sandbox-boundary view
+> cleanup note
+> exec rm
+> allowed root
+> files deleted
+> fan-out hidden in command
+> command stays inside allowed workspace
+> Transaction view
+> exec intent
+> 𝐷 ={𝑑 1..𝑑 4}
+> staged deletes
+> fan-out violates policy
+> abort rollback
+> delete fan-out exceeds threshold
+> rollback discards staged deletes before they become durable
+
+Figure 7. A workspace-local command can still be unsafe when its composed transaction effect is a high-fanout delete. delete set whose fan-out exceeds the policy threshold. Cor-don aborts the transaction and discards the staged deletes before they become durable. 
+
+Why semantic transactions intercept. Cordon does not rely on a stronger single-point classifier at the prompt, tool, or output boundary. It records result lineage, stages local and external effects, and validates the composed execution flow before commit. This lets Cordon block cases where the decisive evidence is distributed across earlier context, derived artifacts, command side effects, and pending external actions. 
+
+6.3 System Performance End-to-end performance. Table 4 summarizes aggregate end-to-end behavior across all 45 workflows, while Figure 8 reports the per-workflow distribution. The measurement includes approval wait so that the end-to-end numbers reflect the current prototype path. Table 4 shows the aggregate cost of transaction media-tion when approval wait is counted. Reject-on-risk improves mean task time from 25.55s to 23.64s, a 7.5% reduction, be-cause rejected transactions terminate risky flows before the agent completes later tool steps. Approve-all and mixed add approval cost, but the increase remains moderate: approve-all raises mean task time by 5.80s, or 22.7%, and mixed raises it by 5.57s, or 21.8%. At the same time, all transaction-mediated 
+
+10 Cordon: Semantic Transactions for Tool-Using LLM Agents EuroSys ’27, April 19–24, 2027, Rabat, Morocco 
+
+Table 4. End-to-end performance on 45 risk-bearing multi-tool agent workflows. Task times include approval wait; Appr. reports approval events.                          
+
+> Mode Mean Med. Calls Tokens Appr. Plain 25.55s 25.16s 162 1.89M 0Approve 31.35s 30.74s 119 1.36M 45 Reject 23.64s 21.88s 125 1.42M 36 Mixed 31.12s 28.74s 127 1.45M 40
+
+Table 5. Rollback performance on deterministic failed-agent trajectories.                  
+
+> Mode Rollback median Recovery median Residual deltas Resume passed
+> Cordon 4.17ms 178.95ms 015/15
+> restore 10.99ms 100.12ms 73 0/15
+> reset 12.27ms 100.38ms 73 0/15
+> reset+clean 21.74ms 111.47ms 012/15
+
+modes reduce model work: token use drops by 23.6–28.4%, and LLM calls fall from 162 to 119–127. Figure 8 explains why these averages do not imply a uni-form speedup or slowdown. The fastest transaction-mediated cases are the derived-secret egress workflows, where valida-tion stops the run before a long unsafe execution path. In these cases, plain execution often continues through com-mand construction and follow-up reasoning, while Cordon reaches a transaction boundary after fewer tool and model steps. This effect appears across multiple application panels rather than in one isolated domain. The slower cases are mostly rollback-heavy high-fanout delete workflows, where Cordon records staged effects, aborts the transaction, and lets the agent complete recovery-oriented follow-up steps. The figure therefore shows that the overhead comes from concrete transaction work and approval handling, while the savings come from cutting off long unsafe executions before they accumulate more model calls. 
+
+Rollback performance. Table 5 isolates rollback cost from model variability by using deterministic trajectories with no LLM calls. Rollback median measures only the recovery primitive. Recovery median measures the failed-step, roll-back, and resume-check path, excluding workspace setup. Residual deltas report the median number of filesystem dif-ferences that remain after rollback. Resume passed counts trials whose continuation check succeeds. Speculative transaction rollback remains in the millisec-ond range, with a 4.17ms median rollback latency across 15 trials. The Git restore and reset baselines appear inexpen-sive, but they leave a median of 73 residual deltas because untracked artifacts and staged effect traces remain outside the tracked-file boundary. Reset plus clean removes those artifacts in most tasks, but it still fails the permission-drift 
+
+Table 6. Task correctness on benign benchmark subsets.          
+
+> Benchmark Plain Agent Cordon Δ
+> 𝜏 -bench 87.5% 90.0% +2.5 Terminal-Bench 100.0% 100.0% +0.0
+
+trajectory because ordinary Git state does not restore the re-quired file-mode state. The transaction rollback path pays for manifest and snapshot bookkeeping, and it binds that work to the transaction scope that produced the staged mutations. 
+
+Cost breakdown. Figure 9 decomposes measured runtime into normalized component shares. For end-to-end work-flows, excluding approval wait, provider latency dominates the measured path: 62.3%, 63.5%, and 63.6% for approve, reject, and mixed runs. Agent and tool execution account for 14.2–14.4%, while Cordon’s transaction-control path ac-counts for 22.2–23.4%. For deterministic recovery, Cordon spends only 2.9% of measured time in the rollback primitive; most time is spent executing the failed step and checking that the resumed task can continue. The Git restore and Git clean bars spend a larger share in rollback itself, at 11.8% and 21.4%, because recovery is performed by applying workspace-level restore or cleanup operations during the measured rollback path. Cordon shifts most of that work into transaction prepa-ration and manifest tracking before failure, so rollback can discard staged state by transaction scope instead of recon-structing the workspace from a broad file-level operation. 
+
+6.4 Task Correctness on Standard Benchmarks 
+
+We use 𝜏 -bench [ 45 ] and Terminal-Bench [ 30 ] as benign task-completion checks for ordinary tool-agent behavior. Both experiments use the benchmark’s official correctness metric and compare the plain agent with Cordon under the same model, prompt, tool interface, decoding parameters, and environment. Table 6 shows that Cordon remains within measurement variance of the plain agent on both benchmarks while pre-serving the same externally evaluated task outcomes. Across standard benign workloads, transaction mediation, staged ex-ecution, and validation do not measurably degrade benchmark-visible correctness or prevent the agent from completing ordinary multi-step tasks. These results suggest that the run-time overhead introduced by semantic transactions primarily affects execution structure and containment behavior rather than the agent’s ability to solve general-purpose tasks. 
+
+6.5 Limitations and Future Work 
+
+Cordon does not attempt to provide complete semantic cor-rectness or universal containment for arbitrary agent be-havior. Instead, it introduces a practical runtime transaction boundary for staging and validating multi-step agent effects before irreversible commit. Its guarantees therefore apply 
+
+> 11
+
+EuroSys ’27, April 19–24, 2027, Rabat, Morocco Zheng Chen, Hanqing Liu, Duling Xu, Dong Dong, Jialin Li, Bangzheng Pu, and Jidong Zhai build      
+
+> github
+> files
+> docker
+> tests
+> release
+> lint
+> 0
+> 10
+> 20
+> 30
+> 40
+> Task time excl. approval (s)
+> 85
+> Coding/DevOps
+> incident
+> db
+> logs
+> backup
+> profile
+> status
+> lock
+> dns
+> analytics
+> 48
+> Infrastructure/Ops
+> device
+> math
+> search
+> memory
+> notebook
+> clinical
+> 70 47
+> Data/Domain
+> travel
+> calendar
+> booking
+> cal-sync
+> agenda
+> checklist
+> drive
+> template
+> slides
+> 0
+> 10
+> 20
+> 30
+> 40
+> Task time excl. approval (s)
+> 47
+> Office/Documents
+> crm
+> ticket
+> browser
+> roster
+> handoff
+> report
+> chat
+> sheet
+> 62 63
+> Support/Sales
+> invoice
+> contract
+> offer
+> ledger
+> settlement
+> billing
+> Business/Finance
+> Plain Approve-all Reject-on-risk Mixed policy
+
+Figure 8. End-to-end task time including approval wait for all 45 workflows under plain execution and three transaction-mediated approval policies. Approve Reject Mixed Cordon Git 
+
+> restore
+> Git
+> clean
+> 0
+> 25
+> 50
+> 75
+> 100
+> Time share (%)
+> LLM provider
+> Agent/tool
+> STX control
+> Setup
+> Failed step
+> Rollback
+> Resume check
+
+Figure 9. Runtime cost composition for end-to-end transaction-mediated workflows and deterministic recov-ery paths. Bars exclude approval wait and show normalized component shares, not absolute latency. only to operations that remain within the mediated transac-tion runtime and whose mutations and effects are observable to the system. Operations that cross external or opaque boundaries, such as unsupported plugins, dynamically changing services, or tools with unobservable side effects, may fall outside this containment scope. In these cases, Cordon records lineage, authority context, and recovery metadata for audit and com-pensation rather than assuming full reversibility or semantic visibility. Future work includes extending mediation coverage across heterogeneous tool ecosystems and reducing runtime over-head through techniques such as scoped approval reuse, incremental validation, and tighter integration with host runtimes and tool frameworks. 
+
+## 7 Related Work 
+
+Transactions and recovery. Database and storage systems use logging, commit protocols, and recovery rules to de-cide when speculative state becomes durable [ 11 , 23 , 31 ]. Coordination avoidance ties coordination to application in-variants [ 7], while sagas handle long-running effects through compensation [ 20 ]. Cordon applies these ideas to a different transaction object: agent tool intents, result lineage, shadow state, staged effects, authority, and audit metadata. 
+
+Provenance and flow. Data provenance explains how derived artifacts depend on earlier inputs and transforma-tions [ 10 , 13 ]. Information-flow systems constrain sensitive data movement across program boundaries [ 19 , 21 , 47 ]. Cor-don does not prove full noninterference; it uses lineage as runtime commit evidence for task-level state and effects. 
+
+Agent runtimes and benchmarks. ReAct and Tool-former showed that language models can interleave rea-soning with tool calls [ 38 , 46 ]. Subsequent systems and benchmarks study agents in software engineering, work-place, multi-turn API, and cross-application settings [ 18 , 30 ,42 , 44 , 45 ]. These works make tool use a first-class capability and evaluation target, while Cordon targets the runtime sub-strate that stages, validates, commits, recovers, and audits tool-call consequences. 
+
+12 Cordon: Semantic Transactions for Tool-Using LLM Agents EuroSys ’27, April 19–24, 2027, Rabat, Morocco 
+
+Agent safety. Prompt-injection defenses, instruction hier-archies, harmful-agent benchmarks, human approval, sand-boxing, output guardrails, tool-attack studies, and supply-chain scanners identify important risks in tool-using agents [ 4,12 , 15 , 17 , 24 , 28 , 34 , 36 , 37 , 39 – 41 , 43 ]. Section 2 analyzes their execution projections; Cordon instead provides a com-mit and recovery abstraction across prompts, tools, local state, external effects, and delegated authority. 
+
+Reference monitors. Reference-monitor designs require mediation to be complete, tamper resistant, and small enough to reason about [ 3 , 27 ]. Capability systems restrict trans-formations over protected objects, and Clark–Wilson em-phasizes well-formed transactions [ 14 ]. Cordon inherits this mediation principle, but its unit is a task-level semantic trans-action rather than a syscall, permission check, or tool invo-cation. 
+
+## 8 Conclusion 
+
+We present Cordon, a transactional execution runtime for tool-using LLM agents. Cordon introduces semantic trans-actions as a task-level execution boundary that groups tool intents, result lineage, staged local state, pending external effects, delegated authority, and recovery metadata into a single commit and rollback unit. By interposing at runtime, Cordon makes agent-produced consequences explicit before they become durable or externally visible. Our evaluation shows that semantic transactions improve containment and recovery for cross-step semantic risks while preserving prac-tical usability and benchmark-visible task correctness. 
+
+## References 
+
+[1] AI Security Institute. 2025. The Inspect Sandboxing Toolkit: Scalable and Secure AI Agent Evaluations. https://www.aisi.gov.uk/work/the-inspect-sandboxing-toolkit-scalable-and-secure-ai-agent-evaluations . Accessed 2026-05-12. [2] Always Further. 2026. nono. https://github.com/always-further/nono .AI-agent sandbox and runtime; Accessed 2026-05-14. [3] James P. Anderson. 1972. Computer Security Technology Planning Study .Technical Report ESD-TR-73-51. USAF Electronic Systems Division, Hanscom Air Force Base, Bedford, MA. [4] Maksym Andriushchenko, Alexandra Souly, Mateusz Dziemian, Derek Duenas, Maxwell Lin, Justin Wang, Dan Hendrycks, Andy Zou, Zico Kolter, Matt Fredrikson, Eric Winsor, Jerome Wynne, Yarin Gal, and Xander Davies. 2024. AgentHarm: A Benchmark for Measuring Harmfulness of LLM Agents. arXiv preprint arXiv:2410.09024 (2024). 
+
+https://arxiv.org/abs/2410.09024 
+
+[5] Anthropic. 2026. Claude Code Settings: Permissions. https://docs. anthropic.com/en/docs/claude-code/settings#permissions . Accessed 2026-05-12. [6] Yuntao Bai, Saurav Kadavath, Sandipan Kundu, Amanda Askell, Jack-son Kernion, Andy Jones, Anna Chen, Anna Goldie, Azalia Mirhoseini, Cameron McKinnon, Carol Chen, Catherine Olsson, Christopher Olah, Danny Hernandez, Dawn Drain, Deep Ganguli, Dustin Li, Eli Tran-Johnson, Ethan Perez, Jamie Kerr, Jared Mueller, Jeffrey Ladish, Joshua Landau, Kamal Ndousse, Kamile Lukosuite, Liane Lovitt, Michael Sel-litto, Nelson Elhage, Nicholas Schiefer, Noemi Mercado, Nova Das-Sarma, Robert Lasenby, Robin Larson, Sam Ringer, Scott Johnston, Shauna Kravec, Sheer El Showk, Stanislav Fort, Tamera Lanham, Tim-othy Telleen-Lawton, Tom Conerly, Tom Henighan, Tristan Hume, Samuel R. Bowman, Zac Hatfield-Dodds, Ben Mann, Dario Amodei, Nicholas Joseph, Sam McCandlish, Tom Brown, and Jared Kaplan. 2022. Constitutional AI: Harmlessness from AI Feedback. arXiv preprint arXiv:2212.08073 (2022). https://arxiv.org/abs/2212.08073 
+
+[7] Peter Bailis, Alan Fekete, Michael J. Franklin, Ali Ghodsi, Joseph M. Hellerstein, and Ion Stoica. 2014. Coordination Avoidance in Database Systems. Proceedings of the VLDB Endowment 8, 3 (2014), 185–196. doi: 10.14778/2735508.2735509 
+
+[8] Daniil A. Boiko, Robert MacKnight, Ben Kline, and Gabe Gomes. 2023. Autonomous chemical research with large language models. Nature 
+
+624 (2023), 570–578. doi: 10.1038/s41586-023-06792-0 
+
+[9] Andres M. Bran, Sam Cox, Oliver Schilter, Carlo Baldassari, Andrew D. White, and Philippe Schwaller. 2024. Augmenting large language models with chemistry tools. Nature Machine Intelligence 6 (2024), 525–535. doi: 10.1038/s42256-024-00832-8 
+
+[10] Peter Buneman, Sanjeev Khanna, and Wang-Chiew Tan. 2001. Why and Where: A Characterization of Data Provenance. In Proceedings of the 8th International Conference on Database Theory . 316–330. doi: 10. 1007/3-540-44503-X_20 
+
+[11] Haogang Chen, Daniel Ziegler, Tej Chajed, Adam Chlipala, M. Frans Kaashoek, and Nickolai Zeldovich. 2015. Using Crash Hoare Logic for Certifying the FSCQ File System. In Proceedings of the 25th Symposium on Operating Systems Principles . 18–37. doi: 10.1145/2815400.2815402 
+
+[12] Sizhe Chen, Julien Piet, Chawin Sitawarin, and David Wagner. 2024. StruQ: Defending Against Prompt Injection with Structured Queries. 
+
+arXiv preprint arXiv:2402.06363 (2024). https://arxiv.org/abs/2402. 06363 
+
+[13] James Cheney, Laura Chiticariu, and Wang-Chiew Tan. 2009. Prove-nance in Databases: Why, How, and Where. Foundations and Trends in Databases 1, 4 (2009), 379–474. doi: 10.1561/1900000006 
+
+[14] David D. Clark and David R. Wilson. 1987. A Comparison of Com-mercial and Military Computer Security Policies. In Proceedings of the IEEE Symposium on Security and Privacy . 184–194. doi: 10.1109/SP.1987. 10001 
+
+[15] Edoardo Debenedetti, Jie Zhang, Mislav Balunović, Luca Beurer-Kellner, Marc Fischer, and Florian Tramèr. 2024. AgentDojo: A Dy-namic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents. In Advances in Neural Information Processing Systems .doi: 10.52202/079017-2636 
+
+[16] DeepSeek-AI. 2026. DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence. https://huggingface.co/deepseek-ai/ DeepSeek-V4-Pro . Accessed 2026-05-15. [17] Docker. 2026. Docker Documentation: Seccomp Security Profiles. 
+
+https://docs.docker.com/engine/security/seccomp/ . Accessed 2026-05-03. [18] Alexandre Drouin, Maxime Gasse, Massimo Caccia, Issam H. Laradji, Manuel Del Verme, Tom Marty, David Vazquez, Nicolas Chapados, and Alexandre Lacoste. 2024. WorkArena: How Capable are Web Agents at Solving Common Knowledge Work Tasks?. In Proceedings of the 41st International Conference on Machine Learning (Proceedings of Machine Learning Research, Vol. 235) . PMLR, Vienna, Austria, 11642–11662. [19] William Enck, Peter Gilbert, Byung-Gon Chun, Landon P. Cox, Jaeyeon Jung, Patrick McDaniel, and Anmol N. Sheth. 2010. TaintDroid: An Information-Flow Tracking System for Realtime Privacy Monitoring on Smartphones. In USENIX Symposium on Operating Systems Design and Implementation .[20] Hector Garcia-Molina and Kenneth Salem. 1987. Sagas. In Proceedings of the ACM SIGMOD International Conference on Management of Data .249–259. [21] Joseph A. Goguen and José Meseguer. 1982. Security Policies and Security Models. In Proceedings of the IEEE Symposium on Security and Privacy . 11–20. doi: 10.1109/SP.1982.10014 
+
+13 EuroSys ’27, April 19–24, 2027, Rabat, Morocco Zheng Chen, Hanqing Liu, Duling Xu, Dong Dong, Jialin Li, Bangzheng Pu, and Jidong Zhai 
+
+[22] gRPC Authors. 2026. gRPC Documentation. https://grpc.io/docs/ .Accessed 2026-05-14. [23] Theo Härder and Andreas Reuter. 1983. Principles of Transaction-Oriented Database Recovery. Comput. Surveys 15, 4 (1983), 287–317. doi: 10.1145/289.291 
+
+[24] Keegan Hines, Gary Lopez, Matthew Hall, Federico Zarfati, Yonatan Zunger, and Emre Kiciman. 2024. Defending Against Indirect Prompt Injection Attacks with Spotlighting. arXiv preprint arXiv:2403.14720 
+
+(2024). https://arxiv.org/abs/2403.14720 
+
+[25] Hakan Inan, Kartikeya Upasani, Jianfeng Chi, Rashi Rungta, Krithika Iyer, Yuning Mao, Michael Tontchev, Qing Hu, Brian Fuller, Davide Testuggine, and Madian Khabsa. 2023. Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations. arXiv preprint arXiv:2312.06674 (2023). https://arxiv.org/abs/2312.06674 
+
+[26] Invariant Labs. 2026. MCP-Scan: A Security Scanner for MCP. https: //github.com/invariantlabs-ai/mcp-scan . Accessed 2026-05-12. [27] Butler W. Lampson. 1974. Protection. ACM SIGOPS Operating Systems Review 8, 1 (1974), 18–24. doi: 10.1145/775265.775268 
+
+[28] LangChain. 2026. LangChain Documentation: Human-in-the-loop. https://docs.langchain.com/oss/python/langchain/human-in-the-loop . Accessed 2026-05-03. [29] Songkai Liu, Yanqing Shen, Yilun Zhang, Zhangli Hou, Xin Wang, Jianxi Luo, and Zhinan Zhang. 2026. iDesignGPT enhances conceptual design via large language model agentic workflows. Nature Commu-nications 17 (2026), 1997. doi: 10.1038/s41467-026-68672-1 
+
+[30] Mike A Merrill, Alexander G Shaw, Nicholas Carlini, Boxuan Li, Harsh Raj, Ivan Bercovich, Lin Shi, Jeong Yeon Shin, Thomas Walshe, E Kelly Buchanan, et al . 2026. Terminal-bench: Benchmarking agents on hard, realistic tasks in command line interfaces. arXiv preprint arXiv:2601.11868 (2026). [31] Chandrasekaran Mohan, Don Haderle, Bruce Lindsay, Hamid Pirahesh, and Peter Schwarz. 1992. ARIES: A transaction recovery method supporting fine-granularity locking and partial rollbacks using write-ahead logging. ACM Transactions on Database Systems (TODS) 17, 1 (1992), 94–162. [32] Nous Research. 2026. Hermes Agent: Tirith Security. https://hermes-agent.ai/features/tirith-security . Accessed 2026-05-12. [33] OpenAI. 2026. Codex CLI. https://developers.openai.com/codex/cli .Accessed 2026-05-11. [34] OpenAI. 2026. OpenAI Agents SDK: Human-in-the-loop. https: //openai.github.io/openai-agents-js/guides/human-in-the-loop/ . Ac-cessed 2026-05-03. [35] Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll L. Wain-wright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, John Schulman, Jacob Hilton, Fraser Kelton, Luke Miller, Maddie Simens, Amanda Askell, Peter Welinder, Paul Chris-tiano, Jan Leike, and Ryan Lowe. 2022. Training Language Models to Follow Instructions with Human Feedback. In Advances in Neural Information Processing Systems , Vol. 35. 27730–27744. [36] Protect AI. 2026. LLM Guard: The Security Toolkit for LLM Interactions. 
+
+https://github.com/protectai/llm-guard . Accessed 2026-05-12. [37] Traian Rebedea, Razvan Dinu, Makesh Narsimhan Sreedhar, Christo-pher Parisien, and Jonathan Cohen. 2023. NeMo Guardrails: A Toolkit for Controllable and Safe LLM Applications with Programmable Rails. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing: System Demonstrations . Association for Compu-tational Linguistics, 431–445. doi: 10.18653/v1/2023.emnlp-demo.40 
+
+[38] Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Eric Hambro, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. 2023. Toolformer: Language Models Can Teach Themselves to Use Tools. In Advances in Neural Information Processing Systems .[39] Jiawen Shi, Zenghui Yuan, Guiyao Tie, Pan Zhou, Neil Zhenqiang Gong, and Lichao Sun. 2025. Prompt Injection Attack to Tool Selection in LLM Agents. arXiv preprint arXiv:2504.19793 (2025). https://arxiv. org/abs/2504.19793 
+
+[40] Snyk. 2026. Agent Scan: Security Scanner for AI Agents, MCP Servers, and Agent Skills. https://github.com/snyk/agent-scan . Accessed 2026-05-12. [41] Snyk. 2026. ToxicSkills: Malicious AI Agent Skills and Agent Skills Supply Chain Compromise. https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/ . Accessed 2026-05-12. [42] Harsh Trivedi, Tushar Khot, Mareike Hartmann, Ruskin Manku, Vinty Dong, Edward Li, Shashank Gupta, Ashish Sabharwal, and Niranjan Balasubramanian. 2024. AppWorld: A Controllable World of Apps and People for Benchmarking Interactive Coding Agents. In Proceed-ings of the 62nd Annual Meeting of the Association for Computational Linguistics . doi: 10.48550/arXiv.2407.18901 
+
+[43] Eric Wallace, Kai Xiao, Reimar Leike, Lilian Weng, Johannes Heidecke, and Alex Beutel. 2024. The Instruction Hierarchy: Training LLMs to Prioritize Privileged Instructions. arXiv preprint arXiv:2404.13208 
+
+(2024). https://arxiv.org/abs/2404.13208 
+
+[44] John Yang, Carlos E. Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. 2024. SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering. In Ad-vances in Neural Information Processing Systems , Vol. 37. Neural Infor-mation Processing Systems Foundation, Vancouver, Canada, 125 pages. doi: 10.52202/079017-1601 
+
+[45] Shunyu Yao, Noah Shinn, Pedram Razavi, and Karthik Narasimhan. 2024. 𝜏 -bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains. arXiv preprint arXiv:2406.12045 (2024). doi: 10.48550/ arXiv.2406.12045 
+
+[46] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2023. ReAct: Synergizing Reasoning and Acting in Language Models. In International Conference on Learning Representations .[47] Nickolai Zeldovich, Silas Boyd-Wickizer, Eddie Kohler, and David Mazières. 2006. Making Information Flow Explicit in HiStar. In USENIX Symposium on Operating Systems Design and Implementation .[48] ZODB Developers. 2026. ZODB: A Native Object Database for Python. 
+
+https://zodb.org/ . Accessed 2026-05-14. 14

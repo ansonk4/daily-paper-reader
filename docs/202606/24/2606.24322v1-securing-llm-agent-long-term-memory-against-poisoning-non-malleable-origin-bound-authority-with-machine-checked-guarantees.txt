@@ -1,0 +1,509 @@
+Title: Securing LLM-Agent Long-Term Memory Against Poisoning: Non-Malleable, Origin-Bound Authority with Machine-Checked Guarantees
+
+URL Source: https://arxiv.org/pdf/2606.24322v1
+
+Published Time: Wed, 24 Jun 2026 00:50:38 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+> 1
+
+# Securing LLM-Agent Long-Term Memory Against Poisoning: Non-Malleable, Origin-Bound Authority with Machine-Checked Guarantees 
+
+Yedidel Louck 
+
+Abstract —LLM agents increasingly rely on persistent long-term memory, which creates a critical vulnerability that we study here: memory poisoning . An adversary can store untrusted con-tent in one session that later steers a consequential action, such as a payment, a setting change, or data exfiltration, in a future session. Existing defenses base a memory item’s authority to act on either its content (detection or trust-scoring) or its derivation history (lineage). We show that both signals are malleable . An attacker can launder an untrusted origin through three channels specific to LLM agents: the agent’s own summarization, atrusted-tool echo, and manufactured corroboration. Each makes the content look benign and breaks or flips its derivation edge to “trusted.” We formalize malleability for the memory write-retrieve-act pipeline and prove a machine-checked separation theorem. No content- or lineage-based defense is sound under laundering (T1), write-time origin binding is necessary (T2), and non-malleable origin-bound authority with Sybil-resistant corroboration-gated elevation is sufficient (T3). Our construction, TMA-NM (Tamper-evident Memory Authority, Non-Malleable), instantiates non-malleable information-flow control (IFC) for LLM-agent memory. A cross-defense, cross-attack, and cross-model benchmark over eight frontier models shows that existing defenses fail exactly where the theory predicts (up to 68% laundering attack-success), while TMA-NM reaches 0% attack success on both direct and laundering attacks across all models and channels, at full legitimate utility. We release the bench-mark, harness, and machine-checked TLA + models to support reproducibility. 
+
+Index Terms —LLM agents, long-term memory, memory poi-soning, information-flow control, capability security, prompt injection, formal verification, benchmark. 
+
+I. I NTRODUCTION 
+
+# PERSISTENT memory is now a default capability of deployed LLM agents. Systems such as MemGPT [1], Mem0 [2], Generative Agents [3], and MemMachine [4] let an agent write facts, preferences, and instructions in one session and recall them in later ones. This statefulness is also a vulnerability. A growing body of work demonstrates memory poisoning : sleeper/dormant poisoning that re-emerges across unrelated sessions [5] (echoing the training-time sleeper-agent threat [6]), memory control-flow attacks that hijack tool se-lection [7], retrieval corruption [8], memory injection [9], and agent backdoors [10], [11], with reported injection success up to ∼99 .8% .
+
+Yedidel Louck is with Department of Computer and Software Engineering, Ariel Cyber Innovation Center, Ariel University, Israel. yedidel.louck@msmail.ariel.ac.il 
+
+The defensive response has been limited [12] and, we argue, aimed at the wrong target. Detection asks whether a memory “looks malicious,” but the attacks show why this is hard. A poisoned memory is benign until it activates, so there is nothing to detect at write or rest time, and an adaptive adversary can disguise the trigger to survive content inspection at use time [13]. The closest structural defense, MemLin-eage [14], tracks provenance and gates sensitive actions, but it re-derives its verdict at dispatch and offers no path for legitimate untrusted information to ever act. As a concrete example, suppose an agent reads a web page while researching a task and saves a note for later. The page says to send the customer list to a given address whenever backups are mentioned. The agent rewrites the page in its own words, and the note now reads like the agent’s own benign memory. Weeks later, in an unrelated session, the user asks about backups, the agent recalls the note, and it exfiltrates the data. The untrusted web origin has been laundered by the agent’s own summarization, so a defense that inspects the note’s content, or its now-dropped derivation edge, sees nothing wrong. This is exactly the gap we close. Our starting observation is that existing defenses decide a memory’s authority to act from a signal the adversary can 
+
+transform , namely its content (detection or trust-scoring) or a derivation edge (lineage). We call such signals malleable ,and we call laundering the act of erasing an item’s un-trusted origin through a behavior-preserving transformation. An LLM-agent adversary has three such transformations. In 
+
+self-summarization (L-a) the agent paraphrases the poison into its own note, so the content looks benign and the derivation edge is dropped. In trusted-tool echo (L-b) a trusted tool returns attacker-controlled content. In manufactured corrob-oration (L-c) the adversary plants several untrusted items to fake a consensus. Each lowers an item’s apparent untrusted-ness without any genuine trusted endorsement. We argue that authority to act must instead be non-malleable , bound to a memory item’s true origin, which the trusted monitor records and no adversary transformation can lower. Untrusted-origin content is non-actionable, and, crucially, this label propagates . An agent note derived from untrusted content, or a trusted-tool output echoing it, inherits untrusted authority, which closes L-a and L-b. Authority rises only through Sybil-resistant corroboration-gated elevation ,that is, through at least two independent trusted principals 
+
+> arXiv:2606.24322v1 [cs.CR] 23 Jun 2026 2
+
+(for example an internal registry and a bank confirmation, not two copies of the same web page) or a fresh action-bound user authorization, never through content asserting its own legitimacy, which closes L-c. This is a direct instantiation of nonmalleable information-flow control [15] (IFC, the classical discipline that tracks how data of different trust levels may flow and combine) for agent memory. It provides robust declassification , so that an attacker who only influences low-integrity data cannot cause a downgrade of authority, and 
+
+transparent endorsement , so that integrity may be raised only by a principal that is itself trusted on the endorsed data and never by the untrusted data vouching for itself. We do not claim origin-tagging or cross-session enforce-ment themselves, since prior systems already provide these (for example, MemLineage [14]). Our novelty is the separa-tion (malleable defenses are unsound, non-malleable authority is sufficient), the non-malleable construction that achieves it, and the benchmark that witnesses it, detailed as C1–C5 below. 
+
+Contributions. 
+
+C1. A formal model of LLM-agent memory authority + a definition of malleability via three LLM-specific laun-dering channels: self-summarization, trusted-tool echo, manufactured corroboration (Section II, Section IV). C2. A machine-checked separation theorem : content- and malleable-lineage defenses are unsound under launder-ing (T1), write-time origin binding is necessary within the model (T2), and non-malleable origin-bound author-ity with Sybil-resistant corroboration-gated elevation is sufficient (T3) (Section IV). C3. A constructive laundering attack breaking all three malleable defense classes (lineage, capability-IFC, and trust-scoring, instantiated by MemLineage, CaMeL/Fides, and SuperLocalMemory), the empirical witness of T1 (Section VI). C4. MEM-INV-Bench , the broadest cross-defense × attack 
+
+× model memory benchmark we are aware of, exhibiting the theory ↔benchmark correspondence in which each defense class fails exactly where the theorem predicts (Section VI). C5. A released, reproducible artifact (benchmark, harness, machine-checked proofs). 1
+
+II. T HREAT MODEL 
+
+A stored memory item is a tuple 
+
+(content , origin , scope , t write , act class ), where origin ∈ { user, trusted tool, agent, untrusted external } and act class ∈{none, inform, act }. The agent runs a write → retrieve → act 
+
+pipeline, where an act is a response and/or a consequential action such as a tool call, payment, setting change, or data egress. The adversary controls untrusted external content that the agent may store, for instance a document, a web page, a tool output, or another user’s message. The adversary cannot forge 
+
+origin or scope , which the trusted monitor sets at write time,  
+
+> 1Our artifact is publicly available: code, harness, and TLA +models at https://github.com/yedidel/mem-inv-bench, and the benchmark data at https: //huggingface.co/datasets/anonymos-2321135/MEM-INV-Bench.
+
+cannot break cryptography, and does not control the user’s authorization channel.                     
+
+> Assumption A1 (origin-labeling oracle). The monitor assigns each write its true origin from the channel it arrives on (user prompt, authenticated tool, agent self-write, untrusted ingestion), never from its content. We assume the channel itself is authenti-cated, so labels are correct at write time. Concretely, a trusted
+> tool channel is realized by mutually authenticated transport (mTLS), audience-bound OAuth tokens, or signed tool responses, so that origin derives from a verified channel identity rather than from message text, and the monitor can flag label drift when a principal’s claimed origin no longer matches its authenticated identity. All of our guarantees are conditional on A1. If a trusted channel is itself compromised, its outputs are mislabeled trusted
+> and the binding inherits that error, which is exactly why elevation requires two independent trusted principals (Section III, M3) and so bounds the damage of any single compromised channel.
+
+We consider five attack classes: sleeper (store now, trigger later), control-flow (a retrieved item redirects a tool or ac-tion), direct (poison that biases an answer), data-exfiltration 
+
+(a stored instruction causes egress), and cross-agent shared memory, which is out of scope and is the province of agent-communication-protocol security [16], [17]. The guarantee we target is that, for any reachable state, no untrusted external 
+
+item causes a consequential action without independent trusted corroboration or a fresh user authorization bound to that ac-tion. Non-consequential responses may still surface untrusted memory with provenance, an honest scope boundary under which answer-biasing is mitigated, not eliminated . Write-time binding applies the Biba integrity principle (low-integrity inputs may not raise an item’s trust) in a temporal setting, combined with Denning-style lattice information flow (trust levels form an ordered lattice along which data may move) and an enforcement-monitor view of the act gate. III. T HE NON -M ALLEABLE CONSTRUCTION (TMA-NM) We call our construction TMA-NM, for Tamper-evident Memory Authority, Non-Malleable : authority is bound to origin (Authority ), the binding cannot be lowered by any laundering transformation ( Non-Malleable ), and every verdict is appended to a tamper-evident hash chain ( Tamper-evident ). It realizes the sufficiency direction: origin-bound authority whose label is non-malleable under the three laundering channels, plus Sybil-resistant corroboration-gated elevation. (Malleability is defined formally in Section IV, and this section presents the construction that resists it.) Fig. 1 shows the monitor mediating the pipeline. The construction has four mechanisms, sketched in Fig. 1. The first, write-time origin binding (M1), sets act class =
+
+f (origin ) at the moment of writing, so that untrusted maps to none, agent to inform, and trusted tool or user to act. The monitor records origin , and the adversary cannot forge it. Non-malleable propagation (M2) is the keystone of the design, and it closes L-a and L-b. Authority is bound ir-revocably to origin at write time and never to content or derivation edges. Any item derived from untrusted sources, whether through agent summarization (L-a) or a trusted tool fed untrusted inputs (L-b), automatically inherits the maximum untrust level and remains act=none , no matter how benign 3  
+
+> append-only verdict log (M4)
+> untrusted source
+> trusted tool
+> TMA-NM
+> monitor
+> long-term memory
+> act gate
+> tool / payment
+> act=none
+> act
+> write-bind
+> retrieve
+> verdict
+> Fig. 1. TMA-NM mediates write, retrieve, and act. Authority ( act class ) is bound at write time from origin (M1), and untrusted items are act=none . The act gate permits a consequential action only if its value is trusted-derived or elevated by independent corroboration (M3), and authority propagates non-malleably (M2). All decisions are logged (M4).
+
+the resulting text appears. This is robust declassification and transparent endorsement [15] instantiated for memory, where a transformation cannot lower authority. For opaque tools the monitor does not infer dataflow inside a black box. It propagates untrust at the call boundary , so a tool invocation’s output inherits the maximum untrust of the arguments and retrieved memory items passed into that call, namely its declared input bindings , which the monitor mediates. A trusted tool fed attacker-controlled content thus emits an untrusted result, closing L-b, without any tool-internal provenance hook. A tool’s output is treated as trusted 
+
+only when it is on an allow-list of origin-authoritative tools and all of its bound inputs are trusted, and otherwise the boundary rule conservatively taints. This is the standard sound over-approximation in which taint may be raised but never silently lowered. Tighter, sub-value propagation through struc-tured payloads is the value-level capability-token extension (Section IX). The third mechanism is Sybil-resistant corroboration-gated elevation (M3), which closes L-c. A consequential action whose security-relevant value is driven by an untrusted item is permitted only when that value is corroborated by ≥2
+
+independent trusted principals, meaning distinct registries or tools rather than repeated or echoed content, or when a fresh action-bound user authorization is presented and consumed. Repeated untrusted items (manufactured corroboration, L-c) do not count, elevation is monotone, and an item cannot corroborate itself. This is the legitimate path that preserves utility. The user authorization is bound to the concrete action rather than the session. It is a single-use token over the tuple (tool , value v, amount , nonce , timestamp ), and the act gate executes only when the dispatched action matches the tuple and the token is unspent. This rules out replay, cross-action substitution, and payee-swap or TOCTOU (time-of-check to time-of-use) between proposal and execution, because re-binding to the exact v is part of the verdict and changing 
+
+v after authorization voids it. The fourth mechanism is a tamper-evident verdict log (M4). Writes, elevations, and allow/deny verdicts are appended to a hash chain, and retroactive edits break the chain. Each append is O(1) , a single hash over the previous head, and adds no model call, so logging does not affect the act-gate 
+
+Algorithm 1 Act-time authorization for a consequential action 
+
+a (allow iff its value is not untrusted-derived, OR is licensed by ≥2 independent trusted principals, OR a fresh user autho-rization is presented, otherwise deny).  
+
+> 1:
+
+v ← security-relevant value of a (e.g. payee, setting, recipient)  
+
+> 2:
+
+U ← { retrieved untrusted items that push v} 
+
+> 3:
+
+if U = ∅ then return ALLOW ▷ v not from untrusted memory  
+
+> 4:
+
+end if  
+
+> 5:
+
+C ← { independent trusted principals that license v} 
+
+> 6:
+
+if |C| ≥ 2 then elevate each u ∈ U ; return ALLOW ▷
+
+M3  
+
+> 7:
+
+end if  
+
+> 8:
+
+if fresh user auth bound to a then consume it; return  
+
+> ALLOW 9:
+
+end if  
+
+> 10:
+
+return DENY ▷ untrusted-derived value, uncorroborated latency. Storage grows linearly in the number of verdicts, and periodic Merkle checkpointing with compaction of pre-checkpoint entries bounds it in practice, keeping the scheme viable at high throughput. Algorithm 1 states the act-time decision. Each laundering channel fails for a structural reason. Self-summarization (L-a) fails because the agent’s note inherits the maximum untrust of its sources (M2), so paraphrasing into benign-looking text grants no authority. Trusted-tool echo (L-b) fails because a tool output whose inputs are untrusted is conditionally tainted (M2), so echoing attacker content does not launder it. Manufactured corroboration (L-c) fails because elevation counts only independent trusted principals (M3), so repeated untrusted items never reach the threshold. Sleeper and disguised triggers are subsumed, since authority is bound to origin rather than to timing or phrasing. Trust is relocated to the origin-labeling boundary and to the independence of corroborators, and a fully compromised trusted tool is the main residual risk (Section IX). Non-consequential answer-biasing is out of scope and is surfaced with provenance. IV. F ORMAL MODEL AND THE SEPARATION THEOREM 
+
+Authority labels form the integrity order untrusted ⊏
+
+agent ⊏ trusted , and a defense D maps each memory item to a label in this order. Let A be the three laundering channels (self-summarization L-a, trusted-tool echo L-b, manufactured corroboration L-c), the adversary transformations available 
+
+without genuine trusted or user consent. Following nonmal-leable IFC [15]: 
+
+Definition 1 (Malleability) . D is malleable if there exist a memory item x and a transformation τ ∈ A ∗ with D(τ (x)) ⊐
+
+D(x), that is, τ raises the effective authority without consent. 
+
+D is non-malleable if D(τ (x)) ⊑ D(x) for every item x and every τ ∈ A ∗.
+
+We model the write → retrieve → act pipeline in TLA +
+
+(Temporal Logic of Actions, checked with the TLC model checker) with a laundering adversary realizing A and a4
+
+defense-independent security invariant Sec , namely that no untrusted-origin item authorizes a consequential action unless elevated by ≥k independent trusted principals or a fresh action-bound user authorization. A CONSTANT selects the act-gate’s authority rule. The three results below are state-ments about the bounded model M with parameters Slots =3 ,
+
+sessions ≤2, and threshold k=2 , each established by exhaus-tive TLC enumeration. 
+
+Theorem 1 (T1, insufficiency of malleable gates) . In M, any gate whose decision is a function of content or of a content-derivable lineage edge is malleable (Def. 1) and admits a reachable state violating Sec . TLC returns the witness trace 
+
+write-untrusted → paraphrase → act .
+
+Theorem 2 (T2, necessity of write-time binding) . In M
+
+with write-time origin binding disabled, Sec is violated in a reachable state, so write-time origin binding is necessary within the model. 
+
+Theorem 3 (T3, sufficiency of non-malleable authority) . In 
+
+M, the gate that binds authority to origin and elevates only via ≥k independent trusted principals (or a fresh action-bound user authorization) is non-malleable and satisfies Sec across all 3,270 reachable states. 
+
+These are claims about the bounded M, and the inductive-invariant argument below extends T3 toward unbounded ex-ecutions. We additionally check the implementation directly, by an exhaustive procedure over the real monitor that veri-fies Action Integrity ( 120 configs), Elevation Soundness ( 64 
+
+corroborator sets), and end-to-end safety. The results above check one model size, and we strengthen T3 toward unbounded executions with an inductive invariant. Let IndInv ≡ TypeOK ∧ (acted ⇔ actedBy ∈ Slots ) ∧
+
+(acted ⇒ mem [actedBy ].origin ̸ = empty ) ∧ Security . We verify with TLC, starting from all states satisfying IndInv 
+
+(including non-reachable ones) and checking that every single transition preserves it, that IndInv is inductive (“no error”). Because TLC starts from every IndInv -state, not only the reachable ones, a single successful run establishes preservation under each action, which is the inductive step of a standard safety proof. Only Security is at risk, since the other conjuncts are structural. The per-action argument is then independent of |Slots | and the session bound. WRITE fires only on an 
+
+empty slot, so it never edits an acted slot and leaves Security 
+
+untouched. PARAPHRASE edits only content and edge fields, which the authority decision never reads, so the decision on every slot is unchanged. ELEVATE only sets elev and is itself guarded by ≥2 independent trusted principals, so it can never elevate an untrusted-only value. ACT is the only action that sets acted , and its enabling guard is exactly the Security 
+
+predicate for the new actor, so the post-state satisfies Security 
+
+by construction. None of these arguments mentions a concrete slot count or session number, so IndInv is preserved for 
+
+any number of memory items and sessions, which extends safety toward unbounded executions. We scope this claim carefully. TLC mechanically verifies the inductive step (preser-vation from all IndInv -states) and the initial state, while the parameter-independence above is a hand argument, and a fully mechanized deductive proof of the unbounded theorem for arbitrary slots, sessions, and thresholds (TLAPS/Lean) remains future work that the inductive invariant sets up. We therefore claim a machine-checked inductive invariant, rather than a fully mechanized unbounded proof. The invariant reduces security to a minimal trusted base. Origin is assigned by the monitor from the channel a datum arrives on (authenticated user input, an allow-listed and ideally cryptographically authenticated tool, or otherwise untrusted )and is never inferred from content, so the adversary, who controls untrusted content, cannot forge it. Since TLC shows that the only paths to a consequential action on an untrusted-origin item are elevation by ≥ 2 independent trusted principals or a fresh action-bound user authorization, a successful attack implies that the adversary forged an origin label (breaking the labeling base), compromised ≥ 2 independent trusted princi-pals, or compromised the user-authorization channel. No con-tent or lineage trick suffices. This is the standard information-flow posture, in which trust is minimized and made explicit 
+
+rather than assumed away, and the ≥ 2-independent threshold is a tunable knob that can be raised for stronger single-compromise or Sybil resistance at a confirmation-rate cost. V. MEM-INV-B ENCH 
+
+This section defines the benchmark, namely its scenarios, defense classes, and metrics. The results appear in Section VI. The benchmark spans 12 domains (finance, travel, SaaS, procurement, payroll, e-commerce, utilities, non-profits, dev-ops, healthcare, CRM, IT-security) and five consequential tool types (pay, wire, purchase, setting-change, data-send). At-tack scenarios cover sleeper, control-flow, and data-exfiltration classes, legitimate-elevation scenarios require external infor-mation to act after trusted corroboration (utility must hold). Each attack has benign , static (blatant), adaptive (disguised), and whitebox variants. The whitebox adversary knows TMA-NM and forges trusted-sounding corroboration inside the un-trusted blob to defeat value-provenance. Because TMA-NM’s authority follows origin rather than content claiming trust, this is resisted by construction. We compare five defense classes, each the strongest faithful instance of its class. none applies no defense. trust score is content-trust scoring (for example SuperLocalMemory [18]), and in the cross-model study its instance is a per-model LLM judge, prob detect , run on the model under test so that it is not a stub. lineage is derivation-edge attribution (MemLineage-style [14]). capability ifc is single-session ca-pability/IFC (CaMeL/Fides-style), which assumes memory is uncompromised. tma nm is ours. The faithfulness point matters in particular for the content detector, which runs on the model under test rather than a stub. We report the consequential-action attack-success rate (ASR), the fraction of runs in which the attacker action executes, for the direct attack and the three laundering channels (L-a/b/c). We also report legit-utility (whether a corroborated legitimate action is correctly authorized, the no-over-block control), uncorr-auto (whether an uncorrobo-rated, untrusted-sourced legitimate action is auto-authorized, 5
+
+where lower is safer because such an action should require confirmation), and per-decision latency measured by a mi-crobenchmark. All studies use the same eight frontier mod-els across six vendors (OpenAI, Anthropic, Google, Meta, DeepSeek, Alibaba): gpt-5-chat, gpt-4o-mini, claude-opus-4.1, claude-sonnet-4.5, gemini-2.5-flash, llama-4-maverick, deepseek-chat, and qwen3-235b, which include a strong-safety model and recent releases. A silent-failure guard excludes any model whose empty-response rate exceeds 5% , and during development it flagged two unreliable models that we replaced, so all eight final models record 0% empty. The smaller sub-studies (Mem0, sensitivity, threshold, independence, and lineage-policy) use reduced model panels by design, stated locally. We report Wilson 95% CIs and permutation tests, and all runs report cost. VI. E VALUATION 
+
+We run a primary unified study (Table I, Fig. 2) and a supporting cross-model trigger-style study (Tables III and II), both over the same eight models. The auto-generated tables label TMA-NM (ours) as temporal auth or tma nm , and the content defense class appears as prob detect (a per-model LLM-judge detector) in the trigger-style study and 
+
+trust score (content-trust scoring) in the unified study. Our primary result comes from the unified benchmark (Table I, Fig. 2), which runs all five defense classes against the direct attack and the three laundering channels, plus the two legitimate-action controls, over the eight models (all 0% empty-response under the guard). Each row is the strongest faithful instance of its class, and the tables are auto-generated from the logs. TMA-NM is the only one of the five defense classes at 0% ASR on both the direct attack and laundering, at 100% legit-utility, identical to the undefended agent. Baselines fail exactly where the separation theorem pre-dicts. Content ( trust score ) and capability-IFC are laundered (68% ), capability-IFC additionally permits the direct attack (84% , since it assumes memory is clean), and lineage resists corroboration laundering but is defeated by summarization and echo ( 47% ). All TMA-NM-vs.-baseline ASR gaps are significant at p < 5 × 10 −5 (two-sided permutation test, 
+
+20 ,000 iterations). Pooled per laundering channel, TMA-NM is 0/192 with Wilson 95% CI [0 , 2.0]% on each of direct, summarization, tool-echo, and corroboration. The full per-model, per-channel breakdown with exact n and CIs is in Appendix B, and each baseline’s decision rule is documented in Appendix A. On deployability, TMA-NM’s act-gate is a deterministic check that requires no extra model call, at 1.3 μs per decision against roughly 2,000 ms for a content-detection judge call. That is about six orders of magnitude cheaper, so the structural defense adds no perceptible latency. TMA-NM also does not block legitimate actions, which is the anti-tautology control. A defense that blocked everything would also reach 0% ASR, and the legit-utility column rules this out. Per model, TMA-NM authorizes the exact same 
+
+legitimate actions as the undefended agent (100% ), so it introduces zero false blocks. The only residual cost is that                                                         
+
+> TABLE I UNIFIED BENCHMARK ,POOLED OVER 8MODELS (W ILSON 95% CI IN TEXT ). C OLUMNS :DIRECT -ATTACK ASR, LAUNDERING ASR ( MEAN OF
+> L-A/B/C), LEGIT -UTILITY (CORROBORATED ,HIGHER IS BETTER ), AND UNCORR -AUTO (AUTO -AUTHORIZATION OF AN uncorroborated ,
+> UNTRUSTED -SOURCED LEGITIMATE ACTION ,WHERE lower is safer ). TMA-NM ALONE IS 0% ON BOTH THE DIRECT ATTACK AND LAUNDERING AT FULL LEGIT -UTILITY ,AND ITS 0% UNCORR -AUTO MEANS SUCH ACTIONS CORRECTLY REQUIRE A ONE -TIME CONFIRMATION RATHER THAN AUTO -EXECUTING .Defense direct-ASR laund.-ASR legit-util. uncorr-auto none 84 68 100 100 trust score 068 100 100 lineage 047 100 0capability ifc 84 68 100 100
+> TMA-NM 00100 0direct-ASR laundering-ASR legit-utility
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> % (pooled, 8 models)
+> none
+> trust score
+> lineage
+> capability ifc
+> tma nm
+> Fig. 2. Unified benchmark (pooled, 8models, Wilson 95% CIs). TMA-NM (green) is 0% on the direct attack and laundering while preserving 100%
+> legit-utility.
+
+an uncorroborated, untrusted-sourced consequential action re-quires a one-time user confirmation (uncorr-auto = 0% ), the correct anti-fraud behavior that the insecure baselines skip (uncorr-auto = 100% ). Three supporting studies reinforce this. The cross-model study below reports the same conclusion across attack styles 
+
+(sleeper, control-flow, and data-exfiltration, with blatant, dis-guised, and whitebox triggers), the ablation isolates each mechanism, and the persistence sweep shows time-invariance. The cross-model trigger-style study (per-model breakdown in Table III, pooled in Table II) supports the same conclusion. Pooled over the eight models, TMA-NM records zero success-ful consequential attacks ( 0/4032 , CI [0 , 0.1]% ) across blatant, disguised, and whitebox triggers, at task utility 95 .9% , equal to the undefended agent. The undefended baseline succeeds 
+
+31 .2% of the time ( 43 .8% on blatant triggers), and every TMA-NM-vs.-baseline gap is significant at p < 1/20 ,000 , the resolution floor of a 20 ,000 -iteration permutation test. Detection is erratic and disguise-fragile. prob detect pools to 10 .6% , but this masks a complete failure on at least one model, since on gpt-5-chat its LLM judge flags nothing and leaves ASR at the undefended level. It leaks on disguised (12 .2% ) and whitebox ( 12 .9% ) triggers on most models and 
+
+costs task utility ( 93 .0% versus 95 .9% ). Content-based detec-tion is not a guarantee and is sensitive to the judge model. Attribution alone is also insufficient. lineage stops the 6
+
+TABLE II CROSS -MODEL STUDY : POOLED CONSEQUENTIAL -ACTION ASR (%) WITH WILSON 95% CI BY TRIGGER STYLE , OVER EIGHT MODELS . TMA-NM IS 0
+
+> THROUGHOUT
+
+.Defense static adaptive whitebox all utility none 43.8 [41.2,46.5] 27.6 [25.3,30.1] 22.2 [20.1,24.5] 31.2 [29.8,32.7] 95.9 [94.8,96.7] prob detect 6.5 [5.3,8.0] 12.2 [10.6,14.1] 12.9 [11.3,14.8] 10.6 [9.7,11.6] 93.0 [91.7,94.2] lineage 24.4 [22.2,26.8] 9.3 [7.9,11.0] 0.0 [0.0,0.3] 11.2 [10.3,12.2] 95.9 [94.8,96.7] temporal auth 0.0 [0.0,0.3] 0.0 [0.0,0.3] 0.0 [0.0,0.3] 0.0 [0.0,0.1] 95.9 [94.8,96.7] TABLE III PER -MODEL CONSEQUENTIAL -ACTION ASR ( STATIC / ADAPTIVE / WHITEBOX ) AND UTILITY (%). TMA-NM ( BOLD ) IS 0/0/0 ON EVERY ONE OF THE EIGHT MODELS WITH NO UTILITY LOSS . N OTE THAT PROB DETECT FAILS completely ON GPT -5-CHAT . A UTO -GENERATED FROM R E S U L T S .J S O N .Model Defense cons-st cons-ad cons-wb util gpt-5-chat none 52 38 22 96 prob detect 52 38 22 96 lineage 33 15 0 96 
+
+temporal auth 0 0 0 96 gpt-4o-mini none 54 29 29 96 prob detect 0 10 10 92 lineage 24 10 0 96 
+
+temporal auth 0 0 0 96 claude-opus-4.1 none 43 36 10 96 prob detect 0 0 0 96 lineage 33 21 0 96 
+
+temporal auth 0 0 0 96 claude-sonnet-4.5 none 10 5 5 96 prob detect 0 0 0 81 lineage 10 5 0 96 
+
+temporal auth 0 0 0 96 gemini-2.5-flash none 68 40 33 92 prob detect 0 10 29 91 lineage 35 16 0 92 
+
+temporal auth 0 0 0 92 llama-4-maverick none 35 21 29 99 prob detect 0 17 19 97 lineage 20 0 0 99 
+
+temporal auth 0 0 0 99 deepseek-chat none 42 21 21 95 prob detect 0 9 5 94 lineage 21 2 0 95 
+
+temporal auth 0 0 0 95 qwen3-235b none 48 32 30 97 prob detect 1 16 19 97 lineage 18 5 0 97 
+
+temporal auth 0 0 0 97 
+
+whitebox attack ( 0% , via its registry-conflict rule) but still permits 24 .4% of blatant attacks, since correctly-attributed yet malicious memory is allowed to act, which is exactly the gap TMA-NM’s elevation gate closes. Each mechanism is load-bearing (Table IV, Fig. 3, mean over the eight models). Removing origin binding returns ASR to undefended levels ( 44 /28 /22 ), matching the necessity result. Removing corroboration-gated elevation keeps ASR at 
+
+0 but drops utility from 96% to 77% , direct evidence that elevation is precisely what lets legitimate external information act, since without it the legitimate-elevation cases are blocked. Removing the verdict log changes neither ASR nor utility, as it provides tamper-evident auditability rather than enforcement, which we state plainly. Authority is also time-invariant (Fig. 4). TMA-NM stays 
+
+TABLE IV MECHANISM ABLATION (MEAN OVER THE EIGHT MODELS ): 
+
+> CONSEQUENTIAL
+
+-ASR ( STATIC /ADAPTIVE /WHITEBOX ) AND UTILITY (%). ORIGIN BINDING (M1) IS THE SECURITY MECHANISM ,
+
+> CORROBORATION
+
+-GATED ELEVATION (M3) IS THE UTILITY MECHANISM , 
+
+> AND THE VERDICT LOG
+
+(M4) IS AUDITABILITY .Condition cons-st cons-ad cons-wb utility none 44 28 22 96 TMA-NM (full) 0 0 0 96 
+
+−origin binding 44 28 22 96 
+
+−elevation 0 0 0 77 
+
+−verdict log 0 0 0 96 
+
+at 0% for N ∈ { 0, 1, 2, 4, 8} intervening sessions, while the undefended threat persists at 51 –61% . Dormancy buys the 7none TMA −M1 −M2 −M3 
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> % (mean over models)  adapt-ASR
+> utility
+
+Fig. 3. Ablation (mean over the eight models): removing origin binding restores attacks, removing elevation costs utility, and removing the verdict log affects neither. 0 2 4 6 8 
+
+> intervening sessions N
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> consequential-ASR (%)  none
+> temporal_auth
+
+Fig. 4. Cross-session persistence: consequential-ASR vs. intervening sessions 
+
+N .
+
+attacker nothing against a write-time binding. To test external validity beyond our own scenarios, we reproduce four published memory-poisoning pipelines (Mem-Morph [19], MemoryGraft [20], Trojan Hippo [21], and a conversational Trojan [22]) as drop-in attacks through the same harness (Table V). Pooled over the eight models, TMA-NM blocks every one ( 0/1152 , 0.0% ) at benign-task utility identical to the undefended agent ( 264 /384 under both), so the result is not bought with utility. The undefended agent is driven 38 .2% of the time, and the baselines fail in the structurally distinct ways our separation predicts. Trojan Hippo exfiltration is the sharpest case: lineage gives no protection (78 .5% , identical to undefended) because an egress to an attacker address conflicts with no registry value to flag, and the content judge still leaks 43 .8% , whereas TMA-NM refuses every attempt because the egress target is an un-elevated untrusted-origin value. This is the same write-time invariant acting on attacks we did not design. We are explicit about scope. Answer-bias remains high under all defenses, including ours, because TMA-NM does not block non-consequential answer-biasing, by design. 
+
+TABLE V HEAD -TO -HEAD AGAINST FOUR PUBLISHED MEMORY -POISONING PIPELINES REPRODUCED AS DROP -IN SCENARIOS : CONSEQUENTIAL -ASR (%, POOLED OVER THE EIGHT MODELS , ALL TRIGGER STYLES ). TMA-NM BLOCKS ALL FOUR AT UTILITY EQUAL TO THE UNDEFENDED AGENT .Published pipeline none prob detect lineage TMA-NM 
+
+MemMorph 27 1 0 0
+
+MemoryGraft 41 3 0 0
+
+Trojan Hippo 78 44 78 0
+
+Conv. Trojan 7 0 0 0All four 38.2 12.0 19.6 0.0 direct                
+
+> summarize
+> tool_echo
+> corroborate
+> none
+> trust_score
+> lineage
+> capability_ifc
+> tma_nm
+> 84 74 68 61
+> 074 68 61
+> 074 68 0
+> 84 74 68 61
+> 0000
+> attacker-action ASR (%): defense x laundering channel
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+
+Fig. 5. Theory ↔benchmark correspondence: attacker-action ASR (%, 8 mod-els) for each defense class against each laundering channel. Each malleable defense fails on the channels the separation theorem predicts, and TMA-NM is 0% throughout. 
+
+A. Theory ↔benchmark correspondence (laundering) 
+
+The separation theorem (Section IV) predicts which defense class fails on which laundering channel. Fig. 5 gives the per-channel ASR pooled over the eight models, and the prediction matches the measurement cell for cell. trust score (content) is defeated by self-summarization, trusted-tool echo, and man-ufactured corroboration. lineage is defeated by summarization and tool-echo but resists corroboration, since its edges remain. 
+
+capability ifc (which assumes memory is uncompromised) is defeated by every channel including the direct poison. And TMA-NM holds at 0% on every channel and model. This is the empirical witness of T1 and T3. 
+
+B. Multi-turn agentic evaluation 
+
+The studies above use a single action proposal. To test a realistic deployment we run a multi-turn tool-using loop 
+
+in which each turn the agent reasons and issues one tool call (a web or notes lookup, which is untrusted, an internal registry, which is trusted, or a consequential pay or send ), then observes the result and continues until it acts or answers. The monitor propagates origin at the value level across turns , so a value fetched from an untrusted lookup remains untrusted when later passed to a consequential call. Over the eight models ( n=128 per defense), the undefended agent is induced to fetch the poisoned value and act on it in 61 .7% 
+
+of episodes, whereas TMA-NM holds at 0% attack success, neutralizing the consequential attacks the undefended agent 8                                    
+
+> TABLE VI CONTENT -DETECTOR SENSITIVITY :LAUNDERING -ASR AND LEGIT -UTILITY AS THE LLM-JUDGE BLOCK THRESHOLD τIS SWEPT (3
+> MODELS ,n=81 ATTACK /27 LEGIT ). N OτREACHES
+> (0% ASR ,100% UTILITY ),WHEREAS TMA-NM DOES .block threshold τlaundering-ASR (%) legit-utility (%) 00.0 0.0 53.7 33.3 20 18.5 85.2 50 22.2 88.9 75 25.9 100.0 100 55.6 100.0
+> TMA-NM (origin-bound) 0.0 100.0
+
+would otherwise execute. This confirms that the guarantee survives multi-step reasoning and cross-turn dataflow, not only single-shot proposals. To check that the guarantee is backend-agnostic, we run the same monitor end-to-end over Mem0 , a production memory framework with LLM-based fact-extraction on write, a local sentence-transformer embedder, and a Qdrant vector store. Origin labels survive Mem0’s consolidation, which rewrites stored content. Critically, the corroboration count consumed by the act gate is maintained from the monitor’s record of independent trusted writes (not re-parsed from the retrieved text), so store-side merging, de-duplication, or vector com-paction cannot silently lower an independence count or relabel an origin. Mem0 may rewrite content , but authority lives in the monitor’s append-only record. Over six models and two attack plus two legitimate scenarios × 8 trials ( n=96 
+
+per defense), the undefended agent is poisoned in 50 .0% of episodes (Wilson 95% CI [40 .2, 59 .8] ), while TMA-NM holds at 0% (CI [0 , 3.8] ), and the gap is significant (permutation test, 
+
+p = 5 × 10 −5, 20 ,000 iterations). Legitimacy is preserved, since TMA-NM authorizes the same 95 /96 legitimate actions (99 .0% ) as the undefended agent, where the single shared miss is a model formatting failure under both arms rather than a TMA-NM block, so the guarantee transfers to a real deployed store with zero false blocks. 
+
+C. Baseline sensitivity and threshold generalization 
+
+A natural objection is that our content baseline is simply under-tuned. To rule this out we run a real LLM content judge that scores each memory item 0–100 for maliciousness and sweep the block threshold τ over the full range (three models, 81 laundering-attack and 27 legitimate episodes, with the judge running on the model under test). Table VI traces the resulting (ASR, utility) frontier. Driving laundering-ASR to 0% requires τ =0 , which blocks every action (utility 0% ), at full utility the judge still leaks 25 .9% , and the best operating point with ASR ≤5% reaches only 33 .3% utility. Laundered-malicious and legitimate items both read as benign, so no 
+
+threshold separates them, and the entire frontier is strictly dominated by TMA-NM’s (0% , 100%) , which it attains by construction rather than by tuning. This is the empirical face of T1, since the failure is structural rather than a calibration artifact.                                         
+
+> TABLE VII THRESHOLD GENERALIZATION :AUTO -AUTHORIZATION RATE (%) BY REQUIRED INDEPENDENT PRINCIPALS kAND AVAILABLE VOUCHERS m(3
+> MODELS ). A TTACK ASR IS 0% FOR EVERY k(0/18 ). k=2 IS OUR DEFAULT ,AND k=1 IS SHOWN AS THE INSECURE SINGLE -SOURCE POINT .threshold m=1 m=2 m=3 m=4
+> k=1 (insecure) 100 100 100 100
+> k=2 (default) 0100 100 100
+> k=3 00100 100
+> k=4 000100
+
+The corroboration threshold also generalizes beyond two. TMA-NM’s elevation gate is parameterized by k, the number of independent trusted principals required. We vary k ∈{1, 2, 3, 4} over legitimate actions backed by m ∈ { 1, 2, 3, 4}
+
+independent vouchers (three models). Table VII shows the expected monotone trade-off. An action is auto-authorized iff 
+
+m ≥ k, so raising k converts more legitimate actions into a one-time confirmation (the security versus burden knob), while 
+
+attack ASR is 0% for every k (0/18 ), since the adversary never obtains even two independent trusted endorsements and manufactured corroboration is untrusted. The inductive invariant is stated for arbitrary k, so the argument is unaffected, and risk-based policies that scale k with an action’s blast radius compose directly. A stricter lineage policy does not settle the class either. Lin-eage gates decide from a derivation edge and, when attribution is inconclusive, must pick a default. We compare default-allow 
+
+(MemLineage-style) against a stricter default-deny (allow only on a conclusive trusted edge), over three models, on the laun-dering channels and on legitimate actions with conclusive ver-sus inconclusive provenance (Table VIII). Default-deny closes self-summarization ( 78% → 0% ) but it still leaks trusted-tool echo ( 74% ), because the echoed value rides a genuinely trusted 
+
+edge that no default can refuse, and it collapses utility for inconclusive-provenance legitimate actions ( 100% → 0% ). So neither lineage policy reaches (0% ASR , 100% utility ), and the class is malleable on the tool-echo channel regardless of its default, exactly as Theorem 1 predicts. Binding to origin 
+
+rather than the edge (TMA-NM) is what closes tool-echo while preserving inconclusive-but-legitimate work. A lineage scheme 
+
+augmented with non-malleable, origin-aware capability tokens would also close tool-echo, but only by ceasing to decide from the edge. Binding tokens to origin and propagating them non-malleably makes such a scheme an instance of TMA-NM, not a competing defense: the class-level claim concerns defenses that decide from content or a malleable edge, and moving to origin is the fix whatever the carrier. VII. R ELATED WORK 
+
+Table IX positions TMA-NM against the closest defenses by property. 
+
+MemLineage [14] persists an origin-derived label across sessions, but its derivation edge is the malleable object our laundering attack defeats, since its own LLM-judge attribution can be suppressed and then falls back to “trusted,” and it has neither corroboration-gated elevation nor a machine-checked guarantee. The LTM-security survey [13] calls for 9                                                                                          
+
+> TABLE VIII LINEAGE DEFAULT -POLICY PROBE (3MODELS ): CONSEQUENTIAL -ASR
+> BY CHANNEL (LOWER BETTER )AND LEGIT -UTILITY BY PROVENANCE CONCLUSIVENESS (HIGHER BETTER ). D EFAULT -DENY CLOSES SELF -SUMMARIZATION BUT STILL LEAKS TRUSTED -TOOL ECHO AND BLOCKS INCONCLUSIVE -PROVENANCE LEGITIMATE ACTIONS ,AND ONLY ORIGIN -BINDING REACHES 0% ASR AT FULL UTILITY .ASR by channel (%, lower better) legit-util (%) policy direct summ. echo corrob. concl. inconcl. lineage default-allow 078 74 0100 100 lineage default-deny 0074 0100 0TMA-NM (origin-bound) 0000100 100
+> TABLE IX DIFFERENTIATION . WT= WRITE -TIME ORIGIN BINDING .XS= CROSS -SESSION MEMORY . NM= NON -MALLEABLE (AUTHORITY SURVIVES PARAPHRASE /ECHO /S YBIL LAUNDERING ). EL= CORROBORATION -GATED ELEVATION . MC= MACHINE -CHECKED GUARANTEE of the memory-authority property specifically (AN ×HERE DOES NOT MEAN A SYSTEM LACKS ALL FORMAL CONTENT ,SINCE
+> CAMEL/F IDES AND THE MCP FRAMEWORK CARRY FORMAL ARGUMENTS ,ONLY THAT THE NON -MALLEABLE MEMORY -AUTHORITY PROPERTY IS NOT MACHINE -CHECKED ). BM= CROSS -DEFENSE MEMORY BENCHMARK . ( ✓YES ,∼PARTIAL ,×NO .) WT XS NM EL MC BM content / trust-scoring [18] ∼✓××××
+> lineage (MemLineage) [14] ✓✓×××∼
+> capability/IFC (CaMeL, Fides) [23], [24] ××××××
+> semantic taint (NeuroTaint) [25] ∼✓∼×××
+> selection integrity [26] ✓✓∼×××
+> TMA-NM (ours) ✓✓✓✓✓✓
+
+write- and store-time provenance anchoring, which we re-alize, and sleeper poisoning [5] and memory control-flow attacks [7] are the threats we close. The mandatory-access-control (MAC) framework [27] is spatial and single-session, with state that resets each round, so we are its temporal complement on persistent memory. The MCP formal frame-work [28] is unimplemented, single-trace, and puts long-term memory out of scope. CaMeL [23] and Fides [24] guard the single-session prompt-to-action path with plain dynamic IFC, whereas we add the cross-session memory dimension and, crucially, non-malleability . We instantiate nonmalleable IFC [15] (robust declassification, transparent endorsement) for LLM-agent memory, to our knowledge the first such instantiation. NeuroTaint [25] tracks semantic taint but is an 
+
+offline auditor , whereas we provide runtime write-time en-forcement that refuses to act on laundered memory. Selection Integrity [26] independently argues a provenance-defense-class impossibility, but for the orthogonal graph-selection channel and without machine-checking or nonmalleable IFC, while our separation targets the paraphrase, tool-echo, and Sybil chan-nels and is mechanically checked. SuperLocalMemory [18] scores Bayesian content-trust at write time, a trust score 
+
+instance that our theorem and benchmark show is laundered, and Mesh Memory Protocol [29] distinguishes echoes from independent corroboration as a protocol but proves no Sybil-resistance guarantee. A fast-growing line of work strengthens the attack side, including memory poisoning with paired defenses on memory-based agents [30], stealthy memory corruption in recom-mender agents (DrunkAgent [31]), and query-only injection (MINJA [9]). A second wave targets the memory pipeline more aggressively: MemMorph [19] hijacks tool selection with records disguised as technical facts (a control-flow attack), MemoryGraft [20] implants malicious “successful experiences” that resurface on semantically similar tasks (a reflection-consolidation sleeper), Trojan Hippo [21] plants a dormant exfiltration payload through a single untrusted tool call (a data-exfiltration sleeper), and a conversational Trojan [22] installs a triggerable backdoor through ordinary dialogue. Each of these is an instance of an attack class in our threat model, and each injects through a channel TMA-NM labels untrusted external at write time, so the laundered value reaches the act gate act=none and is refused regardless of how convincingly it was disguised, how it evaded extraction, or when its trigger fires. We confirm this empirically by repro-ducing all four as drop-in attacks (Section VI, Table V), where TMA-NM blocks every one. TMA-NM is therefore orthogonal and complementary , since it governs the downstream autho-rization step, so its guarantee is largely insensitive to whether poisoning evades extraction or retrieval. As long as the write-time origin label holds, a poisoned item is act=none however it was injected. Retrieval-time filters such as TrustRAG [32] are content-decision defenses (a trust score instance our separation shows is laundered) and compose with TMA-NM as a best-effort pre-filter rather than a guarantee. For multimodal 
+
+memory, Visual Inception [33] plants image sleeper trig-gers and defends with query-time counterfactual verification (CognitiveGuard). Under TMA-NM, vision-derived memory is simply untrusted unless elevated, so origin binding extends across modalities directly, though multimodal independence attestation such as distinct capture provenance is future work. Reflection-driven consolidation attacks induce harmful gen-eralization from locally-correct experiences, and TMA-NM blocks the resulting consequential actions whose value is untrusted-origin, while reflection-induced answer bias remains out of scope (Section IX). Our scope is a single agent’s persis-tent memory, and the inter-agent channel is a complementary protocol-level concern: agentic communication protocols differ sharply in their guarantees [16], and A2A-protocol hardening for sensitive data in multi-agent systems [17] addresses the cross-agent case (Section II) we leave out of scope. Extending TMA-NM’s origin-bound authority across agents through a federation of origin authorities is a natural next step. TMA-NM is also a contemporary instance of long-standing integrity principles. The no-read-down/no-write-up integrity discipline of Biba [34] and the well-formed-transaction and separation-of-duty tenets of Clark–Wilson [35] are the con-ceptual ancestors of, respectively, our origin-bound act=none 
+
+rule and our ≥2-independent-principal elevation, in which separation of duty becomes the elevation gate. Authority propagation follows the lattice information-flow tradition of Denning [36] and the decentralized label model of Myers and Liskov [37]. Non-malleability is the property, absent from those dynamic IFC models, that an adversary controlling only low-integrity data cannot trigger a downgrade, which Cecchetti et al. [15] formalize and we instantiate for agent memory. Our elevation policy is a deliberately lightweight, application-10 
+
+level answer to the Sybil attack [38]. Rather than resource-based identity proofs, we require corroboration from principals that are independent by construction (distinct authenticated channels or administrative domains), which is exactly the “logically central authority” escape hatch Douceur identifies, realized here by the trusted monitor. Finally, the verdict log realizes the accountability goals of Web provenance [39], but for decisions (allow/deny verdicts) rather than data lineage, precisely because lineage is the malleable object our attack defeats. VIII. D ISCUSSION 
+
+TMA-NM reaches 0% not because it is a tuned detector that happens to score well, but as a structural consequence of where the decision is made. An attack succeeds only if untrusted memory causes a consequential action. TMA-NM binds authority-to-act to origin at write time, so an untrusted item is act=none the instant it enters memory, and the act gate refuses any consequential action whose security-relevant value derives from an un-elevated untrusted item. Nothing the adversary controls, neither when the trigger fires (dormancy), nor how it is phrased (disguise), nor how convincingly it claims legitimacy, changes the origin label. The only LLM-dependent part is whether the agent attempts the action, which for the undefended agent varies widely with model and trigger style, from under 10% to a pooled 84% on the direct attack. A single deterministic rule neutralizes this to 0% 
+
+everywhere, with no successful consequential attack in 4,032 
+
+cross-model runs or in any unified, multi-turn, or Mem0 run, whereas probabilistic detection, which is judge- and phrasing-dependent, does not. The whitebox attack fails by construction. The white-box adversary embeds forged “[Finance-verified]” or “[Bank-confirmed]” text inside the untrusted blob to fake corrobora-tion. It fails because TMA-NM counts corroboration by origin 
+
+(items the trusted monitor labeled trusted tool or user ), never by content asserting its own trustworthiness. Forged trust-claims ride on an untrusted external item and therefore carry no authority. This is the crucial difference from content-based detection, which the same forgery partly fools, since 
+
+prob detect leaks 12 .9% on whitebox. We do not block legitimate cases, and we measured this. A defense that blocked everything would also score 0% ASR, so utility is the load-bearing control. In the unified study TMA-NM’s legit-utility is 100% (identical to the undefended agent), and in the cross-model study its task utility is 95 .9% (also equal to undefended), and both include legitimate-elevation 
+
+cases where external information must act after trusted corrob-oration. The ablation isolates the mechanism responsible, since disabling M3 (corroboration-gated elevation) leaves ASR at 0
+
+but collapses utility to 77% . The corroboration path is exactly what admits legitimate external-information actions while the write-time binding keeps malicious ones out, so the two goals are served by two distinct, separately ablatable mechanisms. The same monitor, unchanged, yields 0% across eight models from six vendors (OpenAI, Anthropic, Google, Meta, DeepSeek, Alibaba), including a strong-safety model (claude-opus-4.1) and recent releases, whose undefended susceptibility                               
+
+> TABLE X INDEPENDENCE STRESS TEST :ATTACK ASR (%) WHEN TRUSTED PRINCIPALS ARE COMPROMISED (3MODELS ). A SINGLE COMPROMISE IS RESISTED ,CORRELATED (SHARED -DOMAIN )COMPROMISE IS BLOCKED ONLY BY THE DOMAIN -AWARE MONITOR ,AND DEFEATING k=2 NEEDS TWO independent COMPROMISES WHILE k=3 RESTORES RESISTANCE .compromise setting naive monitor domain-aware (ours) single compromise, k=2 00two independent, k=2 67 67 two correlated (shared domain), k=2 67 0
+> two independent, k=3 00
+
+to the direct attack is high (pooled 84% ). The defense does not depend on model alignment, since it is enforced outside the model. The elevation gate is only as strong as the independence of its corroborators, so we make independence concrete rather than nominal. Two trusted principals count as independent only if they have distinct cryptographic identities, separate administrative or trust domains, and no shared upstream data source, for example an internal ERP registry and a bank-confirmation API rather than two endpoints of the same vendor. The monitor records each principal’s domain in the verdict log and rejects an elevation whose corroborators share a domain. This bounds the single-compromise threat that Assumption A1 isolates, since compromising one provider yields one trusted vote, below the threshold, so an attack needs k independently compromised domains. The threshold 
+
+k generalizes beyond two and is a per-action deployment knob (raise it, or apply a risk-based policy that scales k with the action’s blast radius, for higher-assurance operations), and the inductive invariant is stated for an arbitrary threshold, so the argument is unaffected. The residual risk is correlated failure, a dependency shared by ostensibly distinct principals, and surfacing the dependency graph and attesting independence (for example via supply-chain attestation) is the practical hardening path. Table X empirically probes these boundaries (three models). When the adversary compromises a trusted principal so that it vouches the malicious value, a single compromise is resisted at 
+
+k=2 (0% ), defeating k=2 requires two genuinely independent 
+
+compromises ( 67% , the inherent limit of any k-threshold), and raising to k=3 restores resistance ( 0% ). The decisive case is correlated compromise, where two principals sharing one upstream domain fool a naive count ( 67% ) but are collapsed to a single effective voucher by our domain-aware check (0% ), quantifying why independence must be enforced by construction rather than assumed. For setting k by action class, we recommend k=2 for routine, reversible actions, k≥3 for high-blast-radius or irreversible operations (large payments, credential or permission changes, bulk data egress), and a fresh action-bound user authorization for the highest tier, a risk-based policy that composes with the invariant for any fixed 
+
+k.Finally, because every write, elevation, and allow/deny verdict is appended to the tamper-evident log (M4), origin-labeling drift or registry misconfiguration is auditable rather than silent. An anomalous rate of trusted -labeled writes 11 
+
+from a given channel, or denials clustering on one principal, are detectable signals, and periodic audit of the log is the operational response to a suspected channel compromise. IX. L IMITATIONS 
+
+(a) Answer-bias is mitigated, not eliminated : untrusted memory can still color a non-consequential response (surfaced with provenance), and TMA-NM guards the retrieval-to-action 
+
+path, not free-text answers. (b) Relocated trust : the guarantee holds modulo correct origin labeling and genuinely indepen-dent corroboration, and a fully compromised trusted tool could launder a value, which is why elevation requires ≥2 indepen-dent trusted sources rather than one. (c) Value attribution : the security-relevant value is read exactly from the structured tool call, and in the unified benchmark a memory item’s authority is its channel-assigned origin (set by the monitor, not parsed from text), so the headline results do not depend on text matching. In a black-box deployment, attributing which re-trieved value the agent actually used requires value-level taint 
+
+propagation. The principled mechanism is a capability-token design (authority carried as an unforgeable token through the dataflow, as in CaMeL/Fides), whereas our supporting cross-model study instead uses a text proxy, which an obfuscating adversary could evade and which capability tokens remove. Extending value-level taint to nested, structured tool payloads (JSON schemas, deeply nested fields) is a concrete next step, and tokens flowing with sub-values compose with TMA-NM’s origin labels directly. A related residual is implicit/aggregate 
+
+reconstruction, that is, assembling a security-relevant value from several low-integrity fragments by in-context reasoning. The boundary monitor (M2) taints it when the fragments pass through tracked tool inputs, but pure in-context reconstruction falls under the same value-attribution gap. We leave full value-level capability tokens to future work. (d) Scope of realism :beyond the controlled store we validate a multi-turn agentic loop (Section VI-B, n=128 ) and a production Mem0+Qdrant backend ( n=96 per defense, six models, with Wilson CIs and a permutation test), and these use a focused scenario set, so broadening the task distribution is future work. (e) Bounded proof : the separation is machine-checked on a finite model and extended toward unbounded executions by a machine-checked inductive invariant, and a fully mechanized deductive proof (TLAPS/Lean) of the unbounded theorem remains fu-ture work. (f) Corroborator availability : when fewer than k
+
+independent trusted sources back an untrusted-sourced value, TMA-NM does not silently block but falls back to a one-time user confirmation (the uncorr-auto path), and Table VII quantifies this burden ( m<k requires confirmation). The cost is added friction rather than a permanent denial, and only for untrusted-sourced values, since values from the user task or a trusted tool act with no prompt. How often two indepen-dent trusted sources exist for routine actions is deployment-dependent, and quantifying it in the wild is future work. X. C ONCLUSION 
+
+Memory integrity for LLM agents is not a detection problem but a question of whether an adversary can laun-der an untrusted memory’s authority. We showed, machine-checked on a bounded model, that content- and lineage-based defenses are malleable and therefore unsound under laundering, while non-malleable, origin-bound authority with Sybil-resistant corroboration-gated elevation is sufficient. A constructive laundering attack defeats the lineage, capability-IFC, and trust-scoring classes on a cross-model benchmark exactly where the analysis predicts, while TMA-NM holds at 
+
+0% at no measured utility cost. We release the benchmark, harness, and machine-checked model. REFERENCES [1] C. Packer, S. Wooders, K. Lin, V. Fang, S. G. Patil, I. Stoica, and J. E. Gonzalez, “Memgpt: Towards llms as operating systems,” 2024. [Online]. Available: https://arxiv.org/abs/2310.08560 [2] P. Chhikara, D. Khant, S. Aryan, T. Singh, and D. Yadav, “Mem0: Building production-ready ai agents with scalable long-term memory,” 2025. [Online]. Available: https://arxiv.org/abs/2504.19413 [3] J. S. Park, J. C. O’Brien, C. J. Cai, M. R. Morris, P. Liang, and M. S. Bernstein, “Generative agents: Interactive simulacra of human behavior,” 2023. [Online]. Available: https://arxiv.org/abs/2304.03442 [4] S. Wang, E. Yu, O. Love, T. Zhang, T. Wong, S. Scargall, and C. Fan, “Memmachine: A ground-truth-preserving memory system for personalized ai agents,” 2026. [Online]. Available: https://arxiv.org/abs/2604.04853 [5] S. Pulipaka, S. Hlebik, L. Raghav, S. Abdelnabi, V. Raina, I. Sheth, and M. Fritz, “Hidden in memory: Sleeper memory poisoning in llm agents,” 2026. [Online]. Available: https://arxiv.org/abs/2605.15338 [6] E. Hubinger, C. Denison, J. Mu, M. Lambert, M. Tong, M. MacDiarmid, T. Lanham, D. M. Ziegler, T. Maxwell, N. Cheng, A. Jermyn, A. Askell, A. Radhakrishnan, C. Anil, D. Duvenaud, D. Ganguli, F. Barez, J. Clark, K. Ndousse, K. Sachan, M. Sellitto, M. Sharma, N. DasSarma, R. Grosse, S. Kravec, Y. Bai, Z. Witten, M. Favaro, J. Brauner, H. Karnofsky, P. Christiano, S. R. Bowman, L. Graham, J. Kaplan, S. Mindermann, R. Greenblatt, B. Shlegeris, N. Schiefer, and E. Perez, “Sleeper agents: Training deceptive llms that persist through safety training,” 2024. [Online]. Available: https://arxiv.org/abs/2401.05566 [7] Z. Xu, X. Zhu, Y. Yao, M. Xue, and Y. Song, “From storage to steering: Memory control flow attacks on llm agents,” 2026. [Online]. Available: https://arxiv.org/abs/2603.15125 [8] W. Zou, R. Geng, B. Wang, and J. Jia, “Poisonedrag: Knowledge corruption attacks to retrieval-augmented generation of large language models,” 2024. [Online]. Available: https://arxiv.org/abs/2402.07867 [9] S. Dong, S. Xu, P. He, Y. Li, J. Tang, T. Liu, H. Liu, and Z. Xiang, “Memory injection attacks on llm agents via query-only interaction,” 2026. [Online]. Available: https://arxiv.org/abs/2503.03704 [10] Z. Chen, Z. Xiang, C. Xiao, D. Song, and B. Li, “Agentpoison: Red-teaming llm agents via poisoning memory or knowledge bases,” 2024. [Online]. Available: https://arxiv.org/abs/2407.12784 [11] W. Yang, X. Bi, Y. Lin, S. Chen, J. Zhou, and X. Sun, “Watch out for your agents! investigating backdoor threats to llm-based agents,” 2024. [Online]. Available: https://arxiv.org/abs/2402.11208 [12] K. Chu, “A systematic survey of security threats and defenses in llm-based ai agents: A layered attack surface framework,” 2026. [Online]. Available: https://arxiv.org/abs/2604.23338 [13] Z. Lin, X. Hao, R. Fu, S. Cui, K. Chen, C. Li, Z. Li, and F. Xiong, “A survey on long-term memory security in llm agents: Attacks, defenses, and governance across the memory lifecycle,” 2026. [Online]. Available: https://arxiv.org/abs/2604.16548 [14] C. Ouyang and R. Hou, “Memlineage: Lineage-guided enforcement for llm agent memory,” 2026. [Online]. Available: https://arxiv.org/abs/ 2605.14421 [15] E. Cecchetti, A. C. Myers, and O. Arden, “Nonmalleable information flow control,” in Proc. ACM SIGSAC Conf. on Computer and Commu-nications Security (CCS) , 2017, arXiv:1708.08596. [16] Y. Louck, A. Dvir, and A. Stulman, “Security analysis of agentic ai communication protocols: A comparative evaluation,” ACM Transactions on AI Security and Privacy , 2025. [17] Y. Louck, A. Stulman, and A. Dvir, “Improving google a2a protocol: Protecting sensitive data and mitigating unintended harms in multi-agent systems,” ACM Transactions on Software Engineering and Methodology ,2025. 12 
+
+[18] V. P. Bhardwaj, “Superlocalmemory: Privacy-preserving multi-agent memory with bayesian trust defense against memory poisoning,” 2026. [Online]. Available: https://arxiv.org/abs/2603.02240 [19] X. Zhang, Y. Zheng, Z. Xu, K. Zhou, B. Shen, H. Ou, T. Zhang, and K.-Y. Lam, “Memmorph: Tool hijacking in llm agents via memory poisoning,” 2026. [Online]. Available: https://arxiv.org/abs/2605.26154 [20] S. S. Srivastava and H. He, “Memorygraft: Persistent compromise of llm agents via poisoned experience retrieval,” 2025. [Online]. Available: https://arxiv.org/abs/2512.16962 [21] D. Das, J. Piet, D. Kaviani, L. Beurer-Kellner, F. Tram` er, and D. Wagner, “Trojan hippo: Weaponizing agent memory for data exfiltration,” 2026. [Online]. Available: https://arxiv.org/abs/2605.01970 [22] H. Wang, S. Yang, Y. Chen, and P. Liu, “Hijacking agent memory: Stealthy trojan attacks through conversational interaction,” 2026. [Online]. Available: https://arxiv.org/abs/2605.29960 [23] E. Debenedetti, I. Shumailov, T. Fan, J. Hayes, N. Carlini, D. Fabian, C. Kern, C. Shi, A. Terzis, and F. Tram` er, “Defeating prompt injections by design,” 2025. [Online]. Available: https://arxiv.org/abs/2503.18813 [24] M. Costa, B. K¨ opf, A. Kolluri, A. Paverd, M. Russinovich, A. Salem, S. Tople, L. Wutschitz, and S. Zanella-B´ eguelin, “Securing ai agents with information-flow control,” 2025. [Online]. Available: https://arxiv.org/abs/2505.23643 [25] Y. Cai, W. Tang, C. Wen, and S. Qin, “Ghost in the agent: Redefining information flow tracking for llm agents,” 2026. [Online]. Available: https://arxiv.org/abs/2604.23374 [26] Z. Fei, H. Fei, X. Wang, Y. Yang, P. Gope, B. Sikdar, and Y. Zhang, “Selection integrity for llm graph memory: An accumulability criterion for information-flow-blind retrieval,” 2026. [Online]. Available: https://arxiv.org/abs/2606.12290 [27] Z. Ji, D. Wu, W. Jiang, P. Ma, Z. Li, Y. Gao, S. Wang, and Y. Li, “Taming various privilege escalation in llm-based agent systems: A mandatory access control framework,” 2026. [Online]. Available: https://arxiv.org/abs/2601.11893 [28] N. Acharya and G. K. Gupta, “A formal security framework for mcp-based ai agents: Threat taxonomy, verification models, and defense mechanisms,” 2026. [Online]. Available: https://arxiv.org/abs/ 2604.05969 [29] H. Xu, “Mesh memory protocol: Semantic infrastructure for multi-agent llm systems,” 2026. [Online]. Available: https://arxiv.org/abs/2604.19540 [30] B. D. Sunil, I. Sinha, P. Maheshwari, S. Todmal, S. Mallik, and S. Mishra, “Memory poisoning attack and defense on memory based llm-agents,” 2026. [Online]. Available: https://arxiv.org/abs/2601.05504 [31] S. Yang, Z. Hu, X. Li, C. Wang, T. Yu, X. Xu, L. Zhu, and L. Yao, “Drunkagent: Stealthy memory corruption in llm-powered recommender agents,” 2025. [Online]. Available: https://arxiv.org/abs/2503.23804 [32] H. Zhou, K.-H. Lee, Z. Zhan, Y. Chen, Z. Li, Z. Wang, H. Haddadi, and E. Yilmaz, “Trustrag: Enhancing robustness and trustworthiness in retrieval-augmented generation,” 2025. [Online]. Available: https://arxiv.org/abs/2501.00879 [33] J. Qian, “Visual inception: Compromising long-term planning in agentic recommenders via multimodal memory poisoning,” 2026. [Online]. Available: https://arxiv.org/abs/2604.16966 [34] K. J. Biba, “Integrity considerations for secure computer systems,” 
+
+Technical Report MTR-3153 / ESD-TR-76-372, The MITRE Corporation ,1977. [35] D. D. Clark and D. R. Wilson, “A comparison of commercial and military computer security policies,” in Proc. IEEE Symp. on Security and Privacy (S&P) , 1987, pp. 184–194. [36] D. E. Denning, “A lattice model of secure information flow,” Commu-nications of the ACM , vol. 19, no. 5, pp. 236–243, 1976. [37] A. C. Myers and B. Liskov, “A decentralized model for information flow control,” in Proc. ACM Symp. on Operating Systems Principles (SOSP) ,1997, pp. 129–142. [38] J. R. Douceur, “The sybil attack,” in Proc. 1st Int. Workshop on Peer-to-Peer Systems (IPTPS), LNCS 2429 , 2002, pp. 251–260. [39] L. Moreau, “The foundations for provenance on the web,” Foundations and Trends in Web Science , vol. 2, no. 2–3, pp. 99–241, 2010. 
+
+APPENDIX ABASELINE FIDELITY 
+
+Each baseline is the strongest faithful instance of its defense class, and its authorization rule is deterministic and reproduced verbatim from the released harness.  
+
+> •
+
+none authorizes every action (undefended reference).  
+
+> •
+
+trust score (content) authorizes if any supporting item 
+
+looks benign or ≥2 items assert the value (content-trust plus count-consensus, SuperLocalMemory-style). In the cross-model study its instance is a per-model LLM judge (prob detect ) prompted to flag malicious memory and 
+
+run on the model under test , not a weaker external model or a stub, which is the strongest content detector available per model.  
+
+> •
+
+lineage (MemLineage-style) authorizes unless a sup-porting item has a live derivation edge to an untrusted ancestor. When provenance is inconclusive (no strong edge) it falls back to trusted , faithful to lineage systems that default-allow rather than block legitimate work. We grant it perfect edges (no extraction error).  
+
+> •
+
+capability ifc (CaMeL/Fides-style) is single-session ca-pability/IFC that assumes long-term memory is uncom-promised, so retrieved memory carries no taint and the value is authorized. We grant it its best-case assumption (clean store).  
+
+> •
+
+tma nm (ours) binds a non-malleable effective origin (an item derived from, or a trusted tool echoing, untrusted content stays untrusted ), plus elevation only on ≥2
+
+independent trusted principals. Crucially, the baselines fail structurally rather than from weak tuning. capability ifc authorizes laundered memory regard-less of any threshold because it assumes a clean store, and 
+
+lineage allows whenever no live untrusted edge survives the laundering transformation. A sensitivity sweep over a content judge’s threshold cannot close a structural blind spot. This is precisely the content/lineage insufficiency that T1 predicts, and Section VI-C confirms it empirically, since no judge threshold reaches (0% ASR , 100% utility ). We grant each baseline its most favorable faithful configuration, so the benchmark does not handicap them. APPENDIX BPER -M ODEL , P ER -C HANNEL RESULTS 
+
+Table XI gives the undefended ( none ) consequential-ASR for each of the eight models on each laundering channel ( n=24 
+
+per cell), and TMA-NM is 0/24 in every cell, that is, 0/192 
+
+pooled per channel (Wilson 95% CI [0 , 2.0]% ). The complete five-defense × four-channel × eight-model cube, with raw counts, is in the released artifact. 
+
+TABLE XI UNDEFENDED CONSEQUENTIAL -ASR (%) BY MODEL AND LAUNDERING CHANNEL (n=24 PER CELL ). TMA-NM IS 0% IN EVERY CELL (0/192 
+
+> PER CHANNEL
+
+, CI [0 , 2.0] ). Model direct summ. echo corrob. gpt-5-chat 88 58 67 67 gpt-4o-mini 67 67 83 33 claude-opus-4.1 67 67 67 67 claude-sonnet-4.5 67 67 67 67 gemini-2.5-flash 100 100 67 67 llama-4-maverick 96 67 62 58 deepseek-chat 100 79 67 67 qwen3-235b 92 88 67 67 
+
+pooled (none) 84 74 68 61

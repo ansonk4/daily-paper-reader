@@ -1,0 +1,975 @@
+Title: SEAGym: An Evaluation Environment for Self-Evolving LLM Agents
+
+URL Source: https://arxiv.org/pdf/2606.17546v1
+
+Published Time: Wed, 17 Jun 2026 00:34:41 GMT
+
+Number of Pages: 32
+
+Markdown Content:
+## SEAGym: An Evaluation Environment for Self-Evolving LLM Agents 
+
+Congjie Zheng 1,* Chuanyi Xue 1,* Bin Liang 1 Jun Yang 1,† Changshui Zhang 1,2,† 
+
+> 1Department of Automation, Tsinghua University, Beijing, 100084, China
+> 2Beijing National Research Center for Information Science and Technology (BNRist), Tsinghua University, Beijing, 100084, China
+> {zhengcj24, xcy22}@mails.tsinghua.edu.cn {bliang, yangjun603}@tsinghua.edu.cn, zcs@mail.tsinghua.edu.cn
+
+Abstract 
+
+Self-evolving LLM-based agents improve mainly by changing their agent harness: the structured execution layer around a base model, including prompts, memory, tools, middleware, runtime state, and the model–tool interaction loop. Existing evaluations often reduce this process to isolated task scores or a single se-quential curve, obscuring whether an update produces reusable improvement, overfits re-cent tasks, increases cost, or harms older be-havior. We introduce SEAG YM , an evalu-ation environment for measuring agent har-ness updates across training, validation, test, replay, and cost records. SEAG YM turns Harbor-compatible benchmarks into dynamic self-evolution task sources with train batches, frozen update-validation, held-out ID and OOD transfer views, replay diagnostics, and saved snapshot and metric records. Instantiating SEAG YM on Terminal-Bench 2.0 and HLE, we compare ACE, TF-GRPO, and AHE under a shared epoch/batch protocol. The results show that these evaluation views provide complemen-tary signals about the evolution process: fre-quent updates may fail to improve held-out per-formance, useful intermediate snapshots may collapse later, and source diversity and model backend can affect harness reliability. 
+
+1 Introduction 
+
+LLM-based agents are no longer fixed systems at deployment time. They can store experience, revise prompts, write memories, add skills, change tool-use routines, or edit runtime configuration. These components form an agent harness : the structured execution layer surrounding a base model, compris-ing prompts, context management, memory, tools, orchestration logic, middleware, runtime environ-ments, and feedback or verification mechanisms (Yang et al., 2024; Wang et al., 2025a; Li et al., 
+
+> *These authors contributed equally to this work.
+> †Corresponding authors.
+
+2026; Pan et al., 2026). In this paper, a self-evolving agent is an LLM-based agent that uses task expe-rience to update this persistent harness state, and then reuses the updated state on later tasks. Self-evolution can occur through different pro-cesses. An agent may update itself while solving a single task, use what it learned on one task for the next task, or repeatedly train on a set of tasks across multiple rounds. Methods also differ in what they update. Text-centered methods revise prompts, reflections, instructions, or experience libraries (Shinn et al., 2023; Madaan et al., 2023; Agrawal et al., 2026; Cai et al., 2025). Memory-based and skill-based methods build reusable memories, skills, workflow traces, or knowledge bases (Wang et al., 2023, 2024; Xu et al., 2025; Tang et al., 2025). Harness-level methods change broader exe-cution structure, including tools, middleware, sub-agents, workflows, or project files (Zhuge et al., 2024; Zhang et al., 2025; Yuan et al., 2025a; Lin et al., 2026). These differences can be expressed with the same interaction loop: the agent acts in task episodes, observes trajectories and verifier feedback, updates persistent harness state, and acts again. Evaluating self-evolution therefore requires more than reporting whether a final agent scores higher on a task set. The benchmark must mea-sure the update process itself: what evidence drives each update, when snapshots improve or regress, whether improvements persist beyond the update source, and what cost or instability the update in-troduces. Existing evaluations only partially support this kind of analysis. Most agent benchmarks are de-signed for static evaluation: each task is an iso-lated episode, the agent state is reset, and the score measures one fixed agent (Jimenez et al., 2024; Zhou et al., 2024; Xie et al., 2024; Mialon et al., 2024; Patil et al., 2025; Yao et al., 2024). This removes the state persistence that self-evolving agents are meant to use. Sequential and life-1
+
+> arXiv:2606.17546v1 [cs.AI] 16 Jun 2026
+
+long evaluations move beyond isolated episodes by studying agents over task streams (Jiang et al., 2026; Zheng et al., 2025). However, other self-evolution settings remain under-investigated, such as single-task or epoch-level evolution. More fine-grained analyses, including forgetting and regres-sion, are also not fully covered. A benchmark for self-evolving agents should make these settings and assessment signals explicit so that different self-evolution mechanisms can be compared under a common environment. We introduce SEAG YM , an evaluation en-vironment for self-evolving LLM-based agents. SEAG YM uses an RL-style environment formula-tion in which the self-evolving agent supplies both the task policy and the harness-update rule, while the environment defines the task sampling, feed-back, schedules, and snapshot assessments. Con-cretely, SEAG YM converts static benchmarks into reusable task sources, organizes them into train batches and frozen evaluation views, records agent snapshots and metric artifacts, and connects diverse methods through a rollout/update interface without prescribing how an agent updates its harness. It represents different self-evolution processes with explicit schedule parameters, including state reset, task reuse, batch size, and update timing, so single-task adaptation, online transfer, and epoch-based batch learning can be studied under one environ-ment. For execution, SEAG YM builds on Harbor, a framework for running agent evaluations and RL environments in containerized task settings (Har-bor Framework Team, 2026). The two systems are complementary: Harbor provides task execution, environments, verifiers, and parallel jobs, while SEAG YM turns static benchmark tasks into train batches, validation views, final ID and OOD trans-fer views, and replay diagnostics for self-evolution studies. The experiments instantiate this path with Terminal-Bench 2.0 (Merrill et al., 2026) and HLE (Phan et al., 2025), and separate task rollout from method update so diverse self-evolving agents can be connected through thin wrappers while preserv-ing their native update rules. Our contributions are: • We introduce SEAG YM , a unified evalua-tion environment that converts existing agent benchmarks into dynamic self-evolution task sources and supports the evaluation of self-evolving agents under a common protocol. • We formulate self-evolution as an RL-style environment over agent snapshots, with con-figurable schedules for single-task adapta-tion, online transfer, and epoch-based batch learning, and with held-out views for update-validation, ID transfer, OOD transfer, replay, and diagnostics. • Through experiments on Terminal-Bench 2.0 and HLE, we show that current self-evolving mechanisms produce different update dynam-ics: validation gains do not always transfer, useful intermediate snapshots can regress or recover, and batch size, source diversity, and rollout backend affect harness reliability. 
+
+2 Related Work 
+
+Agent harness. Agent harness is commonly de-scribed as structured execution layers around a base model: it comprises prompts and context man-agement, memory, tool interfaces, orchestration logic, runtime isolation, feedback handling, trac-ing, and recovery logic. Early agent work studied reasoning–acting loops and API/tool use (Yao et al., 2023; Schick et al., 2023; Patil et al., 2023; Qin et al., 2024); newer work shows that tool docu-mentation, agent-computer interfaces, and memory management are themselves performance-critical design variables (Yuan et al., 2025b; Yang et al., 2024; Xiong et al., 2025). Recent platform and protocol work further systematizes the harness as a composable agent runtime for interoperability, ob-servability, verification, and runtime enforcement (Wang et al., 2025a; Ehtesham et al., 2025; Wang et al., 2026; Li et al., 2026). The same shift ap-pears in production practice, where OpenAI, An-thropic, and LangChain describe harness engineer-ing in terms of structured environments, feedback loops, durable execution, middleware, and agent-legible state (OpenAI, 2026a; Anthropic, 2026; LangChain, 2025, 2026). Pan et al. (2026) make this separation explicit by expressing harness mod-ules in natural language, supporting inspection and ablation of the non-model agent state. This perspec-tive makes harness a natural target for adaptation: prompts, memories, tools, and middleware can per-sist beyond a single episode and affect performance on subsequent tasks. 
+
+Continual learning and self-evolution. Contin-ual learning studies systems that face a sequence of tasks or data distributions, where learning from new experience can improve future behavior but may 2also interfere with previously acquired capabilities. Its central evaluation concerns—adaptation, trans-fer, retention, replay, and forgetting—are therefore relevant to self-evolving agents (Parisi et al., 2019; Robins, 1995; Kirkpatrick et al., 2017; Lopez-Paz and Ranzato, 2017; Chaudhry et al., 2019; van de Ven and Tolias, 2019). Self-evolving LLM-based agents extend this setting from parameter learning to agent-system learning. One direction improves the underlying model or behavior policy with su-pervised tuning, reinforcement learning, self-play, process-level rewards, or tool-use training (Yuan et al., 2025c; Kumar et al., 2024; Setlur et al., 2025; Choudhury, 2025; Wang et al., 2025b; Feng et al., 2025). A second direction treats the har-ness itself as the object of evolution: environmen-tal feedback can revise prompts, memories, tool interfaces, workflows, communication structure, or middleware without retraining the base model (Fang et al., 2025; Zhuge et al., 2024; Zhang et al., 2025; Wang et al., 2024; Yuan et al., 2025a; Xu et al., 2025; Tang et al., 2025). This distinction matters for evaluation because harness updates are persistent, method-specific, and may be applied inside the same execution loop that produces the evidence used for updating. Recent methods differ not only in what component they change, but also in whether they rely on reflection, verifier feedback, rollout comparison, or search, and whether the up-date is applied within a task, between tasks, after a batch, or over repeated epochs (Zhang et al., 2026; Agrawal et al., 2026; Cai et al., 2025; Lin et al., 2026). As a result, reported gains are hard to com-pare without a shared protocol that separates train-ing episodes, validation evidence, held-out transfer, replay, and reset assumptions. 
+
+Agent benchmarks. Agent benchmarks provide the environments in which harness behavior be-comes observable. Recent surveys cover evalua-tions of agent capabilities and task settings such as planning, tool use, memory, software repair, termi-nal operation, scientific reasoning, web and desktop interaction, function calling, and tool-agent-user workflows (Yehudai et al., 2026; Jimenez et al., 2024; Merrill et al., 2026; Phan et al., 2025; Zhou et al., 2024; Xie et al., 2024; Mialon et al., 2024; Patil et al., 2025; Yao et al., 2024). These bench-marks mark a shift from text-only scoring toward interactive environments with executable actions, state changes, and task-specific verifiers. Their standard protocol, however, still evaluates a fixed agent on independent episodes; persistent harness state is reset or not supported. Benchmarks ex-plicitly targeting self-evolution or lifelong agent learning remain scarce. SEA-Eval evaluates agents over constructed sequential task streams and sep-arates genuine evolution from token-consumption artifacts, while LifelongAgentBench builds skill-grounded lifelong-learning tasks across interac-tive database, operating-system, and knowledge-graph environments (Jiang et al., 2026; Zheng et al., 2025). These efforts leave open a complementary direction: converting existing agent benchmarks into environments for both evolution and assess-ment, with support for specifying task sampling, feedback visibility, update timing, held-out valida-tion, transfer tests, retention checks, and diagnos-tics across different self-evolution methods. 
+
+3 Method: SEAGym 
+
+3.1 Problem Formulation 
+
+We model a self-evolution run as an MDP-style evaluation process 
+
+M = ( S, A, P, R, ρ ), (1) where each state st ∈ S contains the current agent snapshot, the schedule position, and the available task context. An agent snapshot is 
+
+At = ( M, H t), (2) where M denotes the fixed base model and im-mutable runtime components, and Ht denotes the mutable harness state within this execution layer: prompts, memories, skills, experience libraries, tools, middleware, project files, runtime config-uration, or other model-external components used by the agent loop. At step t, the evaluation envi-ronment samples a task batch Bt. The agent solves the tasks, producing trajectories Tt and receiving feedback Ft according to the benchmark’s visibility policy. It then applies its own update rule 
+
+Ht+1 = U (Ht, B t, Tt, F t), (3) which, together with task execution and verifier feedback, induces the transition from st to st+1 .SEAG YM specifies the observed environment: the task distribution, feedback, schedules, and eval-uation views. It leaves the policy and update rule to each self-evolving agent and asks whether later snapshots improve beyond the update-bearing tasks. 3Figure 1: Overview of SEAG YM . The environment samples train batches, runs task episodes, records trajectories and verifier feedback, lets the self-evolving agent update its own state, and records evaluation points as frozen snapshots. Snapshot quality is measured with frozen update-validation, final held-out tests, replay diagnostics, and cost metrics. 
+
+3.2 Evolution Schedule 
+
+SEAG YM represents online, single-task, batch, and epoch-based self-evolution settings through schedule parameters rather than separate bench-mark formats. This choice is important because existing self-evolving agents do not share a single natural update unit. Some methods revise state af-ter every task, some aggregate several trajectories before updating, and others repeatedly revisit the same source pool across epochs. Hard-coding one schedule would therefore confound the method be-ing evaluated with an arbitrary exposure pattern. Instead, SEAG YM treats state persistence, task reuse, batch size, update repeats, and assessment timing as experimental variables. This makes it possible to ask whether a gain comes from the update rule itself, from seeing more diverse evi-dence in one update, from performing more fre-quent updates, or from repeatedly revisiting the same task distribution. The main experiments use persistent state, repeated train batches, train-batch updates, and epoch-end frozen update-validation assessment. Appendix A gives the schedule fields, saved records, and epoch loop in Algorithm 1. 
+
+3.3 Data Splits and Evaluation Views 
+
+SEAG YM separates dataset splits from evaluation views. The base manifest keeps the conventional split structure Dtrain , Dval , and Dtest , which con-trols task visibility and update evidence. Evalua-tion views are materialized from these splits to as-sess different aspects of the self-evolution process: update-validation tracks intermediate snapshots, ID and OOD views test held-out transfer at different distribution distances, and replay views measure retention, forgetting, or regression. Table 1 summa-rizes the resulting pools and views. The main protocol evaluates native self-updates without using validation views to modify them. Train batches produce update evidence, while val-idation and test views are reserved for frozen as-sessment. If validation examples or private veri-fier artifacts were mixed into the update evidence, a higher score could reflect direct adaptation to 4Role Pool/view Question answered                   
+
+> Update evidence Bt⊂Dtrain what trajectories and visible feedback drive the next harness update? Process assessment Vupdate-val ⊂Dval does a frozen intermediate snapshot improve without using validation tasks as update evidence? ID transfer VID ⊂Dtest does the update transfer to unseen tasks from the source distribution? OOD transfer VOOD ⊂Dtest does the update transfer to shifted or target-domain tasks? Replay / retention Vreplay does the updated harness preserve or recover earlier behavior?
+
+Table 1: Dataset splits and evaluation views in SEAG YM . Base splits control task visibility and update evidence, while views define assessment lenses over the self-evolution process. 
+
+the assessment view rather than self-evolution that transfers to future tasks. Conversely, if only the final test were reported, the evaluation would hide whether an intermediate snapshot improved, re-gressed, recovered, or merely became more expen-sive. SEAG YM therefore records saved snapshot and metric records at explicit evaluation points: update-validation tracks the process, final ID and OOD views test held-out transfer at different distri-bution distances, and replay views expose retention or regression. 
+
+3.4 Benchmark and Baseline Integration 
+
+SEAG YM is designed to integrate both bench-mark suites and self-evolving methods with min-imal code adaptation. On the benchmark side, it reuses Harbor as the task runner (Harbor Frame-work Team, 2026). Harbor retains task defini-tions, environments, verifiers, and parallel execu-tion, while SEAG YM adds the self-evolution sched-ule: train batches, frozen validation views, final held-out views, snapshot timing, and metric com-putation. This turns static benchmark tasks into a dynamic self-evolution environment without rewrit-ing the benchmark. On the method side, SEAG YM separates roll-out from update. A rollout component runs tasks under the current harness state and returns a tra-jectory batch. An update component consumes that trajectory batch and applies the method’s native self-evolution rule. This decomposition gives prompt, memory, skill, textual-optimization, context-update, and harness-editing methods a common interface while leaving each method’s up-date semantics intact. In practice, connecting a new baseline only requires a thin wrapper that converts SEAG YM trajectory batches to the method’s na-tive update input and saves the resulting harness state. The same boundary also applies to reusable integration checklists and skill templates: bench-mark authors follow Harbor task/adapter templates, and baseline authors implement the rollout/update wrapper. Additional interface details are in Ap-pendix E. Figure 1 summarizes this flow. 
+
+3.5 Metrics 
+
+SEAG YM computes metrics from saved records so results can be inspected and recomputed with-out rerunning environments. Given verifier score 
+
+r(A, x ) ∈ [0 , 1] , it reports Perf (A, D ) = 1
+
+|D|
+
+X
+
+> x∈D
+
+r(A, x ), (4) SR (A, D ) = 1
+
+|D|
+
+X
+
+> x∈D
+
+I[r(A, x ) = 1] . (5) For update-validation view V = Vupdate-val and eval-uation point Ei:UVG prev  
+
+> i
+
+= Perf (Ei, V ) − Perf (Ei−1, V ), (6) UVG base  
+
+> i
+
+= Perf (Ei, V ) − Perf (E0, V ). (7) For compact notation, let DI , DO, and DR denote the task sets underlying the final ID, OOD, and replay views: IDG = Perf (AT , D I ) − Perf (A0, D I ), (8) OODG = Perf (AT , D O) − Perf (A0, D O), (9) FR = max(0 , Perf (A0, D R) − Perf (AT , D R)) .
+
+(10) We also report token usage, tool calls, wall-clock time, and cost reduction when available. Main result tables use domain-level macro averages by default so that larger task groups do not dominate cross-domain conclusions. Appendix F summa-rizes the metric table and additional details. 
+
+3.6 Saved Records and Process Diagnostics 
+
+Primary SEAG YM scores are computed from veri-fied task rewards, held-out evaluation views, replay checks, and measured cost. However, these metrics alone do not fully explain why a self-evolution run 5improves, regresses, recovers, or becomes more expensive. SEAG YM therefore saves trajectory ref-erences, public feedback, update summaries, har-ness diffs when available, snapshot records, and metric records at each evaluation point. These ar-tifacts support offline process diagnostics, such as whether an update is supported by the observed tra-jectories, whether failures come from task strategy or runtime behavior, and whether a later snapshot recovers from an earlier regression. Such diagnostics are secondary to the verified metrics. They may be produced by manual in-spection, rule-based analysis, or optional offline LLM-as-judge annotators. This separation keeps the primary evaluation tied to executable task out-comes while still making the evolution process in-terpretable. 
+
+4 Experiments 
+
+4.1 Experimental Setup 
+
+We use an epoch-based batch setting over 80 source train tasks from Terminal-Bench 2.0 and HLE text-only Math/Physics, with 35 source validation tasks, 55 source test tasks, and 80 HLE CS/AI and Engi-neering OOD transfer tasks (Merrill et al., 2026; Phan et al., 2025). Unless stated otherwise, runs use five epochs and train batch size 20. The main comparison evaluates ACE, TF-GRPO, and AHE under DeepSeek-V4-Flash; the ablations use AHE for batch size, source diversity, and cross-model transfer (Zhang et al., 2026; Cai et al., 2025; Lin et al., 2026; DeepSeek-AI, 2026; OpenAI, 2026b; Z.AI, 2026). Appendix Tables 6 and 7 list the full settings, and Appendix F summarizes the metric records. In result tables, Vi, ID i, and OOD i denote success rates of snapshot i on the update-validation, in-distribution transfer, and OOD transfer views, respectively; subscript 0 denotes the initial snap-shot, T the final snapshot, and ⋆ the best-validation snapshot selected for reporting. 
+
+4.2 Baseline Results 
+
+Figure 2 and Table 2 compare the three DeepSeek-V4-Flash runs. Appendix Figures 6 and 9 provide source-group and batch-index breakdowns. AHE is the only baseline that improves valida-tion, ID, and OOD together. This pattern is easier to interpret when we distinguish what each method optimizes. AHE changes the agent harness itself, including prompts, tool-use constraints, middle-ware, and runtime behavior. Its updates can there-1 2 3 4 5       
+
+> Epoch
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Success rate
+> Train
+> 012345
+> Epoch
+> Validation
+> AHE ACE TF-GRPO
+
+Figure 2: Baseline learning curves for AHE, ACE, and TF-GRPO. 
+
+fore alter how the agent searches for evidence, vali-dates candidate answers, recovers from tool errors, and decides when to stop. This broader editable scope helps explain why AHE transfers best across the three reported views, but it also creates a larger reliability burden: a harmful harness change can affect many otherwise unrelated tasks. ACE instead behaves more like skill- or strategy-memory optimization. It yields modest ID and OOD gains, suggesting that the learned skillbook provides reusable task-handling knowledge. How-ever, because ACE does not directly rewrite the execution path or the tool/middleware contract, it has less leverage over failures caused by interaction policy, environment handling, or runtime behavior, and its validation gain is correspondingly smaller. TF-GRPO lies between these two patterns: grouped rollout evidence can quickly strengthen behavior on the source distribution, which produces a large val-idation gain and a small ID gain, but the OOD drop and highest rollout cost suggest that this adapta-tion does not reliably transfer to shifted target tasks. Thus, validation gain and update activity alone are insufficient; the benchmark separates what is being optimized, whether the change generalizes to held-out views, and what cost or instability the update mechanism introduces. 
+
+4.3 Training Fix and Forgetting 
+
+We next replay the source train set with AHE at ini-tialization, after each epoch, and at the end of train-ing. Figure 3 reports the task-level replay grid. Fig-ure 4 reports the replay success rate, pairwise delta task churn, and A0-reference fix/forget rates; Ap-pendix Figure 14 provides the source-group break-down. The final agent solves 43/80 train-replay tasks, compared with 34/80 for the initial agent, but the trajectory is not monotonic. After epoch 4, replay performance drops to 6/80 and produces many roll-out errors before the final agent recovers. This 6Agent V0 V⋆ UVG ID 0 ID ⋆ IDG OOD 0 OOD ⋆ OODG Rollout tok./task Update tok./update 
+
+AHE 40.0 57.1 +17.1 40.0 49.1 +9.1 22.5 28.8 +6.3 1.46M 3.91M ACE 37.1 40.0 +2.9 30.9 34.5 +3.6 22.5 25.0 +2.5 1.93M –TF-GRPO 31.4 48.6 +17.1 30.9 34.5 +3.6 26.3 23.8 -2.5 2.33M 1.60M 
+
+Table 2: Baseline results. Success rates are percentages, gains are percentage points, and token costs are normalized per task or update. All methods report the best-validation snapshot; for AHE, this selected snapshot is the final snapshot. 
+
+shows why snapshot-level diagnostics are needed: an initial-versus-final table would miss a damaging intermediate harness regression and would not ex-plain where the variance comes from. Relative to 
+
+A0, the final agent fixes 13 initially failed tasks and forgets 4 initially solved tasks, giving a net gain of 9 train-replay tasks. The process-level view is the main point of this diagnostic. Early epochs add use-ful harness behavior, such as more active evidence gathering, stricter answer checks, tool-error recov-ery, and completion guards; these changes raise the fix count, but they also introduce new middleware constraints and execution paths that break some previously solved tasks. After epoch 4, the dom-inant failure is an evolved message-construction regression in the middleware/runtime contract; the final epoch restores that execution path, so many tasks recover at once and the A0-reference forget rate falls. Thus, replay does not merely report a final retention score: it decomposes self-evolution variance into task-behavior churn and execution-path instability, which is precisely the kind of pro-cess diagnostic SEAG YM is designed to expose. Appendix D.2 gives the metric definitions, and Ap-pendix C.2 analyzes the observed update sequence. 
+
+4.4 Effect of Batch Size 
+
+We vary the AHE train batch size while keeping the train, update-validation, and ID test task sets fixed. Table 3 summarizes validation, ID, cost, and update status; Appendix Figures 7 and 10 provide curve-level breakdowns, and Appendix C.3 analyzes the corresponding update artifacts.                   
+
+> Batch Validation ID test Update tok. Updates
+> 10 37.1 →22.9 (-14.3) 38.2 →23.6 (-14.5) 3.13M 39/40 20 40.0 →57.1 ( +17.1 )40.0 →49.1 ( +9.1 )3.91M 20/20 40 37.1 →40.0 ( +2.9 )41.8 →43.6 ( +1.8 )3.36M 10/10 80 42.9 →25.7 (-17.1) 41.8 →25.5 (-16.4) 3.57M 5/5
+
+Table 3: Effect of batch size. Validation and ID columns show initial → final success rate, with gain in parenthe-ses. Update tokens are normalized per SEAGym update call; rollout token costs are reported in Appendix B. 
+
+Batch size is non-monotonic: batch 20 is the only setting with large positive validation and ID gains, while batch 10 and batch 80 regress. This suggests that AHE is limited by how much evi-dence the evolving agent can analyze in a single update, not only by update frequency. The recorded update cost is similar across batch sizes, roughly 3–4M tokens per update, so increasing the batch size does not give the evolving agent proportion-ally more analysis capacity. At batch 80, the same update must inspect too many trajectories, diluting per-task attention and increasing the risk of broad, brittle middleware changes. At batch 10, each up-date sees too little evidence and the run performs twice as many harness updates as batch 20, mak-ing the update stream higher-variance and giving runtime regressions more opportunities to accumu-late. The middleware/runtime failures observed in the batch-10 and batch-80 runs are therefore not merely external noise; they are part of the schedule-induced instability exposed by the benchmark. Nei-ther larger batches nor more frequent updates are automatically better; in this sweep, batch 20 is the setting where evidence diversity, per-task analysis depth, update frequency, and harness stability are most balanced. 
+
+4.5 Source Diversity 
+
+We compare the main mixed-source AHE run with an HLE-only run of the same train size. Tables 4 and 5 report final reliability and the best available intermediate snapshot; Appendix Figures 8 and 11 provide curve-level breakdowns, and Appendix C.4 analyzes the corresponding update artifacts.                
+
+> Source VTID TIDG TOOD TOODG T
+> Terminal-Bench + HLE 57.1 49.1 +9.1 28.8 +6.3 HLE only 0.0 0.0 -22.0 0.0 -21.2
+
+Table 4: Source diversity at the final snapshot. Success rates are percentages and gains are percentage points.                
+
+> Source Epoch ⋆ID ⋆IDG ⋆OOD ⋆OODG ⋆
+> Terminal-Bench + HLE 5 (final) 49.1 +9.1 28.8 +6.3 HLE only 347.3 +7.3 25.0 +3.8
+
+7AHE Train Replay: Fixes and Forgetting           
+
+> 110 20 30 40 50 60 70 80
+> task order epoch 012345success fail error
+
+Figure 3: AHE train replay grid. Green cells are successful trials, gray cells are failed trials, and red cells are rollout errors. 0 1 2 3 4 5          
+
+> Epoch
+> 0%
+> 10%
+> 20%
+> 30%
+> 40%
+> 50%
+> 60%
+> Success rate
+> Train Replay Success
+> 012345
+> Epoch
+> −40
+> −20
+> 0
+> 20
+> 40
+> Tasks vs. previous
+> Delta Task Churn
+> fixed
+> forgotten
+> 012345
+> Epoch
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Rate
+> A_0-Reference Rates
+> A_0-ref fix
+> A_0-ref forget
+
+Figure 4: AHE train replay diagnostics. Left: success rate on the 80 source train tasks. Middle: pairwise delta task churn, where fixed tasks are newly solved relative to the previous snapshot and forgotten tasks are previously solved tasks that fail at the current snapshot. Right: A0-reference fix/forget rates with fixed denominators. Table 5: Source diversity at the selected epoch. The se-lected epoch is the best available intermediate snapshot. Success rates are percentages and gains are percentage points. 
+
+The HLE-only run reaches a useful intermedi-ate snapshot, but its final snapshot collapses on validation, ID, and OOD. This suggests that a single benchmark can drive the harness toward benchmark-specific local optima. The mixed-source run also passes through a bad intermediate state, so diversity does not prevent harmful updates. Its advantage is recovery: Terminal-Bench exposes tool, environment, and execution failures, while HLE exposes reasoning failures, giving later up-dates more varied evidence for restoring a broken harness. 
+
+4.6 Cross-Model Transfer 
+
+Finally, we swap evolved AHE harnesses across rollout models. Figure 5 reports ID and OOD gains for the best-validation AHE snapshot from each rollout backend. Appendix C.5 analyzes the update artifacts behind these results, and Appendix D.1 reports the corresponding training trajectories and full success-rate table. The same-backend results show that AHE can adapt the harness to the rollout backend that pro-duced the updates: ID gains are positive for all three backends, ranging from +3.6 to +9.1 per-centage points. Cross-backend results are less sta-ble and asymmetric. For example, the DeepSeek-DeepSeek             
+
+> GLM
+> GPT-5.4
+> Rollout model
+> DeepSeek
+> GLM
+> GPT-5.4
+> Evolved with
+> +9.1 +7.3 -3.6
+> +7.3 +3.6 +0.0
+> -1.8 -7.3 +5.5
+> ID gain
+> DeepSeek
+> GLM
+> GPT-5.4
+> Rollout model
+> DeepSeek
+> GLM
+> GPT-5.4
+> Evolved with
+> +6.3 +0.0 -8.8
+> -5.0 +3.8 -5.0
+> +3.8 -1.3 -7.5
+> OOD gain
+> −5
+> 0
+> 5
+> Gain (percentage points)
+
+Figure 5: Cross-model ID and OOD gains. Rows indi-cate the rollout model used to evolve the AHE harness, columns indicate the rollout model used at evaluation time, and each cell reports gain over the same rollout model’s initial harness on the same evaluation set. Val-ues are percentage points. 
+
+evolved harness improves GLM ID by +7.3 points but hurts GPT-5.4 ID by -3.6 points, while the GPT-5.4-evolved harness improves GPT-5.4 ID by +5.5 points but hurts GLM ID by -7.3 points. The update artifacts explain this asymmetry. DeepSeek trajec-tories lead AHE to edit verification, tool-recovery, artifact-cleanup, and message-contract paths; GLM trajectories emphasize text-only reasoning and re-search without output; GPT-5.4 trajectories empha-size artifact constraints and validation sufficiency. Harness gains therefore transfer when the evalua-tion trajectory exposes similar failures, and weaken when the edited subsystem no longer matches the dominant failure surface. ID gains also do not imply OOD gains. GPT-5.4-evolved AHE improves GPT-5.4 ID by +5.5 8points but drops GPT-5.4 OOD by -7.5 points, and most cross-backend OOD gains are neutral or neg-ative. This mismatch shows that an update can fit the training backend’s observed interaction failures while failing to cover the shifted failure modes of another rollout backend or target domain. Thus, if we only reported native ID results, all three back-ends would appear to improve; the cross-model and OOD views reveal when the learned harness changes remain aligned with the evaluation trajec-tories and when they do not. SEAG YM ’s separate ID, OOD, and cross-backend assessments make this difference visible instead of collapsing it into a single final score. 
+
+5 Conclusion 
+
+SEAG YM evaluates self-evolving LLM agents by treating harness change as the object of study. The central question is not only whether the final agent scores higher, but what persistent state is updated, when the update helps, whether the improvement transfers beyond the update source, whether ear-lier behavior is lost, and what execution or update cost is required. To support this view, SEAG YM 
+
+converts Harbor-compatible benchmarks into train batches, frozen update-validation views, held-out ID and OOD transfer views, replay diagnostics, and saved snapshot and metric records, while allowing each method to keep its native update rule. The Terminal-Bench 2.0 and HLE experiments show that self-evolution gains are strongly tied to the update mechanism. AHE edits the harness itself and can produce broad validation, ID, and OOD gains, but its larger editable scope also creates process-level reliability risks. ACE behaves more like skill- or strategy-memory optimization: it accu-mulates reusable task-handling knowledge, but has less leverage over failures caused by runtime behav-ior or environment interaction. TF-GRPO strength-ens behavior from grouped rollout evidence, yield-ing strong source-validation gains, but its OOD drop and rollout cost show that such adaptation need not transfer stably. These findings argue against reducing self-evolution to a single final score or validation curve. Useful intermediate states can later regress, source diversity and batch size can change harness reliabil-ity, and model backend can condition whether an evolved harness transfers. SEAG YM is therefore intended not as a one-shot ranking of self-evolving methods, but as a controlled evaluation environ-ment with saved records for comparing what differ-ent methods update, whether those updates gener-alize, and what costs or instabilities they introduce. 
+
+Limitations 
+
+This instantiation of SEAG YM focuses on harness-and state-level self-evolution on Terminal-Bench 2.0 and HLE. These sources cover complemen-tary execution-heavy and reasoning-heavy settings, and demonstrate how the protocol separates update-validation, ID transfer, OOD transfer, replay, and cost signals. Future work can extend the same protocol to additional agentic domains, such as web or desktop interaction, long-horizon software engineering, data-analysis workflows, multi-agent collaboration, and continuous online task streams. Because SEAG YM separates benchmark execu-tion from the self-evolution schedule, such exten-sions mainly require new Harbor-compatible task sources and evaluation views rather than changes to the core protocol. The experiments study model-external harness evolution: agents update prompts, memories, skills, experience context, middleware, or tool-use poli-cies. The same environment can be extended to model-weight updates, online RL fine-tuning, or hybrid systems, making it possible to compare harness-level and parameter-level learning in terms of cost, stability, and transfer. The multi-view design creates a cost/coverage tradeoff because snapshots are saved and re-evaluated across update-validation, ID, OOD, and replay views. Future work can study more efficient snapshot selection, adaptive replay, budget-aware evaluation, and more systematic process diagnos-tics while preserving visibility into regression, re-covery, transfer, and forgetting. Finally, the OOD and cross-model experiments show that harness updates can depend on both task distribution and rollout backend. Expanding to more source/target domain pairs, model backends, and longer horizons would further clarify which update mechanisms produce stable transfer and which become backend- or benchmark-specific. 
+
+Ethics Statement 
+
+SEAG YM is intended as an evaluation framework. The benchmark should avoid exposing hidden veri-fier details or private oracle artifacts to agents. If future task domains include real user data, web data, or proprietary repositories, dataset construc-9tion must follow licensing, privacy, and anonymiza-tion requirements. 
+
+References 
+
+Lakshya A. Agrawal, Shangyin Tan, Dilara Soylu, Noah Ziems, Rishi Khare, Krista Opsahl-Ong, Arnav Singhvi, Herumb Shandilya, Michael J. Ryan, Meng Jiang, Christopher Potts, Koushik Sen, Alexandros G. Dimakis, Ion Stoica, Dan Klein, Matei Zaharia, and Omar Khattab. 2026. GEPA: Reflective prompt evo-lution can outperform reinforcement learning. In 
+
+International Conference on Learning Representa-tions .Anthropic. 2026. Harness design for long-running application development. 
+
+https://www.anthropic.com/engineering/ harness-design-long-running-apps .Yuzheng Cai, Siqi Cai, Yuchen Shi, Zihan Xu, Lichao Chen, Yulei Qin, Xiaoyu Tan, Gang Li, Zongyi Li, Haojia Lin, Yong Mao, Ke Li, and Xing Sun. 2025. Training-free group relative policy optimiza-tion. arXiv preprint arXiv:2510.08191 .Arslan Chaudhry, Marcus Rohrbach, Mohamed Elho-seiny, Thalaiyasingam Ajanthan, Puneet K. Doka-nia, Philip H. S. Torr, and Marc’Aurelio Ranzato. 2019. On tiny episodic memories in continual learn-ing. arXiv preprint arXiv:1902.10486 .Sanjiban Choudhury. 2025. Process reward models for LLM agents: Practical framework and directions. 
+
+arXiv preprint arXiv:2502.10325 .DeepSeek-AI. 2026. DeepSeek V4 Preview Re-lease. https://api-docs.deepseek.com/news/ news260424 .Usama Ehtesham, Salam Dib, Sufian Almajali, Tiago Peixoto, Jay Bhattacharya, Anupam Singla, and Themistoklis Diamantopoulos. 2025. A survey of agent interoperability protocols: Model context pro-tocol (MCP), agent communication protocol (ACP), agent-to-agent protocol (A2A), and agent network protocol (ANP). arXiv preprint arXiv:2505.02279 .Jinyuan Fang, Yanwen Peng, Xi Zhang, Yingxu Wang, Xinhao Yi, Guibin Zhang, Yi Xu, Bin Wu, Siwei Liu, Zihao Li, Zhaochun Ren, Nikos Aletras, Xi Wang, Han Zhou, and Zaiqiao Meng. 2025. A compre-hensive survey of self-evolving AI agents: A new paradigm bridging foundation models and lifelong agentic systems. arXiv preprint arXiv:2508.07407 .Jiazhan Feng, Shijue Huang, Xingwei Qu, Ge Zhang, Yujia Qin, Baoquan Zhong, Chengquan Jiang, Jinxin Chi, and Wanjun Zhong. 2025. ReTool: Reinforce-ment learning for strategic tool use in LLMs. arXiv preprint arXiv:2504.11536 .Harbor Framework Team. 2026. Harbor: A framework for evaluating and optimizing agents and models in container environments. Sihang Jiang, Lipeng Ma, Zhonghua Hong, Keyi Wang, Zhiyu Lu, Shisong Chen, Jinghao Zhang, Tianjun Pan, Weijia Zhou, Jiaqing Liang, and Yanghua Xiao. 2026. SEA-eval: A benchmark for evaluating self-evolving agents beyond episodic assessment. arXiv preprint arXiv:2604.08988 .Carlos E. Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik Narasimhan. 2024. SWE-bench: Can language mod-els resolve real-world github issues? In International Conference on Learning Representations .James Kirkpatrick, Razvan Pascanu, Neil Rabinowitz, Joel Veness, Guillaume Desjardins, Andrei A. Rusu, Kieran Milan, John Quan, Tiago Ramalho, Ag-nieszka Grabska-Barwinska, Demis Hassabis, Clau-dia Clopath, Dharshan Kumaran, and Raia Hadsell. 2017. Overcoming catastrophic forgetting in neural networks. Proceedings of the National Academy of Sciences , 114(13):3521–3526. Aviral Kumar, Vincent Zhuang, Rishabh Agarwal, Yi Su, John D. Co-Reyes, Avi Singh, Kate Baumli, Shariq Iqbal, Colton Bishop, Rebecca Roelofs, Lei M. Zhang, Kay McKinney, Disha Shrivastava, Cosmin Paduraru, George Tucker, Doina Precup, Feryal Be-hbahani, and Aleksandra Faust. 2024. Training lan-guage models to self-correct via reinforcement learn-ing. arXiv preprint arXiv:2409.12917 .LangChain. 2025. Agent frameworks, runtimes, and harnesses - oh my! 
+
+https://www.langchain.com/blog/ agent-frameworks-runtimes-and-harnesses-oh-my .LangChain. 2026. How middleware lets you customize your agent har-ness. https://blog.langchain.com/ how-middleware-lets-you-customize-your-agent-harness/ .Junjie Li, Xi Xiao, Yunbei Zhang, Chen Liu, Lin Zhao, Xiaoying Liao, Yingrui Ji, Janet Wang, Jianyang Gu, Yingqiang Ge, Weijie Xu, Xi Fang, Xiang Xu, Tianchen Zhao, Youngeun Kim, Tianyang Wang, Ji-hun Hamm, Smita Krishnaswamy, Jun Huan, and Chandan K. Reddy. 2026. Agent harness engi-neering: A survey. https://picrew.github.io/ LLM-Harness/ . Under review. Jiahang Lin, Shichun Liu, Chengjun Pan, Lizhi Lin, Shihan Dou, Zhiheng Xi, Xuanjing Huang, Hang Yan, Zhenhua Han, Tao Gui, and Yu-Gang Jiang. 2026. Agentic harness engineering: Observability-driven automatic evolution of coding-agent harnesses. 
+
+arXiv preprint arXiv:2604.25850 .David Lopez-Paz and Marc’Aurelio Ranzato. 2017. Gradient episodic memory for continual learning. In 
+
+Advances in Neural Information Processing Systems .Aman Madaan, Niket Tandon, Prakhar Gupta, Skyler Hallinan, Luyu Gao, Sarah Wiegreffe, Uri Alon, Nouha Dziri, Shrimai Prabhumoye, Yiming Yang, Shashank Gupta, Bodhisattwa Prasad Majumder, 
+
+10 Katherine Hermann, Sean Welleck, Amir Yazdan-bakhsh, and Peter Clark. 2023. Self-refine: Iterative refinement with self-feedback. In Advances in Neu-ral Information Processing Systems .William Merrill and 1 others. 2026. Terminal-Bench: Benchmarking agents on hard, realistic tasks in command line interfaces. arXiv preprint arXiv:2601.11868 .Grégoire Mialon, Clémentine Fourrier, Thomas Wolf, Yann LeCun, and Thomas Scialom. 2024. GAIA: A benchmark for general AI assistants. In International Conference on Learning Representations .OpenAI. 2026a. Harness engineering: Leveraging Codex in an agent-first world. https://openai. com/index/harness-engineering/ .OpenAI. 2026b. OpenAI API model documentation: GPT-5.4. https://platform.openai.com/docs/ models/gpt-5.4 .Linyue Pan, Lexiao Zou, Shuo Guo, Jingchen Ni, and Hai-Tao Zheng. 2026. Natural-language agent har-nesses. arXiv preprint arXiv:2603.25723 .German I. Parisi, Ronald Kemker, Jose L. Part, Christo-pher Kanan, and Stefan Wermter. 2019. Continual lifelong learning with neural networks: A review. 
+
+Neural Networks , 113:54–71. Shishir G. Patil, Huanzhi Mao, Fanjia Yan, Char-lie Cheng-Jie Ji, Vishnu Suresh, Ion Stoica, and Joseph E. Gonzalez. 2025. The Berkeley Function Calling Leaderboard (BFCL): From tool use to agen-tic evaluation of large language models. In Pro-ceedings of the 42nd International Conference on Machine Learning , volume 267 of Proceedings of Machine Learning Research , pages 48371–48392. PMLR. Shishir G. Patil, Tianjun Zhang, Xin Wang, and Joseph E. Gonzalez. 2023. Gorilla: Large language model connected with massive APIs. arXiv preprint arXiv:2305.15334 .Long Phan and 1 others. 2025. Humanity’s last exam. 
+
+arXiv preprint arXiv:2501.14249 .Yujia Qin, Shihao Liang, Yining Ye, Kunlun Zhu, Lan Yan, Yaxi Lu, Yankai Lin, Xin Cong, Xiangru Tang, Bill Qian, Sihan Zhao, Lauren Hong, Runchu Tian, Ruobing Xie, Jie Zhou, Mark Gerstein, Dahai Li, Zhiyuan Liu, and Maosong Sun. 2024. ToolLLM: Facilitating large language models to master 16000+ real-world APIs. In International Conference on Learning Representations .Anthony Robins. 1995. Catastrophic forgetting, re-hearsal and pseudorehearsal. Connection Science ,7(2):123–146. Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. 2023. Toolformer: Language models can teach themselves to use tools. In Advances in Neural Information Processing Sys-tems .Amrith Setlur, Chirag Nagpal, Adam Fisch, Xinyang Geng, Jacob Eisenstein, Rishabh Agarwal, Alekh Agarwal, Jonathan Berant, and Aviral Kumar. 2025. Rewarding progress: Scaling automated process veri-fiers for LLM reasoning. In International Conference on Learning Representations .Noah Shinn, Federico Cassano, Edward Berman, Ash-win Gopinath, Karthik Narasimhan, and Shunyu Yao. 2023. Reflexion: Language agents with verbal rein-forcement learning. In Advances in Neural Informa-tion Processing Systems .Xiangru Tang, Tianrui Qin, Tianhao Peng, Ziyang Zhou, Daniel Shao, Tingting Du, Xinming Wei, Peng Xia, Fang Wu, He Zhu, Ge Zhang, Jiaheng Liu, Xingyao Wang, Sirui Hong, Chenglin Wu, Hao Cheng, Chi Wang, and Wangchunshu Zhou. 2025. Agent KB: Leveraging cross-domain experience for agentic prob-lem solving. arXiv preprint arXiv:2507.06229 .Gido M. van de Ven and Andreas S. Tolias. 2019. Three scenarios for continual learning. arXiv preprint arXiv:1904.07734 .Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Man-dlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. 2023. Voyager: An open-ended embodied agent with large language models. arXiv preprint arXiv:2305.16291 .Haoyu Wang, Christopher M. Poskitt, and Jun Sun. 2026. AgentSpec: Customizable runtime enforce-ment for safe and reliable LLM agents. In Proceed-ings of the 48th IEEE/ACM International Conference on Software Engineering .Xingyao Wang, Simon Rosenberg, Juan Michelini, Calvin Smith, Hoang Tran, Engel Nyst, Rohit Mal-hotra, Xuhui Zhou, Valerie Chen, Robert Brennan, and 1 others. 2025a. The OpenHands software agent SDK: A composable and extensible foundation for production agents. arXiv preprint arXiv:2511.03690 .Zihan Wang, Kangrui Wang, Qineng Wang, Pingyue Zhang, Linjie Li, Zhengyuan Yang, Xing Jin, Ke-fan Yu, Minh Nhat Nguyen, Licheng Liu, Eli Got-tlieb, Yiping Lu, Kyunghyun Cho, Jiajun Wu, Li Fei-Fei, Lijuan Wang, Yejin Choi, and Manling Li. 2025b. RAGEN: Understanding self-evolution in LLM agents via multi-turn reinforcement learning. 
+
+arXiv preprint arXiv:2504.20073 .Zora Zhiruo Wang, Jiayuan Mao, Daniel Fried, and Graham Neubig. 2024. Agent workflow memory. 
+
+arXiv preprint arXiv:2409.07429 .Tianbao Xie, Danyang Zhang, Jixuan Chen, Xiaochuan Li, Siheng Zhao, Ruisheng Cao, Tuo Hua, Zhoujun Cheng, Dongchan Shin, Fangyu Lei, Yiheng Liu, Yiheng Xu, Shuyan Zhou, Silvio Savarese, Caiming Xiong, Victor Zhong, and Tao Yu. 2024. OSWorld: 
+
+11 Benchmarking multimodal agents for open-ended tasks in real computer environments. arXiv preprint arXiv:2404.07972 .Guangzhi Xiong, Qiao Jin, Zhizheng Zhang, Xiao Lu, Zhiyong Wang, Meng Ma, Xunzhu Wang, Yiyang Wang, Yikai Liu, Huaxiu Sun, Fei Wang, Zhiyong Liu, and Chenyan Liu. 2025. How memory manage-ment impacts LLM agents: An empirical study of experience-following behavior. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing .Wujiang Xu, Zujie Liang, Kai Mei, Hang Gao, Jun-tao Tan, and Yongfeng Zhang. 2025. A-MEM: Agentic memory for LLM agents. arXiv preprint arXiv:2502.12110 .John Yang, Carlos E. Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. 2024. SWE-agent: Agent-computer interfaces enable automated software engineering. In Advances in Neural Information Processing Systems .Shunyu Yao, Noah Shinn, Parth Razavi, and Karthik Narasimhan. 2024. tau-bench: A benchmark for tool-agent-user interaction in real-world domains. arXiv preprint arXiv:2406.12045 .Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2023. ReAct: Synergizing reasoning and acting in language models. In International Conference on Learning Representations .Asaf Yehudai, Lilach Eden, Alan Li, Guy Uziel, Yilun Zhao, Roy Bar-Haim, Arman Cohan, and Michal Shmueli-Scheuer. 2026. Survey on eval-uation of LLM-based agents. arXiv preprint arXiv:2503.16416 .Siyu Yuan, Kaitao Song, Jiangjie Chen, Xu Tan, Dong-sheng Li, and Deqing Yang. 2025a. EvoAgent: To-wards automatic multi-agent generation via evolution-ary algorithms. arXiv preprint arXiv:2406.14228 .Siyu Yuan, Kaitao Song, Jiangjie Chen, Xu Tan, Yongliang Shen, Ren Kan, Dongsheng Li, and De-qing Yang. 2025b. EASYTOOL: Enhancing LLM-based agents with concise tool instruction. In Pro-ceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Compu-tational Linguistics: Human Language Technologies ,pages 951–972. Weizhe Yuan, Richard Yuanzhe Pang, Kyunghyun Cho, Xian Li, Sainbayar Sukhbaatar, Jing Xu, and Jason Weston. 2025c. Self-rewarding language models. In 
+
+International Conference on Machine Learning .Z.AI. 2026. GLM-5.1 model documentation. https: //docs.z.ai/guides/llm/glm-5.1 .Jiayi Zhang, Jinyu Xiang, Zhaoyang Yu, Fengwei Teng, Xionghui Chen, Jiaqi Chen, Mingchen Zhuge, Xin Cheng, Sirui Hong, Jinlin Wang, Bingnan Zheng, Bang Liu, Yuyu Luo, and Chenglin Wu. 2025. AFlow: Automating agentic workflow generation. 
+
+arXiv preprint arXiv:2410.10762 .Qizheng Zhang, Changran Hu, Shubhangi Upasani, Boyuan Ma, Fenglu Hong, Vamsidhar Kamanuru, Jay Rainton, Chen Wu, Mengmeng Ji, Hanchen Li, Ur-mish Thakker, James Zou, and Kunle Olukotun. 2026. Agentic context engineering: Evolving contexts for self-improving language models. In International Conference on Learning Representations .Junhao Zheng, Xidi Cai, Qiuke Li, Duzhen Zhang, ZhongZhi Li, Yingying Zhang, Le Song, and Qianli Ma. 2025. LifelongAgentBench: Evaluat-ing LLM agents as lifelong learners. arXiv preprint arXiv:2505.11942 .Shuyan Zhou, Frank F. Xu, Hao Zhu, Xuhui Zhou, Robert Lo, Abishek Sridhar, Xianyi Cheng, Tianyue Ou, Yonatan Bisk, Daniel Fried, Uri Alon, and Gra-ham Neubig. 2024. WebArena: A realistic web envi-ronment for building autonomous agents. In Interna-tional Conference on Learning Representations .Mingchen Zhuge, Wenyi Wang, Louis Kirsch, Francesco Faccio, Dmitrii Khizbullin, and Jürgen Schmidhuber. 2024. Language agents as optimizable graphs. In International Conference on Machine Learning .
+
+12 A Additional Method Details 
+
+This appendix follows the structure of the main text. Appendix A expands the method and pro-tocol details from Section 3. Appendix B de-scribes the benchmarks, baselines, concrete set-tings, and recorded compute budget used by Sec-tion 4. Appendix D contains supplementary learn-ing curves and replay diagnostics. Appendix E and Appendix F summarize implementation and met-ric records needed to inspect and recompute the results. 
+
+A.1 Evolution Schedule Fields 
+
+The experiments use an epoch-based batch setting, but the same protocol can instantiate other self-evolution schedules. The experiment configuration records the following schedule fields: • state persistence : whether the harness state is reset between task episodes or persists across them; • task reuse : whether the update-bearing task stream is one pass or repeated across epochs; • train size : the number of tasks selected from the source train pool for each epoch; • batch size : the number of task episodes run before each train-batch update; • number of epochs : the number of traversals over the selected train set; • updates per batch : the number of rollout-update attempts on each train batch; • assessment timing : the boundaries at which frozen snapshots are evaluated. In the default setting, state is persistent, tasks are reused across epochs, updates occur after train batches, and frozen update-validation assessment occurs at epoch end. 
+
+A.2 Saved Evaluation Views 
+
+Base manifests contain only train, validation, and test task ids. Before a scored run, the data module selects and saves: • train batches from the train split; • Vupdate-val from the validation split; • final ID transfer views from held-out source test tasks; 
+
+Algorithm 1 SEAG YM Epoch/Batch Evaluation 
+
+Require: task index, train/val/test splits, schedule, seed 
+
+Require: self-evolving baseline with rollout pol-icy and update rule U 
+
+> 1:
+
+Sample train batches {Bt} and select 
+
+Vupdate-val , replay views, and final views  
+
+> 2:
+
+Record initial snapshot A0 = ( M, H 0) as E0 
+
+> 3:
+
+for epoch = 1 , . . . , N do  
+
+> 4:
+
+for train batch Bt do  
+
+> 5:
+
+Run task episodes from Bt and collect 
+
+(Tt, F t) 
+
+> 6:
+
+Update harness state: Ht+1 ←
+
+U (Ht, B t, Tt, F t) 
+
+> 7:
+
+Save update summary and optional checkpoint  
+
+> 8:
+
+end for  
+
+> 9:
+
+Freeze current agent as Ei and evaluate on 
+
+Vupdate-val ▷ epoch-end assessment  
+
+> 10:
+
+end for  
+
+> 11:
+
+Evaluate A0 and AT on final ID, OOD, and replay views ▷ held-out assessment • final OOD transfer views from held-out target-domain test tasks; • replay or diagnostic views when enabled. The saved task ids are part of the run artifact so that metric computation can be recomputed without relying on in-memory sampling state. 
+
+B Experimental Details 
+
+B.1 Benchmarks 
+
+The paper experiments use two Harbor-backed benchmark sources. Terminal-Bench 2.0 pro-vides executable command-line and software-engineering tasks with containerized environments and verifiers (Merrill et al., 2026). HLE provides expert-level question-answering tasks (Phan et al., 2025); we use text-only Math and Physics tasks as source tasks, and text-only CS/AI plus Engineer-ing tasks as held-out OOD transfer tasks. Harbor provides the task execution substrate, including environments, parallel jobs, trial artifacts, and ver-ifier result files (Harbor Framework Team, 2026). SEAG YM does not copy benchmark definitions; it stores task ids, stable attributes, split membership, schedule records, snapshot records, and normalized metric inputs. 13 B.2 Baselines 
+
+We connect self-evolving methods through the roll-out/update interface described in Section 3. ACE evolves persistent context from task traces (Zhang et al., 2026). TF-GRPO uses grouped rollout evi-dence to update an experience/context store with-out model-weight training (Cai et al., 2025). AHE edits a broader agent harness, including prompts, middleware, memory, and project files, using ob-servability from previous rollouts (Lin et al., 2026). For all methods, task execution remains Harbor-backed and the method wrapper preserves native update semantics as much as possible. 
+
+B.3 Paper Experiment Settings 
+
+Table 6 lists the full setting used by the main exper-iments and ablations. 
+
+B.4 Experiment-Specific Configurations 
+
+Table 7 lists the concrete run configuration behind each experiment subsection. 
+
+B.5 Training Runs, Tokens, and Recorded Runtime 
+
+The compact records below summarize the training runs used for the reported results. Token counts are read from normalized SEAGym metric records. Rollout tokens count task-execution records, and update tokens count SEAGym baseline-update records when the native method exposes token us-age. Runtime is the sum of unique Harbor-reported task-job runtimes recovered from saved task re-sults. It is therefore a recorded task-execution run-time, not a complete end-to-end wall-clock mea-surement; native update wall time and external queueing delays were not recorded consistently across methods.                                  
+
+> Main runs Run Schedule / rows Recorded budget Use
+> Main AHE b20/e5/u20; 720 rows 1053.8M rollout; 78.1M update; 14h06m Main result and diag-nostics Main ACE b20/e5/u20; 720 rows 1384.0M rollout; up-date –; 13h55m Main result Main TF-GRPO b20/e5/u20; 1120 rows 2615.1M rollout; 32.0M update; time – Main result; grouped rollout evidence
+> Ablation and cross-model runs Run Schedule / rows Recorded budget Use
+> AHE batch 10 b10/e5/u40; 720 rows 567.8M rollout; 125.2M update; 17h47m Batch-size ablation AHE batch 40 b40/e5/u10; 720 rows 782.2M rollout; 33.6M update; 10h44m Batch-size ablation AHE batch 80 b80/e5/u5; 720 rows 769.9M rollout; 17.9M update; 10h09m Batch-size ablation AHE batch 80 cont. b80/e5/u5; 720 rows 896.2M rollout; 16.9M update; 7h40m Diagnostic continua-tion AHE HLE only b20/e5/u20; 710 rows 625.4M rollout; 68.9M update; time – Source-diversity abla-tion AHE GLM b20/e5/u20; 720 rows 159.8M rollout; 111.0M update; 14h32m Cross-model diagnos-tic
+
+Schedule shorthand reports batch size, epochs, and updates. Task rows include train, update-validation, and final task executions saved by the training run. Additional evaluate-only snapshot jobs are reported separately in their own artifacts and are not added here. A dash means the field was not recoverable from normalized records. 
+
+C Evolution Artifacts and Case Studies 
+
+C.1 Baseline Evolution Case Study 
+
+The main baseline table reports the performance trajectory of ACE, TF-GRPO, and AHE. To under-stand what changed during training, we inspect the saved update artifacts, agent snapshots, and rep-resentative task traces. The three methods do not update the same kind of state. ACE mainly stores process-level skills, TF-GRPO stores task-family experiences, and AHE edits the runnable harness itself. Table 8 summarizes these artifacts before we discuss individual cases. 
+
+ACE. ACE converts past trajectories into a persis-tent skillbook. In the selected E4 snapshot, the ac-tive skills are mostly transferable execution habits rather than task-specific programs. For example, 
+
+context-00001 instructs the agent to read back output files and check exact formatting after writing them; context-00002 asks the agent to enumerate every explicit problem constraint before finalizing; 
+
+context-00005 pushes the agent to write a candi-date answer before spending the remaining budget on repeated derivation; and harness-00010 recom-mends installing a missing tool or package before abandoning an approach. These artifacts explain why ACE can yield positive gains: it has learned reusable process knowledge from earlier rollouts. The failed traces in Table 10, however, illustrate one reason the gain remains limited. The skills are visible to the model, but they do not change the tools, the completion protocol, or the verifier-equivalent checks available during rollout. 14 Setting Value 
+
+Task source Terminal-Bench 2.0 plus HLE text-only Math and Physics for source training, update-validation, and in-domain testing. Source split sizes 80 train tasks, 35 validation tasks, and 55 in-domain test tasks. OOD transfer test source HLE text-only CS/AI and Engineering, used only as held-out OOD transfer tests. OOD transfer test size 80 total tasks. Train feedback Train tasks provide task trajectories, public errors, verifier rewards, and method-visible artifacts according to the task interface. Validation feedback Vupdate-val is frozen before scored runs and is used only for epoch-end assessment. Final test feedback ID and OOD transfer tests are run only from frozen snapshots and are not fed back to the update rule. State behavior Agent harness state persists across train batches and epochs. Final evaluation compares the initial snapshot A0 with the final snapshot AT .Main schedule Five epochs, train batch size 20, and epoch-end frozen update-validation. Update attempts All main-table runs use one SEAGym update attempt per train batch. Method-native rollouts, such as TF-GRPO train-only grouped evidence, are recorded separately from SEAGym update attempts. Rollout attempts Validation and final views use single-attempt evaluation. TF-GRPO preserves train-only grouped rollout evidence for its native update rule. Main methods ACE, TF-GRPO, and AHE. Each method uses its native harness update rule and saved update artifacts. Main model backend DeepSeek-V4-Flash for the main method comparison; exact provider metadata is recorded with the run artifacts. Batch-size ablation AHE with batch sizes 10, 40, and 80, compared against the main batch size 20 schedule. Source-choice ablation AHE on HLE-only Math and Physics source tasks, compared with the combined Terminal-Bench plus HLE source setting. Cross-model ablation AHE with GLM-5.1 and GPT-5.4, compared against the DeepSeek-V4-Flash AHE run. Execution backend Harbor-backed task execution with SEAGym snapshot, schedule, metric, and artifact records. Runtime budget Scored paper configs use task timeout 1800 seconds and concurrency 16 unless overridden by a run-specific config. Primary metric Task success rate on frozen validation and test views, reported as a percentage. Derived metrics Update-validation gain, final in-domain gain, OOD gain, forgetting, cost, and token usage when available; gain values are percentage-point differences. Diagnostics Update status, setup failures, verifier failures, provider errors, runtime corruption, replay or regression probes when enabled, and harness-state diffs when available. 
+
+Table 6: Full experiment setting for the main runs and ablations. Run-specific overrides are recorded in the corresponding config and artifact files. 
+
+The polyglot-rust-c trace is especially infor-mative because the agent did perform meaningful local validation. It confirmed that the Rust and C++ executables compiled and matched on several inputs. The failure occurred after this local veri-fication step: temporary build artifacts were left in the submission directory. This trace is consis-tent with ACE encouraging checks that an artifact works, while still missing constraints about the fi-nal filesystem state. Similarly, video-processing 
+
+and db-wal-recovery show that output existence, parseability, and simple structure checks are not enough when the success condition depends on fine-grained semantic alignment. The evidence there-fore supports a bounded conclusion: ACE transfers useful procedural knowledge, but the skills often stop short of the verifier condition. 
+
+TF-GRPO. TF-GRPO stores a larger experience memory. Compared with ACE skills, these entries are often more task-family specific. Table 11 gives examples from the saved experience store. These experiences help explain why TF-GRPO can produce a large source-validation gain. They do not merely say “verify more”; they encode spe-cific actions for recurring task types, such as using QMP for QEMU interaction, checking round trips in data pipelines, or avoiding signed overflow in binary parsing. Several successful TF-GRPO evalu-ations occur on task families compatible with these lessons, including pytorch-model-recovery ,
+
+build-pmars , portfolio-optimization ,
+
+llm-inference-batching-scheduler ,
+
+kv-store-grpc , compile-compcert ,
+
+vulnerable-secret ,
+
+fix-code-vulnerability ,
+
+hf-model-inference , and reshard-c4-data .We do not attribute any single success to a single memory entry, because a rollout may combine multiple experiences and model choices. The evidence does support the more conservative claim 15 Paper section Training runs Source / schedule Model backend Extra evaluations and reported view                                
+
+> Baseline Results AHE main, ACE main, and TF-GRPO main Terminal-Bench +HLE; 80/35/55 split; five epochs; batch size 20; one update per train batch DeepSeek v4 Flash for rollout and update where applicable All methods report ID and OOD evalua-tions from their best-validation snapshots; for AHE, the best-validation snapshot is the final snapshot. The table reports vali-dation, ID, OOD, token cost, and update status. Training Fix and Forget-ting AHE main Same as AHE main; fixed saved snapshots at initializa-tion, epochs 1–4, and the final epoch DeepSeek v4 Flash All fixed snapshots are evaluated on the 80 source train tasks. The grid reports success, failure, and rollout-error status by original train exposure order. Effect of Batch Size AHE batch-size sweep: 10, 20, 40, and 80 Terminal-Bench +HLE; five epochs; batch sizes 10/20/40/80; one update per train batch DeepSeek v4 Flash Final ID evaluations use each run’s final snapshot. We report this ablation on vali-dation and ID views; OOD is reserved for the main and OOD analyses. Source Diversity Mixed-source AHE and HLE-only AHE Main source: Terminal-Bench + HLE 80/35/55. HLE-only source: HLE Math/Physics 80/35/50. Both use five epochs and batch size 20 DeepSeek v4 Flash Main source uses final ID and OOD eval-uations. HLE-only reports final vali-dation/ID and the best-validation OOD snapshot because the final HLE-only snapshot collapses. Cross-Model Transfer AHE evolved with DeepSeek-V4-Flash, GLM-5.1, and GPT-5.4 Terminal-Bench + HLE; five epochs; batch size 20; one up-date per train batch DeepSeek-V4-Flash, GLM-5.1, and GPT-5.4, one model per training run Cross-backend snapshot evaluations swap evolved AHE snapshots and rollout back-ends on ID and OOD views. The ta-ble reports finalized ID and OOD evalua-tion records and treats runtime-corrupted trials as diagnostic artifacts rather than scored improvements.
+
+Table 7: Experiment-specific configurations for the results in Section 4. Each run artifact records the resolved JSON config, split, model, backend, and snapshot metadata. 
+
+that TF-GRPO updates a more concrete library of task-family priors than ACE. This also clarifies the boundary of TF-GRPO. Its experiences can make a later attempt more targeted when a similar situation arises, but they still operate through the model’s prompt-time behavior. They do not add tools, intercept completion, or enforce a runtime check. Thus, TF-GRPO sits between ACE and AHE: it is more task-specific than a short skill-book, but it still depends on retrieval and adoption during rollout. 
+
+AHE. AHE produces the most direct changes to the execution path. Its update manifests record not only what changed, but also the failure pattern targeted by each change and why that component was edited. Table 12 summarizes representative updates. These artifacts help explain why AHE can improve validation, ID, and OOD together in the main result table. The update does not only remind the model to perform better checks; it can change the tools available for file editing and research, the way long contexts are managed, and the conditions under which a task may be completed. The successful AHE evaluations include tasks that naturally use these capabil-ities, such as multi-source-data-merger ,
+
+query-optimize , pytorch-model-recovery ,
+
+portfolio-optimization ,
+
+llm-inference-batching-scheduler ,
+
+vulnerable-secret , fix-git ,
+
+hf-model-inference , and reshard-c4-data .Again, we avoid one-to-one causal attribution between a patch and a task success. The stronger evidence is that the changed components match the capabilities demanded by many solved tasks: file interaction, iterative verification, tool-mediated research, and explicit completion control. AHE failures are also informative. The method still fails on tasks such as 
+
+train-fasttext , make-mips-interpreter ,
+
+torch-tensor-parallelism , and some HLE examples, sometimes through timeout, empty model responses, verifier timeout, or remaining task complexity. Thus, harness-level editing expands what can be changed during a rollout, but it does not remove model-budget limits, long-horizon reasoning failures, or environment instability. 
+
+Cross-method interpretation. These cases sug-gest that the three methods improve agents through different mechanisms. ACE mainly changes what the agent is reminded to do: it can encourage output checking, dependency handling, and local valida-tion, but these reminders may not be applied at the right moment or may stop short of the final veri-fier condition. TF-GRPO stores more task-specific experiences, such as using QMP for QEMU inter-16 Method Evolution artifact Representative evidence Primary update tar-get 
+
+ACE Skillbook entries The selected E4 snapshot contains 13 active skills covering output readback, format check-ing, explicit constraint checking, dependency installation, clean-build recovery, and writing a candidate answer before time exhaustion. Prompt-visible proce-dural reminders TF-GRPO Experience memory The experience store records task-family strate-gies such as running failing tests first, using QMP sockets for QEMU input, performing round-trip checks for data pipelines, using un-signed reads in binary parsers, and inspecting model label maps before inference. Task-family strategies AHE Harness, tool, and middle-ware patches The update manifests add file, web, and session tools; context compaction; HLE completion en-forcement; and message-content contract align-ment for middleware guidance. Runtime behavior and completion protocol 
+
+Table 8: Saved evolution artifacts for the baseline methods. The methods improve different parts of the agent state, so their gains and failure modes are not directly interchangeable. 
+
+Skill ID Content summary Intended behavioral change 
+
+context-00001 After writing an output file, immediately read it back and check the exact required format, including absence of Mark-down, extra spaces, wrong delimiters, or missing fields. Reduce output-format and parsing failures. 
+
+context-00002 After deriving a candidate answer, enumerate the explicit constraints in the task statement and independently verify each one. Reduce cases where partial correct-ness is mistaken for complete cor-rectness. 
+
+context-00005 When reasoning is complete or time is running out, write a candidate answer first instead of repeatedly deriving without producing output. Reduce timeout and no-output fail-ures. 
+
+harness-00008 After a multi-target build is interrupted, prefer a clean build rather than piecemeal recovery from partial state. Reduce verifier failures caused by stale artifacts or partial builds. 
+
+harness-00010 When a command or dependency is missing, first try to install or provision it instead of immediately abandoning or bypass-ing the approach. Reduce avoidable failures caused by missing tools. 
+
+Table 9: Representative ACE skills that support successful behavior changes. These entries are prompt-visible procedural reminders: they can improve execution hygiene, but they do not themselves enforce verifier-equivalent constraints. 
+
+action or performing round-trip checks for data pipelines, which can make the agent’s next at-tempt more targeted when a similar situation arises. AHE changes the execution environment more di-rectly by adding tools, middleware, and completion constraints, so its updates can affect not only the agent’s reasoning but also the actions available dur-ing a rollout. This distinction helps explain why improvements differ across methods: the learned artifact determines where training can affect the next rollout, and failures often occur just beyond that scope. 
+
+C.2 Training Forgetting Case Study 
+
+The train-replay experiment is not a second report of train score. It checks whether the evolved agent retains capabilities on seen tasks, and whether new capabilities are gained by sacrificing tasks that were already solved. Because each saved snapshot is re-played on the same 80 source-training tasks, the replay grid lets us inspect how a harness update changes concrete task outcomes. Table 13 gives the snapshot-level evidence before we analyze individ-ual tasks. In the case-study tables, tb/ abbreviates 
+
+terminal-bench/ .This trajectory shows why training forgetting cannot be judged only by whether the final score is higher than the initial score. AHE has a positive final net effect, but the E16 snapshot exposes a dif-ferent risk: when evolution can modify the harness and middleware, forgetting may appear as a broken 17 Task Observed behavior Verifier failure Mechanistic implica-tion                          
+
+> polyglot-rust-c The agent wrote main.rs , compiled it with both rustc and g++ , and tested that the two executables produced matching Fibonacci outputs. The final directory still contained
+> cmain and main ; the verifier ex-pected /app/polyglot to con-tain only main.rs .Local functional test-ing did not enforce the final submission-state constraint.
+> video-processing The script ran, wrote output.toml , and produced parseable fields. The predicted landing frames were 61 and 229, while the ver-ifier accepted only [62, 64] and [231, 234]. Generic output checks did not create a task-specific temporal ora-cle.
+> db-wal-recovery The recovered JSON existed, parsed cor-rectly, had the expected structure, and satisfied ordering checks. WAL semantics were incomplete: for example, record id=1 kept value 100 instead of the expected updated value 150. Structural validity did not imply recovery of the core state-update semantics.
+> path-tracing-reverse The skillbook included a dependency-installation lesson, but the rollout still encountered a missing file command. The task also prohibited invoking the original binary, yet the rollout ran
+> ./mystery .The verifier failed after the gener-ated reverse program did not sat-isfy the isolated execution check. Passive skills do not guarantee that critical constraints are applied at the right decision point.
+
+Table 10: Representative ACE failure cases. The traces support a narrow interpretation: ACE improves execution hygiene, but prompt-visible skills do not reliably enforce final-state constraints, task-specific oracles, or critical prohibitions. 
+
+execution path rather than as a model that no longer knows how to solve a task. The concrete task trajectories in Table 14 con-nect the aggregate gain to saved update arti-facts. Early gains come from executable har-ness changes. Iteration 1 adds file read/write, search, replacement, directory traversal, web search/read, complete_task , write_todos , and context-compaction tools and middleware. Iter-ation 4 adds an HLE verification enforcer that requires web research and verification code be-fore HLE or knowledge-task submission. Itera-tion 9 further strengthens HLE verification and converts the compiled-artifact residue observed in 
+
+polyglot-c-py into an artifact-cleanup rule be-fore submission. These are not single-task memo-ries; they change the action space and completion conditions for later rollouts. Those changes are reflected in replay tasks that move from failure to success: mailman is solved by an early snapshot and again by the final snapshot; polyglot-c-py is solved after an update that explicitly records the extra-binary failure pattern and adds cleanup before submission; rstan-to-pystan is solved only after later runtime-path changes; and two HLE examples become solvable after verification-oriented updates. These cases justify a limited mechanism claim: the gains come from executable harness behavior, including tools, middleware, verification checks, cleanup rules, and completion control, rather than from memorizing individual training answers. The E16 snapshot has a different signature from normal forgetting. It solves only 6/80 re-play tasks and records 66 rollout errors. Ta-ble 15 shows that the affected set includes tasks solved both before and after the collapse, tasks eventually fixed by AT , and one task that re-mains forgotten even after the runtime error is removed. The saved update summaries iden-tify the dominant cause as a NexAU message-sequence contract violation. Middleware-injected messages no longer satisfy the typed-message con-tract expected by the token counter and message schema. Iteration 19 first replaces legacy dictio-nary messages with Message(role=Role.SYSTEM, content=...) , but the content is still a plain string. Iteration 20 then identifies that con-tent must be block-structured and wraps it as 
+
+[TextBlock(text=...)] . After the affected mid-dleware paths are repaired, current-batch success recovers from 1/20 to 10/20, replay errors fall from 66 to 5, and AT gains 38 tasks relative to E16 while losing only one. We therefore do not interpret E16 as ordinary catastrophic forgetting. It exposes the sensitivity of harness evolution to execution contracts: once middleware message construction is changed in-correctly, the error propagates across many tasks that require middleware guidance. Snapshot re-play separates this process failure from ordinary 18 Experience Stored lesson Task-family relevance                
+
+> G0 For unfamiliar codebases and vulnerability fixes, run the existing test suite first and use failing tests to identify the root cause. Code repair and vulnerability-fixing tasks.
+> G1 ,G79 For programmatic QEMU input, use QMP over a TCP socket and prefer send-key ; verify the channel with a small Python socket script. VM and emulator-interaction tasks.
+> G101 After validating structural constraints in data pipelines, run forward-plus-inverse round-trip checks and confirm clean-environment determinism with no leftover artifacts. Data workflow and pipeline-verification tasks.
+> G102 ,G99 Use unsigned integer reads for binary data and respect seg-ment sizes when extracting ELF/PE data. Binary parsing and systems tasks.
+> G109 ,G131 When reconstructing procedurally generated images, com-pare key pixels or extract exact constants before full render-ing. Reverse-engineering and generated-image tasks.
+> G113 ,G74 Before serving a pretrained Hugging Face classifier, inspect the model configuration’s id2label mapping. Model inference and deployment tasks.
+
+Table 11: Representative TF-GRPO experiences. TF-GRPO records more concrete task-family strategies than ACE’s general process reminders. 
+
+answer failure; otherwise the final AT score of 43/80 would hide the large intermediate execution-path collapse. The final replay result should therefore be read as task churn with a positive net effect, not as a rollback to the initial agent. Relative to A0, AT
+
+fixes 13 initially failed tasks and loses 4 initially solved tasks, yielding a net gain of nine tasks on the replay set. The fixed cases include mailman ,
+
+polyglot-c-py , rstan-to-pystan , and multiple HLE tasks. polyglot-c-py is especially infor-mative: A0, E4, and E8 fail, E12 succeeds after the artifact-cleanup rule is introduced, E16 is in-terrupted by the runtime message error, and AT
+
+succeeds again after the runtime path is repaired. This is evidence that an observed failure can be converted into a reusable submission rule and con-tinue to help after a later execution-path repair. The forgotten cases in Table 16 prevent a stronger claim of lossless harness improvement. AHE does not ex-pand capability while preserving every old solution. By modifying tools, middleware, and verification policy, it changes the agent’s behavior distribution: for some tasks, a failure mode becomes a reusable constraint; for others, the new constraints and tool-use paths can cause a previously successful solution to be skipped or routed through a longer and more fragile verification chain. The replay diagnostic therefore does not answer only whether AHE forgets. It decomposes the pro-cess into three observable phenomena: reusable harness improvements, genuine task-level forget-ting, and transient runtime failures introduced by execution-system updates. The saved snapshots and metric records make these phenomena distin-guishable: the final gain comes from 13 fixed ini-tial failures, the E16 collapse is mainly a runtime message-contract failure, and 4 initial successes remain absent from the final snapshot. 
+
+C.3 Batch-Size Case Study 
+
+The batch-size sweep changes how many trajecto-ries AHE must analyze in one update while keeping the train, update-validation, and ID test sets fixed. The total train-task exposure is held constant, but the number of update calls changes: batch 10 has 40 updates, batch 20 has 20, batch 40 has 10, and batch 80 has 5. The aggregate curves show a non-monotonic pattern, but the saved update artifacts reveal why batch size affects more than statistical efficiency. AHE updates are LLM-driven harness edits with a bounded reading and reasoning budget; larger batches do not automatically give the evolve agent proportionally more analysis capacity. The cases in Table 18 support a more specific reading than a monotonic scaling law. Batch 10 receives the largest update budget per train task, about 0.31M tokens, so its failure is not simply a lack of analysis budget. The iteration-16 update targets a real rabbit-hole pattern, but the evidence is narrow: only one non-exception task failure drives the substantive harness change. By iteration 40, a single constructor/configuration mismatch prevents all ten tasks from starting. The negative result is 19 Iter. Concrete update Targeted failure pattern Why this component matters 
+
+1 Added file, web, session, and context-management tools, includ-ing direct file operations, web search/read, explicit completion, progress tracking, and context com-paction. Initial rollouts relied on shell workarounds, answered HLE ques-tions from recall, lacked explicit completion control, and could over-flow context on long tasks. The harness gains new action channels and a middleware layer that later updates can con-strain. 4 Added an HLE verification enforcer that intercepts completion unless re-search and verification evidence are present. Prompt instructions asked for research and verification, but rollouts still skipped them. The final completion point is programmatically constrained. 9 Strengthened HLE verification and added an artifact-cleanup rule for implementation tasks. Some HLE answers were “veri-fied” by one flawed script, while 
+
+polyglot-c-py failed after leaving an extra compiled binary in the output di-rectory. The update changes what counts as sufficient verifica-tion and adds a concrete submission-state rule. 14 Repaired tool-error recovery and added middleware checks for heredoc-heavy coding and sleep-chaining patterns. 
+
+path-tracing repeatedly used large inline heredocs, and 
+
+rstan-to-pystan used long chained sleeps; the recovery middleware itself was also not firing correctly. Runtime guidance can inter-vene during inefficient execu-tion loops rather than relying only on prompt-level advice. 16 Added multiple-choice detection and option-specific research require-ments to HLE verification. For HLE multiple-choice tasks, the agent searched general topics and wrote verification code that confirmed the same hypothesis instead of check-ing each option. Verification becomes tied to the answer format and re-quires evidence about compet-ing choices. 17 Added handling for failed web search, dismissed contradictory ev-idence, and manual combinatorial reasoning. Some HLE rollouts guessed after repeated no-result searches, treated counter-evidence as a special case, or reasoned through counting problems without code. The middleware and prompt steer the agent toward fallback computation and explicit inves-tigation of counter-evidence. 20 Aligned middleware message con-tent with the runtime message con-tract so guidance from tool-error re-covery, verification reminders, and HLE verification can be injected cor-rectly. Middleware guidance could fail to en-ter the model context when message content did not match the runtime con-tract. The middleware can inject guidance into the model con-text again. 
+
+Table 12: Representative AHE update artifacts. Unlike ACE and TF-GRPO, AHE often changes the tools, middleware, and completion protocol available to the agent during rollout. 
+
+therefore better explained as update-stream insta-bility: frequent small-batch edits can learn local failure patterns while also accumulating runtime and configuration contract risk. Batch 20 is the only setting with large posi-tive validation and ID gains, but it is not risk-free. Its intermediate E16 replay collapse shows that a runtime-path failure can affect most tasks. The important difference is that the batch-20 schedule still leaves enough evidence and enough later up-date opportunities to identify and repair the shared message-content contract failure. The final update restores the middleware guidance path, current-batch success recovers from 1/20 to 10/20, and replay errors fall from 66 to 5. Thus, batch 20 is strong in this run because the evidence is diverse enough to reveal cross-task runtime problems, but still small enough for trace-level inspection. Batch 40 illustrates the intermediate regime. It has enough evidence to expose broad shared fail-ures, and it finishes with a small positive validation and ID gain. However, its per-task update budget is only about 40% of batch 20’s, so task-specific analysis is thinner. The final 40/40 ConfigError 
+
+is easy to identify as a shared contract mismatch, but the update is largely spent restoring the runtime path rather than learning more heterogeneous task improvements. Batch 80 is the clearest evidence-overload case. The train batches themselves do not collapse im-mediately, but each update must summarize 80 het-erogeneous trajectories under roughly the same 3–4M-token update budget. Iteration 5 finds an important HLE-wide blind spot in answer-file veri-20 Snapshot Solved / 80 Rollout errors Evidence / interpretation 
+
+A0 34 4 Initial harness before training. 
+
+E4 38 7 File tools, web tools, completion control, and verification constraints start to help. 
+
+E8 37 8 The harness keeps some gains, but local task churn appears. 
+
+E12 42 6 Best intermediate snapshot before the later execution-path collapse. 
+
+E16 6 66 Widespread runtime message-contract violation, not ordinary task forget-ting. 
+
+AT 43 5 The message contract is restored, and earlier gains become visible again. 
+
+Table 13: Snapshot-level train replay evidence for the AHE main run. The sharp E16 drop is dominated by execution errors, while AT recovers after the runtime message contract is restored.                                             
+
+> Task A0E4E8E12 E16 ATEvidence / meaning
+> tb/mailman FSFFERR SEarly harness updates solve an initial failure, but the gain is not stable across snapshots.
+> tb/polyglot-c-py FFFSERR SSuccess appears after artifact-cleanup rules are added and remains after the runtime path is restored.
+> tb/rstan-to-pystan ERR ERR ERR ERR ERR SLater execution constraints and runtime repair are needed before the long-running task succeeds.
+> hle__66ecb2... FSFSERR SHLE verification and search updates produce repeated but finally retained gains.
+> hle__67206a... FFSSERR SThe HLE task becomes stable before E16 ; the E16
+> failure is an execution error rather than an answer error.
+
+Table 14: Representative train-replay task trajectories. S denotes a solved task, F an unsolved non-error trial, and ERR a rollout error. These cases show reusable gains, but also non-monotonic task behavior. 
+
+fication, yet the same batch also contains unrelated regressions on implementation, optimization, and recovery tasks. With only five update opportunities, a broad middleware change around the most salient pattern has little room for later correction. The continuation run confirms that the selected final snapshot carries an unstable runtime state rather than merely a low score. Overall, the result should not be read as a simple claim that larger or smaller batches are intrinsically better. AHE update is not a mini-batch gradient step; it is an LLM-driven harness-editing process with an approximately fixed token and attention budget per update. Batch size changes the amount and heterogeneity of evidence that must be inte-grated under that budget. Small batches expose too little evidence and require many edits; very large batches expose many failures but dilute per-task analysis and encourage broad changes around the most visible pattern. Batch 20 is best in this sweep because it jointly provides diverse failure evidence, enough trace-level detail for diagnosis, and enough update opportunities to repair runtime or configura-tion contract mistakes introduced earlier. 
+
+C.4 Source Diversity Case Study 
+
+The source-diversity experiment compares two AHE training streams with the same train size, batch size, and number of epochs. Both runs ex-pose 80 train tasks, use batch size 20, and perform 20 updates. The difference is the evidence source. The mixed-source run uses Terminal-Bench plus HLE, so its update evidence contains implemen-tation, tool-use, environment, file-operation, long-context, and HLE reasoning failures. The HLE-only run mostly exposes knowledge, math, physics, and answer-verification failures. Table 20 summa-rizes the outcome. We do not read the HLE-only result as “no learn-ing.” The HLE-only run produces a useful interme-diate snapshot: validation rises from 40.0% at E0
+
+to 42.9% at E12 , the shared ID view reaches 47.3%, and OOD reaches 25.0%. The final snapshot then collapses to 0.0% on validation, ID, and OOD. Our interpretation is therefore more specific: HLE-only evidence can produce locally useful HLE-specific harness improvements, but the later update stream pushes the harness toward a fragile verification and message-injection path that the final snapshot does not preserve. Table 21 explains why the HLE-only run can im-prove before it collapses. The update artifacts show AHE learning to block premature HLE answers, circular verification, and self-confirming reasoning. This is a real harness improvement, but it is con-centrated in the answer-verification loop. In other 21 Task A0 E16 AT Explanation 
+
+tb/compile-compcert S ERR S A previously solved task becomes an execution error at 
+
+E16 and recovers after the final runtime-contract fix. 
+
+tb/configure-git-webserver S ERR S The same solved–error–solved pattern indicates execution-path failure rather than task-specific loss. 
+
+tb/mailman F ERR S The final snapshot both restores the runtime path and solves a task that the initial harness failed. 
+
+tb/rstan-to-pystan ERR ERR S The task remains errored until the final snapshot, so recovery is not a simple rollback to A0.
+
+hle__67254b... S ERR F The runtime error is removed, but the task is still for-gotten at the final snapshot. 
+
+Table 15: Representative evidence for the E16 runtime collapse. The pattern is dominated by message-contract failures in the execution path, not by uniformly worse task reasoning.                                        
+
+> Task A0E4E8E12 E16 ATForgetting form
+> tb/kv-store-grpc SFSFERR FAlternates across snapshots, suggesting a changed exe-cution path on the same implementation task.
+> tb/reshard-c4-data SSSSERR ERR Stable initial success is lost through an execution error that remains at AT.
+> hle__6720ff... SFSFFFNon-monotonic HLE behavior becomes a final loss in-dependent of the E16 error spike.
+> hle__67254b... SFFFERR FThe runtime error is repaired, but the final answer behav-ior does not recover.
+
+Table 16: Initially solved tasks that are absent from the final AHE snapshot. The final gain is not lossless retention: 
+
+AT fixes 13 initial failures but forgets 4 initial successes. 
+
+words, HLE-only evidence gives us dense signal about one subsystem and much less signal about the rest of the runtime interaction path. The E12 checkpoint is therefore not just curve noise. Its gains match the artifacts in Table 22: the run has been optimizing rejection handling, domain-specific checking, and the timing of veri-fication reminders. Because the source stream is HLE-only, the resulting harness improvement is also narrow. It improves how the agent handles HLE-style answer verification, but it gives little di-rect evidence about file-state constraints, tool fail-ures, long-running commands, environment setup, or implementation artifacts. The HLE-only final snapshot shows the cost of this narrow optimization path. To repair circular verification, AHE repeatedly edits self-verification middleware. That middleware directly injects mes-sages before the model is called, so a message-construction error affects every HLE task before task solving can proceed. Once that path violates the runtime contract, validation, ID, and OOD all go to zero. This is why we avoid saying only that single-source training “overfits.” The more precise failure mode is that a single reasoning-heavy source concentrates updates on one verification subsystem, and the final runtime failure occurs exactly in that subsystem’s message-injection path. The mixed-source run also passes through a bad intermediate state, so source diversity is not a guar-antee against harmful updates. The difference is the evidence available for recovery. Terminal-Bench exposes tool calls, file editing, environment setup, long-running commands, artifact cleanup, and tool-error recovery. HLE exposes reasoning, web evi-dence, verification sufficiency, and multiple-choice checking. In the mixed-source artifacts, early up-dates add file tools, web tools, session-lifecycle tools, and context compaction; later updates add HLE verification enforcement, artifact cleanup, search-failure fallback, contradictory-evidence han-dling, and message-content contract alignment. When a message-contract failure appears, both Terminal-Bench and HLE tasks are affected, which helps us see it as a shared execution-path failure rather than as an HLE reasoning failure. After the final message-content repair, the current batch re-covers from 1/20 to 10/20 and train-replay errors fall from 66 to 5. The final mixed-source snapshot then preserves gains on validation, ID, and OOD. Our conclusion is therefore not that mixed data is universally better. For AHE, the update target is the harness, and the type of harness-failure ev-idence strongly determines where updates are ap-plied. HLE-only data gives dense reasoning and verification failures, so AHE learns to intensify self-verification; this can produce useful intermedi-ate gains, but it also concentrates risk in the same 22 Batch Updates Validation ID test Update tok./update Update tok./train task Primary evidence                         
+
+> 10 40 37.1 →22.9 38.2 →23.6 3.13M 0.31M Frequent small-sample updates; local fixes coexist with configuration and runtime drift. 20 20 40.0 →57.1 40.0 →49.1 3.91M 0.20M Best balance between evidence diversity, trace inspec-tion depth, and recovery opportunity. 40 10 37.1 →40.0 41.8 →43.6 3.36M 0.08M Small positive gain; shared failures are visible, but heterogeneous task-level analysis is thinner. 80 542.9 →25.7 41.8 →25.5 3.57M 0.04M Evidence overload; salient global patterns dominate long-tail failures and the final state remains runtime-unstable.
+
+Table 17: Batch-size sweep summary. Token fields use recorded update tokens normalized per update and per source-train task. 
+
+message-injection path. Mixed-source data gives a more distributed set of failures, including tools, environments, files, long-running execution, con-text pressure, and HLE reasoning. That diversity does not prevent harmful updates, but in this run it helps the final harness recover from an intermedi-ate collapse and retain gains across validation, ID, and OOD. 
+
+C.5 Cross-Model Case Study 
+
+The cross-model setting lets us inspect how the same AHE update process changes when the rollout backend changes. We do not infer the mechanism from the final score alone. Instead, we read the update artifacts from each run: at every update, the evolve agent receives the current batch trajectories, groups failure patterns, and edits prompts, memory, or middleware. These artifacts show that the three rollout backends expose different failure surfaces, and AHE consequently modifies different harness subsystems. Table 25 summarizes the evidence before we discuss the concrete updates. 
+
+DeepSeek. In the DeepSeek run, updates cover a broad runtime interaction path. Iteration 9 ob-serves that several HLE failures are not caused by the absence of verification. The agent writes verification code, but the code encodes the same wrong assumptions as the written reason-ing, so the previous middleware accepts a self-confirming script as evidence. The same update also records an implementation-side artifact issue: 
+
+polyglot-c-py leaves an extra compiled binary in the solution directory. The resulting patch strength-ens HLEVerificationMiddleware : a single script and a numerical output no longer count as sufficient evidence, and the harness asks for web research, independent computation, an eval/check script, or multiple separate computations. The update also records artifact cleanup in the system prompt and 
+
+LongTermMEMORY .Later updates show that the DeepSeek trajecto-ries expose more than answer-level errors. Iteration 14 finds that ToolErrorRecoveryMiddleware 
+
+is not firing because it accesses a nonexis-tent context_overflow_imminent field. The same batch contains execution-pattern failures: 
+
+path-tracing repeatedly uses large heredocs for complex code, and rstan-to-pystan en-ters long chained sleeps. The patch repairs the middleware field access and adds runtime detection for heredoc-heavy coding and sleep chaining. Iteration 20 then repairs a shared message-contract failure: earlier middleware cre-ated Message(..., content="string") , but the NexAU schema requires block-structured content, so the patch changes the injected messages to 
+
+content=[TextBlock(...)] . Together, these up-dates explain why the DeepSeek-evolved harness contains transferable execution constraints: verifi-cation, tool recovery, artifact cleanup, long-running execution control, and message injection all enter the editable harness state. 
+
+GLM. The GLM run exposes a different fail-ure surface. In iteration 16, three HLE tasks pro-duce only text reasoning: the agent does not read 
+
+instruction.md and does not write an answer file. In protein-assembly , the agent spends 28 mes-sages on PDB/fpbase research but never creates the required gblock.txt . These trajectories show a workflow-entry failure: the agent remains in ex-planation or research mode instead of entering the task’s required execution path. The update therefore does not primarily ex-tend the HLE verifier. It restores and strengthens task-type workflows in the prompt and memory, covering HLE, implementation, image, research-heavy, and package-installation tasks. It also edits 
+
+TaskTypeOptimizerMiddleware : HLE tasks can be detected from the initial user message, work-flow guidance is injected on the first turn, text-only 23 Batch Update evidence Harness change / observed failure Mechanism supported 
+
+10, iter. 16 Current batch has 0/10 successes; 9/10 failures are execution exceptions such as runtime, remote-protocol, or attribute er-rors, and the only genuine task failure is 
+
+regex-chess .The update analyzes regex-chess : the agent repeatedly rewrites generate.py , stays in local regex-escaping and move-generation debugging, does not use web search, and does not switch strategy. It adds rabbit-hole triggers for repeated file rewrites and repeated failed commands. Small batches can trigger reasonable but narrow updates from high-variance evi-dence. 10, iter. 40 All 10 tasks fail before task solving starts. code_agent.yaml passes max_interventions: 1 be-fore the HLE verification middleware accepts that param-eter; the previous update changed the config without syn-chronizing the constructor signature. Many frequent edits increase runtime and configuration contract risk. 20, iter. 20 A shared message-content failure is visi-ble across the current batch; current-batch success recovers from 1/20 to 10/20 after repair. Tool-error recovery, verification reminders, and HLE veri-fication were injecting guidance with message content that did not match the NexAU typed-message schema. The update changes those paths to construct system messages as Message(..., content=[TextBlock(...)]) ; train replay errors later fall from 66 to 5. Batch 20 exposes cross-task failures while preserving enough trace-level de-tail and repair opportunities. 40, iter. 10 The final batch has 0/40 successes after earlier train batches reached as high as 57.5%; the saved update records a 40/40 
+
+ConfigError , where 16 previously pass-ing tasks and 24 failing tasks all become exceptions. An iteration-9 middleware rewrite left the YAML config using max_repetitions , while the progress-monitor mid-dleware expects max_iterations ; iteration 10 aligns the parameter name. Broad shared failures become easy to detect, but the update is dominated by a global contract mismatch. 80, iter. 5 Train-batch success stays nontrivial across B1–B5 (42.5%, 45.0%, 42.5%, 40.0%, 43.8%), yet final validation and ID regress. The update finds that 25/29 failed HLE tasks use write_file 
+
+answer submission that bypasses an answer-verification guard. It also records pass-to-fail regressions in-cluding fix-git , hle__66ecb2... ,
+
+hle__67206a... , largest-eigenval ,scheduler, and password-recovery .The guard previously checked shell-command answer writes; the update extends detection to write_file and 
+
+replace and scans written content for substantive verifi-cation. The unrelated regressions reflect different mecha-nisms, including final-state mismatch, over-engineering, unmet optimization constraints, and hallucinated recovery from partial data. The most salient global pattern can dom-inate diverse task-specific failures. 80 continua-tion Validation from the batch-80 final snap-shot shows typed-message runtime fail-ures, and the first continuation 80-task train job has 26 errored trials. The continuation starts from an unstable runtime state rather than a clean harness. Large batches can leave unresolved execution-path instability in the selected snapshot. 
+
+Table 18: Representative update artifacts from the batch-size sweep. The cases explain the non-monotonic result in Table 17. 
+
+HLE responses trigger a stronger read/write re-minder, and research-heavy non-HLE tasks receive a progress reminder once the agent has used tools for several turns without producing the requested output. This is a concrete workflow-control update, not a generic instruction to reason better. The GLM trajectories push AHE toward action forcing and output production because those are the failures visible in the batch. The next update also shows the risk of this path. Iteration 17 reports that the newly edited middleware injects legacy dictionary messages, while the runtime expects typed 
+
+Message objects. The repair converts dictio-nary injections in task_type_optimizer.py 
+
+and invalid_tool_call.py into 
+
+Message(role=Role.FRAMEWORK, content=[TextBlock(...)]) and adds helper functions that read either typed messages or dictionaries. The same workflow reminder that helps move GLM rollouts into action depends on message injection; when that contract is wrong, the harness improvement becomes an execution-path error. 
+
+GPT-5.4. The GPT-5.4 run concentrates on arti-fact constraints and validation sufficiency. In itera-tion 12, two answer-only HLE failures are under-classified: prompts such as direction-choice or counting questions do not match the previous strict 
+
+Question:/Answer:/Confidence: pattern, so the stronger quantitative workflow is not reliably in-jected. The same update finds that path-tracing 
+
+writes /app/image.c that delegates to /app/orig 
+
+through execl , violating the self-contained task requirement. It also finds that regex-chess at-tempts /app/check.py late in the rollout, times out, and never records a passing behavior-level val-idation. The resulting execution_guard.py patch expands answer-task markers, tracks forbidden-read paths and external-helper signals such as 
+
+/app/orig , execl , system , and subprocess , and distinguishes attempted validation from passing validation. Iteration 17 continues the same pattern. For 
+
+polyglot-c-py , the raw trace shows valida-24 Setting Concrete evidence Mechanism                    
+
+> Batch 10 Iteration 16 has one substantive task failure and adds rabbit-hole detec-tion around regex-chess ; iteration 40 produces 10/10 ConfigError
+> from a max_interventions constructor mismatch. Evidence is narrow and updates are frequent, so local rules can accumulate configuration and runtime-contract risk. Batch 20 Iteration 20 repairs message-content construction for middleware guid-ance; validation, ID, and OOD all improve in the selected run. Evidence diversity and per-trace analysis depth are balanced; the schedule can detect cross-task runtime failures and still recover. Batch 40 Iteration 10 detects a40/40 ConfigError from a
+> max_repetitions /max_iterations mismatch; final gains are small but positive. Shared failures are visible, but per-task analysis depth is lower than batch 20, limiting heterogeneous task improvement. Batch 80 Iteration 5 finds that 25/29 failed HLE tasks bypass answer verification through file tools, while multiple unrelated pass-to-fail regressions remain; final and continuation diagnostics show an unstable runtime state. Evidence overload makes the most salient global pattern visible, but long-tail failures are diluted and broad middleware edits have fewer later repair opportunities.
+
+Table 19: Mechanistic summary of the batch-size case study. AHE update quality depends on evidence density, per-trace analysis depth, update frequency, and opportunities to repair earlier harness edits. 
+
+Source setting Final validation Final ID Final OOD Selected checkpoint 
+
+Terminal-Bench + HLE 57.1 49.1 28.8 Final AT
+
+HLE only 0.0 0.0 0.0 E12 : ID 47.3, OOD 25.0 
+
+Table 20: Source-diversity case-study summary. The HLE-only final snapshot collapses, but its intermediate E12 
+
+snapshot is useful; we therefore analyze both the intermediate gains and the final failure. 
+
+tion with gcc /app/polyglot/main.py.c -o /app/polyglot/cmain , which leaves a com-piled byproduct in a directory where the task asks for a single submitted file. For 
+
+install-windows-3-11 , the observed HTTP re-sponse redirects to http://127.0.0.1/... ; local checks may appear successful, but a remote verifier cannot follow a loopback URL. The update again modifies execution_guard.py , adding a single-file validation-byproduct guard and a loopback-redirect guard. Thus, the GPT-5.4-evolved harness mainly learns to inspect whether the produced ar-tifact and validation trace satisfy the task contract, rather than simply asking the model to deliberate longer. These artifacts explain the asymmetric ID and OOD results in Table 28. AHE’s gains first depend on whether the harness edits match the failure sur-face of the evaluation trajectories. The DeepSeek-evolved harness repairs verification, tool recov-ery, artifact cleanup, and message contracts, so it obtains a same-backend ID gain and can transfer some general execution constraints to other back-ends. The GLM-evolved harness mainly addresses text-only reasoning and research without output; it is most useful when the evaluation trajectory lacks action progress, and less useful when the dominant failures are artifact-contract violations. The GPT-5.4-evolved harness focuses on artifact inspection and validation sufficiency; it improves same-backend ID, but its guards are tied to concrete tool outputs and artifact patterns, so their benefit is less stable when the backend or source distribution changes. The same evidence also explains why ID and OOD gains diverge. An update can be well aligned with the failures observed during source training but miss the shifted failures in another rollout back-end or target domain. When evaluation trajecto-ries still contain similar patterns, such as faulty verification, tool-recovery failure, missing output files, or validation false positives, the correspond-ing harness change can transfer. When the main failures shift to patterns not exposed during train-ing, the gain shrinks or is offset by extra reminders and guards. Thus, the cross-model results support a mechanism-level conclusion: same-backend ID gains are easier because the evaluation trajecto-ries reuse failure surfaces observed during train-ing, whereas cross-backend and OOD evaluations require the learned harness edits to survive both model-behavior shift and task-distribution shift. 25 Evidence Harness update Mechanism 
+
+At iteration 11, the current 20-task HLE batch has 14 failures and 6 successes, with no execu-tion exceptions. The evolve summary assigns 10/14 failures to circular verification: the agent writes verification code, but the code reproduces the same flawed derivation. The self-verification middleware records whether 
+
+run_code is called after rejection and injects a stronger rejection when the agent retries without new code. The update no longer asks only for verification; it requires the post-rejection verification path to change. After middleware rejection, the agent often rereads the problem and resubmits the same an-swer. The rejection message is strengthened to require an independent method and red-team testing. We move the failure response from prompt advice into middleware-level interaction control. The HLE failures require more specific checking strategies than a generic “verify again” instruc-tion. The update changes the system prompt, the 
+
+run_code tool description, and long-term memory. The HLE-specific failure pattern becomes visible in the later harness state. 
+
+Table 21: HLE-only iteration-11 evidence. The run quickly turns HLE failures into self-verification mechanisms rather than tool or environment repairs. 
+
+Observed failure Update response Why it explains the intermediate gain 
+
+The agent’s verification code and written rea-soning share the same wrong assumption. After rejection, the middleware requires new code exe-cution and emphasizes an independent method. This reduces cases where an incorrect answer is “verified” by a script that encodes the same mis-take. An LLM critic fails for more than five itera-tions; all three implementation attempts return empty content, and fallback templates are too generic. Iteration 18 removes the LLM critic and replaces it with a rule-based domain analyzer keyed to reliability, physics, quantum, math, geometry, multiple choice, and related domains. The feedback becomes more stable and more domain-specific than the empty critic path. After rejection, the agent tends to continue along the original answer path. The update adds a before_model hook that injects a structured, domain-specific verification reminder before the next model response. The harness can intervene before the next gen-eration rather than only after another premature submission. 
+
+Table 22: HLE-only intermediate-gain evidence. The useful E12 checkpoint is consistent with saved updates that intensify the self-verification loop. 
+
+Final-collapse evidence Runtime cause Interpretation 
+
+From iteration 19 to 20, pass rate falls from 7/20 to 0/20, and all 20 tasks become 
+
+RuntimeError .The error concentrates on the NexAU token counter: it now accepts only Sequence[Message] , while legacy dictionary messages are no longer supported. The final collapse is not a gradual loss of HLE rea-soning ability; the tasks are blocked by the runtime message contract. Iteration 18 introduced a before_model 
+
+hook for self-verification reminders. The hook inserts plain dictionaries such as {"role": "user", "content": text} into the message list. The same middleware path that produced stronger HLE verification also creates the message-injection failure. Iteration 20 changes the injected message to Message.user(text) .The repair targets the message type rather than the HLE answer strategy itself. The failure is located in the verification middleware’s runtime interface. 
+
+Table 23: HLE-only final-collapse evidence. The final snapshot fails because self-verification middleware violates the typed-message runtime contract. 
+
+Setting Concrete evidence Mechanism 
+
+HLE-only intermediate E12 Iteration 11 repairs circular verification; iteration 18 replaces a failing LLM critic with a rule-based domain analyzer. Single-source HLE evidence can produce useful HLE-specific verification improvements. HLE-only final Iteration 20 records 20/20 RuntimeError from plain-dictionary message insertion into a typed-message runtime. Later updates concentrate on self-verification middle-ware and eventually break its message contract. Mixed-source final Saved updates cover tools, web/session/context management, HLE verification, artifact cleanup, fallback search, contradic-tory evidence, and message-content alignment; final validation, ID, and OOD are all positive. The mixed source exposes both reasoning failures and execution failures, so harness changes cover more of the runtime interaction path and the run has evidence to recover shared runtime failures. HLE-only updates2 diagnostic The diagnostic run has no complete final evaluation, but its validation moves from 37.1 at E0 to 40.0 at E4/E8, drops to 8.6 at E12 , and recovers to 40.0 at E16 .More update opportunities can allow self-repair, but they do not remove the instability caused by a narrow HLE verification evidence source. 
+
+Table 24: Mechanistic summary of source diversity. We find that the source determines which harness subsystem receives evidence, and that subsystem becomes both the likely improvement target and the likely failure point. 
+
+26 Rollout backend Recurring trajectory evidence Main updated components Update tendency 
+
+DeepSeek Buggy verification, missing verification, artifact residue, repeated heredocs, sleep chaining, and mid-dleware message-contract errors. 
+
+HLEVerificationMiddleware ,
+
+ToolErrorRecoveryMiddleware ,
+
+VerificationReminderMiddleware ,prompts, and memory. Repair both reasoning verification and the runtime interaction path. GLM HLE tasks produce text-only reasoning with-out reading instructions or writing answer files; research-heavy tasks spend many turns research-ing without creating the requested output. 
+
+TaskTypeOptimizerMiddleware , task-type workflows, and research-loop re-minders. Move the agent from explanation or research into tool action and output production. GPT-5.4 Answer-only HLE tasks are under-classified; arti-facts violate self-contained constraints; validation is attempted but not passing; single-file tasks leave build byproducts. 
+
+ExecutionGuardMiddleware , artifact scanning, and validation-state tracking. Check whether the final artifact sat-isfies the task contract and whether validation actually passed. 
+
+Table 25: Cross-model case-study summary. Different rollout backends expose different trajectory evidence, and AHE edits the harness subsystem that matches that evidence. 
+
+Run Concrete trajectory evidence Harness update Mechanism 
+
+DeepSeek iter. 9 HLE verification scripts reproduce the same wrong as-sumptions; polyglot-c-py leaves an extra binary. Stricter HLE verification and artifact-cleanup rules. Verification and final-state constraints become exe-cutable harness behavior. DeepSeek iter. 14– 20 Tool recovery middleware is broken; heredoc and sleep-chain patterns waste turns; message content violates the typed-message schema. Tool-error repair, heredoc/sleep-chain detec-tion, and TextBlock -based message construc-tion. Shared runtime interaction paths are repaired. GLM iter. 16 HLE tasks produce only text reasoning; 
+
+protein-assembly researches for 28 messages without writing gblock.txt .Task-type optimizer, first-turn workflow guid-ance, text-only HLE action reminders, and research-loop progress checks. The harness pushes the agent from explanation or research into actions and output files. GLM iter. 17 New workflow middleware injects legacy dictionary mes-sages and triggers runtime errors. Dictionary injections are converted into typed 
+
+Message objects with TextBlock content. The workflow-control path is restored by repairing the mes-sage contract. GPT-5.4 iter. 12 Answer-only HLE tasks are missed; path-tracing del-egates to /app/orig ; regex-chess attempts but never passes validation. Expanded answer-task detection, forbidden-helper scanning, and attempted-vs-passing val-idation tracking. The harness checks artifact constraints and validation suf-ficiency. GPT-5.4 iter. 17 polyglot-c-py leaves a compile byproduct; 
+
+install-windows-3-11 redirects remote users to loopback. Single-file byproduct cleanup guard and loopback-redirect guard. Runtime-observed false pos-itives are turned into narrow execution guards. 
+
+Table 26: Representative cross-model update artifacts. The examples show how each rollout backend exposes different evidence and therefore induces different AHE harness edits. 
+
+27 D Additional Results 
+
+This section provides the supplementary plots ref-erenced by the experiment section. The main text reports compact epoch-level curves and sum-mary tables; the figures below expose source-group breakdowns, batch-index views, and replay-based fix/forgetting diagnostics. These plots use the same saved task-result records and aggregation conven-tions as Section 4. 0 1 2 3 4 5               
+
+> Epoch
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Success rate
+> AHE
+> 012345
+> Epoch
+> ACE
+> 012345
+> Epoch
+> TF-GRPO
+> Train-All Train-HLE Train-TB Val-All Val-HLE Val-TB
+
+Figure 6: Baseline success-rate breakdown by source group. Each panel reports one method; colors distin-guish all tasks, HLE tasks, and Terminal-Bench tasks, while line style distinguishes train and validation curves. Epoch                
+
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Success rate
+> Batch 10
+> Epoch
+> Batch 20
+> 012345
+> Epoch
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Success rate
+> Batch 40
+> 012345
+> Epoch
+> Batch 80
+> Train-All Train-HLE Train-TB Val-All Val-HLE Val-TB
+
+Figure 7: AHE batch-size success-rate breakdown by source group. Each panel reports one batch size; colors distinguish all tasks, HLE tasks, and Terminal-Bench tasks, while line style distinguishes train and validation curves. 0 1 2 3 4 5          
+
+> Epoch
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Success rate
+> Mixed source
+> 012345
+> Epoch
+> HLE only
+> Train-All Train-HLE Train-TB Val-All Val-HLE Val-TB
+
+Figure 8: AHE source-diversity success-rate breakdown by source group. Each panel reports one source setting; colors distinguish all tasks, HLE tasks, and Terminal-Bench tasks, while line style distinguishes train and validation curves. 0 4 8 12 16 20        
+
+> Train batch index
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Success rate
+> Train
+> 04812 16 20
+> Train batch index
+> Validation
+> AHE ACE TF-GRPO
+
+Figure 9: Baseline learning curves by train batch index. Validation points are plotted at the corresponding epoch-end batch index. 0 5 10 15 20 30 40          
+
+> Train batch index
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Success rate
+> Train
+> 0510 15 20 30 40
+> Train batch index
+> Validation
+> Batch 10 Batch 20 Batch 40 Batch 80
+
+Figure 10: AHE batch-size learning curves by train batch index. Different batch sizes have different num-bers of update points; validation points are plotted at the corresponding epoch-end batch index. 
+
+28 0 4 8 12 16 20       
+
+> Train batch index
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Success rate
+> Train
+> 04812 16 20
+> Train batch index
+> Validation
+> Mixed source HLE only
+
+Figure 11: AHE source-diversity learning curves by train batch index. Validation points are plotted at the corresponding epoch-end batch index. 
+
+D.1 Cross-Model Continuation Results 
+
+The cross-model appendix compares AHE training runs using the same Terminal-Bench + HLE source setting and batch-20 schedule, with DeepSeek-V4-Flash, GLM-5.1, and GPT-5.4 as the training back-end. The GPT-5.4 row uses the continuation run from epoch 3 through epoch 5. Table 27 reports the training-run validation and cost fields; Figure 5 summarizes the final ID and OOD gains, and Ta-ble 28 reports the underlying success rates. 1 2 3 4 5       
+
+> Epoch
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Success rate
+> Train
+> 012345
+> Epoch
+> Validation
+> DeepSeek-V4 GLM-5.1 GPT-5.4
+
+Figure 12: AHE cross-model learning curves. The left panel reports epoch-averaged train success rate, and the right panel reports epoch-end validation success rate. 0 1 2 3 4 5               
+
+> Epoch
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Success rate
+> DeepSeek-V4
+> 012345
+> Epoch
+> GLM-5.1
+> 012345
+> Epoch
+> GPT-5.4
+> Train-All Train-HLE Train-TB Val-All Val-HLE Val-TB
+
+Figure 13: AHE cross-model success-rate breakdown by source group. Each panel reports one training backend; colors distinguish all tasks, HLE tasks, and Terminal-Bench tasks, while line style distinguishes train and validation curves.                                     
+
+> Training backend V0VTUVG Vmax Best epoch Rollout tok./task Update tok./update Updates Status
+> DeepSeek-V4-Flash 40.0 57.1 +17.1 57.1 51.46M 3.91M 20/20 changed complete GLM-5.1 31.4 0.0 -31.4 40.0 10.22M 5.55M 19/20 changed final validation collapse GPT-5.4 45.7 48.6 +2.9 51.4 30.19M 3.62M 17/20 changed continuation complete
+
+Table 27: AHE cross-model continuation summary. Success-rate columns are percentages, and UVG is the fi-nal validation gain in percentage points. Vmax is the best epoch-end validation score observed during training. Token costs are normalized as rollout tokens per evalu-ated task/trial and recorded update tokens per SEAGym update call. Final ID and OOD results are reported sep-arately in Table 28.                                                                       
+
+> Evolved harness Rollout model ID 0ID ⋆IDG OOD 0OOD ⋆OODG
+> DeepSeek-evolved (epoch 5) DeepSeek 40.0 49.1 +9.1 22.5 28.8 +6.3 DeepSeek-evolved (epoch 5) GLM 45.5 52.7 +7.3 23.8 23.8 0.0 DeepSeek-evolved (epoch 5) GPT-5.4 47.3 43.6 -3.6 38.8 30.0 -8.8 GLM-evolved (epoch 1) DeepSeek 40.0 47.3 +7.3 22.5 17.5 -5.0 GLM-evolved (epoch 1) GLM 45.5 49.1 +3.6 23.8 27.5 +3.8 GLM-evolved (epoch 1) GPT-5.4 47.3 47.3 0.0 38.8 33.8 -5.0 GPT-5.4-evolved (epoch 3) DeepSeek 40.0 38.2 -1.8 22.5 26.3 +3.8 GPT-5.4-evolved (epoch 3) GLM 45.5 38.2 -7.3 23.8 22.5 -1.3 GPT-5.4-evolved (epoch 3) GPT-5.4 47.3 52.7 +5.5 38.8 31.3 -7.5
+
+Table 28: Full cross-model ID and OOD results. Suc-cess rates are percentages. Gains compare the selected evolved snapshot to the same rollout model’s A0 result on the same evaluation set. 
+
+D.2 Train Replay Fix and Forgetting Metrics 
+
+The train replay diagnostics in Figure 4 use two complementary fix/forget definitions. Let T be the replay task set, Se ⊆ T be the tasks solved after epoch e, and S0 be the tasks solved by A0 before training. The pairwise delta metrics count task churn be-tween adjacent snapshots: 
+
+∆Fix e = |Se\Se−1|, ∆Forget e = |Se−1\Se|.
+
+These quantities are defined for e > 0; the initial agent is plotted with zero delta. We report these as task counts rather than rates because their pur-pose is local process diagnosis: how many individ-ual tasks were newly fixed or broken by the latest update interval. Using changing success/failure denominators would mix task churn with denom-inator drift and make the recovery after epoch 4 harder to interpret. The A0-reference metrics compare every snap-shot to the fixed initial agent: 
+
+Fix A0
+
+e = |Se \ S0||T \ S0| , Forget A0
+
+e = |S0 \ Se||S0| .
+
+These rates answer a different question: relative to the initial harness, what fraction of initially failed tasks has been fixed, and what fraction of initially solved tasks has been lost? The denominators are fixed across epochs, so the curves are directly com-parable over time. All replay diagnostics are com-puted offline by the benchmark and are not fed back 29 to the evolving agent. Appendix C.2 analyzes the corresponding saved snapshots, task trajectories, and update artifacts. 30 0 1 2 3 4 5     
+
+> Epoch
+> 0%
+> 20%
+> 40%
+> 60%
+> 80%
+> 100%
+> Rate
+> HLE
+> A_0-ref fix
+> A_0-ref forget
+> success
+> 012345
+> Epoch
+> Rate
+> Terminal-Bench
+> A_0-ref fix
+> A_0-ref forget
+> success
+
+Figure 14: Source-group train replay diagnostics for AHE. Each panel reports success rate and A0-reference fix/forget rates for HLE or Terminal-Bench tasks using source-specific fixed denominators. 
+
+E Integration Details 
+
+E.1 Task Index and Visibility 
+
+SEAG YM uses a lightweight task index rather than copying benchmark task definitions. Each indexed task stores a stable id, source benchmark refer-ence, task attributes, scoring metadata, and visi-bility metadata. Executable instructions, environ-ments, verifiers, and raw artifacts remain in the underlying benchmark backend whenever possible. The agent-visible task view excludes private evaluation metadata, such as reference outputs, private assertions, split membership, and held-out view labels. This separation prevents evaluation metadata from becoming update evidence. 
+
+E.2 Rollout and Update Interfaces 
+
+The method interface has two roles: • rollout adapter : runs a batch of tasks under the current harness state and returns trajecto-ries, verifier rewards, public errors, and ob-served cost; • update adapter : consumes the trajectory batch, applies the method’s native update rule, and saves updated harness state and update summaries. This split is needed because many benchmark run-ners instantiate task agents per trial, while self-evolution state must persist outside individual task executions. It also allows different update mecha-nisms to share the same task schedule and assess-ment protocol. 
+
+E.3 Harbor Backend 
+
+The implementation uses Harbor as the benchmark execution substrate. Harbor runs tasks, environ-ments, verifiers, parallel jobs, and trial artifacts. SEAG YM adds the outer self-evolution schedule, snapshot records, held-out view orchestration, met-ric inputs, and normalized reports. The integration                                
+
+> Metric Definition Interpretation
+> Perf 1
+> |D|
+> P
+> x∈Dr(A, x )normalized verified task performance SR 1
+> |D|
+> P
+> x∈DI[r(A, x )=1]
+> success rate when task scores are binary UVG prev Perf (Ei, V )−
+> Perf (Ei−1, V )
+> local update-validation gain UVG base Perf (Ei, V )−Perf (E0, V )cumulative update-validation gain IDG Perf (AT, D I)−
+> Perf (A0, D I)
+> final held-out in-domain gain OODG Perf (AT, D O)−
+> Perf (A0, D O)
+> final OOD transfer gain FR max(0 ,Perf (A0, D R)−
+> Perf (AT, D R))
+> replay forgetting or regression Cost tokens, tool calls, time, or dol-lars efficiency and overhead of evolution
+
+Table 29: Summary of SEAG YM metrics. Primary scores come from verified task outcomes; update-validation, ID, OOD, and replay metrics explain the trajectory of self-evolution. 
+
+does not require modifying Harbor source code or redefining Harbor’s adapter standard. 
+
+F Metric Details 
+
+In these experiments, task scores are binary, so we report the aggregate verified outcome as a success rate. The saved evaluation summaries also include a stricter execution-success flag, which additionally requires that no execution exception was recorded. We use the verified task score for paper metrics and reserve execution exceptions, timeouts, provider failures, and middleware errors for process diag-nostics. 
+
+F.1 Saved Records 
+
+Metrics are computed from saved run records rather than live objects. The run stores evaluation-point summaries, task-level normalized results, verifier outputs, cost records, update summaries, snapshot references, and backend job references. This lets users recompute metrics or change aggregation rules without rerunning task environments. 31 F.2 Aggregation 
+
+Main tables use domain-level macro averages by default so that domains with more tasks do not dominate the score. Micro averages and task-level breakdowns can be reported in appendix tables for diagnostics. 32
