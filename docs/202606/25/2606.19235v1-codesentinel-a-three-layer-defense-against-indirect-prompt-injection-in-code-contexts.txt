@@ -1,0 +1,380 @@
+Title: CodeSentinel: A Three-Layer Defense Against Indirect Prompt Injection in Code Contexts
+
+URL Source: https://arxiv.org/pdf/2606.19235v1
+
+Published Time: Thu, 18 Jun 2026 01:20:24 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+# CodeSentinel : A Three-Layer Defense Against Indirect Prompt Injection in Code Contexts 
+
+Po-Han Cheng † Chia-Mu Yu † Ying-Dar Lin † Yu-Sung Wu † Wei-Bin Lee ∗†National Yang Ming Chiao Tung University ∗Hon Hai Research Institute 
+
+Abstract 
+
+Code large language models increasingly re-trieve external code context from repositories, documentation, issue threads, and coding-agent environments, creating an indirect prompt-injection surface where attackers hide instruc-tions in comments, strings, identifiers, or decoy code. We propose CodeSentinel , a three-layer inference-time sanitizer. It uses Tree-sitter to extract high-risk model-facing CST nodes, then combines syntax-guided pre-filtering, CST-guided Dynamic Min-K% scoring, and node perturbation analysis to detect adversarial and natural-looking semantic triggers. Detected nodes are removed or neutralized before reach-ing the downstream Code LLM. Across six re-cent attack families, CodeSentinel achieves 0.80 average node-level F1, outperforming CodeGarrison, DePA, and KillBadCode. 
+
+1 Introduction 
+
+Code large language models (Code LLMs) are now embedded in software development workflows, in-cluding code completion, bug fixing, code expla-nation, vulnerability detection, and agentic edit-ing. These systems rarely consume only a devel-oper instruction. They also read external code con-text from GitHub, Stack Overflow, documentation, commit messages, issue discussions, or retrieval-augmented generation (RAG)-retrieved source files. This practice improves usefulness but introduces a deployment risk: untrusted external code may con-tain hidden instructions that the model interprets as commands. This work studies indirect prompt injection in code contexts . Unlike direct jailbreaks, where the attacker directly sends a malicious prompt, the at-tacker here poisons external code that a benign developer or coding agent may later retrieve. The payload can be embedded in comments, string liter-als, identifiers, or decoy-like snippets. Such regions are visible to the LLM but may have weak or no runtime effects, making them easy to overlook in industrial workflows. Recent code-context attacks exploit this gap in different ways. For example, Yang et al. (2025) and Jenko et al. (2025) inject optimized adversarial fragments into non-functional code regions. Štorek et al. (2025) and Huang et al. (2025) use natural-looking code transformations or identifier substitu-tions. Li et al. (2025c) and Li et al. (2025b) mislead LLM-based code auditors through decoy snippets or reasoning-aware obfuscation. These attacks ex-pose a central limitation of existing defenses: key-word filters miss implicit triggers, file-level per-plexity dilutes short payloads, and training-based defenses may be difficult to deploy for black-box commercial models. We propose CodeSentinel , a three-layer syntax–semantics-aware defense for indirect prompt injection in code contexts. CodeSentinel 
+
+treats untrusted code as structured input rather than flat text. It parses code into a concrete syn-tax tree (CST), extracts model-facing high-risk nodes, and applies three complementary layers: (i) syntax-guided pre-filtering for explicit and struc-tural anomalies, (ii) CST-guided Dynamic Min-K% scoring for adversarial perturbations, and (iii) CST-guided node perturbation analysis for natural-looking semantic triggers. For each node flagged by any layer, CodeSentinel sanitizes the corre-sponding source-code span in a model-facing con-text copy and forwards the cleaned context to the downstream model. 
+
+Contributions. Our contributions are: • We formulate indirect prompt injection in code contexts as CST-node-level sanitization over model-facing high-risk regions. • We introduce CodeSentinel , a three-layer inference-time defense combining static code structure, node-level likelihood anomalies, and logits-level behavioral influence. 
+
+> arXiv:2606.19235v1 [cs.CR] 17 Jun 2026
+
+• We evaluate CodeSentinel on six recent attack families and show that it outperforms CodeGarri-son, DePA, and KillBadCode. 
+
+2 Related Work 
+
+Indirect prompt injection (Yi et al., 2025; Zhan et al., 2024; Khodayari et al., 2026) hides malicious instructions in external content later consumed by an LLM. Representative code-context attacks in-clude CodeJailbreaker (Ouyang et al., 2025) for implicit metadata channels; ShadowCode (Yang et al., 2025) and INSEC (Jenko et al., 2025) for non-functional or adversarial payloads; XOXO (Štorek et al., 2025) and ITGen (Huang et al., 2025) for semantic-preserving rewrites or identifier substitu-tions; and Flashboom (Li et al., 2025c) and CoT-Deceptor (Li et al., 2025b) for auditor deception. Existing defenses include general prompt-injection methods (Lin et al., 2025; Wen et al., 2025; Chen et al., 2025b,a; Debenedetti et al., 2025), mostly for natural-language prompts, and code-specific methods such as DePA’s line-level perplexity (Tsai et al., 2025), KillBad-Code’s token-deletion naturalness (Sun et al., 2025), and CodeGarrison’s learned source-code representations (Ghannoum and Ghafari, 2025). 
+
+CodeSentinel differs by operating at CST-node granularity and combining likelihood anomalies with behavioral influence under syntax-preserving neutralization. Tables 5 and 6 in the Appendix provide broader taxonomies. 
+
+3 Proposed Method 
+
+3.1 Problem Formulation 
+
+Let P u be the trusted developer prompt and C be the external code context. We define the model-facing input as X = Serialize( P u, C ), where se-rialization preserves byte offsets between source spans, CST nodes, and surrogate-model tokens. Let 
+
+T (C) denote the CST of C. Rather than assuming a disjoint partition between executable and risky code, we define high-risk model-facing CST nodes: 
+
+Drisk = Dcom ∪ Dstr ∪ Did ∪ Ddecoy . (1) Here Dcom , Dstr , and Did are comment, string-literal, and identifier nodes. Decoy-like nodes are statement or block spans that are syntactically valid, salient to the model, but weakly connected to the program’s main logic:              
+
+> Ddecoy ={n∈ T (C) : tn∈Tstmt /block ,
+> Reach( n)< γ r,Sal( n;X)> γ s}.(2)
+
+Reach( n) ∈ [0 , 1] is computed from lightweight call-graph, control-flow, and data-flow reachability from entry points; Sal( n; X) ∈ [0 , 1] measures model-facing salience using lexical cues and local scoring proxies. Each node n has a CST type tn,source span span( n), raw text text( n), and token positions T (n) under the surrogate tokenizer. The attacker inserts a hidden trigger set S∗ ⊆
+
+Drisk such that       
+
+> fθ(X) = ymal ,fθ(Neutralize( X, S ∗)) = ysafe ,(3)
+
+where fθ is the downstream victim Code LLM. The defender detects ˆS ⊆ Drisk and outputs a sanitized context ˜C = Sanitize( C, ˆS) before calling the vic-tim model. Since victim logits may be unavail-able, CodeSentinel uses a local surrogate model 
+
+qϕ with logits function gϕ. Ideally,       
+
+> ˆS= arg max
+> S⊆Drisk
+> |S|≤ m
+> "
+> d
+> 
+> softmax( gϕ(X)) ,softmax( gϕ(X(S)))
+> 
+> −λ U (C, Sanitize( C, S ))
+> #
+> ,
+
+where X(S) = Neutralize( X, S ), d(·, ·) measures behavioral change, m is the node budget, and U
+
+penalizes utility damage such as parse errors, un-safe renaming, or avoidable compile-breaking ed-its. Risk nodes may overlap with executable se-mantics, especially identifiers and string literals; therefore, CodeSentinel sanitizes a model-facing context copy and only claims semantic preserva-tion when a rewrite is explicitly certified. Table 4 in the Appendix summarizes the notation used in the formulation and detection pipeline. 
+
+3.2 Overview 
+
+Figure 1 shows the workflow. Figure 7 in the Ap-pendix provides an alternative threat-model view of the sanitization decision, where untrusted context is either passed unchanged or cleaned before be-ing sent to the downstream model. CodeSentinel 
+
+first invokes a Tree-sitter CST parser and extracts candidate nodes: 
+
+Dcand = Dcom ∪ Dstr ∪ Did ∪ Ddecoy . (4) The three layers are then applied sequentially with early exit: 
+
+D1 = Dcand , ˆS1 = {n ∈ D1 : s1(n) > τ 1},D2 = D1 \ ˆS1, ˆS2 = {n ∈ D2 : s2(n; X) > τ 2},D3 = D2 \ ˆS2, ˆS3 = {n ∈ D3 : s3(n; X) > τ 3}.Figure 1: CodeSentinel workflow. 
+
+The final detection set is 
+
+ˆS = ˆS1 ∪ ˆS2 ∪ ˆS3. (5) Nodes flagged by earlier layers are not evaluated by later, more expensive layers. Sanitization is ap-plied once to ˆS, which avoids score instability from repeatedly modifying the context during detection. This design makes CodeSentinel usable as a pre-API sanitizer for both open-weight and black-box victim models. 
+
+3.3 Layer 1: Syntax-Guided Pre-Filtering 
+
+Layer 1 catches explicit or structurally suspicious payloads with negligible overhead. For each candi-date node n,   
+
+> s1(n) = max ( Rregex (n), R lex (n), R graph (n;X)) ,(6)
+
+where all three risk scores are normalized to 
+
+[0 , 1] . The regex matcher detects high-confidence instruction-overriding phrases, role-control direc-tives, suspicious command templates, and prompt-template injection patterns. The lexical–structural checker captures invisible Unicode, excessive non-ASCII symbols, abnormal punctuation density, re-peated control tokens, and unusually long contin-uous strings. To reduce false positives on short benign identifiers, feature ratios use smoothing: 
+
+ρf (n) = cf (n) + ϵ
+
+|text( n)| + ϵ , (7) where cf (n) is the count for feature f . The interaction-graph analyzer targets Flashboom-style decoys (Li et al., 2025c):       
+
+> Rgraph (n;X) = Sal( n;X) (1 −Reach( n)) .(8)
+
+Thus, salient nodes disconnected from main pro-gram logic receive high Layer-1 risk. 
+
+3.4 Layer 2: CST-Guided Dynamic Min-K% 
+
+Layer 2 targets adversarial perturbations such as ShadowCode and INSEC. These attacks often in-ject statistically abnormal fragments into comments or string literals. Since file-level perplexity may di-lute short malicious payloads, CodeSentinel per-forms anomaly detection at CST-node granularity. For a candidate node n, let {zi : i ∈ T (n)} be the surrogate-token sequence aligned to the node span, and let Ntok (n) = |T (n)|. The token-level negative log-likelihood (NLL) is           
+
+> ri(n) = −log qϕ(zi|X<pos( zi)),i∈T(n),(9)
+
+where pos( zi) is the token position in the serialized input. Let R(n) = {ri(n) : i ∈ T (n)} be the node-level loss sequence. We compute a smoothed loss distribution 
+
+ui(n) = ri(n) + ϵ
+
+P 
+
+> j∈T(n)
+
+(rj (n) + ϵ) (10) and its entropy 
+
+H(n) = − X 
+
+> i∈T(n)
+
+ui(n) log ui(n). (11) Unlike fixed Min-K%, CodeSentinel dynamically adjusts the selected fraction by node type, length, and entropy:    
+
+> kdyn (n) = clip
+> 
+> kbase (tn)H(n)log max( Ntok (n),2) , k min , k max
+> 
+> .
+
+This avoids division by zero for one-token nodes. Let 
+
+M (n) = max (1 , ⌈kdyn (n)Ntok (n)⌉) (12) and let K(n) be the indices of the M (n) largest NLL values in R(n). The mean top-loss score is 
+
+MeanTopK( n) = 1
+
+|K(n)|
+
+X
+
+> i∈K(n)
+
+ri(n). (13) To capture localized perturbations hidden inside long benign regions, we additionally compute  
+
+> MaxWinLoss( n) = max
+> a
+> 1
+> wna+wn−1X
+> i=a
+> ri(n),(14)
+
+where wn = min( w, N tok (n)) , and        
+
+> MaxSpike( n) =
+> (
+> max i> 1|ri(n)−ri−1(n)|,Ntok (n)>1,
+> 0,Ntok (n) = 1 .
+
+Because NLL scales differ by node type and tok-enizer, we calibrate each signal using clean valida-tion nodes of the same CST type: 
+
+Zh(n) = h(n) − μh,t n
+
+σh,t n + ϵ , (15) where h ∈ { MeanTopK , MaxWinLoss , MaxSpike }.The final Layer-2 anomaly score s2(n) is    
+
+> max ( ZMeanTopK (n), αZ MaxWinLoss (n) + (1 −α)ZMaxSpike (n)) ,
+
+where α ∈ [0 , 1] balances regional and local anomaly signals. A node is classified as an ad-versarial payload when s2(n) > τ 2.
+
+3.5 Layer 3: CST-Guided Node Perturbation Analysis 
+
+Layer 3 targets natural-looking semantic triggers such as XOXO and ITGen. Unlike adversarial per-turbations, these triggers often appear syntactically valid and statistically natural, making them difficult to detect through likelihood-based anomaly analy-sis alone. Layer 3 therefore measures how strongly a candidate node changes the model’s prediction after syntax-preserving neutralization. To reduce cost, CodeSentinel first applies surprise-gated selection. For each candidate node 
+
+n, define          
+
+> Surp( n) = TopMean ρ
+> n
+> |rctx
+> i(n)−rprior
+> i(n)|:i∈T(n)
+> o
+> ,
+
+where rctx  
+
+> i
+
+(n) is the token-level NLL under the full serialized input X, and rprior  
+
+> i
+
+(n) is the NLL com-puted from the node text without surrounding code context. A large score indicates high context sen-sitivity rather than merely high rarity. Only nodes with Surp( n) > τ surp are evaluated further, with at most B nodes passed to perturbation analysis per sample. For each selected node n, CodeSentinel con-structs 
+
+X(n) = Neutralize( X, n ), (16) where the replacement preserves syntax. Com-ments are removed or replaced with neutral com-ment markers; string literals are replaced with type-compatible safe literals; identifiers are replaced by fresh scope-consistent names; and unreachable decoy blocks are replaced with syntax-preserving no-ops when the language permits. Let gϕ(X) denote the surrogate logits at the task-specific decision position. For completion tasks, this is the next-token position at the com-pletion cursor. For auditing tasks, this is the first answer position over label tokens such as YES /NO 
+
+or vulnerable /safe . We convert logits to a distri-bution with temperature T :
+
+πT (X) = softmax( gϕ(X)/T ). (17) The Layer-3 behavioral influence score is 
+
+s3(n) = JSD 
+
+
+
+πT (X), π T (X(n))
+
+
+
+. (18) A node is classified as a semantic trigger when 
+
+s3(n) > τ 3. Intuitively, if neutralizing a seemingly benign node causes a large change in the model’s output distribution, that node is likely to steer the model toward attacker-desired behavior. 
+
+3.6 Sanitization 
+
+CodeSentinel edits only spans in ˆS. The default mode is prompt-only sanitization : the repository source is not modified, and only model-facing copy is cleaned. This mode removes injection signals while preserving syntactic validity and most exe-cutable structure, but it does not claim full semantic equivalence for arbitrary strings or identifiers. A stricter compile-preserving mode is used when language-specific rewriting is available. In this mode, comments may be removed, string liter-als are replaced only by type-compatible neutral Attack CodeSentinel CG DePA KBC INSEC 0.90 0.73 0.61 0.32 Flashboom 0.79 0.85 0.55 0.28 XOXO 0.80 0.72 0.56 0.22 ShadowCode 0.85 0.62 0.54 0.32 CoTDeceptor 0.66 0.63 0.43 0.35 ITGen 0.77 0.65 0.34 0.30 Average 0.80 0.70 0.51 0.30 
+
+Table 1: Node-level F1 score on six attack families. 
+
+Figure 2: Node-level ROC curve of CodeSentinel . The AUROC is 0.82. 
+
+literals, identifiers are renamed through scope-consistent renaming, and decoy blocks are removed only when reachability analysis certifies that they are unreachable. After rewriting, CodeSentinel 
+
+reparses the sanitized context and rejects edits that break syntax. Figure 8 in the Appendix illustrates a concrete C-auditing example in which a misleading identifier biases the model output, while neutraliza-tion removes the cue and restores the safe decision. 
+
+4 Evaluation 
+
+We evaluate five research questions: • RQ1: Does CodeSentinel outperform existing defenses? • RQ2: Are all three layers necessary? • RQ3: Does CodeSentinel generalize across sur-rogate models? • RQ4: Does CodeSentinel work in black-box victim settings? • RQ5: Does sanitization preserve benign-code utility? 
+
+Figure 3: Cumulative performance of the three-layer pipeline on the ablation subset. 
+
+Figure 4: Cross-surrogate generalization when different open-source models provide defense-side logits. 
+
+4.1 Setup Datasets. We evaluate on paired benign and adversarial samples from six attack families: XOXO, ITGen, Flashboom, ShadowCode, INSEC, and CoTDeceptor. These cover semantic trig-gers, adversarial perturbations, decoy attacks, and reasoning-trajectory manipulation. Samples are split by repository and attack family into train, val-idation, and test sets. All thresholds τ1, τ2, τ3, and 
+
+τsurp are selected on the validation split and fixed before test evaluation. 
+
+Models. Defense-side surrogate models include Salesforce/codegen-350M-mono ,
+
+Salesforce/codegen-350M-multi ,
+
+Qwen/Qwen3.5-4B , and google/gemma-4-E4B .Victim models include CodeGemma, CodeBERT, GraphBERT, Gemma-family models, Mistral-Figure 5: Sample-level ASR on open-weight victim models before and after applying CodeSentinel .            
+
+> Victim Model Before After Impact Claude-3.5-Haiku 27.11 7.72 -19.39 GPT-5.1-Codex-mini 18.32 5.81 -12.51 Gemini-3.1-Flash-lite 24.14 8.28 -15.86
+> Table 2: Sample-level ASR (%).
+
+family models, and commercial coding agents. In black-box victim settings, only the sanitized context is sent to the victim; all likelihood and logits scores are computed by the local surrogate. 
+
+Baselines and metrics. We compare against CodeGarrison (CG) (Ghannoum and Ghafari, 2025), DePA (Tsai et al., 2025), and KillBad-Code (KBC) (Sun et al., 2025). Unless otherwise stated, F1 and AUROC are node-level detection metrics, ASR is a sample-level attack success rate, and latency is measured as preprocessing time per code sample. Clean-code utility is evaluated on benign samples after sanitization. 
+
+4.2 Results RQ1: CodeSentinel outperforms existing de-fenses. Table 1 reports node-level F1 across six attack types. CodeSentinel achieves the best av-erage F1 score of 0.80, outperforming CG (0.70), DePA (0.51), and KBC (0.30). Figure 6 in the Appendix shows that CodeSentinel also has low preprocessing latency. Figure 2 reports node-level AUROC. Table 7 in the Appendix reports a targeted setting where attacks are optimized against DePA, showing that CodeSentinel suffers a smaller F1 drop than the line-level perplexity baseline. Moreover, Table 8 in the Appendix pro-vide leave-one-attack-out results and Table 9 stress-tests CodeSentinel under adaptive attacks. 
+
+RQ2: all three layers are necessary. Figure 3 shows cumulative performance on the ablation sub-set. F1 improves as layers are added, while preci-                            
+
+> Benchmark Metric Before After Impact HumanEval Pass@1 100.00 100.00 0.00 HumanEval Compile 100.00 100.00 0.00 MBPP Pass@1 96.11 89.88 -6.23 MBPP Compile 100.00 100.00 0.00 RepoBench Exact Match 100.00 67.33 -32.67 RepoBench BLEU-4 100.00 94.05 -5.95
+> Table 3: Clean-code utility before and after applying
+> CodeSentinel .
+
+sion remains stable and recall increases. Figure 9 in the Appendix shows that Layer 3 is the strongest standalone layer but also has the highest latency, supporting the early-exit design. 
+
+RQ3: CodeSentinel generalizes across surro-gate models. Figure 4 shows detection perfor-mance under different defense-side surrogate mod-els. F1 remains stable across models, suggesting that the detection signal is not tied to a single logits provider. Figure 11 in Appendix further evaluates cross-tokenizer robustness, showing CST-aligned node scoring remains stable across tokenizers. 
+
+RQ4: CodeSentinel works in black-box victim settings. Figure 5 shows that sanitization reduces ASR on open-weight victim models. Table 2 shows consistent ASR reduction on commercial coding agents. Figure 10 in Appendix further reports trans-ferability results. 
+
+RQ5: sanitization mostly preserves benign-code utility. Table 3 shows CodeSentinel preserves compile rates on HumanEval (Chen et al., 2021) and MBPP (Austin et al., 2021). MBPP Pass@1 drops by 6.23 points. RepoBench (Liu et al., 2024) exact match decreases because sanitization changes surface tokens, but BLEU-4 remains high. 
+
+5 Conclusion 
+
+We presented CodeSentinel , a three-layer inference-time defense for code-context prompt injection. Experiments show that CST-guided local-ization, Dynamic Min-K% scoring, and node per-turbation jointly improve detection, reduce ASR, and preserve benign-code utility. Limitations 
+
+CodeSentinel currently focuses on single-context sanitization and does not fully address repository-scale multi-file reasoning, long-horizon interac-tive agents, or triggers distributed across many files. Identifier sanitization also requires careful scope-aware renaming, and overly aggressive clean-ing may change surface-level code similarity even when compilation is preserved. Future work should extend CodeSentinel to multi-turn coding agents and larger repository contexts. 
+
+Ethical Considerations 
+
+This work studies defenses against indirect prompt injection in code-generation systems. The attack descriptions are limited to high-level categories and are used to evaluate sanitization mechanisms. The goal is to help developers and model providers reduce risks from untrusted code context before it reaches downstream Code LLMs. 
+
+References 
+
+Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Duan, Emin Ding, Ray Drori, Charles Sutton, and Hanie Kumar. 2021. Program synthesis with large language models. 
+
+arXiv preprint arXiv:2108.07732 .Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Ka-plan, Harrison Haris, Yuri Burda, Nathan Brad-bury, Arthur Cassano, et al. 2021. Evaluating large language models trained on code. arXiv preprint arXiv:2107.03374 .Sizhe Chen, Julien Piet, Chawin Sitawarin, and David Wagner. 2025a. StruQ: Defending Against Prompt Injection with Structured Queries. In USENIX Secu-rity Symposium .Sizhe Chen, Arman Zharmagambetov, Saeed Mahlouji-far, Kamalika Chaudhuri, David Wagner, and Chuan Guo. 2025b. SecAlign: Defending Against Prompt Injection with Preference Optimization. In ACM Con-ference on Computer and Communications Security (CCS) .Yulin Chen, Haoran Li, Yuan Sui, Yufei He, Yue Liu, Yangqiu Song, and Bryan Hooi. 2025c. Can Indirect Prompt Injection Attacks Be Detected and Removed? Edoardo Debenedetti, Ilia Shumailov, Tianqi Fan, Jamie Hayes, Nicholas Carlini, Daniel Fabian, Christoph Kern, Chongyang Shi, Andreas Terzis, and Florian Tramèr. 2025. Defeating Prompt Injections by De-sign. Ehab Ghannoum and Mohammad Ghafari. 2025. Poi-soned source code detection in code models. Journal of Systems and Software , 226. Li Huang, Weifeng Sun, and Meng Yan. 2025. Iter-ative Generation of Adversarial Example for Deep Code Models. In 2025 IEEE/ACM 47th International Conference on Software Engineering (ICSE) .Slobodan Jenko, Niels Mündler, Jingxuan He, Mark Vero, and Martin Vechev. 2025. Black-Box Adver-sarial Attacks on LLM-Based Code Completion. Yang Jiao, Xiaodong Wang, and Kai Yang. 2025. PR-Attack: Coordinated Prompt-RAG Attacks on Retrieval-Augmented Generation in Large Language Models via Bilevel Optimization. Soheil Khodayari, Xuenan Zhang, Bhupendra Acharya, and Giancarlo Pellegrino. 2026. Indirect prompt in-jection in the wild: An empirical study of prevalence, techniques, and objectives. Haoyang Li, Huan Gao, Zhiyuan Zhao, Zhiyu Lin, Junyu Gao, and Xuelong Li. 2025a. LLMs Caught in the Crossfire: Malware Requests and Jailbreak Challenges. Haoyang Li, Mingjin Li, Jinxin Zuo, Siqi Li, Xiao Li, Hao Wu, Yueming Lu, and Xiaochuan He. 2025b. CoTDeceptor: Adversarial Code Obfuscation Against CoT-Enhanced LLM Code Agents. Xiao Li, Yue Li, Hao Wu, Yue Zhang, Kaidi Xu, Xiuzhen Cheng, Sheng Zhong, and Fengyuan Xu. 2025c. Make a Feint to the East While Attacking in the West: Blinding LLM-Based Code Auditors with Flashboom Attacks. Huawei Lin, Yingjie Lao, Tong Geng, Tan Yu, and Weijie Zhao. 2025. Uniguardian: A unified defense for detecting prompt injection, backdoor attacks and adversarial attacks in large language models. Mickel Liu, Liwei Jiang, Yancheng Liang, Si-mon Shaolei Du, Yejin Choi, Tim Althoff, and Natasha Jaques. 2025a. Chasing Moving Targets with Online Self-Play Reinforcement Learning for Safer Language Models. Tianyang Liu, Canwen Xu, and Julian McAuley. 2024. Repobench: Benchmarking repository-level code auto-completion systems. In International Confer-ence on Learning Representations (ICLR) .Yue Liu, Yanjie Zhao, Yunbo Lyu, Ting Zhang, Haoyu Wang, and David Lo. 2025b. "Your AI, My Shell": Demystifying Prompt Injection Attacks on Agentic AI Coding Editors. Sheng Ouyang, Yihao Qin, Bo Lin, Liqian Chen, Xi-aoguang Mao, and Shangwen Wang. 2025. Smoke and Mirrors: Jailbreaking LLM-based Code Genera-tion via Implicit Malicious Prompts. Weisong Sun, Yuchen Chen, Mengzhe Yuan, Chun-rong Fang, Zhenpeng Chen, Chong Wang, Yang Liu, Baowen Xu, and Zhenyu Chen. 2025. Show Me Your Code! Kill Code Poisoning: A Lightweight Method Based on Code Naturalness. Chi-Chien Tsai, Chia-Mu Yu, Ying-Dar Lin, Yu-Sung Wu, and Wei-Bin Lee. 2025. Beyond Natural Lan-guage Perplexity: Detecting Dead Code Poisoning in Code Generation Datasets. Muntasir Wahed, Xiaona Zhou, Kiet A. Nguyen, Tian-jiao Yu, Nirav Diwan, Gang Wang, Dilek Hakkani-Tür, and Ismini Lourentzou. 2025. MOCHA: Are Code Language Models Robust Against Multi-Turn Malicious Coding Prompts? Tongyu Wen, Chenglong Wang, Xiyuan Yang, Haoyu Tang, Yueqi Xie, Lingjuan Lyu, Zhicheng Dou, and Fangzhao Wu. 2025. Defending against indirect prompt injection by instruction detection. Yuchen Yang, Yiming Li, Hongwei Yao, Bingrun Yang, Yiling He, Tianwei Zhang, Dacheng Tao, and Zhan Qin. 2025. ShadowCode: Towards (Automatic) Ex-ternal Prompt Injection Attack against Code LLMs. Jingwei Yi, Yueqi Xie, Bin Zhu, Emre Kiciman, Guangzhong Sun, Xing Xie, and Fangzhao Wu. 2025. Benchmarking and defending against indirect prompt injection attacks on large language models. In ACM SIGKDD Conference on Knowledge Discovery and Data Mining .Qiusi Zhan, Zhixiang Liang, Zifan Ying, and Daniel Kang. 2024. InjecAgent: Benchmarking indirect prompt injections in tool-integrated large language model agents. In Findings of the Association for Computational Linguistics: ACL 2024 .Adam Štorek, Mukur Gupta, Noopur Bhatt, Aditya Gupta, Janie Kim, Prashast Srivastava, and Suman Jana. 2025. XOXO: Stealthy Cross-Origin Context Poisoning Attacks against AI Coding Assistants. 
+
+A Notation Table 
+
+This appendix consolidates the notation used in the problem formulation and detection pipeline. Table 4 separates the source-level context C, the serialized model-facing input X, CST-node objects, detection scores, and flagged node sets. This dis-tinction is important because CodeSentinel op-erates on source spans but scores them through surrogate-token likelihoods and task-specific log-its. 
+
+B Related-Work Tables 
+
+Tables 5 and 6 provide a compact taxonomy of prior attacks and defenses. Table 5 emphasizes where the injected payload is placed and whether it targets        
+
+> Figure 6: Execution time per code sample.
+> CodeSentinel keeps preprocessing latency low.
+
+code-generation or code-assistance workflows. Ta-ble 6 compares defenses along deployment-relevant dimensions, including black-box compatibility, static analysis, node-level perturbation, likelihood-based detection, and whether model training or runtime redesign is required. 
+
+C Runtime Analysis 
+
+Figure 6 reports preprocessing latency per code sample. The main cost of CodeSentinel comes from surrogate-model scoring and node perturba-tion, but the early-exit design avoids invoking ex-pensive layers for nodes already caught by syntax-guided checks. This keeps the defense practical as a pre-API sanitizer for black-box Code LLM deployments. 
+
+D Additional Figures 
+
+This section provides additional visual evidence for the detection workflow and layer-level behav-ior. Figure 7 gives an alternative view of the threat model, where the detector decides whether the un-trusted context should be passed unchanged or san-itized. Figure 8 shows a concrete C-auditing ex-ample in which a misleading identifier steers the model toward an unsafe answer, while neutraliza-tion restores the correct decision. Figure 9 com-plements the ablation in the main text by showing the standalone accuracy–latency trade-off of each layer. 
+
+E Transfer and Tokenizer Robustness 
+
+We further test whether the detection signal trans-fers across victim models and tokenizers. Fig-ure 10 evaluates transferability by comparing Category Notation Meaning Input P u trusted developer prompt Input C external code context Input X = Serialize( P u, C ) serialized model-facing input Structure T (C) CST of the external code context Node n CST node or source span Node tn CST node type Node span( n) byte/source span of node n                                                          
+
+> Node text( n)raw source text of node n
+> Node T(n)surrogate-token positions aligned to node n
+> Candidate Dcom comment nodes Candidate Dstr string-literal nodes Candidate Did identifier nodes Candidate Ddecoy salient, low-reachability decoy nodes Candidate Drisk high-risk model-facing nodes Candidate Dcand candidate nodes evaluated by CodeSentinel
+> Model fθdownstream victim Code LLM Model qϕlocal surrogate scoring model Model gϕ(X)surrogate logits at the task-specific decision position Output ysafe safe output Output ymal malicious output Attack S∗hidden malicious trigger set Defense ˆSℓnodes flagged by Layer ℓ
+> Defense ˆSdetected suspicious nodes Defense ˜Csanitized code context Scoring sℓ(n)Layer-ℓnode score Scoring ri(n)token-level NLL for token iin node n
+> Scoring d(·,·)behavioral distance function Scoring τℓLayer-ℓdetection threshold Objective mnode perturbation budget Objective U(·)utility-damage penalty
+
+Table 4: Notation used in the problem formulation and detection pipeline. 
+
+the original attack success rate with ASR af-ter DePA and after CodeSentinel . The results show that CodeSentinel reduces transferred at-tacks more consistently across victim models. Fig-ure 11 evaluates cross-tokenizer robustness. Since 
+
+CodeSentinel scores CST-aligned nodes rather than raw file-level text, its detection remains stable when the attack payload and defense-side surrogate use different tokenizer spaces. Table 7 reports a targeted setting where attacks are optimized against DePA. The smaller F1 drop for CodeSentinel suggests that CST-node local-ization and behavioral perturbation provide com-plementary signals beyond line-level perplexity. 
+
+F Leave-One-Attack-Out Evaluation 
+
+Table 8 evaluates whether CodeSentinel depends on attack-family-specific signals. For each row, we remove one attack family during threshold selec-tion and report performance on the held-out family. The average drop is modest, indicating that the pipeline captures general code-context injection patterns. The larger drops on XOXO and ITGen suggest that natural-looking semantic transforma-tions remain the most challenging cases, which motivates the Layer-3 perturbation analysis. 
+
+G Adaptive Attack 
+
+We further evaluate CodeSentinel under an adap-tive threat model. In this setting, the attacker is assumed to know the defense architecture and de-tection algorithms. In particular, the attacker is aware that CodeSentinel uses CST-guided candi-date extraction, surprise-gated selection in Layer 3, and node-level influence measurement to detect se-mantic triggers. We consider three adaptive strate-gies, each targeting a different component of the defense. 
+
+Decoy Injection. This attack targets the candidate-selection mechanism in Layer 3. Be-cause node perturbation analysis is more expensive than the earlier layers, CodeSentinel only applies it to selected high-risk candidates. The attacker exploits this design by injecting high-surprise but non-malicious nodes into the code context. These nodes are not intended to directly cause malicious model behavior. Instead, they are designed to occupy Layer-3 candidate slots, reducing the Work Category Type Code Gen Payload Manual AI Gen. MalwareBench (Li et al., 2025a) Jailbreak Direct ✓ ✓ ✓ ✓                                                            
+
+> PR-Attack (Jiao et al., 2025) RAG poisoning Indirect –✓––CodeJailbreaker (Ouyang et al., 2025) Metadata injection Indirect ✓✓✓✓
+> AIShellJack (Liu et al., 2025b) Agentic editor Indirect ✓✓✓✓
+> ShadowCode (Yang et al., 2025) Non-functional payload Indirect ✓✓–✓
+> INSEC (Jenko et al., 2025) Non-functional payload Indirect ✓✓–✓
+> XOXO (Štorek et al., 2025) Semantic transform Indirect ✓✓–✓
+> ITGen (Huang et al., 2025) Semantic transform Indirect ✓✓–✓
+> Flashboom (Li et al., 2025c) Auditor deception Indirect ✓✓✓✓
+> CoTDeceptor (Li et al., 2025b) Auditor deception Indirect ✓✓✓✓
+> MOCHA (Wahed et al., 2025) Multi-turn prompts Direct ✓✓✓✓
+
+Table 5: Comparison of prompt-injection attack related work. Code Gen indicates whether the attack targets code-generation or code-assistance workflows; Payload indicates whether an explicit payload is inserted; Manual and AI Gen. indicate how payloads are produced.                                                                                            
+
+> Defense IPI Code Gen Black-box Static Node Pert. PPL/Min-K Train/Redesign UniGuardian (Lin et al., 2025) –––––––Instruction Detector (Wen et al., 2025) ✓–✓––––BIPIA (Yi et al., 2025) ✓–✓––––Chen et al. (Chen et al., 2025c) ✓–✓––––Self-RedTeam (Liu et al., 2025a) ––––––✓
+> SecAlign (Chen et al., 2025b) ✓–––––✓
+> StruQ (Chen et al., 2025a) ✓–––––✓
+> CaMeL (Debenedetti et al., 2025) ✓–✓–––✓
+> DePA (Tsai et al., 2025) –✓✓––✓–KillBadCode (Sun et al., 2025) –✓✓–✓––CodeGarrison (Ghannoum and Ghafari, 2025) –✓✓✓––✓
+> CodeSentinel ✓✓✓✓✓✓–
+
+Table 6: Comparison of prompt-injection defense related work. IPI denotes indirect prompt injection; Node Pert. denotes node perturbation; PPL/Min-K denotes perplexity or Min-K-style likelihood analysis.          
+
+> Defense Original F1 Targeted F1 Impact
+> CodeSentinel 0.8061 0.7202 -0.0859 DePA 0.5041 0.2300 -0.2741
+
+Table 7: Detection performance under attacks optimized against the DePA baseline defense. Impact is computed as Targeted F1 minus Original F1. 
+
+chance that the true malicious trigger is evaluated by node perturbation analysis. In our evaluation, the attacker injects 20 high-surprise non-malicious nodes to stress this selection mechanism. 
+
+Copy Trigger. This attack targets the single-node influence assumption of Layer 3. Instead of insert-ing one malicious trigger, the attacker places mul-tiple identical triggers at different locations in the code context. If CodeSentinel neutralizes only one occurrence, the remaining copies may still pre-serve the attacker-desired behavior. As a result, the logits change caused by neutralizing any single trigger can become smaller, making each individ-ual trigger appear less influential. This strategy                         
+
+> Attack Original Leave-one-out Impact XOXO 0.80 0.673 -0.127 ITGen 0.77 0.630 -0.140 Flashboom 0.79 0.865 0.075 CoTDeceptor 0.66 0.660 0.000 ShadowCode 0.85 0.850 0.000 INSEC 0.90 0.900 0.000 Average 0.80 0.763 -0.037
+
+Table 8: Leave-one-attack-out evaluation. Impact is computed as Leave-one-out performance minus Origi-nal performance. 
+
+tests whether node perturbation analysis remains effective when the malicious effect is distributed across multiple syntactic locations. 
+
+Contextual Attack. This attack targets the surprise-gated selector. The attacker uses a genetic algorithm to optimize the surrounding context of the malicious payload, with the goal of reducing the trigger’s surprise score. If the trigger appears less surprising under the defense-side scoring model, it becomes harder to select for perturbation analysis. Figure 7: Alternative CodeSentinel workflow.               
+
+> Figure 8: Illustrative example of CodeSentinel on an adversarial C prompt. The adversarial identifier biases the model, while neutralization removes the misleading lexical cue. CWE-476 denotes NULL pointer dereference.
+> Attack Original Adaptive Impact Decoy Injection 0.82 0.74 -0.08 Copy Trigger 0.82 0.62 -0.20 Contextual Attack 0.82 0.66 -0.16
+> Table 9: Node-level AUROC under adaptive attacks.
+
+This evaluates whether CodeSentinel can still de-tect semantic triggers when the attacker explicitly optimizes the local context to avoid the selection stage. 
+
+Results. Table 9 reports the F1 score under the three adaptive attacks. The original defense achieves an F1 score of 0.82. Under Decoy In-jection, the F1 score drops to 0.74, showing that high-surprise benign nodes can partially distract the candidate selector. Under Copy Trigger, the F1 score drops to 0.62, which is the largest degradation among the three attacks. This confirms that dupli-cated triggers can dilute the influence of any single neutralized node. Under Contextual Attack, the F1 score decreases to 0.66, indicating that reducing the trigger’s surprise score weakens the perturbation-selection stage. Overall, CodeSentinel degrades under adaptive pressure but still maintains an F1 score of at least 0.62. The adaptive evaluation highlights two limita-tions of influence-based semantic-trigger detection. First, high-surprise benign nodes can consume part of the perturbation budget. Second, duplicated trig-Figure 9: Standalone classification performance and inference latency of each defense layer. 
+
+> Figure 10: Transferability effect on sample-level ASR before and after defense.
+
+gers can reduce the apparent influence of any single occurrence. Nevertheless, CodeSentinel does not collapse under these stronger attacks, suggesting that syntax-aware localization, anomaly scoring, and node-level perturbation provide complemen-tary robustness. Figure 11: Cross-tokenizer robustness when attack payloads and defense detection use different tokenizer spaces. FPR denotes false positive rate; tokenizer space denotes the surrogate tokenizer used to segment payloads.
