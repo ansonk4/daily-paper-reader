@@ -1,0 +1,24 @@
+{
+  "name": "Dayeon Kang",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=47; Semantic Scholar paper_count=26",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Whose Agent Are You? Multi-Layer Fingerprinting and Attribution of Autonomous Web Agents",
+    "paper_year": "2026",
+    "name": "Dayeon Kang",
+    "affiliations": [],
+    "paper_count": 26,
+    "citation_count": 47,
+    "author_id": "121646291",
+    "lookup": "author_search"
+  }
+}

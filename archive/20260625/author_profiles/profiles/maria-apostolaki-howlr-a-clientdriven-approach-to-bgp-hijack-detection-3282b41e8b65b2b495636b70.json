@@ -1,0 +1,31 @@
+{
+  "name": "Maria Apostolaki",
+  "role": "last_author",
+  "affiliation": "Princeton University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=41; Semantic Scholar paper_count=12",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Maria Apostolaki",
+    "affiliations": [
+      "Princeton University"
+    ],
+    "author_row": "Maria Apostolaki"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "HOWLR: A Client-Driven Approach to BGP Hijack Detection",
+    "paper_year": "2026",
+    "name": "Maria Apostolaki",
+    "affiliations": [],
+    "paper_count": 12,
+    "citation_count": 41,
+    "author_id": "2266474006",
+    "lookup": "author_search"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Waqas Ali",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=31; Semantic Scholar paper_count=11",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Federated Temporal Attention Intelligence for Cyber-Resilient IoMT: Lightweight Digital Twins and PPO-Driven Honeypot Deception",
+    "paper_year": "2026",
+    "name": "Waqas Ali",
+    "affiliations": [],
+    "paper_count": 11,
+    "citation_count": 31,
+    "author_id": "2326580829",
+    "lookup": "author_search"
+  }
+}

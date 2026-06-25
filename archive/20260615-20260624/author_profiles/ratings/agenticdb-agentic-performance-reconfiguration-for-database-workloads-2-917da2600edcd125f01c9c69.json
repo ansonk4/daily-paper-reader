@@ -1,0 +1,70 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Xinyue Yang",
+      "role": "first_author",
+      "affiliation": "University of Chinese Academy of Sciences; Nanjing Institute of Software, Chinese Academy of Sciences",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=1; Semantic Scholar paper_count=2",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Xinyue Yang",
+        "affiliations": [
+          "University of Chinese Academy of Sciences",
+          "Nanjing Institute of Software, Chinese Academy of Sciences"
+        ],
+        "author_row": "Xinyue Yang"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "AgenticDB: Agentic Performance Reconfiguration for Database Workloads",
+        "paper_year": "2026",
+        "name": "Xinyue Yang",
+        "affiliations": [],
+        "paper_count": 2,
+        "citation_count": 1,
+        "author_id": "2322654241",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Yanjun Wu",
+      "role": "last_author",
+      "affiliation": "Institute of Software, Chinese Academy of Sciences",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=1538; Semantic Scholar paper_count=7",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Yanjun Wu",
+        "affiliations": [
+          "Institute of Software, Chinese Academy of Sciences"
+        ],
+        "author_row": "Yanjun Wu"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "AgenticDB: Agentic Performance Reconfiguration for Database Workloads",
+        "paper_year": "2026",
+        "name": "Yanjun Wu",
+        "affiliations": [],
+        "paper_count": 7,
+        "citation_count": 1538,
+        "author_id": "2134080148",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:54:33.837834+00:00"
+}

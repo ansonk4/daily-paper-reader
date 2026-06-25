@@ -1,0 +1,24 @@
+{
+  "author_score": 10.0,
+  "author_rating_explanation": "Both focus authors are affiliated with Google Brain / Google Research, which is a major AI research lab under Google. Verified affiliations and very high citation counts confirm strong, prestigious author backgrounds.",
+  "author_profiles": [
+    {
+      "name": "Ashish Vaswani",
+      "role": "first_author",
+      "affiliation": "Google Brain",
+      "citation_hints": "Semantic Scholar citation_count=195978; Semantic Scholar paper_count=56",
+      "confidence": "high",
+      "evidence_source": "paper_author_row, arxiv_source, semantic_scholar"
+    },
+    {
+      "name": "Illia Polosukhin",
+      "role": "last_author",
+      "affiliation": "Google Research",
+      "citation_hints": "Semantic Scholar citation_count=185646; Semantic Scholar paper_count=21",
+      "confidence": "high",
+      "evidence_source": "paper_author_row, semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-25T09:09:13.666732+00:00"
+}

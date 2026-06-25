@@ -1,0 +1,21 @@
+{
+  "name": "Yihao Chen",
+  "role": "first_author",
+  "affiliation": "DCST & BNRist & State Key Laboratory of Internet Architecture, Tsinghua University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yihao Chen",
+    "affiliations": [
+      "DCST & BNRist & State Key Laboratory of Internet Architecture, Tsinghua University"
+    ],
+    "author_row": "Yihao Chen"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

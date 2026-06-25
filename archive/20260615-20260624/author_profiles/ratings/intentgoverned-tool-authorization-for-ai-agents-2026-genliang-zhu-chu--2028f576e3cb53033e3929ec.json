@@ -1,0 +1,64 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Genliang Zhu",
+      "role": "first_author",
+      "affiliation": "Accentrust; Georgia Institute of Technology 0.48 Chu Wang",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=2; Semantic Scholar paper_count=6",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Genliang Zhu",
+        "affiliations": [
+          "Accentrust",
+          "Georgia Institute of Technology 0.48 Chu Wang",
+          "Accentrust"
+        ],
+        "author_row": "0.48 Genliang Zhu"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Intent-Governed Tool Authorization for AI Agents",
+        "paper_year": "2026",
+        "name": "Genliang Zhu",
+        "affiliations": [],
+        "paper_count": 6,
+        "citation_count": 2,
+        "author_id": "2279421818",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Chu Wang",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=59; Semantic Scholar paper_count=5",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Intent-Governed Tool Authorization for AI Agents",
+        "paper_year": "2026",
+        "name": "Chu Wang",
+        "affiliations": [],
+        "paper_count": 5,
+        "citation_count": 59,
+        "author_id": "2359699572",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:27:28.491233+00:00"
+}

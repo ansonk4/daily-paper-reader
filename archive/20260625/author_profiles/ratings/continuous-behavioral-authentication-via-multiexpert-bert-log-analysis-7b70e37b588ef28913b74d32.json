@@ -1,0 +1,36 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Stergios Lantzos",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {}
+    },
+    {
+      "name": "Thanasis Korakis",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {}
+    }
+  ],
+  "author_rating_status": "fallback",
+  "rated_at": "2026-06-25T05:14:05.249515+00:00"
+}

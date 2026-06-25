@@ -1,0 +1,65 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Noe Y. Flandre",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=7; Semantic Scholar paper_count=3",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Composing Verifiable Conceptual Models via Building Blocks: Towards Design-Time Verification of Agentic AI Workflows",
+        "paper_year": "2026",
+        "name": "Noé Y. Flandre",
+        "affiliations": [],
+        "paper_count": 3,
+        "citation_count": 7,
+        "author_id": "2330172377",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Philippe J. Giabbanelli",
+      "role": "last_author",
+      "affiliation": "[11pt] 1 Team EVERGREEN, Inria, Centre Inria d'Universit\\'e C\\ ote d'Azur, Montpellier, France; 2 Department of Data Science, William & Mary, Williamsburg, VA, USA; 3 Office of Enterprise Research and Innovation, Old Dominion University, Norfolk, VA, USA; center",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=6; Semantic Scholar paper_count=2",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Philippe J. Giabbanelli",
+        "affiliations": [
+          "[11pt] 1 Team EVERGREEN, Inria, Centre Inria d'Universit\\'e C\\ ote d'Azur, Montpellier, France",
+          "2 Department of Data Science, William & Mary, Williamsburg, VA, USA",
+          "3 Office of Enterprise Research and Innovation, Old Dominion University, Norfolk, VA, USA",
+          "center"
+        ],
+        "author_row": "center Noé Y. Flandre 1 , Alexander C. Nwala 2 , and Philippe J. Giabbanelli 3"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Composing Verifiable Conceptual Models via Building Blocks: Towards Design-Time Verification of Agentic AI Workflows",
+        "paper_year": "2026",
+        "name": "Philippe J. Giabbanelli",
+        "affiliations": [],
+        "paper_count": 2,
+        "citation_count": 6,
+        "author_id": "2066965608",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:57:09.610281+00:00"
+}

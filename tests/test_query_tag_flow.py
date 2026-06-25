@@ -118,12 +118,20 @@ class QueryTagFlowTest(unittest.TestCase):
                 "matched_query_tag": "query:sr-rl",
                 "matched_query_text": "symbolic regression with reinforcement learning",
                 "matched_requirement_id": "req-2",
+                "relevance_score": 8,
+                "author_score": 9,
+                "author_rating_explanation": "Verified lab.",
+                "author_profiles": [{"name": "Ada", "role": "first_author", "affiliation": "OpenAI"}],
             }
         ]
         out = self.select_mod.build_scored_papers(papers, llm_ranked)
         self.assertEqual(len(out), 1)
         self.assertIn("query:sr-rl", out[0].get("llm_tags") or [])
         self.assertEqual(out[0].get("matched_requirement_id"), "req-2")
+        self.assertEqual(out[0].get("llm_score"), 8.8)
+        self.assertEqual(out[0].get("relevance_score"), 8)
+        self.assertEqual(out[0].get("author_score"), 9)
+        self.assertEqual(out[0].get("author_profiles")[0]["affiliation"], "OpenAI")
 
 
 if __name__ == "__main__":

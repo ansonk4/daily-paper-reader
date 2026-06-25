@@ -1,0 +1,34 @@
+{
+  "name": "Pingchuan Ma",
+  "role": "first_author",
+  "affiliation": "Zhejiang University of Technology; Hong Kong University of Science and Technology; Arizona State University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=1460; OpenAlex works_count=90",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Pingchuan Ma",
+    "affiliations": [
+      "Zhejiang University of Technology"
+    ],
+    "author_row": "Pingchuan Ma"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "AutoSpec: Safety Rule Evolution for LLM Agents via Inductive Logic Programming",
+    "paper_year": "2026",
+    "name": "Pingchuan Ma",
+    "affiliations": [
+      "Hong Kong University of Science and Technology",
+      "Arizona State University"
+    ],
+    "works_count": 90,
+    "cited_by_count": 1460,
+    "author_id": "https://openalex.org/A5001790767",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

@@ -1,0 +1,33 @@
+{
+  "name": "Osamu Ito",
+  "role": "first_author",
+  "affiliation": "Shin Saeki, Jun Shiraishi & Masato Sasaki; Honda Motor Co., Ltd.; Wako-shi, Saitama 351-0188, Japan",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=415; Semantic Scholar paper_count=21",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Osamu Ito",
+    "affiliations": [
+      "Shin Saeki, Jun Shiraishi & Masato Sasaki",
+      "Honda Motor Co., Ltd.",
+      "Wako-shi, Saitama 351-0188, Japan"
+    ],
+    "author_row": "Osamu Ito * , Akihiko Katagiri , Yoshikazu Nakagawa"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Surrogate Assisted Pedestrian Protection Design via a Foundation Model Orchestrated Workflow",
+    "paper_year": "2026",
+    "name": "O. Ito",
+    "affiliations": [],
+    "paper_count": 21,
+    "citation_count": 415,
+    "author_id": "147739195",
+    "lookup": "author_search"
+  }
+}

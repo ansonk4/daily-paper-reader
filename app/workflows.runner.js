@@ -1,4 +1,4 @@
-// 工作流触发面板：用于从前端触发 GitHub Actions workflow，并展示运行进度
+// Workflow Runner面板：用于从前端触发 GitHub Actions workflow，并展示运行进度
 // 依赖：GitHub Token（Classic PAT），需要 repo + workflow 权限
 
 window.DPRWorkflowRunner = (function () {
@@ -6,8 +6,8 @@ window.DPRWorkflowRunner = (function () {
     {
       key: 'daily-now',
       id: 'daily-paper-reader.yml',
-      name: '立即爬取并处理论文',
-      desc: '触发 daily-paper-reader 工作流（抓取→召回→重排→生成 docs）。',
+      name: 'Fetch and Process Papers Now',
+      desc: 'Run the daily-paper-reader workflow: fetch, retrieve, rerank, and generate docs.',
       dispatchInputs: {
         run_enrich: 'false',
       },
@@ -15,20 +15,20 @@ window.DPRWorkflowRunner = (function () {
     {
       key: 'sync',
       id: 'sync.yml',
-      name: '同步上游代码',
-      desc: '触发 Upstream Sync 工作流（合并上游 main 到当前仓库）。',
+      name: 'Sync Upstream Code',
+      desc: 'Run the Upstream Sync workflow to merge upstream main into this repository.',
     },
     {
       key: 'reset-content',
       id: 'reset-content.yml',
-      name: '重置 content（docs + archive）',
-      desc: '将 docs 恢复为 docs_init 基线，并清空 archive。该操作为危险操作。',
+      name: 'Reset Content (docs + archive)',
+      desc: 'Restore docs from docs_init and clear archive. This is a dangerous action.',
     },
     {
       key: 'conference-retrieval',
       id: 'conference-paper-retrieval.yml',
-      name: '会议论文检索',
-      desc: '按会议和年份触发 Supabase BM25/Embedding 候选召回与 RRF 融合。',
+      name: 'Conference Paper Search',
+      desc: 'Run Supabase BM25/embedding candidate retrieval and RRF fusion by conference and year.',
       dispatchInputs: {
         top_k: '50',
         rrf_top_n: '200',
@@ -240,12 +240,12 @@ window.DPRWorkflowRunner = (function () {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        throw new Error((data && data.error) || `本地调试后端请求失败：HTTP ${res.status}`);
+        throw new Error((data && data.error) || `Local debug backend request failed: HTTP ${res.status}`);
       }
       return data;
     } catch (e) {
       if (e && e.name === 'AbortError') {
-        throw new Error('本地调试后端请求超时，请确认 8567 端口服务正在运行。');
+        throw new Error('Local debug backend request timed out. Confirm the service is running on port 8567.');
       }
       throw e;
     } finally {
@@ -289,10 +289,10 @@ window.DPRWorkflowRunner = (function () {
     const command = Array.isArray(run.command) ? run.command.join(' ') : '';
     const logHtml = logText
       ? `<pre data-dpr-workflow-log="1" style="white-space:pre-wrap; max-height:360px; overflow:auto; background:#111; color:#ddd; padding:10px; border-radius:6px; font-size:12px;">${escapeHtml(logText)}</pre>`
-      : '<div style="color:#999;">暂无日志。</div>';
+      : '<div style="color:#999;">No logs yet.</div>';
     runsEl.innerHTML = `
       <div style="margin-bottom:8px;">
-        <div style="font-weight:600;">本地运行 #${escapeHtml(run.run_number || run.id)}</div>
+        <div style="font-weight:600;">Local Run #${escapeHtml(run.run_number || run.id)}</div>
         <div style="color:#666; margin-top:2px;">
           <span style="display:inline-block; padding:1px 6px; border-radius:999px; background:rgba(0,0,0,0.06); color:${badgeColor};">
             ${escapeHtml(formatRunBadgeText(status, conclusion))}
@@ -314,23 +314,23 @@ window.DPRWorkflowRunner = (function () {
       if (run.status === 'completed') {
         stopPolling();
         setStatus(
-          `本地运行已结束：${run.conclusion || 'completed'}`,
+          `Local run finished: ${run.conclusion || 'completed'}`,
           run.conclusion === 'success' ? '#080' : '#c00',
         );
       } else {
-        setStatus('本地运行中：每 5 秒自动刷新...', '#1565c0', { waiting: true });
+        setStatus('Local run in progress: refreshing every 5 seconds...', '#1565c0', { waiting: true });
       }
     } catch (e) {
       console.error(e);
-      setStatus(`刷新本地运行失败：${e.message || e}`, '#c00');
+      setStatus(`Failed to refresh local run: ${e.message || e}`, '#c00');
     }
   };
 
   const dispatchLocalAndMonitor = async (wf, workflowFile, dispatchInputs) => {
     stopPolling();
     activeRun = null;
-    setStatus(`正在触发本地调试任务：${wf.name || workflowFile} ...`, '#666', { waiting: true });
-    runsEl.innerHTML = '<div style="color:#999;">正在请求本地后端，请稍候...</div>';
+    setStatus(`Starting local debug task: ${wf.name || workflowFile} ...`, '#666', { waiting: true });
+    runsEl.innerHTML = '<div style="color:#999;">Requesting local backend, please wait...</div>';
     const localConfigOverride = window.SubscriptionsGithubToken &&
       typeof window.SubscriptionsGithubToken.loadLocalConfigOverride === 'function'
       ? window.SubscriptionsGithubToken.loadLocalConfigOverride()
@@ -351,7 +351,7 @@ window.DPRWorkflowRunner = (function () {
     const run = data.run || {};
     activeRun = { local: true, runId: run.id };
     selectedRun = activeRun;
-    setStatus(`本地运行已创建：run_id=${run.id}`, '#080', { waiting: true });
+    setStatus(`Local run created: run_id=${run.id}`, '#080', { waiting: true });
     await refreshLocalRun(run.id);
     refreshTimer = setInterval(() => {
       const r = selectedRun || activeRun;
@@ -408,21 +408,21 @@ window.DPRWorkflowRunner = (function () {
     overlay.innerHTML = `
       <div id="dpr-workflow-panel">
         <div id="dpr-workflow-header">
-          <div style="font-weight:600;">工作流触发</div>
+          <div style="font-weight:600;">Workflow Runner</div>
           <div style="display:flex; gap:8px; align-items:center;">
-            <button id="dpr-workflow-refresh-btn" class="arxiv-tool-btn" style="padding:2px 10px;">刷新</button>
-            <button id="dpr-workflow-close-btn" class="arxiv-tool-btn" style="padding:2px 6px;">关闭</button>
+            <button id="dpr-workflow-refresh-btn" class="arxiv-tool-btn" style="padding:2px 10px;">Refresh</button>
+            <button id="dpr-workflow-close-btn" class="arxiv-tool-btn" style="padding:2px 6px;">Close</button>
           </div>
         </div>
         <div id="dpr-workflow-body">
-          <div id="dpr-workflow-status" style="font-size:12px; color:#666; margin-bottom:10px;">准备就绪。</div>
-          <div style="font-weight:600; font-size:13px; margin-bottom:6px;">最近运行（各取 3 条）</div>
+          <div id="dpr-workflow-status" style="font-size:12px; color:#666; margin-bottom:10px;">Ready.</div>
+          <div style="font-weight:600; font-size:13px; margin-bottom:6px;">Recent Runs (3 Each)</div>
           <div id="dpr-workflow-recent" style="font-size:12px; color:#333; border:1px solid #eee; border-radius:8px; background:#fff; padding:10px; margin-bottom:12px;">
-            <div style="color:#999;">加载中...</div>
+            <div style="color:#999;">Loading...</div>
           </div>
-          <div style="font-weight:600; font-size:13px; margin-bottom:6px;">执行过程</div>
+          <div style="font-weight:600; font-size:13px; margin-bottom:6px;">Execution</div>
           <div id="dpr-workflow-runs" style="font-size:12px; color:#333; border:1px solid #eee; border-radius:8px; background:#fff; padding:10px; min-height:120px;">
-            <div style="color:#999;">尚未触发工作流。</div>
+            <div style="color:#999;">No workflow has been triggered yet.</div>
           </div>
         </div>
       </div>
@@ -451,7 +451,7 @@ window.DPRWorkflowRunner = (function () {
         } else if (r && r.owner && r.repo && r.runId) {
           refreshRun(r.owner, r.repo, r.runId);
         } else {
-          setStatus('暂无可刷新的运行记录。', '#666');
+          setStatus('No run records to refresh.', '#666');
         }
       });
     }
@@ -533,7 +533,7 @@ window.DPRWorkflowRunner = (function () {
         return `
           <div class="dpr-wf-recent-block">
             <div class="dpr-wf-recent-block-title">${escapeHtml(wf.name)}</div>
-            <div style="color:#c90;">当前仓库不是 GitHub Fork，已禁用上游同步。</div>
+            <div style="color:#c90;">This repository is not a GitHub fork. Upstream sync is disabled.</div>
           </div>
         `;
       }
@@ -568,7 +568,7 @@ window.DPRWorkflowRunner = (function () {
       return `
         <div class="dpr-wf-recent-block">
           <div class="dpr-wf-recent-block-title">${escapeHtml(wf.name)}</div>
-          ${lines || '<div style="color:#999;">暂无运行记录</div>'}
+          ${lines || '<div style="color:#999;">No run records</div>'}
         </div>
       `;
     }).join('');
@@ -587,7 +587,7 @@ window.DPRWorkflowRunner = (function () {
           .forEach((n) => n.classList.remove('is-active'));
         btn.classList.add('is-active');
         selectedRun = { owner, repo, runId, token: loadGithubToken() };
-        setStatus(`正在加载运行详情：run_id=${runId}`, '#666', { waiting: true });
+        setStatus(`Loading run details: run_id=${runId}`, '#666', { waiting: true });
         await refreshRun(owner, repo, runId);
         refreshTimer = setInterval(() => {
           if (!selectedRun) return;
@@ -604,7 +604,7 @@ window.DPRWorkflowRunner = (function () {
     if (!token) {
       recentEl.classList.remove('is-loading');
       recentEl.innerHTML =
-        '<div style="color:#c00;">未检测到 GitHub Token，无法加载最近运行记录。</div>';
+        '<div style="color:#c00;">No GitHub Token detected; cannot load recent runs.</div>';
       return;
     }
 
@@ -612,15 +612,15 @@ window.DPRWorkflowRunner = (function () {
       const repoContext = await resolveRepoContext(token);
       const { owner, repo } = repoContext;
       if (!owner || !repo) {
-        renderRecentRuns(owner, repo, null, '无法推断目标仓库，无法加载最近运行记录。');
+        renderRecentRuns(owner, repo, null, 'Cannot infer the target repository; cannot load recent runs.');
         return;
       }
 
       const hasRendered = !!recentEl.querySelector('.dpr-wf-recent-block');
       if (!hasRendered) {
-        recentEl.innerHTML = '<div style="color:#999;">正在加载最近运行记录...</div>';
+        recentEl.innerHTML = '<div style="color:#999;">Loading recent runs...</div>';
       } else {
-        // 刷新时不要清空现有内容，避免“闪一下再出现”的观感
+        // Refresh时不要清空现有内容，避免“闪一下再出现”的观感
         recentEl.classList.add('is-loading');
       }
       const byWorkflow = {};
@@ -637,7 +637,7 @@ window.DPRWorkflowRunner = (function () {
         if (!res.ok) {
           const txt = await res.text().catch(() => '');
           throw new Error(
-            `读取最近运行失败(${wfId})：HTTP ${res.status} ${res.statusText} - ${txt}`,
+            `Failed to read recent runs (${wfId}): HTTP ${res.status} ${res.statusText} - ${txt}`,
           );
         }
         const data = await res.json();
@@ -700,7 +700,7 @@ window.DPRWorkflowRunner = (function () {
     const wf = workflow || {};
     const workflowFile = String(wf.id || '');
     if (!workflowFile) {
-      setStatus('工作流配置缺失，无法触发。', '#c00');
+      setStatus('Workflow configuration is missing; cannot trigger.', '#c00');
       return;
     }
     const dynamicInputs = { ...(wf.dispatchInputs || {}) };
@@ -719,39 +719,39 @@ window.DPRWorkflowRunner = (function () {
       } catch (e) {
         console.error(e);
         const msg = e.message || String(e);
-        setStatus(`本地触发失败：${msg}`, '#c00');
-        runsEl.innerHTML = `<div style="color:#c00;">${escapeHtml(msg)}<br/>请确认本地后端已启动：<code>scripts/local_debug.sh</code> 或 <code>python src/local_debug_server.py --port 8567</code></div>`;
+        setStatus(`Local trigger failed: ${msg}`, '#c00');
+        runsEl.innerHTML = `<div style="color:#c00;">${escapeHtml(msg)}<br/>Confirm the local backend is running: <code>scripts/local_debug.sh</code> or <code>python src/local_debug_server.py --port 8567</code></div>`;
         return;
       }
     }
     const token = loadGithubToken();
     if (!token) {
-      setStatus('未检测到 GitHub Token：请在“密钥配置”或“GitHub Token”处完成配置。', '#c00');
+      setStatus('No GitHub Token detected. Configure it in Secrets or GitHub Token.', '#c00');
       return;
     }
     const repoContext = await resolveRepoContext(token);
     const { owner, repo } = repoContext;
     if (!owner || !repo) {
-      setStatus('无法推断目标仓库：请确认 GitHub Token 有效，或使用 xxx.github.io/仓库名/ 访问。', '#c00');
+      setStatus('Cannot infer the target repository. Check that the GitHub Token is valid, or open xxx.github.io/repo-name/.', '#c00');
       return;
     }
     if (wf.key === 'sync' && repoContext.isFork === false) {
-      setStatus('当前仓库不是 GitHub Fork，无法使用上游同步。', '#c00');
+      setStatus('This repository is not a GitHub fork, so upstream sync cannot be used.', '#c00');
       runsEl.innerHTML =
-        '<div style="color:#c00;">当前仓库不是 Fork 仓库，Upstream Sync 不会运行。</div>' +
-        `<div style="margin-top:8px;"><a class="arxiv-tool-btn" style="padding:6px 10px; text-decoration:none;" target="_blank" href="https://github.com/${owner}/${repo}/fork">前往 Fork 当前仓库</a></div>`;
+        '<div style="color:#c00;">This repository is not a fork. Upstream Sync will not run.</div>' +
+        `<div style="margin-top:8px;"><a class="arxiv-tool-btn" style="padding:6px 10px; text-decoration:none;" target="_blank" href="https://github.com/${owner}/${repo}/fork">Fork This Repository</a></div>`;
       return;
     }
 
-    setStatus(`正在检查工作流状态：${wf.name || workflowFile} ...`, '#666', { waiting: true });
-    runsEl.innerHTML = '<div style="color:#999;">正在检查是否有运行中的工作流...</div>';
+    setStatus(`Checking workflow status: ${wf.name || workflowFile} ...`, '#666', { waiting: true });
+    runsEl.innerHTML = '<div style="color:#999;">Checking for running workflows...</div>';
     stopPolling();
     activeRun = null;
 
     try {
-      // 检查是否有正在运行中的同名工作流（防止误触重复触发）
+      // 检查是否有正在In Progress的同名工作流（防止误触重复触发）
       const activeStatuses = new Set(['queued', 'in_progress', 'waiting']);
-      const statusZhMap = { queued: '排队中', in_progress: '运行中', waiting: '等待中' };
+      const statusZhMap = { queued: 'Queued', in_progress: 'In Progress', waiting: 'Waiting' };
       const checkUrl = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(
         workflowFile,
       )}/runs?per_page=5`;
@@ -765,18 +765,18 @@ window.DPRWorkflowRunner = (function () {
           const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${r.id}`;
           const statusText = statusZhMap[r.status] || r.status;
           setStatus(
-            `已有正在运行的工作流（#${r.run_number || r.id}，状态：${statusText}），请等待完成后再触发。`,
+            `A workflow is already running (#${r.run_number || r.id}, status: ${statusText}). Wait for it to finish before triggering again.`,
             '#c00',
           );
           runsEl.innerHTML =
-            `<div style="color:#c00;">同一时间只允许运行一个该工作流实例，请等待当前运行结束。</div>` +
-            `<div style="margin-top:8px;"><a class="arxiv-tool-btn" style="padding:6px 10px; text-decoration:none;" target="_blank" href="${runUrl}">查看当前运行</a></div>`;
+            `<div style="color:#c00;">Only one instance of this workflow can run at a time. Wait for the current run to finish.</div>` +
+            `<div style="margin-top:8px;"><a class="arxiv-tool-btn" style="padding:6px 10px; text-decoration:none;" target="_blank" href="${runUrl}">View Current Run</a></div>`;
           return;
         }
       }
 
-      setStatus(`正在触发工作流：${wf.name || workflowFile} ...`, '#666', { waiting: true });
-      runsEl.innerHTML = '<div style="color:#999;">正在触发，请稍候...</div>';
+      setStatus(`Triggering workflow: ${wf.name || workflowFile} ...`, '#666', { waiting: true });
+      runsEl.innerHTML = '<div style="color:#999;">Triggering, please wait...</div>';
 
       const createdAt = new Date();
 
@@ -799,14 +799,14 @@ window.DPRWorkflowRunner = (function () {
       if (!res.ok) {
         const txt = await res.text().catch(() => '');
         if (res.status === 422 && txt.includes('disabled workflow')) {
-          const err = new Error('触发失败：该 Workflow 当前处于禁用状态，请先前往 Actions 页面启用该工作流。');
+          const err = new Error('Trigger failed: this workflow is disabled. Enable it on the Actions page first.');
           err.workflowEnableUrl = `https://github.com/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflowFile)}`;
           throw err;
         }
-        throw new Error(`触发失败：HTTP ${res.status} ${res.statusText} - ${txt}`);
+        throw new Error(`Trigger failed: HTTP ${res.status} ${res.statusText} - ${txt}`);
       }
 
-      setStatus('已触发，正在等待运行记录创建...', '#666', { waiting: true });
+      setStatus('Triggered. Waiting for the run record...', '#666', { waiting: true });
 
       // 轮询找到本次 dispatch 对应的 run
       const lookup = async () => {
@@ -816,7 +816,7 @@ window.DPRWorkflowRunner = (function () {
         const runsRes = await ghFetch(token, runsUrl);
         if (!runsRes.ok) {
           const txt = await runsRes.text().catch(() => '');
-          throw new Error(`读取 workflow runs 失败：HTTP ${runsRes.status} ${runsRes.statusText} - ${txt}`);
+          throw new Error(`Failed to read workflow runs: HTTP ${runsRes.status} ${runsRes.statusText} - ${txt}`);
         }
         const data = await runsRes.json();
         const list = Array.isArray(data.workflow_runs) ? data.workflow_runs : [];
@@ -842,14 +842,14 @@ window.DPRWorkflowRunner = (function () {
       }
 
       if (!run || !run.id) {
-        setStatus('已触发，但未能在短时间内找到对应的运行记录。建议打开 Actions 页面查看。', '#c00');
-        runsEl.innerHTML = `<div style="color:#666;">请在 GitHub Actions 查看：<a target="_blank" href="https://github.com/${owner}/${repo}/actions">打开 Actions</a></div>`;
+        setStatus('Triggered, but the matching run record was not found quickly. Check the Actions page.', '#c00');
+        runsEl.innerHTML = `<div style="color:#666;">Check GitHub Actions: <a target="_blank" href="https://github.com/${owner}/${repo}/actions">Open Actions</a></div>`;
         return;
       }
 
       activeRun = { owner, repo, runId: run.id, token };
       selectedRun = activeRun;
-      setStatus(`运行已创建：run_id=${run.id}，开始拉取进度...`, '#080', { waiting: true });
+      setStatus(`Run created: run_id=${run.id}, loading progress...`, '#080', { waiting: true });
       await refreshRun(owner, repo, run.id);
 
       refreshTimer = setInterval(() => {
@@ -858,16 +858,16 @@ window.DPRWorkflowRunner = (function () {
         refreshRun(r.owner, r.repo, r.runId);
       }, 5000);
 
-      // 触发后刷新最近运行列表
+      // 触发后Refresh最近运行列表
       loadRecentRuns();
     } catch (e) {
       console.error(e);
       const msg = e.message || String(e);
-      setStatus(`触发失败：${msg}`, '#c00');
+      setStatus(`Trigger failed: ${msg}`, '#c00');
       if (e.workflowEnableUrl) {
         runsEl.innerHTML =
           `<div style="color:#c00;">${escapeHtml(msg)}<br/>` +
-          `👉 <a href="${e.workflowEnableUrl}" target="_blank" style="color:#1a73e8;">前往 Actions 页面启用工作流</a></div>`;
+          `👉 <a href="${e.workflowEnableUrl}" target="_blank" style="color:#1a73e8;">Open Actions to Enable Workflow</a></div>`;
       } else {
         runsEl.innerHTML = `<div style="color:#c00;">${escapeHtml(msg)}</div>`;
       }
@@ -918,7 +918,7 @@ window.DPRWorkflowRunner = (function () {
             <div class="dpr-wf-job-meta">
               <span class="dpr-wf-job-meta-text">${escapeHtml(j.status || '')}${j.conclusion ? ` / ${escapeHtml(j.conclusion)}` : ''}</span>
             </div>
-            <div class="dpr-wf-steps">${stepLines || '<div style="color:#999;">暂无步骤信息</div>'}</div>
+            <div class="dpr-wf-steps">${stepLines || '<div style="color:#999;">No step information</div>'}</div>
           </div>
         `;
       })
@@ -938,10 +938,10 @@ window.DPRWorkflowRunner = (function () {
           </div>
         </div>
         <div style="flex-shrink:0; display:flex; gap:8px;">
-          <a class="arxiv-tool-btn" style="padding:6px 10px; text-decoration:none;" target="_blank" href="${runUrl}">打开 Actions</a>
+          <a class="arxiv-tool-btn" style="padding:6px 10px; text-decoration:none;" target="_blank" href="${runUrl}">Open Actions</a>
         </div>
       </div>
-      ${jobHtml || '<div style="color:#999;">暂无 Job 信息</div>'}
+      ${jobHtml || '<div style="color:#999;">No job information</div>'}
     `;
   };
 
@@ -954,7 +954,7 @@ window.DPRWorkflowRunner = (function () {
       const res = await ghFetch(token, runUrl);
       if (!res.ok) {
         const txt = await res.text().catch(() => '');
-        throw new Error(`读取 run 失败：HTTP ${res.status} ${res.statusText} - ${txt}`);
+        throw new Error(`Failed to read run: HTTP ${res.status} ${res.statusText} - ${txt}`);
       }
       const run = await res.json();
       const stateKey = `${run.status || ''}/${run.conclusion || ''}`;
@@ -974,26 +974,26 @@ window.DPRWorkflowRunner = (function () {
       if (run.status === 'completed') {
         stopPolling();
         setStatus(
-          `运行已结束：${run.conclusion || 'completed'}`,
+          `Run finished: ${run.conclusion || 'completed'}`,
           run.conclusion === 'success' ? '#080' : '#c00',
         );
-        // run 状态结束后，刷新“最近运行”列表，确保 completed/success 等状态能及时反映
+        // run 状态结束后，Refresh“最近运行”列表，确保 completed/success 等状态能及时反映
         if (prevStateKey !== stateKey) {
           loadRecentRuns();
         }
       } else {
-        setStatus('运行中：每 5 秒自动刷新...', '#1565c0', { waiting: true });
+        setStatus('Running: refreshing every 5 seconds...', '#1565c0', { waiting: true });
       }
     } catch (e) {
       console.error(e);
-      setStatus(`刷新失败：${e.message || e}`, '#c00');
+      setStatus(`Refresh failed: ${e.message || e}`, '#c00');
     }
   };
 
   const runWorkflowByKey = async (workflowKey, extraInputs) => {
     const wf = getWorkflowByKey(workflowKey);
     if (!wf) {
-      setStatus('未找到对应的工作流配置。', '#c00');
+      setStatus('Matching workflow configuration not found.', '#c00');
       return;
     }
     open();
@@ -1043,7 +1043,7 @@ window.DPRWorkflowRunner = (function () {
     const normalizedYears = normalizeConferenceYears(years);
     if (!normalizedConference || !normalizedYears.length) {
       open();
-      setStatus('请先选择支持的会议和年份。', '#c00');
+      setStatus('Select a supported conference and year first.', '#c00');
       return false;
     }
     const extraInputs =

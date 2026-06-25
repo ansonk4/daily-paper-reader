@@ -1,0 +1,31 @@
+{
+  "name": "Joao Barros",
+  "role": "last_author",
+  "affiliation": "Department of Electrical and Computer Engineering",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=8443; Semantic Scholar paper_count=183",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Joao Barros",
+    "affiliations": [
+      "Department of Electrical and Computer Engineering"
+    ],
+    "author_row": "\\; Joao Barros"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Phoenix: Safe GitHub Issue Resolution via Multi-Agent LLMs",
+    "paper_year": "2026",
+    "name": "J. Barros",
+    "affiliations": [],
+    "paper_count": 183,
+    "citation_count": 8443,
+    "author_id": "143965919",
+    "lookup": "author_search"
+  }
+}

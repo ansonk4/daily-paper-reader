@@ -1,0 +1,46 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Qiqi Liu",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=1342; Semantic Scholar paper_count=27",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "MIDS: Detecting Stealthy Masquerade and Tampering Attacks on CAN Bus via Bidirectional Mamba",
+        "paper_year": "2026",
+        "name": "Qiqi Liu",
+        "affiliations": [],
+        "paper_count": 27,
+        "citation_count": 1342,
+        "author_id": "2154742071",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Limin Sun",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {}
+    }
+  ],
+  "author_rating_status": "fallback",
+  "rated_at": "2026-06-25T04:54:53.243821+00:00"
+}

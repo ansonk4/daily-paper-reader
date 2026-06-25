@@ -19,6 +19,7 @@ MODELSCOPE_ENDPOINT = "https://modelscope.cn/hf"
 _DEFAULT_RETRIES = 3
 _DEFAULT_HF_BACKOFF_RETRIES = 1
 _DEFAULT_REMOTE_TIMEOUT_SECONDS = 60
+_DEFAULT_REMOTE_EMBED_RETRIES = 3
 _DEFAULT_REMOTE_EMBED_ENDPOINT = os.getenv("DPR_EMBED_API_URL") or "https://zwwen.online/embed"
 # 当前服务使用固定 API key 接入。
 _DEFAULT_REMOTE_EMBED_API_KEY = os.getenv("DPR_EMBED_API_KEY") or "26932a86d772001af60cbd9d2c162bfda3a90e094f797f3d6806f6077478b27a"
@@ -72,6 +73,7 @@ class RemoteSentenceTransformer:
     self._log = log
     self._remote_available = True
     self._remote_disabled_reason = ""
+    self.remote_retries = max(int(os.getenv("DPR_EMBED_API_RETRIES") or _DEFAULT_REMOTE_EMBED_RETRIES), 1)
 
   @staticmethod
   def _normalize_endpoint(endpoint: str) -> str:
@@ -185,12 +187,28 @@ class RemoteSentenceTransformer:
 
       for chunk_index, chunk in enumerate(chunks, start=1):
         headers = self._headers()
-        response = requests.post(
-          self.endpoint,
-          headers=headers,
-          json={"texts": chunk},
-          timeout=self.timeout,
-        )
+        response = None
+        for attempt in range(1, self.remote_retries + 1):
+          try:
+            response = requests.post(
+              self.endpoint,
+              headers=headers,
+              json={"texts": chunk},
+              timeout=self.timeout,
+            )
+            if response.status_code < 500:
+              break
+            response.raise_for_status()
+          except requests.exceptions.RequestException:
+            if attempt >= self.remote_retries:
+              raise
+            self._log(
+              f"[WARN] 远程 embedding 批次失败，重试 {attempt}/{self.remote_retries}："
+              f"chunk={chunk_index}/{len(chunks)}"
+            )
+            time.sleep(min(2 ** (attempt - 1), 8))
+        if response is None:
+          raise RuntimeError("远程 embedding 请求未返回响应")
         if response.status_code == 401 and headers.get("Authorization"):
           self._log("[WARN] 远程 embedding 鉴权失败，自动回退为无鉴权请求重试一次。")
           headers = {

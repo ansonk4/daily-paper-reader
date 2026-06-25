@@ -1,0 +1,24 @@
+{
+  "name": "Roman Vainshtein",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=138; Semantic Scholar paper_count=11",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "RIFT-Bench: Dynamic Red-teaming For Agentic AI Systems",
+    "paper_year": "2026",
+    "name": "Roman Vainshtein",
+    "affiliations": [],
+    "paper_count": 11,
+    "citation_count": 138,
+    "author_id": "144493139",
+    "lookup": "author_search"
+  }
+}

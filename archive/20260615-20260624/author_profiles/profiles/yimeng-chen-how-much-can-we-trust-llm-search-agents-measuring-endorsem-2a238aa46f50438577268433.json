@@ -1,0 +1,23 @@
+{
+  "name": "Yimeng Chen",
+  "role": "first_author",
+  "affiliation": "1 Center of Excellence for Generative AI, KAUST; 2 Jilin University 3 Zhejiang University; 4 The Swiss AI Lab, IDSIA-USI/SUPSI 5 NNAISENSE",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yimeng Chen",
+    "affiliations": [
+      "1 Center of Excellence for Generative AI, KAUST",
+      "2 Jilin University 3 Zhejiang University",
+      "4 The Swiss AI Lab, IDSIA-USI/SUPSI 5 NNAISENSE"
+    ],
+    "author_row": "Yimeng Chen 1 , Zhe Ren 2 , Firas Laakom 1 , Yu Li 3 , Dandan Guo 2 , Jürgen Schmidhuber 1,4,5"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

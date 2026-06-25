@@ -1,0 +1,21 @@
+{
+  "name": "Wenzhi Chen",
+  "role": "last_author",
+  "affiliation": "Zhejiang University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Wenzhi Chen",
+    "affiliations": [
+      "Zhejiang University"
+    ],
+    "author_row": "Wenzhi Chen"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

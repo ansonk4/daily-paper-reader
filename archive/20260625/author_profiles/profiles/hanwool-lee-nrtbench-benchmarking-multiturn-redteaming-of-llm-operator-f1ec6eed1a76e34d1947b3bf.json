@@ -1,0 +1,21 @@
+{
+  "name": "Hanwool Lee",
+  "role": "first_author",
+  "affiliation": "AIM Intelligence",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Hanwool Lee",
+    "affiliations": [
+      "AIM Intelligence"
+    ],
+    "author_row": "Hanwool Lee"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

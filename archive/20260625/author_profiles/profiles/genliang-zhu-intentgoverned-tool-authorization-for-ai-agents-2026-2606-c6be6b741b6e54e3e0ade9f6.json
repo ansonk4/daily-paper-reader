@@ -1,0 +1,23 @@
+{
+  "name": "Genliang Zhu",
+  "role": "first_author",
+  "affiliation": "Accentrust; Georgia Institute of Technology 0.48 Chu Wang",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Genliang Zhu",
+    "affiliations": [
+      "Accentrust",
+      "Georgia Institute of Technology 0.48 Chu Wang",
+      "Accentrust"
+    ],
+    "author_row": "0.48 Genliang Zhu"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Qian Luo",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=30; Semantic Scholar paper_count=5",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "RoboLineage: Agent-Native Data Lifecycle Governance Across Robot Policy Iterations",
+    "paper_year": "2026",
+    "name": "Qian Luo",
+    "affiliations": [],
+    "paper_count": 5,
+    "citation_count": 30,
+    "author_id": "2074296000",
+    "lookup": "author_search"
+  }
+}

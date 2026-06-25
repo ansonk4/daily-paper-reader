@@ -1,0 +1,44 @@
+{
+  "name": "Tae-Hyun Oh",
+  "role": "last_author",
+  "affiliation": "School of Computing, KAIST; Korea Advanced Institute of Science and Technology; Kootenay Association for Science & Technology",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=2825; OpenAlex works_count=205; Semantic Scholar citation_count=3975; Semantic Scholar paper_count=95",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Tae-Hyun Oh",
+    "affiliations": [
+      "School of Computing, KAIST"
+    ],
+    "author_row": "quad Tae-Hyun Oh"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "TRAP: Benchmark for Task-completion and Resistance to Active Privacy-extraction",
+    "paper_year": "2026",
+    "name": "Tae-Hyun Oh",
+    "affiliations": [
+      "Korea Advanced Institute of Science and Technology",
+      "Kootenay Association for Science & Technology"
+    ],
+    "works_count": 205,
+    "cited_by_count": 2825,
+    "author_id": "https://openalex.org/A5078114111",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "TRAP: Benchmark for Task-completion and Resistance to Active Privacy-extraction",
+    "paper_year": "2026",
+    "name": "Tae-Hyun Oh",
+    "affiliations": [],
+    "paper_count": 95,
+    "citation_count": 3975,
+    "author_id": "66808667",
+    "lookup": "author_search"
+  }
+}

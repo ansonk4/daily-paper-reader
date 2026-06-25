@@ -1,0 +1,59 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Sheng Zhang",
+      "role": "first_author",
+      "affiliation": "Microsoft Research",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=7589; Semantic Scholar paper_count=271",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Sheng Zhang",
+        "affiliations": [
+          "Microsoft Research"
+        ],
+        "author_row": "Sheng Zhang"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Building Agent Harnesses for Scientific Curation from Multimodal Sources",
+        "paper_year": "2026",
+        "name": "S. Zhang",
+        "affiliations": [],
+        "paper_count": 271,
+        "citation_count": 7589,
+        "author_id": "40183413",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Hoifung Poon",
+      "role": "last_author",
+      "affiliation": "Microsoft Research",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Hoifung Poon",
+        "affiliations": [
+          "Microsoft Research"
+        ],
+        "author_row": "textbf Hoifung Poon"
+      },
+      "openalex": {},
+      "semantic_scholar": {}
+    }
+  ],
+  "rated_at": "2026-06-24T14:03:15.668358+00:00"
+}

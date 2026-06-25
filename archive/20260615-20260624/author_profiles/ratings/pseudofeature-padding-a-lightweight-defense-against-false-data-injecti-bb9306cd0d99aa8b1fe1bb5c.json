@@ -1,0 +1,57 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Farhin Farhad Riya",
+      "role": "first_author",
+      "affiliation": "University of Tennessee at Knoxville; University of Tennessee,Department of Electrical Engineering and Computer Science",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "openalex",
+      "openalex": {
+        "source": "openalex",
+        "paper_title": "Pseudo-Feature Padding: A Lightweight Defense Against False Data Injection in Power Grids",
+        "paper_year": 2025,
+        "name": "Farhin Farhad Riya",
+        "affiliations": [
+          "University of Tennessee at Knoxville",
+          "University of Tennessee,Department of Electrical Engineering and Computer Science"
+        ],
+        "works_count": null,
+        "cited_by_count": null,
+        "author_id": "https://openalex.org/A5077288403"
+      },
+      "semantic_scholar": {}
+    },
+    {
+      "name": "Kevin Tomsovic",
+      "role": "last_author",
+      "affiliation": "Clemson University; Clemson University,Department of Electrical and Computer Engineering,South Carolina",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "openalex",
+      "openalex": {
+        "source": "openalex",
+        "paper_title": "Pseudo-Feature Padding: A Lightweight Defense Against False Data Injection in Power Grids",
+        "paper_year": 2025,
+        "name": "Kevin Tomsovic",
+        "affiliations": [
+          "Clemson University",
+          "Clemson University,Department of Electrical and Computer Engineering,South Carolina"
+        ],
+        "works_count": null,
+        "cited_by_count": null,
+        "author_id": "https://openalex.org/A5023434400"
+      },
+      "semantic_scholar": {}
+    }
+  ],
+  "rated_at": "2026-06-24T09:30:48.930833+00:00"
+}

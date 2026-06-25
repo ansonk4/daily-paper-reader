@@ -1,0 +1,23 @@
+{
+  "name": "Mert Nakıp",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=524; Semantic Scholar paper_count=54",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "A predictive neural network architecture for early detection of low-rate cyberattacks",
+    "paper_year": 2026,
+    "name": "M. Nakıp",
+    "affiliations": [],
+    "paper_count": 54,
+    "citation_count": 524,
+    "author_id": "1500391660"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Yali Du",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=1193; Semantic Scholar paper_count=51",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Safe and Generalizable Hierarchical Multi-Agent RL via Constraint Manifold Control",
+    "paper_year": "2026",
+    "name": "Yali Du",
+    "affiliations": [],
+    "paper_count": 51,
+    "citation_count": 1193,
+    "author_id": "145824830",
+    "lookup": "author_search"
+  }
+}

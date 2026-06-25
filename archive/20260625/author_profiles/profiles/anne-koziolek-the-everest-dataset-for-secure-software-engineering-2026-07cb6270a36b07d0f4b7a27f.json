@@ -1,0 +1,21 @@
+{
+  "name": "Anne Koziolek",
+  "role": "last_author",
+  "affiliation": "Karlsruhe Institute of Technology",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Anne Koziolek",
+    "affiliations": [
+      "Karlsruhe Institute of Technology"
+    ],
+    "author_row": "Anne Koziolek"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

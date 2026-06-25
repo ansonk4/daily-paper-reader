@@ -1,0 +1,65 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Anmol Goel",
+      "role": "first_author",
+      "affiliation": "Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science; TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE; tabular c https://github.com/UKPLab/arxiv2026-agentcibench \\ https://github.com/UKPLab/arxiv2026-agentcibench; [0.05cm] https://hf.co/datasets/UKPLab/AgentCIBench \\ https://hf.co/datasets/UKPLab/AgentCIBench tabular",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Anmol Goel",
+        "affiliations": [
+          "Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science",
+          "TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE",
+          "tabular c https://github.com/UKPLab/arxiv2026-agentcibench \\ https://github.com/UKPLab/arxiv2026-agentcibench",
+          "[0.05cm] https://hf.co/datasets/UKPLab/AgentCIBench \\ https://hf.co/datasets/UKPLab/AgentCIBench tabular"
+        ],
+        "author_row": "Anmol Goel and Iryna Gurevych"
+      },
+      "openalex": {},
+      "semantic_scholar": {}
+    },
+    {
+      "name": "Iryna Gurevych",
+      "role": "last_author",
+      "affiliation": "Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science; TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE; tabular c https://github.com/UKPLab/arxiv2026-agentcibench \\ https://github.com/UKPLab/arxiv2026-agentcibench; [0.05cm] https://hf.co/datasets/UKPLab/AgentCIBench \\ https://hf.co/datasets/UKPLab/AgentCIBench tabular",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=46287; Semantic Scholar paper_count=513",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Iryna Gurevych",
+        "affiliations": [
+          "Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science",
+          "TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE",
+          "tabular c https://github.com/UKPLab/arxiv2026-agentcibench \\ https://github.com/UKPLab/arxiv2026-agentcibench",
+          "[0.05cm] https://hf.co/datasets/UKPLab/AgentCIBench \\ https://hf.co/datasets/UKPLab/AgentCIBench tabular"
+        ],
+        "author_row": "Anmol Goel and Iryna Gurevych"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?",
+        "paper_year": "2026",
+        "name": "Iryna Gurevych",
+        "affiliations": [],
+        "paper_count": 513,
+        "citation_count": 46287,
+        "author_id": "1730400",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T12:50:49.634755+00:00"
+}

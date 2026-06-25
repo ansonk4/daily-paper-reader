@@ -1,0 +1,32 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Richard Kang",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=3418; Semantic Scholar paper_count=55",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Governed AI-Assisted Engineering: Graduated Human Oversight for Agentic Code Generation in Regulated Domains",
+        "paper_year": "2026",
+        "name": "Richard W. Kang",
+        "affiliations": [],
+        "paper_count": 55,
+        "citation_count": 3418,
+        "author_id": "6598875",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "author_rating_status": "fallback",
+  "rated_at": "2026-06-25T04:49:09.297129+00:00"
+}

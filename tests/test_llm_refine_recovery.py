@@ -198,6 +198,36 @@ class LlmRefineRecoveryTest(unittest.TestCase):
         self.assertNotIn("<= 60 Chinese characters", user_content)
         self.assertTrue(user_content.rstrip().endswith("Output must be strict JSON only, no markdown, no fences, no extra text."))
 
+    def test_apply_author_ratings_recomputes_final_score(self):
+        class FakeRater:
+            def rate_paper(self, paper):
+                return {
+                    "author_score": 9,
+                    "author_rating_explanation": "Verified elite lab affiliation.",
+                    "author_profiles": [
+                        {
+                            "name": "Ada",
+                            "role": "first_author",
+                            "affiliation": "OpenAI",
+                            "confidence": "high",
+                            "evidence_source": "mock",
+                        }
+                    ],
+                }
+
+        merged = {
+            "p-1": {
+                "paper_id": "p-1",
+                "relevance_score": 8,
+                "score": 8,
+            }
+        }
+        self.mod.apply_author_ratings(merged, {"p-1": {"id": "p-1", "title": "T"}}, FakeRater())
+        self.assertEqual(merged["p-1"]["relevance_score"], 8)
+        self.assertEqual(merged["p-1"]["author_score"], 9)
+        self.assertEqual(merged["p-1"]["score"], 8.4)
+        self.assertEqual(merged["p-1"]["author_profiles"][0]["affiliation"], "OpenAI")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,21 @@
+{
+  "name": "Andrés Murillo",
+  "role": "last_author",
+  "affiliation": "Fujitsu Research of Europe",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Andrés Murillo",
+    "affiliations": [
+      "Fujitsu Research of Europe"
+    ],
+    "author_row": "Andr\\'es Murillo"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

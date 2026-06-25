@@ -1,0 +1,41 @@
+{
+  "name": "Ruijie Meng",
+  "role": "last_author",
+  "affiliation": "University of Jordan; Jordan Hospital; Department of Clinical Laboratories and Forensic Medicine, Jordan University Hospital, Amman 11942, Jordan; Department of Pathology, Microbiology and Forensic Medicine, School of Medicine, The University of Jordan, Amman 11942, Jordan",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=407; OpenAlex works_count=32; Semantic Scholar citation_count=474; Semantic Scholar paper_count=18",
+  "confidence": "medium",
+  "evidence_source": "openalex, semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Understanding the (In)Security of Vibe-Coded Applications",
+    "paper_year": "2026",
+    "name": "Ruijie Meng",
+    "affiliations": [
+      "University of Jordan",
+      "Jordan Hospital",
+      "Department of Clinical Laboratories and Forensic Medicine, Jordan University Hospital, Amman 11942, Jordan",
+      "Department of Pathology, Microbiology and Forensic Medicine, School of Medicine, The University of Jordan, Amman 11942, Jordan",
+      "National University of Singapore",
+      "Max Planck Institute for Security and Privacy"
+    ],
+    "works_count": 32,
+    "cited_by_count": 407,
+    "author_id": "https://openalex.org/A5053022213",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Understanding the (In)Security of Vibe-Coded Applications",
+    "paper_year": "2026",
+    "name": "Ruijie Meng",
+    "affiliations": [],
+    "paper_count": 18,
+    "citation_count": 474,
+    "author_id": "13582702",
+    "lookup": "author_search"
+  }
+}

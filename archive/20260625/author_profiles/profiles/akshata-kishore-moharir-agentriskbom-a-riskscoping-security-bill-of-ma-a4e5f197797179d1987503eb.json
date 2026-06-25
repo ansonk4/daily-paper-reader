@@ -1,0 +1,26 @@
+{
+  "name": "Akshata Kishore Moharir",
+  "role": "last_author",
+  "affiliation": "Microsoft",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=19; Semantic Scholar paper_count=19",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "AgentRiskBOM: A Risk-Scoping Security Bill of Materials for Agentic AI Systems",
+    "paper_year": "2026",
+    "name": "Akshata Kishore Moharir",
+    "affiliations": [
+      "Microsoft"
+    ],
+    "paper_count": 19,
+    "citation_count": 19,
+    "author_id": "1961500932",
+    "lookup": "author_search"
+  }
+}

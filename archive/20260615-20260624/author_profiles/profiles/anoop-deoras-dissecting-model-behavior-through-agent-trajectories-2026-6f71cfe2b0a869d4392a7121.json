@@ -1,0 +1,31 @@
+{
+  "name": "Anoop Deoras",
+  "role": "last_author",
+  "affiliation": "AWS AI Labs",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=2990; Semantic Scholar paper_count=57",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Anoop Deoras",
+    "affiliations": [
+      "AWS AI Labs"
+    ],
+    "author_row": "Gaurav Gupta Vatshank Chaturvedi Jun Huan Anoop Deoras"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Dissecting model behavior through agent trajectories",
+    "paper_year": "2026",
+    "name": "Anoop Deoras",
+    "affiliations": [],
+    "paper_count": 57,
+    "citation_count": 2990,
+    "author_id": "1713801",
+    "lookup": "author_search"
+  }
+}

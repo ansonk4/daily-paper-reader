@@ -1,0 +1,31 @@
+{
+  "name": "Tianhao Chen",
+  "role": "first_author",
+  "affiliation": "Duke University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=316; Semantic Scholar paper_count=20",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Tianhao Chen",
+    "affiliations": [
+      "Duke University"
+    ],
+    "author_row": "Tianhao Chen , Zhengyuan Jiang , Yuepeng Hu, Yebei Gou, Neil Zhenqiang Gong"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Dynamic Malicious Skills in Agentic AI",
+    "paper_year": "2026",
+    "name": "Tianhao Chen",
+    "affiliations": [],
+    "paper_count": 20,
+    "citation_count": 316,
+    "author_id": "1588210610",
+    "lookup": "author_search"
+  }
+}

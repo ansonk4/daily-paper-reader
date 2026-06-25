@@ -1,0 +1,26 @@
+{
+  "name": "Zhihao Cui",
+  "role": "first_author",
+  "affiliation": "Columbia University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=2535; OpenAlex works_count=49",
+  "confidence": "medium",
+  "evidence_source": "openalex",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "StepGuard: Guarding Web Navigation via Single-Step Calibration",
+    "paper_year": "2026",
+    "name": "Zhi‐Hao Cui",
+    "affiliations": [
+      "Columbia University"
+    ],
+    "works_count": 49,
+    "cited_by_count": 2535,
+    "author_id": "https://openalex.org/A5069397423",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

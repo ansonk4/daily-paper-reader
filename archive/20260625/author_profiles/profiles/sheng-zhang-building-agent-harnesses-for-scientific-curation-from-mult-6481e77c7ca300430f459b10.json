@@ -1,0 +1,21 @@
+{
+  "name": "Sheng Zhang",
+  "role": "first_author",
+  "affiliation": "Microsoft Research",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Sheng Zhang",
+    "affiliations": [
+      "Microsoft Research"
+    ],
+    "author_row": "Sheng Zhang"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

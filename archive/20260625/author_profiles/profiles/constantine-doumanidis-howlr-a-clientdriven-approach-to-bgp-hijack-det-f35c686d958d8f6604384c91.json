@@ -1,0 +1,24 @@
+{
+  "name": "Constantine Doumanidis",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=112; Semantic Scholar paper_count=16",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "HOWLR: A Client-Driven Approach to BGP Hijack Detection",
+    "paper_year": "2026",
+    "name": "Constantine Doumanidis",
+    "affiliations": [],
+    "paper_count": 16,
+    "citation_count": 112,
+    "author_id": "84225013",
+    "lookup": "author_search"
+  }
+}

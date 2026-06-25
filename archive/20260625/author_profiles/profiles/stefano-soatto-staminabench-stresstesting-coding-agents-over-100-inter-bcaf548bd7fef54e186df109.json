@@ -1,0 +1,21 @@
+{
+  "name": "Stefano Soatto",
+  "role": "last_author",
+  "affiliation": "[0.5em] AWS Agentic AI",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Stefano Soatto",
+    "affiliations": [
+      "[0.5em] AWS Agentic AI"
+    ],
+    "author_row": "Vlad Sobal Shuo Yang Yuting Zhang Wei Xia Stefano Soatto"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

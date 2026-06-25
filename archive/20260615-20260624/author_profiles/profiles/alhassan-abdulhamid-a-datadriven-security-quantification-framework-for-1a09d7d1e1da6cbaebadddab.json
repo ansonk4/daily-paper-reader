@@ -1,0 +1,34 @@
+{
+  "name": "Alhassan Abdulhamid",
+  "role": "first_author",
+  "affiliation": "Sohag Kabir e2; Ibrahim Ghafir e3; Ci Lei e4; Omar Albahbouh",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=65; Semantic Scholar paper_count=9",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Alhassan Abdulhamid",
+    "affiliations": [
+      "Sohag Kabir e2",
+      "Ibrahim Ghafir e3",
+      "Ci Lei e4",
+      "Omar Albahbouh"
+    ],
+    "author_row": "Alhassan Abdulhamid e1"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "A data-driven security quantification framework for IoT-based systems",
+    "paper_year": "2026",
+    "name": "Alhassan Abdulhamid",
+    "affiliations": [],
+    "paper_count": 9,
+    "citation_count": 65,
+    "author_id": "2198763228",
+    "lookup": "author_search"
+  }
+}

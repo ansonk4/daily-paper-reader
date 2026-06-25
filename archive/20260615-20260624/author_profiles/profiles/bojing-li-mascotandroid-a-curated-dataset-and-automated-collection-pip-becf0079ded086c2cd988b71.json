@@ -1,0 +1,22 @@
+{
+  "name": "Bojing Li",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "openalex",
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "MASCOT-Android: A Curated Dataset and Automated Collection Pipeline for Android Malware Source Code Specimens",
+    "paper_year": 2026,
+    "name": "Bojing Li",
+    "affiliations": [],
+    "works_count": null,
+    "cited_by_count": null,
+    "author_id": "https://openalex.org/A5138912647"
+  },
+  "semantic_scholar": {}
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Yincheng Zhou",
+  "role": "first_author",
+  "affiliation": "Shanghang Zhang 2",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yincheng Zhou",
+    "affiliations": [
+      "Shanghang Zhang 2"
+    ],
+    "author_row": "Yincheng Zhou"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

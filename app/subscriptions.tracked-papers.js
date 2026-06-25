@@ -20,7 +20,7 @@ window.SubscriptionsTrackedPapers = (function () {
     if (!trackedListEl) return;
     if (!items || !items.length) {
       trackedListEl.innerHTML =
-        '<div style="color:#999;">暂无订阅论文，可通过下方搜索添加。</div>';
+        '<div style="color:#999;">No tracked papers yet. Add one using search below.</div>';
       return;
     }
     trackedListEl.innerHTML = '';
@@ -47,7 +47,7 @@ window.SubscriptionsTrackedPapers = (function () {
           <div style="font-size:12px;color:#666;">
             ${
               item.published
-                ? '发表于：' + escapeHtml(item.published)
+                ? 'Published: ' + escapeHtml(item.published)
                 : ''
             }
             ${
@@ -61,7 +61,7 @@ window.SubscriptionsTrackedPapers = (function () {
         </div>
         <button data-id="${
           item.id
-        }" class="arxiv-tracked-del" style="flex-shrink:0;border:none;background:none;color:#c00;font-size:11px;cursor:pointer;padding:2px 4px;">取消订阅</button>
+        }" class="arxiv-tracked-del" style="flex-shrink:0;border:none;background:none;color:#c00;font-size:11px;cursor:pointer;padding:2px 4px;">Unsubscribe</button>
       `;
       trackedListEl.appendChild(row);
     });
@@ -79,7 +79,7 @@ window.SubscriptionsTrackedPapers = (function () {
             !window.SubscriptionsManager ||
             !window.SubscriptionsManager.updateDraftConfig
           ) {
-            throw new Error('缺少本地草稿更新能力');
+            throw new Error('Local draft update capability is missing');
           }
           window.SubscriptionsManager.updateDraftConfig((cfg) => {
             const next = cfg || {};
@@ -99,7 +99,7 @@ window.SubscriptionsTrackedPapers = (function () {
         } catch (err) {
           console.error(err);
           if (msgEl) {
-            msgEl.textContent = '取消订阅失败，请稍后重试';
+            msgEl.textContent = 'Failed to unsubscribe. Try again later.';
             msgEl.style.color = '#c00';
           }
         }

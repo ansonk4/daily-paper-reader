@@ -1,9 +1,9 @@
-# Zotero 使用说明（待补充）
+# Zotero Usage (TODO)
 
-该页面为占位说明页。
+This is a placeholder page.
 
-你后续可在此补充：
+You can add later:
 
-- Connector 安装步骤
-- Better Notes 安装与配置
-- `others/actions-zotero.yml` 使用方法
+- Connector installation steps
+- Better Notes installation and configuration
+- `others/actions-zotero.yml` usage

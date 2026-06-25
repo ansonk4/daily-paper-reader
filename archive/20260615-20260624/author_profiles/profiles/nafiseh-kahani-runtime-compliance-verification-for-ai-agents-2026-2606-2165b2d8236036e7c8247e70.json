@@ -1,0 +1,22 @@
+{
+  "name": "Nafiseh Kahani",
+  "role": "first_author",
+  "affiliation": "Masoud Barati 1 0000-0001-7829-2240; Diana Addae 1 0009-0009-8833-0488",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Nafiseh Kahani",
+    "affiliations": [
+      "Masoud Barati 1 0000-0001-7829-2240",
+      "Diana Addae 1 0009-0009-8833-0488"
+    ],
+    "author_row": "Nafiseh Kahani 1 0000-0002-9322-0699"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

@@ -1,0 +1,31 @@
+{
+  "name": "Wenbo Jiang",
+  "role": "last_author",
+  "affiliation": "University of Electronic Science and Technology of China",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=2390; Semantic Scholar paper_count=48",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Wenbo Jiang",
+    "affiliations": [
+      "University of Electronic Science and Technology of China"
+    ],
+    "author_row": "Kunlan Xiang , Haomiao Yang , Wenbo Jiang"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Beyond Native Success: Auditing Deployment-Interface Exposure of CLIP Backdoors",
+    "paper_year": "2026",
+    "name": "Wenbo Jiang",
+    "affiliations": [],
+    "paper_count": 48,
+    "citation_count": 2390,
+    "author_id": "47897137",
+    "lookup": "author_search"
+  }
+}

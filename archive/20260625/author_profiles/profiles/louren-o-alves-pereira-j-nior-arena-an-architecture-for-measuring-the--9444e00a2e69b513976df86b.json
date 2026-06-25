@@ -1,0 +1,24 @@
+{
+  "name": "Lourenço Alves Pereira Júnior",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=115; Semantic Scholar paper_count=4",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "ARENA: An Architecture for Measuring the Transferability of Autonomous Cyber Defense",
+    "paper_year": "2026",
+    "name": "Lourenço Alves Pereira Júnior",
+    "affiliations": [],
+    "paper_count": 4,
+    "citation_count": 115,
+    "author_id": "2284265146",
+    "lookup": "author_search"
+  }
+}

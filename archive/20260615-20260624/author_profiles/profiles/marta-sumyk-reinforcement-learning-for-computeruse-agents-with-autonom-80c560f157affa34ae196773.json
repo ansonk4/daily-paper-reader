@@ -1,0 +1,25 @@
+{
+  "name": "Marta Sumyk",
+  "role": "first_author",
+  "affiliation": "Brown University; Comput. Sci. Dept., Brown Univ., Providence, RI",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "openalex",
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Reinforcement Learning: A Survey",
+    "paper_year": 1996,
+    "name": "Leslie Pack Kaelbling",
+    "affiliations": [
+      "Brown University",
+      "Comput. Sci. Dept., Brown Univ., Providence, RI"
+    ],
+    "works_count": null,
+    "cited_by_count": null,
+    "author_id": "https://openalex.org/A5012862284"
+  },
+  "semantic_scholar": {}
+}

@@ -1,0 +1,55 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Zesen Liu",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=272; Semantic Scholar paper_count=7",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Safe to Check, Unsafe to Use: Relinking at the Compression Boundary of LLM Agents",
+        "paper_year": "2026",
+        "name": "Zesen Liu",
+        "affiliations": [],
+        "paper_count": 7,
+        "citation_count": 272,
+        "author_id": "2109370921",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Dongdong She",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=14; Semantic Scholar paper_count=10",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Safe to Check, Unsafe to Use: Relinking at the Compression Boundary of LLM Agents",
+        "paper_year": "2026",
+        "name": "Dongdong She",
+        "affiliations": [],
+        "paper_count": 10,
+        "citation_count": 14,
+        "author_id": "2379666422",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T14:10:34.107394+00:00"
+}

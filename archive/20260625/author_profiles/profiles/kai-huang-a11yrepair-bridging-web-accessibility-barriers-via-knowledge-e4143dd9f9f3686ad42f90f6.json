@@ -1,0 +1,31 @@
+{
+  "name": "Kai Huang",
+  "role": "first_author",
+  "affiliation": "Technical University of Munich",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=1065; Semantic Scholar paper_count=49",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Kai Huang",
+    "affiliations": [
+      "Technical University of Munich"
+    ],
+    "author_row": "Kai Huang"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "A11YRepair: Bridging Web Accessibility Barriers via Knowledge-Enhanced Divide-and-Conquer Repair",
+    "paper_year": "2026",
+    "name": "Kai Huang",
+    "affiliations": [],
+    "paper_count": 49,
+    "citation_count": 1065,
+    "author_id": "47942130",
+    "lookup": "author_search"
+  }
+}

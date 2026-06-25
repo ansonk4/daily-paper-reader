@@ -1,0 +1,31 @@
+{
+  "name": "Zhongxiang Dai",
+  "role": "last_author",
+  "affiliation": "The Chinese University of Hong Kong, Shenzhen\\\\ Emails: Wangxuan Fan fanwx@cuhk.edu.cn , Xiaoyu Nie xiaoyunie@link.cuhk.edu.cn , Zhongxiang Dai daizhongxiang@cuhk.edu.cn",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=1639; Semantic Scholar paper_count=57",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Zhongxiang Dai",
+    "affiliations": [
+      "The Chinese University of Hong Kong, Shenzhen\\\\ Emails: Wangxuan Fan fanwx@cuhk.edu.cn , Xiaoyu Nie xiaoyunie@link.cuhk.edu.cn , Zhongxiang Dai daizhongxiang@cuhk.edu.cn"
+    ],
+    "author_row": "Wangxuan Fan, Xiaoyu Nie, Zhongxiang Dai Corresponding author."
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Harness-MU: A Safe, Governed, and Effective Harness for Multi-User LLM Agents",
+    "paper_year": "2026",
+    "name": "Zhongxiang Dai",
+    "affiliations": [],
+    "paper_count": 57,
+    "citation_count": 1639,
+    "author_id": "3042111",
+    "lookup": "author_search"
+  }
+}

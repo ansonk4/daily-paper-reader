@@ -442,6 +442,14 @@ def build_scored_papers(papers: List[Dict[str, Any]], llm_ranked: List[Dict[str,
         paper["matched_query_tag"] = matched_query_tag
         paper["matched_query_text"] = str(item.get("matched_query_text") or "").strip()
         paper["matched_requirement_id"] = str(item.get("matched_requirement_id") or "").strip()
+        for field in (
+            "relevance_score",
+            "author_score",
+            "author_rating_explanation",
+            "author_profiles",
+        ):
+            if field in item:
+                paper[field] = item.get(field)
         merged[pid] = paper
 
     return list(merged.values())

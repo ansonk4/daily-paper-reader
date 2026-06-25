@@ -1,0 +1,33 @@
+{
+  "name": "Pingchuan Ma",
+  "role": "first_author",
+  "affiliation": "Zhejiang University of Technology; Hong Kong University of Science and Technology",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=1200; Semantic Scholar paper_count=67",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Pingchuan Ma",
+    "affiliations": [
+      "Zhejiang University of Technology"
+    ],
+    "author_row": "Pingchuan Ma"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "AutoSpec: Safety Rule Evolution for LLM Agents via Inductive Logic Programming",
+    "paper_year": "2026",
+    "name": "Pingchuan Ma",
+    "affiliations": [
+      "Hong Kong University of Science and Technology"
+    ],
+    "paper_count": 67,
+    "citation_count": 1200,
+    "author_id": "1384480816",
+    "lookup": "author_search"
+  }
+}

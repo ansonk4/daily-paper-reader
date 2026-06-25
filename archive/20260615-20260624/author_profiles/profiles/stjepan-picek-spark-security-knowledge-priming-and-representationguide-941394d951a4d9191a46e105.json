@@ -1,0 +1,32 @@
+{
+  "name": "Stjepan Picek",
+  "role": "last_author",
+  "affiliation": "University of Zagreb; Radboud University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=0; Semantic Scholar paper_count=2",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Stjepan Picek",
+    "affiliations": [
+      "University of Zagreb",
+      "Radboud University"
+    ],
+    "author_row": "Stjepan Picek"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "SPARK: Security Knowledge Priming and Representation-Guided Knowledge Activation for LLM-based Secure Code Generation",
+    "paper_year": "2026",
+    "name": "Stjepan Picek",
+    "affiliations": [],
+    "paper_count": 2,
+    "citation_count": 0,
+    "author_id": "2137927432",
+    "lookup": "author_search"
+  }
+}

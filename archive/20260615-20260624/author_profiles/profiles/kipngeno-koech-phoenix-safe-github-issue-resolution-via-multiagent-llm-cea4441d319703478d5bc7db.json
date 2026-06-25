@@ -1,0 +1,31 @@
+{
+  "name": "Kipngeno Koech",
+  "role": "first_author",
+  "affiliation": "Department of Electrical and Computer Engineering",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=4; Semantic Scholar paper_count=3",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Kipngeno Koech",
+    "affiliations": [
+      "Department of Electrical and Computer Engineering"
+    ],
+    "author_row": "kipngeno koech"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Phoenix: Safe GitHub Issue Resolution via Multi-Agent LLMs",
+    "paper_year": "2026",
+    "name": "Kipngeno Koech",
+    "affiliations": [],
+    "paper_count": 3,
+    "citation_count": 4,
+    "author_id": "2337795259",
+    "lookup": "author_search"
+  }
+}

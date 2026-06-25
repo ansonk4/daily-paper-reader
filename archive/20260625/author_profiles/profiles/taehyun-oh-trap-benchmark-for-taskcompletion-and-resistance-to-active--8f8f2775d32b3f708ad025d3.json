@@ -1,0 +1,31 @@
+{
+  "name": "Tae-Hyun Oh",
+  "role": "last_author",
+  "affiliation": "School of Computing, KAIST",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=3975; Semantic Scholar paper_count=95",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Tae-Hyun Oh",
+    "affiliations": [
+      "School of Computing, KAIST"
+    ],
+    "author_row": "quad Tae-Hyun Oh"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "TRAP: Benchmark for Task-completion and Resistance to Active Privacy-extraction",
+    "paper_year": "2026",
+    "name": "Tae-Hyun Oh",
+    "affiliations": [],
+    "paper_count": 95,
+    "citation_count": 3975,
+    "author_id": "66808667",
+    "lookup": "author_search"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "Ashish Vaswani",
+  "role": "first_author",
+  "affiliation": "Google Brain; Noam Shazeer; Niki Parmar",
+  "citation_hints": "Semantic Scholar citation_count=195978; Semantic Scholar paper_count=56",
+  "confidence": "medium",
+  "evidence_source": "paper_author_row, arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Ashish Vaswani",
+    "affiliations": [
+      "Google Brain",
+      "Noam Shazeer",
+      "Google Brain",
+      "Niki Parmar"
+    ],
+    "author_row": "Ashish Vaswani"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Attention Is All You Need",
+    "paper_year": "2017",
+    "name": "Ashish Vaswani",
+    "affiliations": [],
+    "paper_count": 56,
+    "citation_count": 195978,
+    "author_id": "40348417",
+    "lookup": "author_search"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Hannah Le",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=5; Semantic Scholar paper_count=4",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "TxBench-PP: Analyzing AI Agent Performance on Small-Molecule Preclinical Pharmacology",
+        "paper_year": "2026",
+        "name": "Hannah Le",
+        "affiliations": [],
+        "paper_count": 4,
+        "citation_count": 5,
+        "author_id": "2401308573",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Kenny Workman",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=5; Semantic Scholar paper_count=6",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "TxBench-PP: Analyzing AI Agent Performance on Small-Molecule Preclinical Pharmacology",
+        "paper_year": "2026",
+        "name": "Kenny Workman",
+        "affiliations": [],
+        "paper_count": 6,
+        "citation_count": 5,
+        "author_id": "2190830836",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:27:50.009283+00:00"
+}

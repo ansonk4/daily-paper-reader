@@ -45,8 +45,8 @@ window.SubscriptionsManager = (function () {
 
   const defaultPromptTemplate = [
     'You are a retrieval planning assistant.',
-    '标签 (Tag): {{TAG}}',
-    '中文描述 (Description): {{USER_DESCRIPTION}}',
+    'Tag: {{TAG}}',
+    'User description: {{USER_DESCRIPTION}}',
     'Retrieval context: {{RETRIEVAL_CONTEXT}}',
     '',
     'Return JSON only:',
@@ -57,17 +57,17 @@ window.SubscriptionsManager = (function () {
     '    {',
       '      "keyword": "short keyword phrase for BM25 recall",',
       '      "query": "semantic rewrite for this keyword",',
-      '      "keyword_cn": "中文直译（可选）",',
+      '      "keyword_cn": "literal translation (optional)",',
     '    },',
     '  ],',
     '  "intent_queries": [',
     '    {',
       '      "query": "intent-oriented semantic query 1",',
-      '      "query_cn": "中文直译（可选）",',
+      '      "query_cn": "literal translation (optional)",',
     '    },',
     '    {',
       '      "query": "intent-oriented semantic query 2",',
-      '      "query_cn": "中文直译（可选）",',
+      '      "query_cn": "literal translation (optional)",',
     '    }',
     '  ],',
     '}',
@@ -80,8 +80,8 @@ window.SubscriptionsManager = (function () {
     '6) Do NOT output incomplete modifier phrases ending with generic words like "driven", "based", "related", "guided", "enhanced", "for", or "with".',
     '7) Avoid coupling core terms (e.g., "symbolic regression", "reinforcement learning", "genetic programming", "Transformer") with extra qualifiers into one keyword. Keep core terms atomic in keyword and use query for full intent.',
     '8) Suggested example:',
-    '   {"keyword":"symbolic regression","query":"deep symbolic regression methods","keyword_cn":"符号回归","query_cn":"符号回归深度方法"},',
-    '   {"keyword":"reinforcement learning","query":"policy gradient symbolic regression","keyword_cn":"强化学习","query_cn":"策略梯度在符号回归中的应用"},',
+    '   {"keyword":"symbolic regression","query":"deep symbolic regression methods","keyword_cn":"symbolic regression","query_cn":"deep symbolic regression methods"},',
+    '   {"keyword":"reinforcement learning","query":"policy gradient symbolic regression","keyword_cn":"reinforcement learning","query_cn":"policy gradients for symbolic regression"},',
     '   {"keyword":"Monte Carlo tree search","query":"Monte Carlo tree search for symbolic regression"}',
     '9) intent_queries: output 1-4 actionable intent queries. The query field MUST be English only; query_cn should be Chinese.',
     '10) intent_queries must be specific semantic search sentences, not acronym-only strings.',
@@ -498,7 +498,7 @@ window.SubscriptionsManager = (function () {
                 data-conference="${name}"
                 data-conference-year="${year}"
                 aria-pressed="${active ? 'true' : 'false'}"
-                ${disabled ? `disabled title="${year} 暂未接入，暂不可选择"` : ''}
+                ${disabled ? `disabled title="${year} is not connected yet"` : ''}
               >${year}</button>`;
             })
             .join('');
@@ -545,7 +545,7 @@ window.SubscriptionsManager = (function () {
       : profiles;
     if (!filtered.length) {
       targetEl.innerHTML = `<div class="dpr-profile-picker-empty">${
-        mode === 'daily' ? '暂无可快速抓取的词条。' : '暂无可检索的词条。'
+        mode === 'daily' ? 'No entries available for quick run.' : 'No entries available.'
       }</div>`;
       return;
     }
@@ -641,51 +641,51 @@ window.SubscriptionsManager = (function () {
       let title = btn.getAttribute('data-default-title') || btn.textContent || '';
       if (blocked) {
         if (hasUnsavedChanges) {
-          title = btn === quickRunConferenceBtn ? '请先保存后再检索会议论文。' : '请先保存后再抓取。';
+          title = btn === quickRunConferenceBtn ? 'Save before searching conference papers.' : 'Save before running.';
         } else if (selectedProfileCount < 1) {
-          title = '请先在上方选择至少一个词条。';
+          title = 'Select at least one entry above.';
         } else if (btn === quickRunConferenceBtn && !selectedConferenceYearPairs.size) {
-          title = '请先选择至少一个会议年份。';
+          title = 'Select at least one conference year.';
         } else {
-          title = btn === quickRunConferenceBtn ? '请先选择至少一个会议年份。' : '请先选择至少一个词条。';
+          title = btn === quickRunConferenceBtn ? 'Select at least one conference year.' : 'Select at least one entry.';
         }
       }
       btn.title = title;
     });
     if (quickRunHintEl) {
       quickRunHintEl.textContent = dailySelectedProfileCount > 0
-        ? `已选 ${dailySelectedProfileCount} 个词条。`
-        : '请选择至少一个词条。';
+        ? `${dailySelectedProfileCount} entries selected.`
+        : 'Select at least one entry.';
     }
     if (conferenceHintEl) {
       conferenceHintEl.textContent = selectedProfileCount > 0
-        ? `已选 ${selectedProfileCount} 个词条。`
-        : '先勾选词条，再勾选年份。';
+        ? `${selectedProfileCount} entries selected.`
+        : 'Select entries first, then years.';
     }
     if (hasUnsavedChanges && quickRunMsgEl) {
-      quickRunMsgEl.textContent = '有未保存修改，请先保存。';
+      quickRunMsgEl.textContent = 'Unsaved changes. Save first.';
       quickRunMsgEl.style.color = '#c00';
     }
     const conferenceMsgEl = document && typeof document.getElementById === 'function'
       ? document.getElementById('arxiv-admin-conference-run-msg')
       : null;
     if (hasUnsavedChanges && conferenceMsgEl) {
-      conferenceMsgEl.textContent = '有未保存修改，请先保存。';
+      conferenceMsgEl.textContent = 'Unsaved changes. Save first.';
       conferenceMsgEl.style.color = '#c00';
     }
   };
 
   const clearQuickRunUnsavedMessage = () => {
     if (!quickRunMsgEl) return;
-    if (/未保存修改|先保存|先点击/.test(quickRunMsgEl.textContent || '')) {
-      quickRunMsgEl.textContent = '配置已保存，可以发起快速抓取。';
+    if (/Unsaved changes|Save first|Save before/.test(quickRunMsgEl.textContent || '')) {
+      quickRunMsgEl.textContent = 'Configuration saved. Quick run is ready.';
       quickRunMsgEl.style.color = '#080';
     }
     const conferenceMsgEl = document && typeof document.getElementById === 'function'
       ? document.getElementById('arxiv-admin-conference-run-msg')
       : null;
-    if (conferenceMsgEl && /未保存修改|先保存|先点击/.test(conferenceMsgEl.textContent || '')) {
-      conferenceMsgEl.textContent = '配置已保存，可以发起会议论文检索。';
+    if (conferenceMsgEl && /Unsaved changes|Save first|Save before/.test(conferenceMsgEl.textContent || '')) {
+      conferenceMsgEl.textContent = 'Configuration saved. Conference search is ready.';
       conferenceMsgEl.style.color = '#080';
     }
   };
@@ -736,7 +736,7 @@ window.SubscriptionsManager = (function () {
 
   const runQuickFetch = async (days, msgEl, tipText, runOptions) => {
     if (hasUnsavedChanges) {
-      const text = '检测到未保存修改，请先点击“保存”后再发起快速抓取。';
+      const text = 'Unsaved changes detected. Click Save before starting a quick run.';
       if (msgEl) {
         msgEl.textContent = text;
         msgEl.style.color = '#c00';
@@ -745,7 +745,7 @@ window.SubscriptionsManager = (function () {
       return false;
     }
     if (!window.DPRWorkflowRunner || typeof window.DPRWorkflowRunner.runQuickFetchByDays !== 'function') {
-      const text = '工作流触发器未加载到当前页面。';
+      const text = 'Workflow runner is not loaded on this page.';
       if (msgEl) {
         msgEl.textContent = text;
         msgEl.style.color = '#c00';
@@ -756,7 +756,7 @@ window.SubscriptionsManager = (function () {
     const options = runOptions && typeof runOptions === 'object' ? runOptions : {};
     const result = await window.DPRWorkflowRunner.runQuickFetchByDays(days, options);
     if (result === false) {
-      const text = '工作流未成功触发，请检查权限或工作流配置。';
+      const text = 'Workflow was not triggered. Check permissions or workflow configuration.';
       if (msgEl) {
         msgEl.textContent = text;
         msgEl.style.color = '#c00';
@@ -764,7 +764,7 @@ window.SubscriptionsManager = (function () {
       setQuickRunMessage(text, '#c00');
       return false;
     }
-    const finalTip = (typeof tipText === 'string' ? tipText : null) || `已发起 ${days} 天内抓取任务。`;
+    const finalTip = (typeof tipText === 'string' ? tipText : null) || `Started a ${days}-day fetch task.`;
     if (msgEl) {
       msgEl.textContent = finalTip;
       msgEl.style.color = '#080';
@@ -776,7 +776,7 @@ window.SubscriptionsManager = (function () {
   const runProfileQuickFetch = async (profileTag, days, runOptions) => {
     const normalizedTag = normalizeText(profileTag);
     if (!normalizedTag) {
-      setQuickRunMessage('词条标签为空，无法发起单词条抓取。', '#c00');
+      setQuickRunMessage('Entry tag is empty; cannot run a single-entry fetch.', '#c00');
       return false;
     }
     const options = runOptions && typeof runOptions === 'object' ? cloneDeep(runOptions) : {};
@@ -787,30 +787,30 @@ window.SubscriptionsManager = (function () {
     };
     const fetchMode = normalizeText(options.fetchMode).toLowerCase();
     const modeText = fetchMode === 'standard'
-      ? '30 天标准抓取任务'
-      : (fetchMode === 'skims' ? '30 天速览抓取任务' : `${days} 天抓取任务`);
-    const tip = `已发起词条「${normalizedTag}」的${modeText}。`;
+      ? '30-day standard fetch'
+      : (fetchMode === 'skims' ? '30-day skim fetch' : `${days}-day fetch`);
+    const tip = `Started ${modeText} for "${normalizedTag}".`;
     return runQuickFetch(days, quickRunMsgEl || msgEl, tip, options);
   };
 
   const runSelectedQuickFetch = async (days, runOptions = {}) => {
     const tags = getDailySelectedProfileTagsForRun();
     if (!tags.length) {
-      setQuickRunMessage('请先勾选至少一个词条。快速抓取支持任意词条。', '#c00');
+      setQuickRunMessage('Select at least one entry. Quick run supports any entry.', '#c00');
       refreshQuickRunButtons();
       return false;
     }
     const fetchMode = normalizeText(runOptions.fetchMode).toLowerCase();
     const modeText = fetchMode === 'standard'
-      ? '30 天全标准 / 精读'
-      : (fetchMode === 'skims' ? '30 天全速览' : `${days} 天`);
+      ? '30-day standard / deep-read'
+      : (fetchMode === 'skims' ? '30-day skim' : `${days}-day`);
     const options = runOptions && typeof runOptions === 'object' ? cloneDeep(runOptions) : {};
     const dispatchInputs = isPlainObject(options.dispatchInputs) ? options.dispatchInputs : {};
     options.dispatchInputs = {
       ...dispatchInputs,
       profile_tag: tags.join(','),
     };
-    const tip = `已对 ${tags.length} 个词条发起${modeText}抓取任务。`;
+    const tip = `Started ${modeText} fetch tasks for ${tags.length} entries.`;
     const success = await runQuickFetch(days, quickRunMsgEl || msgEl, tip, options);
     if (success) showWorkflowSuccessEffects();
     return success;
@@ -827,7 +827,7 @@ window.SubscriptionsManager = (function () {
 
   const runQuickConferenceRetrieval = async (msgEl) => {
     if (hasUnsavedChanges) {
-      const text = '检测到未保存修改，请先点击“保存”后再发起会议论文检索。';
+      const text = 'Unsaved changes detected. Click Save before searching conference papers.';
       if (msgEl) {
         msgEl.textContent = text;
         msgEl.style.color = '#c00';
@@ -839,7 +839,7 @@ window.SubscriptionsManager = (function () {
     const profileTags = getSelectedProfileTagsForRun();
     if (!profileTags.length) {
       if (msgEl) {
-        msgEl.textContent = '请先勾选至少一个词条。';
+        msgEl.textContent = 'Select at least one entry.';
         msgEl.style.color = '#c00';
       }
       refreshQuickRunButtons();
@@ -855,14 +855,14 @@ window.SubscriptionsManager = (function () {
     const groups = Object.entries(grouped).filter(([, years]) => years.length);
     if (!groups.length) {
       if (msgEl) {
-        msgEl.textContent = '请先选择至少一个会议年份。';
+        msgEl.textContent = 'Select at least one conference year.';
         msgEl.style.color = '#c00';
       }
       return false;
     }
     if (!window.DPRWorkflowRunner || typeof window.DPRWorkflowRunner.runConferenceRetrieval !== 'function') {
       if (msgEl) {
-        msgEl.textContent = '工作流触发器未加载到当前页面。';
+        msgEl.textContent = 'Workflow runner is not loaded on this page.';
         msgEl.style.color = '#c00';
       }
       return false;
@@ -877,13 +877,13 @@ window.SubscriptionsManager = (function () {
     ));
     if (results.some((item) => item === false)) {
       if (msgEl) {
-        msgEl.textContent = '部分会议检索工作流未成功触发，请检查权限或配置。';
+        msgEl.textContent = 'Some conference search workflows did not start. Check permissions or configuration.';
         msgEl.style.color = '#c00';
       }
       return false;
     }
     if (msgEl) {
-      msgEl.textContent = `已发起 ${groupText} 会议论文检索任务。`;
+      msgEl.textContent = `Started conference paper search for ${groupText}.`;
       msgEl.style.color = '#080';
     }
     showWorkflowSuccessEffects();
@@ -893,18 +893,18 @@ window.SubscriptionsManager = (function () {
   const runResetContent = (msgEl) => {
     if (String(window.DPR_ACCESS_MODE || '') !== 'full') {
       if (msgEl) {
-        msgEl.textContent = '未检测到完整登录权限，危险操作未开启。';
+        msgEl.textContent = 'Full login permissions were not detected. Dangerous actions are disabled.';
         msgEl.style.color = '#c00';
       }
       return;
     }
 
     const confirmText = window.prompt(
-      '危险区域：仅重置论文内容。会将 docs 备份为 docs_backup_xxx 后恢复为 docs_init，并清空 archive；不会删除配置、密钥或词条设置。输入「RESET_ALL」确认。',
+      'Danger zone: only reset paper content. This backs up docs to docs_backup_xxx, restores docs_init, and clears archive. It will not delete configuration, secrets, or entries. Type "RESET_ALL" to confirm.',
     );
     if (confirmText !== 'RESET_ALL') {
       if (msgEl) {
-        msgEl.textContent = '已取消危险操作。';
+        msgEl.textContent = 'Dangerous action canceled.';
         msgEl.style.color = '#666';
       }
       return;
@@ -912,7 +912,7 @@ window.SubscriptionsManager = (function () {
 
     if (!window.DPRWorkflowRunner || typeof window.DPRWorkflowRunner.runWorkflowByKey !== 'function') {
       if (msgEl) {
-        msgEl.textContent = '工作流触发器未加载到当前页面。';
+        msgEl.textContent = 'Workflow runner is not loaded on this page.';
         msgEl.style.color = '#c00';
       }
       return;
@@ -920,7 +920,7 @@ window.SubscriptionsManager = (function () {
 
     window.DPRWorkflowRunner.runWorkflowByKey('reset-content');
     if (msgEl) {
-      msgEl.textContent = '已发起论文内容重置任务。';
+      msgEl.textContent = 'Started paper content reset task.';
       msgEl.style.color = '#080';
     }
   };
@@ -982,23 +982,23 @@ window.SubscriptionsManager = (function () {
       );
       const intentQueries = normalizeIntentQueries(profile.intent_queries);
       if (!paperSources.length) {
-        return `词条「${tag}」至少需要 1 个论文源。`;
+        return `Entry "${tag}" needs at least 1 paper source.`;
       }
       const unknownSources = paperSources.filter((item) => !availableSources.includes(item));
       if (unknownSources.length) {
-        return `词条「${tag}」包含未配置的论文源：${unknownSources.join(', ')}。`;
+        return `Entry "${tag}" contains unconfigured paper sources: ${unknownSources.join(', ')}.`;
       }
       if (!keywords.length) {
-        return `词条「${tag}」至少需要 1 条关键词。`;
+        return `Entry "${tag}" needs at least 1 keyword.`;
       }
       if (keywords.length > MAX_KEYWORDS_PER_PROFILE) {
-        return `词条「${tag}」的关键词最多只能保留 ${MAX_KEYWORDS_PER_PROFILE} 条。`;
+        return `Entry "${tag}" can keep at most ${MAX_KEYWORDS_PER_PROFILE} keywords.`;
       }
       if (!intentQueries.length) {
-        return `词条「${tag}」至少需要 1 条意图Query。`;
+        return `Entry "${tag}" needs at least 1 intent query.`;
       }
       if (intentQueries.length > MAX_INTENT_QUERIES_PER_PROFILE) {
-        return `词条「${tag}」的意图Query 最多只能保留 ${MAX_INTENT_QUERIES_PER_PROFILE} 条。`;
+        return `Entry "${tag}" can keep at most ${MAX_INTENT_QUERIES_PER_PROFILE} intent queries.`;
       }
     }
     return '';
@@ -1092,9 +1092,9 @@ window.SubscriptionsManager = (function () {
   const updateSaveReminder = () => {
     if (!msgEl) return;
     if (hasUnsavedChanges) {
-      msgEl.innerHTML = '<span class="dpr-save-reminder">⚠ 有未保存修改，请点击右上角「保存」。</span>';
+      msgEl.innerHTML = '<span class="dpr-save-reminder">⚠ Unsaved changes. Click Save in the top right.</span>';
       msgEl.style.color = '#9a6500';
-    } else if (/未保存修改/.test(msgEl.textContent || '')) {
+    } else if (/Unsaved changes/.test(msgEl.textContent || '')) {
       setMessage('', '#666');
     }
   };
@@ -1113,8 +1113,8 @@ window.SubscriptionsManager = (function () {
       <div id="arxiv-search-panel">
         <div id="arxiv-search-panel-header">
           <div class="dpr-admin-header-left">
-            <div style="font-weight:600;">后台管理</div>
-            <div class="dpr-admin-tabs" role="tablist" aria-label="后台管理面板切换">
+            <div style="font-weight:600;">Admin</div>
+            <div class="dpr-admin-tabs" role="tablist" aria-label="Admin panel tabs">
               <button
                 id="dpr-admin-tab-daily"
                 class="dpr-admin-tab is-active"
@@ -1123,7 +1123,7 @@ window.SubscriptionsManager = (function () {
                 aria-selected="true"
                 aria-controls="arxiv-search-quick-run-side"
               >
-                日常管理
+                Daily
               </button>
               <button
                 id="dpr-admin-tab-conference"
@@ -1133,14 +1133,14 @@ window.SubscriptionsManager = (function () {
                 aria-selected="false"
                 aria-controls="arxiv-conference-control-side"
               >
-                会议论文
+                Conference Papers
               </button>
             </div>
           </div>
           <div style="display:flex; gap:8px; align-items:center;">
-            <button id="arxiv-config-save-btn" class="arxiv-tool-btn" style="padding:2px 10px; background:#2e7d32; color:white;">保存</button>
-            <button id="arxiv-open-secret-setup-btn" class="arxiv-tool-btn" style="padding:2px 10px;">密钥配置</button>
-            <button id="arxiv-search-close-btn" class="arxiv-tool-btn" style="padding:2px 6px;">关闭</button>
+            <button id="arxiv-config-save-btn" class="arxiv-tool-btn" style="padding:2px 10px; background:#2e7d32; color:white;">Save</button>
+            <button id="arxiv-open-secret-setup-btn" class="arxiv-tool-btn" style="padding:2px 10px;">Secrets</button>
+            <button id="arxiv-search-close-btn" class="arxiv-tool-btn" style="padding:2px 6px;">Close</button>
           </div>
         </div>
 
@@ -1151,13 +1151,13 @@ window.SubscriptionsManager = (function () {
                 <div id="dpr-sq-display" class="dpr-sq-display"></div>
                 <div class="dpr-input-card">
                   <div class="dpr-inline-row">
-                    <button id="dpr-sq-open-chat-btn" class="arxiv-tool-btn" style="background:#2e7d32; color:#fff;">新增</button>
+                    <button id="dpr-sq-open-chat-btn" class="arxiv-tool-btn" style="background:#2e7d32; color:#fff;">Add</button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div id="dpr-smart-msg" style="font-size:12px; color:#666; margin-top:10px;">提示：修改后点击「保存」才会写入 config.yaml。</div>
+            <div id="dpr-smart-msg" style="font-size:12px; color:#666; margin-top:10px;">Tip: changes are written to config.yaml only after you click Save.</div>
           </div>
 
           <div id="arxiv-search-quick-run-divider" class="dpr-task-divider" aria-hidden="true"></div>
@@ -1170,48 +1170,48 @@ window.SubscriptionsManager = (function () {
           >
             <div class="dpr-bulk-bar-head">
               <div>
-                <div class="chat-quick-run-title">快速抓取</div>
-                <div id="arxiv-admin-quick-run-hint" class="dpr-task-hint">默认全选词条，快速抓取不区分日常状态。</div>
+                <div class="chat-quick-run-title">Quick Run</div>
+                <div id="arxiv-admin-quick-run-hint" class="dpr-task-hint">All entries are selected by default. Quick run ignores daily status.</div>
               </div>
-              <button id="arxiv-admin-open-workflow-panel-btn" class="arxiv-tool-btn dpr-task-workflow-btn" type="button">打开工作流</button>
+              <button id="arxiv-admin-open-workflow-panel-btn" class="arxiv-tool-btn dpr-task-workflow-btn" type="button">Open Workflows</button>
             </div>
             <div class="dpr-task-picker-tools">
-              <button id="arxiv-admin-daily-select-all-btn" class="arxiv-tool-btn" type="button">全选</button>
-              <button id="arxiv-admin-daily-clear-all-btn" class="arxiv-tool-btn" type="button">取消全选</button>
+              <button id="arxiv-admin-daily-select-all-btn" class="arxiv-tool-btn" type="button">Select All</button>
+              <button id="arxiv-admin-daily-clear-all-btn" class="arxiv-tool-btn" type="button">Clear All</button>
             </div>
             <div id="arxiv-admin-daily-profile-picker" class="dpr-profile-picker-row"></div>
             <div class="dpr-task-content-row">
               <div class="dpr-task-primary-column">
-                <div class="dpr-task-action-grid dpr-task-action-grid--radio" role="radiogroup" aria-label="快速抓取模式">
+                <div class="dpr-task-action-grid dpr-task-action-grid--radio" role="radiogroup" aria-label="Quick run mode">
                   <label class="chat-quick-run-item dpr-task-radio-card">
                     <input type="radio" name="dpr-quick-run-mode" value="10" checked>
-                    <span class="dpr-task-action-title">立即抓取十天论文</span>
-                    <span class="dpr-task-action-cost">约 ¥0.10</span>
+                    <span class="dpr-task-action-title">Fetch 10 days now</span>
+                    <span class="dpr-task-action-cost">About ¥0.10</span>
                   </label>
                   <label class="chat-quick-run-item dpr-task-radio-card">
                     <input type="radio" name="dpr-quick-run-mode" value="30-skims">
-                    <span class="dpr-task-action-title">立即抓取三十天速览</span>
-                    <span class="dpr-task-action-cost">约 ¥0.20</span>
+                    <span class="dpr-task-action-title">Fetch 30-day skims now</span>
+                    <span class="dpr-task-action-cost">About ¥0.20</span>
                   </label>
                   <label class="chat-quick-run-item dpr-task-radio-card">
                     <input type="radio" name="dpr-quick-run-mode" value="30-standard">
-                    <span class="dpr-task-action-title">立即抓取三十天精读</span>
-                    <span class="dpr-task-action-cost">约 ¥0.50</span>
+                    <span class="dpr-task-action-title">Fetch 30-day deep reads now</span>
+                    <span class="dpr-task-action-cost">About ¥0.50</span>
                   </label>
                 </div>
-                <button id="arxiv-admin-quick-run-start-btn" class="chat-quick-run-run-btn dpr-task-start-btn" type="button">开始检索</button>
+                <button id="arxiv-admin-quick-run-start-btn" class="chat-quick-run-run-btn dpr-task-start-btn" type="button">Start</button>
                 <div id="arxiv-admin-quick-run-msg" class="chat-quick-run-msg"></div>
               </div>
 
               <div class="dpr-task-danger-module">
-                <div class="chat-quick-run-title">危险区域</div>
-                <div class="dpr-task-danger-desc">恢复初始论文；不删除设置</div>
+                <div class="chat-quick-run-title">Danger Zone</div>
+                <div class="dpr-task-danger-desc">Restore initial papers; settings stay intact</div>
                 <button
                   id="arxiv-admin-reset-content-btn"
                   class="chat-quick-run-run-btn"
                   type="button"
                 >
-                  删除所有
+                  Delete All
                 </button>
                 <div id="arxiv-admin-reset-content-msg" class="chat-quick-run-msg"></div>
               </div>
@@ -1229,20 +1229,20 @@ window.SubscriptionsManager = (function () {
               <div class="dpr-bulk-bar-head">
                 <div>
                   <div class="dpr-title-inline">
-                    <div class="chat-quick-run-title">会议论文检索</div>
-                    <div id="arxiv-admin-conference-hint" class="dpr-conference-note">默认全选词条。</div>
+                    <div class="chat-quick-run-title">Conference Paper Search</div>
+                    <div id="arxiv-admin-conference-hint" class="dpr-conference-note">All entries are selected by default.</div>
                   </div>
                 </div>
               </div>
 
               <div class="dpr-task-picker-tools">
-                <button id="arxiv-admin-conference-select-all-btn" class="arxiv-tool-btn" type="button">全选</button>
-                <button id="arxiv-admin-conference-clear-all-btn" class="arxiv-tool-btn" type="button">取消全选</button>
+                <button id="arxiv-admin-conference-select-all-btn" class="arxiv-tool-btn" type="button">Select All</button>
+                <button id="arxiv-admin-conference-clear-all-btn" class="arxiv-tool-btn" type="button">Clear All</button>
               </div>
               <div id="arxiv-admin-conference-profile-picker" class="dpr-profile-picker-row"></div>
 
               <div class="dpr-choice-field">
-                <div class="chat-quick-run-title">会议年份</div>
+                <div class="chat-quick-run-title">Conference Years</div>
                 <div id="arxiv-admin-conference-choice-group" class="dpr-conference-choice-grid"></div>
               </div>
               <button
@@ -1250,10 +1250,10 @@ window.SubscriptionsManager = (function () {
                 class="chat-quick-run-run-btn dpr-task-start-btn"
                 type="button"
               >
-                开始检索
+                Start
               </button>
               <div id="arxiv-admin-conference-run-msg" class="chat-quick-run-msg">
-                触发 Supabase 会议检索。
+                Trigger Supabase conference search.
               </div>
             </div>
           </div>
@@ -1305,7 +1305,7 @@ window.SubscriptionsManager = (function () {
   const loadSubscriptions = async () => {
     try {
       if (!window.SubscriptionsGithubToken || !window.SubscriptionsGithubToken.loadConfig) {
-        throw new Error('SubscriptionsGithubToken.loadConfig 不可用');
+        throw new Error('SubscriptionsGithubToken.loadConfig is unavailable');
       }
       const { config } = await window.SubscriptionsGithubToken.loadConfig();
       draftConfig = normalizeSubscriptions(config || {});
@@ -1318,21 +1318,21 @@ window.SubscriptionsManager = (function () {
       setMessage('', '#666');
     } catch (e) {
       console.error(e);
-      setMessage('加载配置失败，请确认 GitHub Token 可用。', '#c00');
+      setMessage('Failed to load configuration. Check that the GitHub Token is valid.', '#c00');
     }
   };
 
   const saveDraftConfig = async () => {
     if (isSavingDraftConfig) {
-      setMessage('正在保存中，请稍后...', '#666');
+      setMessage('Saving, please wait...', '#666');
       return;
     }
     if (!window.SubscriptionsGithubToken || !window.SubscriptionsGithubToken.saveConfig) {
-      setMessage('当前无法保存配置，请先完成 GitHub 登录。', '#c00');
+      setMessage('Cannot save configuration until GitHub login is complete.', '#c00');
       return;
     }
     if (!draftConfig) {
-      setMessage('配置尚未加载完成，请先等待配置读取完成后再试。', '#c00');
+      setMessage('Configuration is still loading. Try again after it finishes.', '#c00');
       return;
     }
     try {
@@ -1346,7 +1346,7 @@ window.SubscriptionsManager = (function () {
         setMessage(validationError, '#c00');
         return;
       }
-      setMessage('正在保存配置...', '#666');
+      setMessage('Saving configuration...', '#666');
       await window.SubscriptionsGithubToken.saveConfig(
         toSave,
         'chore: save smart query config from dashboard',
@@ -1358,11 +1358,11 @@ window.SubscriptionsManager = (function () {
       if (window.SubscriptionsSmartQuery && window.SubscriptionsSmartQuery.clearPendingDeletedProfileIds) {
         window.SubscriptionsSmartQuery.clearPendingDeletedProfileIds();
       }
-      setMessage('配置已保存。', '#080');
+      setMessage('Configuration saved.', '#080');
     } catch (e) {
       console.error(e);
-      const msg = e && e.message ? e.message : '未知错误';
-      setMessage(`保存配置失败：${msg}`.slice(0, 180), '#c00');
+      const msg = e && e.message ? e.message : 'Unknown error';
+      setMessage(`Failed to save configuration: ${msg}`.slice(0, 180), '#c00');
     } finally {
       isSavingDraftConfig = false;
       if (saveBtn) {
@@ -1381,7 +1381,7 @@ window.SubscriptionsManager = (function () {
 
   const closeOverlay = () => {
     if (hasUnsavedChanges) {
-      const ok = window.confirm('检测到未保存修改，确认直接关闭并丢弃本地草稿吗？');
+      const ok = window.confirm('Unsaved changes detected. Close and discard the local draft?');
       if (!ok) return;
       if (window.SubscriptionsSmartQuery && window.SubscriptionsSmartQuery.clearPendingDeletedProfileIds) {
         window.SubscriptionsSmartQuery.clearPendingDeletedProfileIds();
@@ -1437,7 +1437,7 @@ window.SubscriptionsManager = (function () {
           if (window.DPRSecretSetup && window.DPRSecretSetup.openStep2) {
             window.DPRSecretSetup.openStep2();
           } else {
-            alert('当前页面尚未加载密钥配置向导脚本，请刷新后重试。');
+            alert('The secret setup wizard is not loaded yet. Refresh and try again.');
           }
         } catch (e) {
           console.error(e);
@@ -1481,8 +1481,8 @@ window.SubscriptionsManager = (function () {
     resetContentBtn = document.getElementById('arxiv-admin-reset-content-btn');
     resetContentMsgEl = document.getElementById('arxiv-admin-reset-content-msg');
     if (quickRunConferenceBtn) {
-      quickRunConferenceBtn.setAttribute('data-default-title', '一次性触发会议论文拉取任务');
-      quickRunConferenceBtn.title = '一次性触发会议论文拉取任务';
+      quickRunConferenceBtn.setAttribute('data-default-title', 'Trigger a one-time conference paper fetch');
+      quickRunConferenceBtn.title = 'Trigger a one-time conference paper fetch';
     }
     initializeConferenceChoices();
     renderConferenceChoiceButtons();
@@ -1556,7 +1556,7 @@ window.SubscriptionsManager = (function () {
           console.error(e);
         }
         if (quickRunMsgEl) {
-          quickRunMsgEl.textContent = '工作流触发面板未加载，请刷新页面后重试。';
+          quickRunMsgEl.textContent = 'Workflow panel is not loaded. Refresh and try again.';
           quickRunMsgEl.style.color = '#c00';
         }
       });

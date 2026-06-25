@@ -1,0 +1,71 @@
+{
+  "author_score": 7.0,
+  "author_rating_explanation": "Both authors are affiliated with Duke University, a reputable research institution. First author Tianhao Chen has moderate citation impact (316 citations, 20 papers). Last author Neil Zhenqiang Gong has strong citation impact (15384 citations, 225 papers), indicating established research presence. Duke University is a well-ranked university but not typically classified among the absolute top global AI labs/companies, placing this in the 7-8 range.",
+  "author_profiles": [
+    {
+      "name": "Tianhao Chen",
+      "role": "first_author",
+      "affiliation": "Duke University",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=316; Semantic Scholar paper_count=20",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Tianhao Chen",
+        "affiliations": [
+          "Duke University"
+        ],
+        "author_row": "Tianhao Chen , Zhengyuan Jiang , Yuepeng Hu, Yebei Gou, Neil Zhenqiang Gong"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Dynamic Malicious Skills in Agentic AI",
+        "paper_year": "2026",
+        "name": "Tianhao Chen",
+        "affiliations": [],
+        "paper_count": 20,
+        "citation_count": 316,
+        "author_id": "1588210610",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Neil Zhenqiang Gong",
+      "role": "last_author",
+      "affiliation": "Duke University",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=15384; Semantic Scholar paper_count=225",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Neil Zhenqiang Gong",
+        "affiliations": [
+          "Duke University"
+        ],
+        "author_row": "Tianhao Chen , Zhengyuan Jiang , Yuepeng Hu, Yebei Gou, Neil Zhenqiang Gong"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Dynamic Malicious Skills in Agentic AI",
+        "paper_year": "2026",
+        "name": "N. Gong",
+        "affiliations": [],
+        "paper_count": 225,
+        "citation_count": 15384,
+        "author_id": "144516687",
+        "lookup": "author_search"
+      },
+      "namename": "Neil Zhenqiang Gong"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-25T07:25:34.116226+00:00"
+}

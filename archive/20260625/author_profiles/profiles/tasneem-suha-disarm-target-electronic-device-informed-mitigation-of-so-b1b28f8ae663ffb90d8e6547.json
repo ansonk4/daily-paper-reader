@@ -1,0 +1,24 @@
+{
+  "name": "Tasneem Suha",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=12; Semantic Scholar paper_count=7",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "DISARM: Target Electronic Device Informed Mitigation of Software Runtime Side-Channel Vulnerabilities",
+    "paper_year": "2026",
+    "name": "T. Suha",
+    "affiliations": [],
+    "paper_count": 7,
+    "citation_count": 12,
+    "author_id": "2086796109",
+    "lookup": "author_search"
+  }
+}

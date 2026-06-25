@@ -1,0 +1,31 @@
+{
+  "name": "Dang Nguyen",
+  "role": "first_author",
+  "affiliation": "University of Chicago",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=191; Semantic Scholar paper_count=78",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Dang Nguyen",
+    "affiliations": [
+      "University of Chicago"
+    ],
+    "author_row": "Dang Nguyen"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Benchmarking Agentic Review Systems",
+    "paper_year": "2026",
+    "name": "Dang Tuan Nguyen",
+    "affiliations": [],
+    "paper_count": 78,
+    "citation_count": 191,
+    "author_id": "1748994",
+    "lookup": "author_search"
+  }
+}

@@ -1,5 +1,5 @@
-// 全局 UI 行为：布局 + 订阅入口按钮
-// 1. API Base：区分本地开发与线上部署
+// Global UI behavior: layout + subscription entry buttons
+// 1. API base: distinguish local development from production
 (function() {
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     window.API_BASE_URL = 'http://127.0.0.1:8008';
@@ -8,10 +8,10 @@
   }
 })();
 
-// 2. 侧边栏宽度拖拽脚本
+// 2. Sidebar width drag script
 (function() {
   function setupSidebarResizer() {
-    // 统一“微宽屏 + 窄屏”为同一套逻辑：<1024 时为覆盖式 sidebar，不提供拖拽调宽
+    // Treat narrow screens consistently: below 1024px the sidebar overlays and is not resizable.
     if (window.innerWidth < 1024) return;
     if (document.getElementById('sidebar-resizer')) return;
 
@@ -41,7 +41,7 @@
         '--sidebar-width',
         newWidth + 'px',
       );
-      // 同步更新选中区域的阴影宽度
+      // Keep the active indicator width in sync.
       if (window.syncSidebarActiveIndicator) {
         window.syncSidebarActiveIndicator({ animate: false });
       }
@@ -60,23 +60,23 @@
   }
 
   var resizeTimer = null;
-  // 侧边栏自动展开/收起的阈值（与 docsify-plugin.js 中的 SIDEBAR_AUTO_COLLAPSE_WIDTH 保持一致）
+  // Sidebar auto-collapse threshold; keep in sync with docsify-plugin.js.
   var SIDEBAR_COLLAPSE_THRESHOLD = 1024;
-  // 记录上一次的窗口宽度状态，避免重复触发
+  // Track the previous viewport state to avoid repeated toggles.
   var lastWasWide = window.innerWidth >= SIDEBAR_COLLAPSE_THRESHOLD;
 
-  // 页面加载时根据屏幕宽度设置 sidebar 初始状态
+  // Initialize sidebar state from viewport width.
   function initSidebarState() {
     var body = document.body;
     if (window.innerWidth < SIDEBAR_COLLAPSE_THRESHOLD) {
-      // 小屏幕默认收起 sidebar：沿用 Docsify 原生语义，`close` 表示展开，不使用 `close` 表示收起
+      // On small screens, keep the sidebar collapsed by default. Docsify uses `close` for expanded.
       if (body.classList.contains('close')) {
         body.classList.remove('close');
       }
     }
   }
 
-  // 在 DOM 加载完成后初始化 sidebar 状态
+  // Initialize sidebar state after DOM is ready.
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSidebarState);
   } else {
@@ -95,18 +95,18 @@
       }
     }
 
-    // 根据窗口宽度自动同步 sidebar 展开/收起状态
-    // 桌面：body.close = 收起；移动端（<1024）：body.close = 展开（沿用 Docsify 原生语义）
+    // Sync sidebar expanded/collapsed state from viewport width.
+    // Desktop: body.close = collapsed. Mobile: body.close = expanded, per Docsify semantics.
     var isWide = window.innerWidth >= SIDEBAR_COLLAPSE_THRESHOLD;
     var body = document.body;
     if (isWide !== lastWasWide) {
       if (isWide) {
-        // 窗口变宽，自动展开 sidebar（移除 close 类）
+        // Wide viewport: expand sidebar.
         if (body.classList.contains('close')) {
           body.classList.remove('close');
         }
       } else {
-        // 窗口变窄，沿用 Docsify 移动端语义：默认不使用 close 表示收起状态
+        // Narrow viewport: default to collapsed in Docsify mobile semantics.
         if (body.classList.contains('close')) {
           body.classList.remove('close');
         }
@@ -114,12 +114,12 @@
       lastWasWide = isWide;
     }
 
-    // 即时同步选中区域的尺寸
+    // Immediately sync active indicator dimensions.
     if (window.syncSidebarActiveIndicator) {
       window.syncSidebarActiveIndicator({ animate: false });
     }
 
-    // 为窗口调整过程加上 dpr-resizing，禁用输入框/底部条的过渡，让动画更跟手
+    // Disable transitions during resize for smoother controls.
     document.body.classList.add('dpr-resizing');
     if (resizeTimer) {
       clearTimeout(resizeTimer);
@@ -131,7 +131,7 @@
   });
 })();
 
-// 3. 自定义订阅管理入口按钮脚本（左下角 📚）
+// 3. Custom subscription management entry button.
 (function() {
   function createCustomButton() {
     if (document.getElementById('custom-toggle-btn')) return;
@@ -146,7 +146,7 @@
     btn.id = 'custom-toggle-btn';
     btn.className = 'custom-toggle-btn';
     btn.innerHTML = '⚙️';
-    btn.title = '后台管理';
+    btn.title = 'Admin';
 
     btn.addEventListener('click', function () {
       var event = new CustomEvent('ensure-arxiv-ui');
@@ -171,7 +171,7 @@
     document.body.appendChild(btn);
   }
 
-  // 左下角保留一个独立触发函数，暂不自动挂载按钮（防止重复入口）
+  // Keep an independent launcher for the lower-left quick-run button.
   function createQuickRunButton() {
     if (document.getElementById('custom-quick-run-btn')) return;
 
@@ -200,8 +200,8 @@
     quickBtn.id = 'custom-quick-run-btn';
     quickBtn.className = 'custom-toggle-btn custom-quick-run-btn';
     quickBtn.innerHTML = '🚀';
-    quickBtn.title = '快速抓取';
-    quickBtn.setAttribute('aria-label', '快速抓取');
+    quickBtn.title = 'Quick Run';
+    quickBtn.setAttribute('aria-label', 'Quick Run');
 
     quickBtn.addEventListener('click', function (e) {
       e.preventDefault();

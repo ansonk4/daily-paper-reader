@@ -1,0 +1,24 @@
+{
+  "name": "Amir Houmansadr",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=8022; Semantic Scholar paper_count=141",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Whose Agent Are You? Multi-Layer Fingerprinting and Attribution of Autonomous Web Agents",
+    "paper_year": "2026",
+    "name": "Amir Houmansadr",
+    "affiliations": [],
+    "paper_count": 141,
+    "citation_count": 8022,
+    "author_id": "1972973",
+    "lookup": "author_search"
+  }
+}

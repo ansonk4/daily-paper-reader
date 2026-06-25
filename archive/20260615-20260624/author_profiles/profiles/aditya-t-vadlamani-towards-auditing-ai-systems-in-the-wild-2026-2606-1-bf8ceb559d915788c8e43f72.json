@@ -1,0 +1,31 @@
+{
+  "name": "Aditya T. Vadlamani",
+  "role": "first_author",
+  "affiliation": "Ohio State University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=13; Semantic Scholar paper_count=7",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Aditya T. Vadlamani",
+    "affiliations": [
+      "Ohio State University"
+    ],
+    "author_row": "Aditya T. Vadlamani"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Towards Auditing AI Systems in the Wild",
+    "paper_year": "2026",
+    "name": "Aditya T. Vadlamani",
+    "affiliations": [],
+    "paper_count": 7,
+    "citation_count": 13,
+    "author_id": "2295142688",
+    "lookup": "author_search"
+  }
+}

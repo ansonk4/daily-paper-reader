@@ -1,0 +1,31 @@
+{
+  "name": "De Zhang Lee",
+  "role": "first_author",
+  "affiliation": "National University of Singapore",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=9; Semantic Scholar paper_count=8",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "De Zhang Lee",
+    "affiliations": [
+      "National University of Singapore"
+    ],
+    "author_row": "De Zhang Lee"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Enhancing Stateful Detection of Adversarial Attacks with Soft-labels' Temporality and Robust Similarity Approximations",
+    "paper_year": "2026",
+    "name": "Deajung Lee",
+    "affiliations": [],
+    "paper_count": 8,
+    "citation_count": 9,
+    "author_id": "1657408810",
+    "lookup": "author_search"
+  }
+}

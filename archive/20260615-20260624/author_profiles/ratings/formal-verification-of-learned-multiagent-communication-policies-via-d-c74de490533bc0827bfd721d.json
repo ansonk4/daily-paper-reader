@@ -1,0 +1,55 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Ahmad Farooq",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=14; Semantic Scholar paper_count=7",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Formal Verification of Learned Multi-Agent Communication Policies via Decision Tree Distillation",
+        "paper_year": "2026",
+        "name": "Ahmad Farooq",
+        "affiliations": [],
+        "paper_count": 7,
+        "citation_count": 14,
+        "author_id": "2283184112",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Kamran Iqbal",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=1798; Semantic Scholar paper_count=130",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Formal Verification of Learned Multi-Agent Communication Policies via Decision Tree Distillation",
+        "paper_year": "2026",
+        "name": "K. Iqbal",
+        "affiliations": [],
+        "paper_count": 130,
+        "citation_count": 1798,
+        "author_id": "34552792",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:06:44.252307+00:00"
+}

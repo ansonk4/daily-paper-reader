@@ -1,0 +1,36 @@
+{
+  "name": "Yujiao Wu",
+  "role": "last_author",
+  "affiliation": "China Three Gorges University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=1469; OpenAlex works_count=53; Semantic Scholar citation_count=282; Semantic Scholar paper_count=16",
+  "confidence": "medium",
+  "evidence_source": "openalex, semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "StepGuard: Guarding Web Navigation via Single-Step Calibration",
+    "paper_year": "2026",
+    "name": "Yujiao Wu",
+    "affiliations": [
+      "China Three Gorges University"
+    ],
+    "works_count": 53,
+    "cited_by_count": 1469,
+    "author_id": "https://openalex.org/A5102910708",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "StepGuard: Guarding Web Navigation via Single-Step Calibration",
+    "paper_year": "2026",
+    "name": "Yujiao Wu",
+    "affiliations": [],
+    "paper_count": 16,
+    "citation_count": 282,
+    "author_id": "2187038467",
+    "lookup": "author_search"
+  }
+}

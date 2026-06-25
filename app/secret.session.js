@@ -47,7 +47,7 @@
       }
       return await resp.json();
     } catch (e) {
-      console.warn('[SECRET] 未能读取静态 secret.private：', e);
+      console.warn('[SECRET] Failed to read static secret.private：', e);
     }
     return null;
   }
@@ -69,7 +69,7 @@
       const parsed = JSON.parse(raw);
       return parsed && parsed.payload ? parsed.payload : parsed;
     } catch (e) {
-      console.error('[SECRET] 读取本地 secret.private 失败：', e);
+      console.error('[SECRET] Failed to read local secret.private：', e);
       return null;
     }
   }
@@ -84,7 +84,7 @@
       );
       return true;
     } catch (e) {
-      console.error('[SECRET] 保存本地 secret.private 失败：', e);
+      console.error('[SECRET] Failed to save local secret.private：', e);
       return false;
     }
   }
@@ -102,7 +102,7 @@
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.ok) {
-      throw new Error((data && data.error) || `写入本地 secret.private 失败：HTTP ${res.status}`);
+      throw new Error((data && data.error) || `Failed to write local secret.private：HTTP ${res.status}`);
     }
     saveLocalSecretPayload(payload);
     return true;
@@ -171,22 +171,10 @@
     }, SECRET_OVERLAY_ANIMATION_MS);
   };
 
-  // 简单的密码强度校验：至少 8 位，包含数字、小写字母、大写字母和特殊符号
+  // 简单的密码强度校验：至少 6 位
   function validatePassword(pwd) {
-    if (!pwd || pwd.length < 8) {
-      return '密码至少需要 8 位字符。';
-    }
-    if (!/[0-9]/.test(pwd)) {
-      return '密码必须包含数字。';
-    }
-    if (!/[a-z]/.test(pwd)) {
-      return '密码必须包含小写字母。';
-    }
-    if (!/[A-Z]/.test(pwd)) {
-      return '密码必须包含大写字母。';
-    }
-    if (!/[^A-Za-z0-9]/.test(pwd)) {
-      return '密码必须包含至少一个特殊符号（如 !@# 等）。';
+    if (!pwd || pwd.length < 6) {
+      return 'Password must be at least 6 characters.';
     }
     return '';
   }
@@ -329,7 +317,7 @@
     }
     return {
       key: 'deepseek',
-      label: 'DeepSeek 官方',
+      label: 'DeepSeek Official',
       baseUrl: getDefaultDeepSeekBaseUrl(),
       models: getDefaultDeepSeekChatModels(),
     };
@@ -342,31 +330,31 @@
   const RERANKER_PROFILES = [
     {
       value: 'public-zwwen-rerank',
-      label: '公益 Rerank（zwwen.online）',
+      label: 'Public Rerank (zwwen.online)',
       provider: 'public_zwwen',
       model: 'Qwen/Qwen3-Reranker-0.6B',
       baseUrl: 'https://zwwen.online/rerank',
       requiresApiKey: false,
       testApiKey: '26932a86d772001af60cbd9d2c162bfda3a90e094f797f3d6806f6077478b27a',
-      note: '默认推荐；使用 zwwen.online 公益 rerank 服务。',
+      note: 'Recommended by default; uses the public zwwen.online rerank service.',
     },
     {
       value: 'local-qwen3-0.6b',
-      label: '本地 Qwen3-Reranker-0.6B',
+      label: 'Local Qwen3-Reranker-0.6B',
       provider: 'local',
       model: 'Qwen/Qwen3-Reranker-0.6B',
       baseUrl: '',
       requiresApiKey: false,
-      note: '无需 reranker API Key，GitHub Actions 在 CPU 上加载本地模型。',
+      note: 'No reranker API key needed; GitHub Actions loads the local model on CPU.',
     },
     {
       value: 'siliconflow-qwen3-0.6b',
-      label: '硅基流动 Qwen3-Reranker-0.6B',
+      label: 'SiliconFlow Qwen3-Reranker-0.6B',
       provider: 'siliconflow',
       model: 'Qwen/Qwen3-Reranker-0.6B',
       baseUrl: 'https://api.siliconflow.cn/v1/rerank',
       requiresApiKey: true,
-      note: '速度快、成本低；需要硅基流动 API Key。',
+      note: 'Fast and low-cost; requires a SiliconFlow API key.',
     },
   ];
   const DEFAULT_RERANKER_PROFILE =
@@ -464,7 +452,7 @@
   async function pingChatModels(modelEntries, statusEl) {
     const entries = Array.isArray(modelEntries) ? modelEntries : [];
     if (!entries.length) {
-      throw new Error('请先填写完整的模型配置。');
+      throw new Error('Complete the model configuration first.');
     }
 
     const controller = new AbortController();
@@ -480,10 +468,10 @@
         const endpoint = buildChatCompletionsEndpoint(baseUrl);
 
         if (!model || !apiKey || !endpoint) {
-          throw new Error('模型配置缺少 apiKey、baseUrl 或 model。');
+          throw new Error('Model configuration is missing apiKey, baseUrl, or model.');
         }
         if (statusEl) {
-          statusEl.textContent = `正在测试模型 ${i + 1}/${entries.length}：${model} ...`;
+          statusEl.textContent = `Testing model ${i + 1}/${entries.length}：${model} ...`;
           statusEl.style.color = '#666';
         }
 
@@ -515,7 +503,7 @@
         if (!resp.ok) {
           const text = resp._dprErrorPreview || await resp.text().catch(() => '');
           throw new Error(
-            `${model} 请求失败：HTTP ${resp.status} ${resp.statusText}${text ? ` - ${text.slice(0, 160)}` : ''}`,
+            `${model} request failed: HTTP ${resp.status} ${resp.statusText}${text ? ` - ${text.slice(0, 160)}` : ''}`,
           );
         }
         const responseText = await resp.text().catch(() => '');
@@ -529,7 +517,7 @@
         }
         if (data && data.error) {
           const err = data.error;
-          throw new Error(`${model} 返回错误：${err.message || err.code || JSON.stringify(err).slice(0, 160)}`);
+          throw new Error(`${model} returned an error: ${err.message || err.code || JSON.stringify(err).slice(0, 160)}`);
         }
         results.push(model);
       }
@@ -549,7 +537,7 @@
       },
     });
     if (!userRes.ok) {
-      throw new Error('无法使用当前 GitHub Token 获取用户信息。');
+      throw new Error('Cannot fetch user information with the current GitHub Token.');
     }
     const userData = await userRes.json();
     const login = userData.login || '';
@@ -599,7 +587,7 @@
     }
 
     if (!repoOwner || !repoName) {
-      throw new Error('无法推断目标仓库，请检查当前访问域名或配置。');
+      throw new Error('Cannot infer the target repository. Check the current domain or configuration.');
     }
 
     return { owner: repoOwner, repo: repoName };
@@ -631,13 +619,13 @@
           await window.sodium.ready;
         } else {
           throw new Error(
-            '浏览器未正确加载 libsodium-wrappers，无法写入 GitHub Secrets。',
+            'The browser did not load libsodium-wrappers correctly, so GitHub Secrets cannot be written.',
           );
         }
       }
       const sodium = window.sodium;
       if (!sodium) {
-        throw new Error('浏览器缺少 libsodium 支持，无法写入 GitHub Secrets。');
+        throw new Error('The browser lacks libsodium support, so GitHub Secrets cannot be written.');
       }
 
       const { owner, repo } = await detectGithubRepoFromToken(token);
@@ -654,14 +642,14 @@
       );
       if (!pkRes.ok) {
         throw new Error(
-          `获取仓库 Public Key 失败（HTTP ${pkRes.status}），请确认 Token 是否具备 repo 权限。`,
+          `Failed to fetch repository public key（HTTP ${pkRes.status}），Check whether the token has repo permission.`,
         );
       }
       const pkData = await pkRes.json();
       const publicKey = pkData.key;
       const keyId = pkData.key_id;
       if (!publicKey || !keyId) {
-        throw new Error('Public Key 数据不完整，无法写入 Secrets。');
+        throw new Error('Public key data is incomplete; cannot write Secrets.');
       }
 
       const encryptValue = (value) => {
@@ -699,10 +687,10 @@
       const rerankerBaseUrl = normalizeBaseUrlForStorage(safeOptions.rerankerBaseUrl || '');
 
       if (!summarizedApiKey || !summarizedBaseUrl || !summarizedModel) {
-        throw new Error('总结模型配置不完整，无法写入 GitHub Secrets。');
+        throw new Error('Summary model configuration is incomplete; cannot write GitHub Secrets.');
       }
       if (!rerankerProfile || !rerankerProvider || !rerankerModel) {
-        throw new Error('Reranker 配置不完整，无法写入 GitHub Secrets。');
+        throw new Error('Reranker configuration is incomplete; cannot write GitHub Secrets.');
       }
 
       const secretNameSummKey = 'Summarized_LLM_API_KEY';
@@ -751,7 +739,7 @@
         if (!res.ok) {
           const txt = await res.text().catch(() => '');
           throw new Error(
-            `写入 GitHub Secret ${name} 失败：HTTP ${res.status} ${res.statusText} - ${txt}`,
+            `Writing GitHub Secret ${name} failed: HTTP ${res.status} ${res.statusText} - ${txt}`,
           );
         }
       };
@@ -820,7 +808,7 @@
 
       return true;
     } catch (e) {
-      console.error('[SECRET] 保存 GitHub Secrets 失败：', e);
+      console.error('[SECRET] Failed to save GitHub Secrets：', e);
       return false;
     }
   }
@@ -863,11 +851,11 @@
         } else if (getRes.status !== 404) {
           const txt = await getRes.text().catch(() => '');
           throw new Error(
-            `读取远程 secret.private 失败：HTTP ${getRes.status} ${getRes.statusText} - ${txt}`,
+            `Failed to read remote secret.private: HTTP ${getRes.status} ${getRes.statusText} - ${txt}`,
           );
         }
       } catch (e) {
-        console.error('[SECRET] 预读远程 secret.private 失败：', e);
+        console.error('[SECRET] Failed to pre-read remote secret.private：', e);
         throw e;
       }
 
@@ -903,13 +891,13 @@
       if (!putRes.ok) {
         const txt = await putRes.text().catch(() => '');
         throw new Error(
-          `提交 secret.private 到仓库失败：HTTP ${putRes.status} ${putRes.statusText} - ${txt}`,
+          `Failed to commit secret.private to repository：HTTP ${putRes.status} ${putRes.statusText} - ${txt}`,
         );
       }
 
       return true;
     } catch (e) {
-      console.error('[SECRET] 保存 secret.private 到 GitHub 仓库失败：', e);
+      console.error('[SECRET] Failed to save secret.private to GitHub repository：', e);
       return false;
     }
   }
@@ -919,7 +907,7 @@
     const cryptoObj = (typeof window !== 'undefined' && (window.crypto || window.msCrypto)) || null;
     if (!cryptoObj || !cryptoObj.subtle) {
       throw new Error(
-        '当前环境不支持 Web Crypto AES-GCM。请通过 https 或 http://localhost 使用现代浏览器（Chrome/Edge/Firefox）打开本页面后重试。',
+        'This environment does not support Web Crypto AES-GCM. Open this page through https or http://localhost in a modern browser (Chrome/Edge/Firefox) and try again.',
       );
     }
     const baseKey = await cryptoObj.subtle.importKey(
@@ -953,13 +941,13 @@
   // 明文为 JSON 字符串，包含 LLM API Key 等配置信息。
   async function decryptSecret(password, payload) {
     if (!payload || typeof payload !== 'object') {
-      throw new Error('密文格式不正确');
+      throw new Error('Ciphertext format is invalid');
     }
     const saltB64 = payload.salt;
     const ivB64 = payload.iv;
     const cipherB64 = payload.ciphertext;
     if (!saltB64 || !ivB64 || !cipherB64) {
-      throw new Error('缺少必须字段（salt/iv/ciphertext）');
+      throw new Error('Required fields are missing (salt/iv/ciphertext)');
     }
 
     const saltBytes = base64ToBytes(saltB64);
@@ -981,7 +969,7 @@
     try {
       obj = JSON.parse(text);
     } catch {
-      throw new Error('解密成功但内容不是有效 JSON');
+      throw new Error('Decryption succeeded, but the content is not valid JSON');
     }
     return obj;
   }
@@ -1056,13 +1044,13 @@
     const renderUnlockUI = () => {
       setStep2Modal(false);
       modal.innerHTML = `
-        <h2 style="margin-top:0;">🔐 解锁密钥</h2>
+        <h2 style="margin-top:0;">🔐 Unlock Secrets</h2>
         <p style="font-size:13px; color:#555; margin-bottom:8px;">
-          检测到已存在密钥文件 <code>secret.private</code>。请输入解锁密码，
-          或选择以游客身份访问（仅支持阅读论文，无法使用后台大模型能力）。
+          An existing <code>secret.private</code> file was detected. Enter the unlock password,
+          or continue as a guest. Guest mode only supports reading papers and cannot use admin LLM features.
         </p>
         <label for="secret-gate-password" style="font-size:13px; color:#333; display:block; margin-bottom:4px;">
-          解锁密码（至少 8 位，包含数字、小写字母、大写字母和特殊符号）：
+          Unlock password (at least 6 characters):
         </label>
         <input
           id="secret-gate-password"
@@ -1071,14 +1059,14 @@
           style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:6px; font-size:13px;"
         />
         <div id="secret-gate-error" style="min-height:18px; font-size:12px; color:#999; margin-bottom:8px;">
-          密码仅在本地用于解密，不会上传到服务器。
+          The password is used locally for decryption and is never uploaded.
         </div>
         <div class="secret-gate-actions">
           <button id="secret-gate-guest" type="button" class="secret-gate-btn secondary">
-            以游客身份访问
+            Continue as Guest
           </button>
           <button id="secret-gate-unlock" type="button" class="secret-gate-btn primary">
-            解锁密钥
+            Unlock
           </button>
         </div>
       `;
@@ -1107,7 +1095,7 @@
           return;
         }
         if (errorEl) {
-          errorEl.textContent = '正在解锁密钥，请稍候...';
+          errorEl.textContent = 'Unlocking secrets, please wait...';
           errorEl.style.color = '#666';
         }
         unlockBtn.disabled = true;
@@ -1115,7 +1103,7 @@
         try {
           const staticPayload = await fetchStaticSecretPayload();
           if (!staticPayload) {
-            throw new Error('获取 secret.private 失败');
+            throw new Error('Failed to get secret.private');
           }
           const payload = await loadLocalSecretPayloadPreferred(staticPayload);
           const secret = await decryptSecret(pwd, payload);
@@ -1128,7 +1116,7 @@
           console.error(e);
           if (errorEl) {
             errorEl.textContent =
-              '解锁失败，请检查密码是否正确，或稍后重试。';
+              'Unlock failed. Check the password or try again later.';
             errorEl.style.color = '#c00';
           }
         } finally {
@@ -1174,10 +1162,10 @@
         'deepseek-v4-flash';
       const formatModelLabel = (providerKey, model) => {
         if (providerKey === 'deepseek' && model === 'deepseek-v4-flash') {
-          return 'DeepSeek V4 Flash · 默认推荐';
+          return 'DeepSeek V4 Flash · Recommended';
         }
         if (providerKey === 'deepseek' && model === 'deepseek-v4-pro') {
-          return 'DeepSeek V4 Pro · 高性能模型';
+          return 'DeepSeek V4 Pro · High-performance model';
         }
         if (providerKey === 'openrouter' && model === 'openrouter/owl-alpha') {
           return 'openrouter/owl-alpha · OpenRouter';
@@ -1186,35 +1174,35 @@
       };
 
       modal.innerHTML = `
-        <h2 style="margin-top:0;">🛡️ 新配置指引 · 第二步</h2>
+        <h2 style="margin-top:0;">🛡️ New Setup · Step 2</h2>
         <div class="secret-setup-step2-grid" style="font-size:13px;">
           <div class="secret-setup-step2-col">
             <div class="secret-setup-step2-block">
-              <div class="secret-setup-step2-title">GitHub Token（必填）</div>
+              <div class="secret-setup-step2-title">GitHub Token (required)</div>
               <p class="secret-setup-step2-note">
-                需要使用 <code>Classic PAT</code>，并同时具备 <code>repo</code>、<code>workflow</code> 和 <code>gist</code> 权限。
+                Use a <code>Classic PAT</code> with <code>repo</code>, <code>workflow</code>, and <code>gist</code> permissions.
               </p>
               <div class="secret-setup-input-row">
                 <input
                   id="secret-setup-github-token"
                   type="password"
                   autocomplete="off"
-                  placeholder="用于读写 config.yaml 与触发 workflow 的 GitHub PAT"
+                  placeholder="GitHub PAT for reading/writing config.yaml and triggering workflows"
                   style="width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px;"
                 />
                 <button id="secret-setup-github-verify" type="button" class="secret-gate-btn secondary">
-                  验证
+                  Verify
                 </button>
               </div>
               <div id="secret-setup-github-status" style="min-height:18px; font-size:12px; color:#999;">
-                需要使用 <code>Classic PAT</code>，并同时具备 <code>repo</code>、<code>workflow</code> 和 <code>gist</code> 权限。
+                Use a <code>Classic PAT</code> with <code>repo</code>, <code>workflow</code>, and <code>gist</code> permissions.
               </div>
             </div>
 
             <div id="secret-setup-deepseek-section" class="secret-setup-step2-block">
-              <div class="secret-setup-step2-title">LLM API（必填）</div>
+              <div class="secret-setup-step2-title">LLM API (required)</div>
               <p class="secret-setup-step2-note">
-                LLM 用于 query enrich、LLM refine、总结与聊天；Reranker 可在右侧单独选择。
+                The LLM is used for query enrichment, LLM refinement, summaries, and chat. Choose the reranker separately on the right.
               </p>
               <select id="secret-setup-llm-provider" class="secret-setup-select" style="margin-bottom:8px;"></select>
               <div class="secret-setup-input-row multi-actions">
@@ -1222,26 +1210,26 @@
                   id="secret-setup-deepseek"
                   type="password"
                   autocomplete="off"
-                  placeholder="API Key，例如：sk-xxxx"
+                  placeholder="API key, e.g. sk-xxxx"
                   style="width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px;"
                 />
                 <button id="secret-setup-deepseek-test" type="button" class="secret-gate-btn secondary">
-                  测试
+                  Test
                 </button>
                 <button id="secret-setup-deepseek-verify" type="button" class="secret-gate-btn secondary" style="display:none;">
-                  验证
+                  Verify
                 </button>
               </div>
               <div id="secret-setup-deepseek-status" style="min-height:18px; font-size:12px; color:#999; margin-bottom:8px;">
-                将通过一次 <code>hello world</code> 请求检查 LLM 配置可用性。
+                A <code>hello world</code> request will check whether the LLM configuration works.
               </div>
 
               <div style="font-weight:500; margin-bottom:4px; display:flex; align-items:center; gap:4px;">
-                用于工作流总结 / 过滤的大模型
+                Model for workflow summaries / filtering
                 <span class="secret-model-tip">!
                   <span class="secret-model-tip-popup">
-                    支持 DeepSeek 官方 API 与 OpenRouter。<br/>
-                    Reranker API Key 与 LLM API Key 分开配置。
+                    Supports DeepSeek Official API and OpenRouter.<br/>
+                    Reranker API keys are configured separately from LLM API keys.
                   </span>
                 </span>
               </div>
@@ -1255,7 +1243,7 @@
             <div class="secret-setup-step2-block">
               <div class="secret-setup-step2-title">Reranker</div>
               <p class="secret-setup-step2-note">
-                Step 3 使用 Qwen3 reranker 对候选论文重排。请选择本地模型或远端服务。
+                Step 3 uses Qwen3 reranker to rerank candidate papers. Choose a local model or remote service.
               </p>
               <select id="secret-setup-reranker-profile" class="secret-setup-select" style="margin-bottom:8px;"></select>
               <div id="secret-setup-reranker-remote-fields" style="display:none;">
@@ -1273,15 +1261,15 @@
                     id="secret-setup-reranker-base-url"
                     type="text"
                     autocomplete="off"
-                    placeholder="Rerank Base URL，例如 https://api.siliconflow.cn/v1/rerank"
+                    placeholder="Rerank Base URL, e.g. https://api.siliconflow.cn/v1/rerank"
                     style="width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px;"
                   />
                 </div>
                 <button id="secret-setup-reranker-test" type="button" class="secret-gate-btn secondary secret-setup-step2-actions">
-                  测试 Reranker
+                  Test Reranker
                 </button>
                 <div id="secret-setup-reranker-test-status" style="min-height:18px; font-size:12px; color:#999; margin-top:6px;">
-                  将发送一次最小 rerank 请求验证 API Key、Base URL 与模型是否可用。
+                  A minimal rerank request will verify the API key, base URL, and model.
                 </div>
               </div>
               <div id="secret-setup-reranker-status" style="font-size:12px; color:#666; line-height:1.6;"></div>
@@ -1301,17 +1289,17 @@
         </div>
 
         <div id="secret-setup-error" style="min-height:18px; font-size:12px; color:#999; margin-top:10px; margin-bottom:8px;">
-          所有密钥信息将加密写入 GitHub Secrets（用于 GitHub Actions），并同步生成本地 <code>secret.private</code> 备份，原文不会直接存入仓库。
+          All secrets will be encrypted into GitHub Secrets for GitHub Actions, and a local encrypted <code>secret.private</code> backup will be generated. Plaintext is never committed.
         </div>
         <div class="secret-gate-actions">
           <button id="secret-setup-back" type="button" class="secret-gate-btn secondary">
-            上一步
+            Back
           </button>
           <button id="secret-setup-close" type="button" class="secret-gate-btn secondary">
-            关闭
+            Close
           </button>
           <button id="secret-setup-generate" type="button" class="secret-gate-btn primary">
-            保存配置
+            Save Configuration
           </button>
         </div>
       `;
@@ -1409,8 +1397,8 @@
         deepseekModelSelect.value = preferred;
         deepseekInput.placeholder =
           provider.key === 'openrouter'
-            ? 'OpenRouter API Key，例如：sk-or-v1-...'
-            : 'DeepSeek API Key，例如：sk-xxxx';
+            ? 'OpenRouter API key, e.g. sk-or-v1-...'
+            : 'DeepSeek API key, e.g. sk-xxxx';
       };
       syncLLMModelOptions();
 
@@ -1472,7 +1460,7 @@
           rerankerApiKeyInput.disabled = !requiresApiKey;
           rerankerApiKeyInput.placeholder = requiresApiKey
             ? 'Reranker API Key'
-            : '公益 Reranker 无需 API Key';
+            : 'Public Reranker does not need an API key';
           if (!requiresApiKey) {
             rerankerApiKeyInput.value = '';
           }
@@ -1491,7 +1479,7 @@
           rerankerBaseUrlInput.value = '';
         }
         rerankerBaseUrlInput.setAttribute('data-reranker-profile', profile.value);
-        rerankerStatusEl.textContent = `${profile.note} 模型：${profile.model}`;
+        rerankerStatusEl.textContent = `${profile.note} Model: ${profile.model}`;
       };
       const syncProviderSections = () => {
         deepseekSection.style.display = 'block';
@@ -1499,7 +1487,7 @@
 
       const resetGithubStatus = () => {
         githubOk = false;
-        githubStatusEl.innerHTML = '需要使用 <code>Classic PAT</code>，并同时具备 <code>repo</code>、<code>workflow</code> 和 <code>gist</code> 权限。';
+        githubStatusEl.innerHTML = 'Use a <code>Classic PAT</code> with <code>repo</code>, <code>workflow</code>, and <code>gist</code> permissions.';
         githubStatusEl.style.color = '#999';
       };
 
@@ -1507,19 +1495,19 @@
         deepseekOk = false;
         const provider = selectedLLMProvider();
         deepseekStatusEl.innerHTML =
-          `将通过一次 <code>hello world</code> 请求检查 ${provider.label} 配置可用性。`;
+          `A <code>hello world</code> request will check whether ${provider.label} works.`;
         deepseekStatusEl.style.color = '#999';
       };
       const resetCustomStatus = () => {
         customStatusEl.innerHTML =
-          '将依次用已填写聊天模型发送 <code>hello world</code>，检查接口与模型是否可用。';
+          'Each configured chat model will send <code>hello world</code> to check whether the endpoint and model work.';
         customStatusEl.style.color = '#999';
       };
       const resetRerankerTestStatus = () => {
         const profile = selectedRerankerProfile();
         rerankerTestStatusEl.textContent = rerankerRequiresApiKey(profile)
-          ? '将发送一次最小 rerank 请求验证 API Key、Base URL 与模型是否可用。'
-          : '将发送一次最小 rerank 请求验证 Base URL 与模型是否可用。';
+          ? 'A minimal rerank request will verify the API key, base URL, and model.'
+          : 'A minimal rerank request will verify the base URL and model.';
         rerankerTestStatusEl.style.color = '#999';
       };
       const buildRerankerDraft = (fallbackApiKey, fallbackBaseUrl) => {
@@ -1533,10 +1521,10 @@
         const requiresApiKey = rerankerRequiresApiKey(profile);
 
         if (requiresApiKey && !apiKey) {
-          throw new Error(`选择 ${profile.label} 时需要填写 Reranker API Key。`);
+          throw new Error(`Selecting ${profile.label} requires a Reranker API key.`);
         }
         if (profile.provider !== 'local' && !baseUrl) {
-          throw new Error(`请选择 ${profile.label} 时需要填写 Rerank Base URL。`);
+          throw new Error(`Selecting ${profile.label} requires a Rerank Base URL.`);
         }
 
         return {
@@ -1562,10 +1550,10 @@
         const model = selectedDeepSeekModel();
         const provider = selectedLLMProvider();
         if (!apiKey) {
-          throw new Error(`请先输入 ${provider.label} API Key。`);
+          throw new Error(`Enter ${provider.label} API key.`);
         }
         if (!model) {
-          throw new Error('请选择用于工作流总结的大模型。');
+          throw new Error('Select a model for workflow summaries.');
         }
         const providerModels = sanitizeModelList(provider.models || [], 99);
         const chatModels = providerModels.includes(model)
@@ -1590,7 +1578,7 @@
         const model = selectedDeepSeekModel();
         const provider = selectedLLMProvider();
         if (!apiKey || !model) {
-          throw new Error(`请先填写 ${provider.label} API Key 并选择模型。`);
+          throw new Error(`Fill ${provider.label} API key and select a model first.`);
         }
         return [
           {
@@ -1610,11 +1598,11 @@
       };
 
       if (initialGithubToken) {
-        githubStatusEl.textContent = '已载入当前加密配置；如更换 GitHub Token，保存前请重新验证。';
+        githubStatusEl.textContent = 'Current encrypted configuration loaded. If you change the GitHub Token, verify it again before saving.';
         githubStatusEl.style.color = '#666';
       }
       if (initialApiKey) {
-        deepseekStatusEl.textContent = `已载入当前 ${selectedLLMProvider().label} 配置；如更换 API Key 或模型，建议点击测试按钮。`;
+        deepseekStatusEl.textContent = `Current ${selectedLLMProvider().label} configuration loaded. If you change the API key or model, test it again.`;
         deepseekStatusEl.style.color = '#666';
       }
 
@@ -1648,18 +1636,18 @@
           return;
         }
         if (draft.provider === 'local') {
-          rerankerTestStatusEl.textContent = '当前选择为本地 reranker，无需远端测试。';
+          rerankerTestStatusEl.textContent = 'The current selection is a local reranker; no remote test is needed.';
           rerankerTestStatusEl.style.color = '#666';
           return;
         }
         const endpoint = buildRerankEndpoint(draft.baseUrl);
         if (!endpoint) {
-          rerankerTestStatusEl.textContent = '❌ 请填写 Rerank Base URL。';
+          rerankerTestStatusEl.textContent = '❌ Enter the Rerank Base URL.';
           rerankerTestStatusEl.style.color = '#c00';
           return;
         }
         rerankerTestBtn.disabled = true;
-        rerankerTestStatusEl.textContent = '正在测试远端 Reranker...';
+        rerankerTestStatusEl.textContent = 'Testing remote Reranker...';
         rerankerTestStatusEl.style.color = '#666';
         try {
           const headers = {
@@ -1689,12 +1677,12 @@
           }
           const data = await res.json().catch(() => null);
           if (!data || !Array.isArray(data.results)) {
-            throw new Error('响应缺少 results 字段。');
+            throw new Error('Response is missing the results field.');
           }
-          rerankerTestStatusEl.textContent = `✅ Reranker 可用：返回 ${data.results.length} 条结果。`;
+          rerankerTestStatusEl.textContent = `✅ Reranker is available: returned ${data.results.length} results.`;
           rerankerTestStatusEl.style.color = '#28a745';
         } catch (e) {
-          rerankerTestStatusEl.textContent = `❌ 测试失败：${e.message || e}`;
+          rerankerTestStatusEl.textContent = `❌ Test failed: ${e.message || e}`;
           rerankerTestStatusEl.style.color = '#c00';
         } finally {
           rerankerTestBtn.disabled = false;
@@ -1708,7 +1696,7 @@
           }
           syncProviderSections();
           setErrorText(
-            'LLM 密钥将加密写入 GitHub Secrets（用于 GitHub Actions），并同步生成本地 secret.private 备份。',
+            'LLM secrets will be encrypted into GitHub Secrets for GitHub Actions, and a local secret.private backup will be generated.',
             '#999',
           );
         });
@@ -1725,13 +1713,13 @@
       githubVerifyBtn.addEventListener('click', async () => {
         const token = normalizeText(githubInput.value);
         if (!token) {
-          githubStatusEl.textContent = '请先输入 GitHub Token。';
+          githubStatusEl.textContent = 'Enter GitHub Token。';
           githubStatusEl.style.color = '#c00';
           githubOk = false;
           return;
         }
         githubVerifyBtn.disabled = true;
-        githubStatusEl.textContent = '正在验证 GitHub Token...';
+        githubStatusEl.textContent = 'Verifying GitHub Token...';
         githubStatusEl.style.color = '#666';
         try {
           const res = await fetch('https://api.github.com/user', {
@@ -1752,15 +1740,15 @@
           const missing = requiredScopes.filter((scope) => !scopeList.includes(scope));
           if (missing.length) {
             throw new Error(
-              `Token 权限不足，缺少：${missing.join(', ')}。请在 GitHub 中重新生成 PAT。`,
+              `Token permissions are insufficient. Missing: ${missing.join(', ')}. Regenerate the PAT in GitHub.`,
             );
           }
           const userData = await res.json().catch(() => ({}));
-          githubStatusEl.innerHTML = `✅ 验证成功：用户 ${userData.login || ''}，权限：${scopeList.join(', ')}<br>Gist 分享：已开启。`;
+          githubStatusEl.innerHTML = `✅ Verification succeeded: user ${userData.login || ''}, scopes: ${scopeList.join(', ')}<br>Gist sharing: enabled.`;
           githubStatusEl.style.color = '#28a745';
           githubOk = true;
         } catch (e) {
-          githubStatusEl.textContent = `❌ 验证失败：${e.message || e}`;
+          githubStatusEl.textContent = `❌ Verification failed: ${e.message || e}`;
           githubStatusEl.style.color = '#c00';
           githubOk = false;
         } finally {
@@ -1771,21 +1759,21 @@
       deepseekVerifyBtn.addEventListener('click', async () => {
         const key = normalizeText(deepseekInput.value);
         if (!key) {
-          deepseekStatusEl.textContent = `请先输入 ${selectedLLMProvider().label} API Key。`;
+          deepseekStatusEl.textContent = `Enter ${selectedLLMProvider().label} API key.`;
           deepseekStatusEl.style.color = '#c00';
           deepseekOk = false;
           return;
         }
         deepseekVerifyBtn.disabled = true;
-        deepseekStatusEl.textContent = `正在测试 ${selectedLLMProvider().label} 配置...`;
+        deepseekStatusEl.textContent = `Testing ${selectedLLMProvider().label} configuration...`;
         deepseekStatusEl.style.color = '#666';
         try {
           const models = await pingChatModels(buildPingEntries(), deepseekStatusEl);
-          deepseekStatusEl.textContent = `✅ 配置可用：${models.join(', ')}`;
+          deepseekStatusEl.textContent = `✅ Configuration works: ${models.join(', ')}`;
           deepseekStatusEl.style.color = '#28a745';
           deepseekOk = true;
         } catch (e) {
-          deepseekStatusEl.textContent = `❌ 验证失败：${e.message || e}`;
+          deepseekStatusEl.textContent = `❌ Verification failed: ${e.message || e}`;
           deepseekStatusEl.style.color = '#c00';
           deepseekOk = false;
         } finally {
@@ -1798,11 +1786,11 @@
         deepseekVerifyBtn.disabled = true;
         try {
           const models = await pingChatModels(buildPingEntries(), deepseekStatusEl);
-          deepseekStatusEl.textContent = `✅ 配置可用：${models.join(', ')}`;
+          deepseekStatusEl.textContent = `✅ Configuration works: ${models.join(', ')}`;
           deepseekStatusEl.style.color = '#28a745';
           deepseekOk = true;
         } catch (e) {
-          deepseekStatusEl.textContent = `❌ 测试失败：${e.message || e}`;
+          deepseekStatusEl.textContent = `❌ Test failed: ${e.message || e}`;
           deepseekStatusEl.style.color = '#c00';
           deepseekOk = false;
         } finally {
@@ -1815,7 +1803,7 @@
         const githubToken = normalizeText(githubInput.value);
         const localOnly = isLocalDebugHost();
         if (!localOnly && (!githubToken || !githubOk)) {
-          setErrorText('请先填写并通过验证 GitHub Token。', '#c00');
+          setErrorText('Enter and verify the GitHub Token first.', '#c00');
           return;
         }
 
@@ -1823,12 +1811,12 @@
         try {
           providerDraft = collectProviderDraft();
         } catch (e) {
-          setErrorText(e.message || '当前模型配置不完整。', '#c00');
+          setErrorText(e.message || 'Current model configuration is incomplete.', '#c00');
           return;
         }
 
         if (!deepseekOk) {
-          setErrorText(`请先点击“测试当前配置”，确认 ${selectedLLMProvider().label} 配置可用。`, '#c00');
+          setErrorText(`Click "Test current configuration" first to confirm that ${selectedLLMProvider().label} works.`, '#c00');
           return;
         }
 
@@ -1870,7 +1858,7 @@
         };
 
         try {
-          setErrorText(localOnly ? '正在生成本地加密配置...' : '正在准备写入 GitHub Secrets...', '#666');
+          setErrorText(localOnly ? 'Generating local encrypted configuration...' : 'Preparing to write GitHub Secrets...', '#666');
           genBtn.disabled = true;
 
           if (!localOnly) {
@@ -1892,19 +1880,19 @@
                 rerankerBaseUrl: providerDraft.reranker && providerDraft.reranker.baseUrl,
               },
               (current, total, secretName) => {
-                setErrorText(`(${current}/${total}) 正在上传 GitHub Secret：${secretName}...`, '#666');
+                setErrorText(`(${current}/${total}) Uploading GitHub Secret: ${secretName}...`, '#666');
               },
             );
             if (!secretsOk) {
               setErrorText(
-                '❌ 写入 GitHub Secrets 失败，请检查网络、Token 权限（需 Classic PAT + repo/workflow/gist）或稍后重试。',
+                '❌ Failed to write GitHub Secrets. Check the network and token permissions (Classic PAT + repo/workflow/gist), or retry later.',
                 '#c00',
               );
               return;
             }
           }
 
-          setErrorText(localOnly ? '正在保存到浏览器本地...' : 'GitHub Secrets 上传完成，正在生成加密配置 secret.private...', '#666');
+          setErrorText(localOnly ? 'Saving to browser local storage...' : 'GitHub Secrets uploaded. Generating encrypted secret.private...', '#666');
           const payload = await createEncryptedSecret(password, plainConfig);
           window.decoded_secret_private = plainConfig;
           setMode('full');
@@ -1914,7 +1902,7 @@
               await saveLocalSecretPayloadToDisk(payload, plainConfig);
             } catch (e) {
               console.error(e);
-              setErrorText('❌ 保存到本地 secret.private 失败，请确认本地后端已启动。', '#c00');
+              setErrorText('❌ Failed to save local secret.private. Confirm the local backend is running.', '#c00');
               return;
             }
           } else {
@@ -1932,11 +1920,11 @@
               URL.revokeObjectURL(url);
             }, 0);
 
-            setErrorText('正在将 secret.private 推送到 GitHub 仓库根目录...', '#666');
+            setErrorText('Pushing secret.private to the GitHub repository root...', '#666');
             const commitOk = await saveSecretPrivateToGithubRepo(githubToken, payload);
             if (!commitOk) {
               setErrorText(
-                '⚠️ 已生成本地 secret.private，但自动推送到 GitHub 仓库失败，请稍后手动提交或检查 Token/网络。',
+                '⚠️ Local secret.private was generated, but automatic push to GitHub failed. Commit it later or check token/network access.',
                 '#c00',
               );
             }
@@ -1970,7 +1958,7 @@
         } catch (e) {
           console.error(e);
           setErrorText(
-            '生成 secret.private 失败，请稍后重试或检查浏览器兼容性。',
+            'Failed to generate secret.private. Try again later or check browser compatibility.',
             '#c00',
           );
         } finally {
@@ -1983,13 +1971,13 @@
     const renderInitStep1 = () => {
       setStep2Modal(false);
       modal.innerHTML = `
-        <h2 style="margin-top:0;">🛡️ 新配置指引 · 第一步</h2>
+        <h2 style="margin-top:0;">🛡️ New Setup · Step 1</h2>
         <p style="font-size:13px; color:#555; margin-bottom:8px;">
-          检测到当前仓库尚未创建 <code>secret.private</code> 文件。
-          请先设置一个用于加密本地配置的密码，该密码将用于解锁大模型密钥等敏感信息。
+          No <code>secret.private</code> file was found in the current repository.
+          Set a password to encrypt local configuration. This password unlocks LLM keys and other sensitive information.
         </p>
         <label for="secret-setup-password" style="font-size:13px; color:#333; display:block; margin-bottom:4px;">
-          设置解锁密码：
+          Set unlock password:
         </label>
         <input
           id="secret-setup-password"
@@ -2001,18 +1989,18 @@
           id="secret-setup-password-confirm"
           type="password"
           autocomplete="off"
-          placeholder="再次输入密码确认"
+          placeholder="Enter password again to confirm"
           style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:6px; font-size:13px;"
         />
         <div id="secret-setup-error" style="min-height:18px; font-size:12px; color:#666; margin-bottom:8px;">
-          密码至少 8 位，且必须包含数字、小写字母、大写字母和特殊符号。密码仅保存在浏览器本地，用于解锁密钥。
+          Password must be at least 6 characters. It is stored only in the browser for unlocking secrets.
         </div>
         <div class="secret-gate-actions">
           <button id="secret-setup-guest" type="button" class="secret-gate-btn secondary">
-            以游客身份访问
+            Continue as Guest
           </button>
           <button id="secret-setup-next" type="button" class="secret-gate-btn primary">
-            下一步
+            Next
           </button>
         </div>
       `;
@@ -2045,7 +2033,7 @@
         }
         if (pwd !== pwd2) {
           if (errorEl) {
-            errorEl.textContent = '两次输入的密码不一致，请重新确认。';
+            errorEl.textContent = 'The two passwords do not match. Try again.';
             errorEl.style.color = '#c00';
           }
           return;
@@ -2102,7 +2090,7 @@
       window.DPRSecretSetup = window.DPRSecretSetup || {};
       window.DPRSecretSetup.openStep2 = function () {
         enforceGuestMode(document.getElementById('secret-gate-overlay'));
-        alert('当前域名已启用游客模式，不支持解锁密码与密钥配置。');
+        alert('Guest mode is enabled for the current domain. Password unlock and secret setup are not supported.');
       };
     };
 
@@ -2150,7 +2138,7 @@
             try {
               const payload = localPayload || staticPayload || await fetchStaticSecretPayload();
               if (!payload) {
-                throw new Error('获取 secret.private 失败');
+                throw new Error('Failed to get secret.private');
               }
               const secret = await decryptSecret(savedPwd, payload);
               window.decoded_secret_private = secret;
@@ -2171,7 +2159,7 @@
               return;
             } catch (e) {
               console.error(
-                '[SECRET] 自动解锁失败，将回退到手动输入密码界面：',
+                '[SECRET] Auto-unlock failed; falling back to manual password entry: ',
                 e,
               );
               clearPassword();

@@ -1,0 +1,38 @@
+{
+  "name": "Shiyang Chen",
+  "role": "first_author",
+  "affiliation": "Beijing Institute of Technology; Weifang Medical University; Swansea University; Center for Excellence in Molecular Cell Science",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=813; OpenAlex works_count=36",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Shiyang Chen",
+    "affiliations": [
+      "Beijing Institute of Technology"
+    ],
+    "author_row": "Shiyang Chen"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Governance Decay: How Context Compaction Silently Erases Safety Constraints in Long-Horizon LLM Agents",
+    "paper_year": "2026",
+    "name": "Shiyang Chen",
+    "affiliations": [
+      "Weifang Medical University",
+      "Swansea University",
+      "Center for Excellence in Molecular Cell Science",
+      "Chongqing Emergency Medical Center",
+      "First People's Hospital of Chongqing",
+      "University of Chinese Academy of Sciences"
+    ],
+    "works_count": 36,
+    "cited_by_count": 813,
+    "author_id": "https://openalex.org/A5101508083",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

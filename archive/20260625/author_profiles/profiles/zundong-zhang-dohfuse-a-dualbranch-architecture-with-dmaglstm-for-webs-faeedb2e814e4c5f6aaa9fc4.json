@@ -1,0 +1,24 @@
+{
+  "name": "ZunDong Zhang",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=281; Semantic Scholar paper_count=31",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "DoHFuse: A Dual-Branch Architecture with DMAGLSTM for Website Fingerprinting over DNS over HTTPS/3",
+    "paper_year": "2026",
+    "name": "Zundong Zhang",
+    "affiliations": [],
+    "paper_count": 31,
+    "citation_count": 281,
+    "author_id": "2745915",
+    "lookup": "author_search"
+  }
+}

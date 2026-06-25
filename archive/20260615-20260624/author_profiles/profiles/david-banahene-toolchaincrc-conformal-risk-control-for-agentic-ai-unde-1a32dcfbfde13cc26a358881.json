@@ -1,0 +1,24 @@
+{
+  "name": "David Banahene",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=1; Semantic Scholar paper_count=1",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "ToolChain-CRC: Conformal Risk Control for Agentic AI Under Retrieval and Tool-Use Drift",
+    "paper_year": "2026",
+    "name": "David Banahene",
+    "affiliations": [],
+    "paper_count": 1,
+    "citation_count": 1,
+    "author_id": "2291278156",
+    "lookup": "author_search"
+  }
+}

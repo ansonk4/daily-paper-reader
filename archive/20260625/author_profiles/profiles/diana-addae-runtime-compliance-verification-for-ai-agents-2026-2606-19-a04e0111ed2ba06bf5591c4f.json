@@ -1,0 +1,24 @@
+{
+  "name": "Diana Addae",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=0; Semantic Scholar paper_count=2",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Runtime Compliance Verification for AI Agents",
+    "paper_year": "2026",
+    "name": "Diana Addae",
+    "affiliations": [],
+    "paper_count": 2,
+    "citation_count": 0,
+    "author_id": "2401678773",
+    "lookup": "author_search"
+  }
+}

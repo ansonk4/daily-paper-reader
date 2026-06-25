@@ -1,0 +1,32 @@
+{
+  "name": "Paresh Dashore",
+  "role": "first_author",
+  "affiliation": "Kartik Balasubramaniam, Genta Indra Winata, Sambit Sahu, Shi-Xiong Zhang; AI Foundations, Capital One",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=11; Semantic Scholar paper_count=3",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Paresh Dashore",
+    "affiliations": [
+      "Kartik Balasubramaniam, Genta Indra Winata, Sambit Sahu, Shi-Xiong Zhang",
+      "AI Foundations, Capital One"
+    ],
+    "author_row": "Paresh Dashore . , Shreyas Kulkarni * , Uttam Gurram * , Nadia Bathaee"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Towards Scalable Customization and Deployment of Multi-Agent Systems for Enterprise Applications",
+    "paper_year": "2026",
+    "name": "Paresh Dashore",
+    "affiliations": [],
+    "paper_count": 3,
+    "citation_count": 11,
+    "author_id": "2362718864",
+    "lookup": "author_search"
+  }
+}

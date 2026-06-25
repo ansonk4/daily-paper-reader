@@ -1,0 +1,31 @@
+{
+  "name": "Tarun Kumar Sharma",
+  "role": "last_author",
+  "affiliation": "[3pt] Santa Clara, CA, USA & Colonia, NJ, USA",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=1234; Semantic Scholar paper_count=17",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Tarun Kumar Sharma",
+    "affiliations": [
+      "[3pt] Santa Clara, CA, USA & Colonia, NJ, USA"
+    ],
+    "author_row": "tabular [t] @ c@ 3em c@ Prashant Kumar Pathak & Tarun Kumar Sharma"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "When Global Gating Is Enough: Admission-Time Hubness Control in Anisotropic Vector Retrieval Systems",
+    "paper_year": "2026",
+    "name": "Tarun S. Sharma",
+    "affiliations": [],
+    "paper_count": 17,
+    "citation_count": 1234,
+    "author_id": "50787045",
+    "lookup": "author_search"
+  }
+}

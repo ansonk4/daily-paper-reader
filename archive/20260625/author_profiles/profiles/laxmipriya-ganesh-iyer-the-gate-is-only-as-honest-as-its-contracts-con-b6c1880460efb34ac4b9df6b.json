@@ -1,0 +1,46 @@
+{
+  "name": "Laxmipriya Ganesh Iyer",
+  "role": "first_author",
+  "affiliation": "United States of America; Rahul Suresh Babu Independent Researcher; Oldham Council; Independent Researcher United States of America",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=0; OpenAlex works_count=3; Semantic Scholar citation_count=3; Semantic Scholar paper_count=5",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Laxmipriya Ganesh Iyer",
+    "affiliations": [
+      "United States of America",
+      "Rahul Suresh Babu Independent Researcher",
+      "United States of America"
+    ],
+    "author_row": "Laxmipriya Ganesh Iyer Independent Researcher"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "The Gate Is Only as Honest as Its Contracts: ContractGuard for the Contract Layer of Risk-Aware Causal Gating",
+    "paper_year": "2026",
+    "name": "Laxmipriya Ganesh Iyer",
+    "affiliations": [
+      "Oldham Council",
+      "Independent Researcher United States of America"
+    ],
+    "works_count": 3,
+    "cited_by_count": 0,
+    "author_id": "https://openalex.org/A5138722113",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "The Gate Is Only as Honest as Its Contracts: ContractGuard for the Contract Layer of Risk-Aware Causal Gating",
+    "paper_year": "2026",
+    "name": "Lax Iyer",
+    "affiliations": [],
+    "paper_count": 5,
+    "citation_count": 3,
+    "author_id": "2205444133",
+    "lookup": "author_search"
+  }
+}

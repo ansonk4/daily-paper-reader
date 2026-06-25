@@ -1,0 +1,34 @@
+{
+  "name": "Rean Clive Fernandes",
+  "role": "first_author",
+  "affiliation": "Renmin University of China; Gaoling School of Artificial Intelligence, Renmin University of China, Beijing, 100872, China",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=5; Semantic Scholar paper_count=2",
+  "confidence": "medium",
+  "evidence_source": "openalex, semantic_scholar",
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "A survey on large language model based autonomous agents",
+    "paper_year": 2024,
+    "name": "Lei Wang",
+    "affiliations": [
+      "Renmin University of China",
+      "Gaoling School of Artificial Intelligence, Renmin University of China, Beijing, 100872, China"
+    ],
+    "works_count": null,
+    "cited_by_count": null,
+    "author_id": "https://openalex.org/A5101394605"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Constitutional Black-Box Monitoring for Scheming in LLM Agents",
+    "paper_year": 2026,
+    "name": "Simon Storf",
+    "affiliations": [],
+    "paper_count": 2,
+    "citation_count": 5,
+    "author_id": "2421615022"
+  }
+}

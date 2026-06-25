@@ -1,0 +1,23 @@
+{
+  "name": "Shengli Zhang",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=0; Semantic Scholar paper_count=4",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "МЕТОДИ ІНТЕГРАЦІЇ ОНТОЛОГІЧНО ОРІЄНТОВАНИХ МУЛЬТИАГЕНТНИХ СИСТЕМ У ГІБРИДНЕ ОСВІТНЄ СЕРЕДОВИЩЕ",
+    "paper_year": 2025,
+    "name": "Олексій Шапиро",
+    "affiliations": [],
+    "paper_count": 4,
+    "citation_count": 0,
+    "author_id": "2279074201"
+  }
+}

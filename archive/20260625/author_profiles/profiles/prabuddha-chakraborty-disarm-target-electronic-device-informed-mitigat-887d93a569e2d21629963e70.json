@@ -1,0 +1,24 @@
+{
+  "name": "Prabuddha Chakraborty",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=634; Semantic Scholar paper_count=46",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "DISARM: Target Electronic Device Informed Mitigation of Software Runtime Side-Channel Vulnerabilities",
+    "paper_year": "2026",
+    "name": "Prabuddha Chakraborty",
+    "affiliations": [],
+    "paper_count": 46,
+    "citation_count": 634,
+    "author_id": "145293829",
+    "lookup": "author_search"
+  }
+}

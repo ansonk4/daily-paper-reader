@@ -1,0 +1,24 @@
+{
+  "name": "Yibin Li",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=129; Semantic Scholar paper_count=35",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Toward Self-Evolution-Ready Workflow Harnesses: A Reversible Migration Path and Convertibility Taxonomy for Expert LLM Pipelines",
+    "paper_year": "2026",
+    "name": "Yibin Li",
+    "affiliations": [],
+    "paper_count": 35,
+    "citation_count": 129,
+    "author_id": "2277468084",
+    "lookup": "author_search"
+  }
+}

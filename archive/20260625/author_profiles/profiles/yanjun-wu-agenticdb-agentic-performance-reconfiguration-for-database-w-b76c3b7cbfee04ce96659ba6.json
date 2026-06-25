@@ -1,0 +1,21 @@
+{
+  "name": "Yanjun Wu",
+  "role": "last_author",
+  "affiliation": "Institute of Software, Chinese Academy of Sciences",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yanjun Wu",
+    "affiliations": [
+      "Institute of Software, Chinese Academy of Sciences"
+    ],
+    "author_row": "Yanjun Wu"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

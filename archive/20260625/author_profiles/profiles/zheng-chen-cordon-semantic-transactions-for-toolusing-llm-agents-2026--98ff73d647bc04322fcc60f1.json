@@ -1,0 +1,33 @@
+{
+  "name": "Zheng Chen",
+  "role": "first_author",
+  "affiliation": "AetherHeart Tech Co., Ltd.; Hezhou University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=26903; OpenAlex works_count=384",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Zheng Chen",
+    "affiliations": [
+      "AetherHeart Tech Co., Ltd."
+    ],
+    "author_row": "Zheng Chen, Hanqin Liu, Duling Xu, Jialin Li, Dong Dong, and Bangzheng Pu"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Cordon: Semantic Transactions for Tool-Using LLM Agents",
+    "paper_year": "2026",
+    "name": "Zheng Chen",
+    "affiliations": [
+      "Hezhou University"
+    ],
+    "works_count": 384,
+    "cited_by_count": 26903,
+    "author_id": "https://openalex.org/A5100370681",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

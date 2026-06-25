@@ -103,7 +103,7 @@ function testGetDeepSeekPreset() {
     getDeepSeekPreset('deepseek'),
     {
       key: 'deepseek',
-      label: 'DeepSeek 官方',
+      label: 'DeepSeek Official',
       baseUrl: 'https://api.deepseek.com',
       models: ['deepseek-v4-flash', 'deepseek-v4-pro'],
     },

@@ -1,0 +1,20 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Almond Kiruthu Murimi",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "openalex": {},
+      "semantic_scholar": {}
+    }
+  ],
+  "rated_at": "2026-06-24T08:43:27.903517+00:00"
+}

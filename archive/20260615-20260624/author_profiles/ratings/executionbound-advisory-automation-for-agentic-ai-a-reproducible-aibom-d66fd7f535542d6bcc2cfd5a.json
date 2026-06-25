@@ -1,0 +1,55 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Petar Radanliev",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=2801; Semantic Scholar paper_count=98",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Execution-bound advisory automation for agentic AI: a reproducible AIBOM-driven CSAF-VEX framework",
+        "paper_year": "2026",
+        "name": "P. Radanliev",
+        "affiliations": [],
+        "paper_count": 98,
+        "citation_count": 2801,
+        "author_id": "51002836",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Kay Atefi",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=5; Semantic Scholar paper_count=4",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Execution-bound advisory automation for agentic AI: a reproducible AIBOM-driven CSAF-VEX framework",
+        "paper_year": "2026",
+        "name": "Kay Atefi",
+        "affiliations": [],
+        "paper_count": 4,
+        "citation_count": 5,
+        "author_id": "2383589749",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:55:38.715711+00:00"
+}

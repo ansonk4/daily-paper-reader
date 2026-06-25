@@ -1,0 +1,59 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Yang Yue",
+      "role": "first_author",
+      "affiliation": "Beijing University of Posts and Telecommunications",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Yang Yue",
+        "affiliations": [
+          "Beijing University of Posts and Telecommunications"
+        ],
+        "author_row": "Yang Yue"
+      },
+      "openalex": {},
+      "semantic_scholar": {}
+    },
+    {
+      "name": "Jingfeng Zhang",
+      "role": "last_author",
+      "affiliation": "China Telecom",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=4752; Semantic Scholar paper_count=102",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Jingfeng Zhang",
+        "affiliations": [
+          "China Telecom"
+        ],
+        "author_row": "Ji Zhang"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "AutoRAS: Learning Robust Agentic Systems with Primitive Representations",
+        "paper_year": "2026",
+        "name": "Jingfeng Zhang",
+        "affiliations": [],
+        "paper_count": 102,
+        "citation_count": 4752,
+        "author_id": "47539929",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T12:58:44.771750+00:00"
+}

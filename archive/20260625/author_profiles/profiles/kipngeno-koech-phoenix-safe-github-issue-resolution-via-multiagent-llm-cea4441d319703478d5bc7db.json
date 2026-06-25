@@ -1,0 +1,21 @@
+{
+  "name": "Kipngeno Koech",
+  "role": "first_author",
+  "affiliation": "Department of Electrical and Computer Engineering",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Kipngeno Koech",
+    "affiliations": [
+      "Department of Electrical and Computer Engineering"
+    ],
+    "author_row": "kipngeno koech"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

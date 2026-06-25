@@ -1,0 +1,24 @@
+{
+  "name": "Niranjan Kumar Sharma",
+  "role": "first_author",
+  "affiliation": "Yuxiong He, Nitya Kumar Sharma, Shawn Xia, Haowei Yu; Elliott Brossard, Derek Denny-Brown, Choden Konigsmark; Bhanu Prakash, Brandon Baker, Andong Zhan Snowflake Inc.; USA",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Niranjan Kumar Sharma",
+    "affiliations": [
+      "Yuxiong He, Nitya Kumar Sharma, Shawn Xia, Haowei Yu",
+      "Elliott Brossard, Derek Denny-Brown, Choden Konigsmark",
+      "Bhanu Prakash, Brandon Baker, Andong Zhan Snowflake Inc.",
+      "USA"
+    ],
+    "author_row": "Niranjan Kumar Sharma, S Muralidhar, Samy Boshra-Riad, Mike Halcrow"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

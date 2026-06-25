@@ -1,0 +1,25 @@
+{
+  "name": "Fernando Diaz",
+  "role": "last_author",
+  "affiliation": "Carnegie Mellon University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=30101; Semantic Scholar paper_count=682",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Simulating the role of transactive memory in group training and performance",
+    "paper_year": 2001,
+    "name": "Kathleen M. Carley",
+    "affiliations": [
+      "Carnegie Mellon University"
+    ],
+    "paper_count": 682,
+    "citation_count": 30101,
+    "author_id": "1702030"
+  }
+}

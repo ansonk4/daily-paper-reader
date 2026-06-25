@@ -12,6 +12,7 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
     @patch("src.model_loader.requests.post")
     def test_remote_encode_batches_and_normalizes(self, mock_post):
         resp1 = MagicMock()
+        resp1.status_code = 200
         resp1.raise_for_status.return_value = None
         resp1.json.return_value = {
             "embeddings": [
@@ -20,6 +21,7 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
             ]
         }
         resp2 = MagicMock()
+        resp2.status_code = 200
         resp2.raise_for_status.return_value = None
         resp2.json.return_value = {
             "embeddings": [
@@ -73,8 +75,28 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
                 batch_size=2,
             )
 
-        self.assertEqual(mock_post.call_count, 1)
+        self.assertEqual(mock_post.call_count, 3)
         mock_load_local.assert_not_called()
+
+    @patch("src.model_loader.requests.post")
+    def test_remote_encode_retries_transient_request_failure(self, mock_post):
+        resp = MagicMock()
+        resp.status_code = 200
+        resp.raise_for_status.return_value = None
+        resp.json.return_value = {"embeddings": [[3.0, 4.0]]}
+        mock_post.side_effect = [requests.exceptions.ConnectionError("closed"), resp]
+
+        model = RemoteSentenceTransformer(
+            model_name="BAAI/bge-small-en-v1.5",
+            endpoint="https://zwwen.online/embed",
+            api_key="test-key",
+            timeout=30,
+            default_batch_size=2,
+        )
+        arr = model.encode(["a"], convert_to_numpy=True, normalize_embeddings=True, batch_size=2)
+
+        self.assertEqual(mock_post.call_count, 2)
+        self.assertEqual(arr.shape, (1, 2))
 
     @patch("src.model_loader._load_local_sentence_transformer")
     @patch("src.model_loader.requests.post")
@@ -94,7 +116,7 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
         )
         arr = model.encode(["a"], convert_to_numpy=True, normalize_embeddings=True, batch_size=2)
 
-        self.assertEqual(mock_post.call_count, 1)
+        self.assertEqual(mock_post.call_count, 3)
         mock_load_local.assert_called_once()
         local_model.encode.assert_called_once()
         self.assertEqual(arr.shape, (1, 2))
@@ -122,7 +144,7 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
         arr1 = model.encode(["a"], convert_to_numpy=True, normalize_embeddings=True, batch_size=2)
         arr2 = model.encode(["b"], convert_to_numpy=True, normalize_embeddings=True, batch_size=2)
 
-        self.assertEqual(mock_post.call_count, 1)
+        self.assertEqual(mock_post.call_count, 3)
         mock_load_local.assert_called_once()
         self.assertEqual(local_model.encode.call_count, 2)
         self.assertFalse(model._remote_available)

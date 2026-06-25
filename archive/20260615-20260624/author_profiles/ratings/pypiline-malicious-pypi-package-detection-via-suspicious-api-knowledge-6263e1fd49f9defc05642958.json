@@ -1,0 +1,49 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Siyuan Pang",
+      "role": "first_author",
+      "affiliation": "Institute of Information Engineering, Chinese Academy of Sciences, Beijing, China",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Siyuan Pang",
+        "affiliations": [
+          "Institute of Information Engineering, Chinese Academy of Sciences, Beijing, China"
+        ],
+        "author_row": "Siyuan Pang"
+      },
+      "openalex": {},
+      "semantic_scholar": {}
+    },
+    {
+      "name": "Baoxu Liu",
+      "role": "last_author",
+      "affiliation": "Institute of Information Engineering, Chinese Academy of Sciences, Beijing, China",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Baoxu Liu",
+        "affiliations": [
+          "Institute of Information Engineering, Chinese Academy of Sciences, Beijing, China"
+        ],
+        "author_row": "Baoxu Liu"
+      },
+      "openalex": {},
+      "semantic_scholar": {}
+    }
+  ],
+  "rated_at": "2026-06-24T13:49:59.649355+00:00"
+}

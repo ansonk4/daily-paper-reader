@@ -1,0 +1,33 @@
+{
+  "name": "Han Zheng",
+  "role": "first_author",
+  "affiliation": "Qinying Wang EPFL; Qiang Liu EPFL; Mathias Payer EPFL",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=698; Semantic Scholar paper_count=37",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Han Zheng",
+    "affiliations": [
+      "Qinying Wang EPFL",
+      "Qiang Liu EPFL",
+      "Mathias Payer EPFL"
+    ],
+    "author_row": "Han Zheng EPFL"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "SoK: Taxonomizing the Low-Level Attack Surface of Modern Web Browsers",
+    "paper_year": "2026",
+    "name": "Handou Zheng",
+    "affiliations": [],
+    "paper_count": 37,
+    "citation_count": 698,
+    "author_id": "97243810",
+    "lookup": "author_search"
+  }
+}

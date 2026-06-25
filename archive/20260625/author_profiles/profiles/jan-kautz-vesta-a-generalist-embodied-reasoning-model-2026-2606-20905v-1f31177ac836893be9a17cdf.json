@@ -1,0 +1,23 @@
+{
+  "name": "Jan Kautz",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=2009; Semantic Scholar paper_count=20",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Gemini Robotics 1.5: Pushing the Frontier of Generalist Robots with Advanced Embodied Reasoning, Thinking, and Motion Transfer",
+    "paper_year": 2025,
+    "name": "Norman Di Palo",
+    "affiliations": [],
+    "paper_count": 20,
+    "citation_count": 2009,
+    "author_id": "52218759"
+  }
+}

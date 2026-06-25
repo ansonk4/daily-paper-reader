@@ -1,0 +1,54 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Gabriele Digregorio",
+      "role": "first_author",
+      "affiliation": "Politecnico di Milano; Marco Di Gennaro; Francesco Pastore",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=11; Semantic Scholar paper_count=4",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Gabriele Digregorio",
+        "affiliations": [
+          "Politecnico di Milano",
+          "Marco Di Gennaro",
+          "Politecnico di Milano",
+          "Francesco Pastore"
+        ],
+        "author_row": "Gabriele Digregorio"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Unified Security Orchestration Framework for Protecting AI/ML Systems Against Input-Based and Model Supply Chain Attacks",
+        "paper_year": 2026,
+        "name": "Senthil Muthu",
+        "affiliations": [],
+        "paper_count": 4,
+        "citation_count": 11,
+        "author_id": "21612242"
+      }
+    },
+    {
+      "name": "Michele Carminati",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {}
+    }
+  ],
+  "rated_at": "2026-06-24T13:44:57.658887+00:00"
+}

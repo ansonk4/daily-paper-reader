@@ -232,7 +232,7 @@ def build_conference_summary_lines(
 ) -> List[str]:
     deep_summary = norm_text(ranked_item.get("_deep_summary"))
     if deep_summary:
-        return ["---", "", "## 论文详细总结（自动生成）", "", deep_summary.rstrip(), ""]
+        return ["---", "", "## Detailed Summary (AI-generated)", "", deep_summary.rstrip(), ""]
 
     evidence = get_evidence(ranked_item)
     tldr = get_tldr(ranked_item)
@@ -243,7 +243,7 @@ def build_conference_summary_lines(
     lines = [
         "---",
         "",
-        "## 论文详细总结（自动生成）",
+        "## Detailed Summary (AI-generated)",
         "",
         "### 1. Retrieval Relevance",
         ensure_sentence(evidence or "This paper was recalled by the conference retrieval pipeline; judge its exact relevance against the retrieval request and original text"),
@@ -562,7 +562,10 @@ def enrich_conference_paper_for_deep_read(
     if existing:
         try:
             generate_docs = load_generate_docs_module()
-            existing_summary = generate_docs.extract_section_tail(existing, "论文详细总结（自动生成）")
+            existing_summary = (
+                generate_docs.extract_section_tail(existing, "Detailed Summary (AI-generated)")
+                or generate_docs.extract_section_tail(existing, "论文详细总结（自动生成）")
+            )
         except Exception:
             existing_summary = ""
     if existing_summary:

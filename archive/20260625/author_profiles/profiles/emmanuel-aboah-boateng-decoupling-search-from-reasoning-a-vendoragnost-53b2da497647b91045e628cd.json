@@ -1,0 +1,23 @@
+{
+  "name": "Emmanuel Aboah Boateng",
+  "role": "first_author",
+  "affiliation": "Siddharth Kodwani, Sudeep Das; DoorDash, Inc.; \\ e.aboahboateng, kyle.macdonald, amardeep.kumar",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Emmanuel Aboah Boateng",
+    "affiliations": [
+      "Siddharth Kodwani, Sudeep Das",
+      "DoorDash, Inc.",
+      "\\ e.aboahboateng, kyle.macdonald, amardeep.kumar"
+    ],
+    "author_row": "Emmanuel Aboah Boateng, Kyle MacDonald, Amardeep Kumar"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

@@ -1,0 +1,1359 @@
+{
+  "top_k": 33,
+  "generated_at": "2026-06-25T04:03:54.539164+00:00",
+  "papers": [
+    {
+      "id": "2606.23032v2",
+      "source": "arxiv",
+      "title": "IPO Finance Agent: Evaluation of LLM Financial Analysts beyond Finance Agent v2, with Automated Rubric Generation -- the Case of the SpaceX (SPCX) IPO",
+      "abstract": "Finance Agent v2 (by Vals AI) has emerged as the reference benchmark for evaluating both Anthropic Claude and OpenAI ChatGPT frontier language models on financial tasks. However, it narrowly deals with periodic reporting from publicly traded companies (SEC 10-K and 10-Q filings), and its agentic harness relies on naive, unenriched chunk retrieval. Neither the task design nor the retrieval approach addresses the distinct challenges of IPO due diligence. SEC S-1 filings combine historical financial statements, governance structures, pro forma and common-control accounting treatments, capital-formation narratives, and underwriting-sensitive risk disclosures within substantially longer documents than typical periodic filings. That is why we introduce IPO Finance Agent, which extends the Finance Agent v2 framework along two directions: task domain and retrieval architecture. During our experiments, the original Finance Agent v2 harness basically failed to deliver any output related to the SpaceX S-1 filing, due to document length. We therefore had to improve the agentic harness with contextual retrieval, a more realistic and industry-standard approach for long documents. We also built a dataset of 1,000 IPO-diligence questions, and publicly release 70 questions on the SpaceX (SPCX) S-1 filing to support reproducibility, while the remainder are held private to guard against benchmark contamination. In addition, we introduce an evaluator-optimizer pipeline to automatically generate evaluation rubrics for the benchmark: candidate facts are extracted from model answers, consolidated into draft criteria, then automatically audited for omissions, hallucinations, mistiered items, and redundancy, with LLM feedback driving iterative repair, targeted enrichment, and deduplication. Human experts only review final rubrics before deployment. Results show that the best-performing evaluated model, Alibaba Qwen 3.7 Max, reaches 79.4% accuracy at 0.30 USD per query, and the most cost-efficient model on the resulting Pareto frontier, Xiaomi MiMo-2.5 Pro, reaches slightly lower accuracy (76.8%) at 0.05 USD per query. Both exceed the current Finance Agent v2 leaderboard ceiling-Google Gemini 3.5 Flash at 57.9% for 2.51 USD per querywhile undercutting even FABv2's cheapest entry (MiniMax M3: 48.3% at 0.32 USD) on cost-efficiency. Code and data are released on GitHub: https://github.com/benstaf/ipoagent",
+      "authors": [
+        "Mostapha Benhenda"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "q-fin.GN"
+      ],
+      "published": "2026-06-22T08:42:19+00:00",
+      "link": "https://arxiv.org/pdf/2606.23032v2",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.23032v1",
+      "source": "arxiv",
+      "title": "IPO Finance Agent: Evaluation of LLM Financial Analysts beyond Finance Agent v2, with Automated Rubric Generation -- the Case of the SpaceX (SPCX) IPO",
+      "abstract": "Finance Agent v2 (by Vals AI) has emerged as the reference benchmark for evaluating both Anthropic Claude and OpenAI ChatGPT frontier language models on financial tasks. However, it narrowly deals with periodic reporting from publicly traded companies (SEC 10-K and 10-Q filings), and its agentic harness relies on naive, unenriched chunk retrieval. Neither the task design nor the retrieval approach addresses the distinct challenges of IPO due diligence. SEC S-1 filings combine historical financial statements, governance structures, pro forma and common-control accounting treatments, capital-formation narratives, and underwriting-sensitive risk disclosures within substantially longer documents than typical periodic filings. That is why we introduce IPO Finance Agent, which extends the Finance Agent v2 framework along two directions: task domain and retrieval architecture. During our experiments, the original Finance Agent v2 harness basically failed to deliver any output related to the SpaceX S-1 filing, due to document length. We therefore had to improve the agentic harness with contextual retrieval, a more realistic and industry-standard approach for long documents. We also built a dataset of 1,000 IPO-diligence questions, and publicly release 70 questions on the SpaceX (SPCX) S-1 filing to support reproducibility, while the remainder are held private to guard against benchmark contamination. In addition, we introduce an evaluator-optimizer pipeline to automatically generate evaluation rubrics for the benchmark: candidate facts are extracted from an ensemble of independently-generated model answers to each question, consolidated into draft criteria, then automatically audited for omissions, hallucinations, mistiered items, and redundancy, with LLM feedback driving iterative repair, targeted enrichment, and deduplication. Human experts only review final rubrics before deployment. Results show that the best-performing evaluated model, Alibaba Qwen 3.7 Max, reaches 79.4% accuracy at $0.30 per query, and the most cost-efficient model on the resulting Pareto frontier, Xiaomi MiMo-2.5 Pro, reaches slightly lower accuracy (76.8%) at $0.05 per query. Both exceed the current Finance Agent v2 leaderboard ceiling-Google Gemini 3.5 Flash at 57.9% for $2.51 per querywhile undercutting even FABv2's cheapest entry (MiniMax M3: 48.3% at $0.32) on cost-efficiency. Code and data are released on GitHub: https://github.com/benstaf/ipoagent",
+      "authors": [
+        "Mostapha Benhenda"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "q-fin.GN"
+      ],
+      "published": "2026-06-22T08:42:19+00:00",
+      "link": "https://arxiv.org/pdf/2606.23032v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.23449v1",
+      "source": "arxiv",
+      "title": "AOHP: An Open-Source OS-Level Agent Harness for Personalized, Efficient and Secure Interaction",
+      "abstract": "AI agents are driving a new software paradigm, with the ability to autonomously call tools, extract information, manage memory, and complete tasks that span applications and data sources. Most existing end-user operating systems, however, are designed for application-centric workflows and offer little native support for AI agents. This mismatch limits the wider adoption of agents and leads to execution overhead and safety risks when running agents on conventional systems. While the concept of agent-native operating systems is emerging, the research community lacks an open testbed to explore the architectural primitives desired for agent-mediated interaction. We present AOHP (Android Open Harness Project), an OS-level agent harness built on the Android Open Source Project (AOSP). The core design principle of AOHP is to treat agents as first-class OS actors, enabling adaptive user interfaces and agent-friendly runtime environments. AOHP preserves the mature Android software and hardware ecosystem while introducing three agent-oriented system mechanisms: personalized service composition, efficient agent interfaces, and secure information flow. Based on preliminary experiments on challenging tasks covering key capabilities of OS agents, AOHP shows clear advantages in task completion (+21.12% completion rate), execution cost (-51.55% token cost), and security-policy compliance.",
+      "authors": [
+        "Shanhui Zhao",
+        "Jiacheng Liu",
+        "Guohong Liu",
+        "Jichao Yan",
+        "Jialei Ye",
+        "Yuhao Yang",
+        "Hao Wen",
+        "Shizuo Tian",
+        "Yizhen Yuan",
+        "Yuxuan Chen",
+        "Yunxin Liu",
+        "Ju Ren",
+        "Ya-Qin Zhang",
+        "Chao Huang",
+        "Yao Guo",
+        "Yuanchun Li"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.OS"
+      ],
+      "published": "2026-06-22T15:02:42+00:00",
+      "link": "https://arxiv.org/pdf/2606.23449v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ]
+    },
+    {
+      "id": "2606.21005v1",
+      "source": "arxiv",
+      "title": "Building Agent Harnesses for Scientific Curation from Multimodal Sources",
+      "abstract": "Scientific discovery workflows often depend on structured curation from the literature. This is difficult for current agents because the key evidence is scattered across long text, dense tables, and figures, and the final records often require reasoning across multiple evidence fragments rather than copying a single span. We study scientific curation from multimodal sources and introduce Beaver, an agent harness that extracts structured information from scientific papers while preserving provenance to the supporting evidence. Beaver combines a frontier agent with multimodal evidence tooling, task scaffolding, and artifact-grounded autoresearch. These components turn curation into a staged, auditable workflow and enable an iterative evaluate--diagnose--revise loop, where persistent run artifacts expose stage-localized failures and guide harness updates. Experiments show that Beaver reaches 81.0 on Gold-Referenced Attribute Score (GRAS), an attribute-level measure of agreement with gold curated records, outperforming frontier agents by over 23 absolute points. Ablations show that task scaffolding, multimodal evidence tooling, and provenance traces each contribute meaningfully to performance, while attribute-level analysis shows the largest gains on high-value attributes that require cross-modal reasoning and normalization. These results show that, for scientific curation from papers with multimodal evidence, harness design is a central determinant of agent performance.",
+      "authors": [
+        "Sheng Zhang",
+        "Qin Liu",
+        "Renqian Luo",
+        "Shufang Xie",
+        "Reuben Tan",
+        "Sean Hayes",
+        "Gregory Bryman",
+        "Wendong Ge",
+        "Roxy Zhang",
+        "Oluwaseun Egbelowo",
+        "Kelly Yee",
+        "Hoifung Poon"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-19T00:36:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.21005v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.17546v1",
+      "source": "arxiv",
+      "title": "SEAGym: An Evaluation Environment for Self-Evolving LLM Agents",
+      "abstract": "Self-evolving LLM-based agents improve mainly by changing their agent harness: the structured execution layer around a base model, including prompts, memory, tools, middleware, runtime state, and the model-tool interaction loop. Existing evaluations often reduce this process to isolated task scores or a single sequential curve, obscuring whether an update produces reusable improvement, overfits recent tasks, increases cost, or harms older behavior. We introduce SEAGym, an evaluation environment for measuring agent harness updates across training, validation, test, replay, and cost records. SEAGym turns Harbor-compatible benchmarks into dynamic self-evolution task sources with train batches, frozen update-validation, held-out ID and OOD transfer views, replay diagnostics, and saved snapshot and metric records. Instantiating SEAGym on Terminal-Bench 2.0 and HLE, we compare ACE, TF-GRPO, and AHE under a shared epoch/batch protocol. The results show that these evaluation views provide complementary signals about the evolution process: frequent updates may fail to improve held-out performance, useful intermediate snapshots may collapse later, and source diversity and model backend can affect harness reliability.",
+      "authors": [
+        "Congjie Zheng",
+        "Chuanyi Xue",
+        "Bin Liang",
+        "Jun Yang",
+        "Changshui Zhang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-16T05:50:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.17546v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.22417v1",
+      "source": "arxiv",
+      "title": "Code Isn't Memory: A Structural Codebase Index Inside a Coding Agent",
+      "abstract": "Coding agents now interleave LLMs with retrieval over the working repository, and retrieval implementations vary widely across deployed harnesses. Inside a fixed coding-agent harness on a fixed model, does adding a structural codebase index actually change cost or resolve? We ran three arms (the harness with the index, the same harness without it, and an agentic-grep comparator) on SWE-PolyBench Verified and SWE-bench Pro with Claude Opus 4.7 held fixed throughout, across three seeds, inside a leak-audited per-task sandbox. The within-harness ablation produces a large localization gain and a statistically separated resolve gain, with no cost penalty per cell and lower cost per solve. The cross-harness check shows that the index does not regress against an agentic-grep baseline on resolve or localization, again at no cost penalty. We release the per-cell exclusion ledger, the leak-audit script, the localization extractor, and the results database. The deployment question for a structural codebase index is thus not whether it is too expensive to run (across seeds, the index lands at a lower $/solved than agentic grep) but whether the workload includes multi-file changes where structural ranking pays off.",
+      "authors": [
+        "Ishaan Bhola",
+        "Adithyan Krishnan",
+        "Sravanth Kurmala",
+        "Mukunda NS"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-21T10:10:51+00:00",
+      "link": "https://arxiv.org/pdf/2606.22417v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.22610v1",
+      "source": "arxiv",
+      "title": "PaperClaw: Harnessing Agents for Autonomous Research and Human-in-the-Loop Refinement",
+      "abstract": "Large language models have become capable reasoners and tool users that write and run code and search the literature, which makes automating the research process itself a realistic goal. We present PAPERCLAW, a harnessed multi-agent system that carries a project autonomously, from a field of study to a finished paper. PAPERCLAW curates a domain from a field's live literature, datasets, and code; brainstorms it into an idea with a pre-registered main-result contract; and drives a stoppable hypothesis map through an iterative propose, test, reflect loop that grows only from measured verdicts and halts once the evidence supports the idea, at which point it writes a venue-compliant paper. A full-lifecycle memory keeps each stage in a single living record, so a long run can be paused, inspected, and resumed without losing context. At the centre is an in-cycle research assistant with research tools and skills: it can drive the whole pipeline on its own, while the same interface lets a person step in at any stage, turning a first autonomous draft into a stronger paper through human-in-the-loop refinement. Throughout, PAPERCLAW keeps its output grounded and checkable, citing only references validated against open scholarly indexes and reporting results that genuinely ran. An evaluation with an LLM judge finds that PAPERCLAW produces strong papers both fully autonomously and with human-in-the-loop refinement.",
+      "authors": [
+        "Weiwei Ye",
+        "Hangchen Liu",
+        "Dongyuan Li",
+        "Renhe Jiang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-21T17:37:01+00:00",
+      "link": "https://arxiv.org/pdf/2606.22610v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.19613v1",
+      "source": "arxiv",
+      "title": "StaminaBench: Stress-Testing Coding Agents over 100 Interaction Turns",
+      "abstract": "We introduce StaminaBench, a benchmark that measures the stamina of coding agents: how many consecutive interaction turns (change requests) they can handle before failing. Unlike the prevailing fraction-of-tasks-solved metric, this matches real vibe-coding where sessions run dozens or hundreds of turns. In StaminaBench, agents implement a REST API server and modify it across a tunable number of procedurally generated follow-up change requests - 100 in our experiments, resulting in codebases of up to 6,000 lines. Tests are generated fully programmatically without LLM involvement, ensuring reproducibility and reliability; change sequences are drawn from either a hardcoded or LLM-driven sampler, both constrained to a structured action space to ensure changes are valid. The agent and the server run in an isolated environment and communicate with the benchmark through HTTP, making testing fully black-box and language-agnostic. We evaluate six agent harnesses paired with seven open-source LLMs across 20 scenarios of 100 turns each and find that: (1) all the tested models fail within 5-6 turns, confirming that vibe-coding-style programming without thorough testing produces bugs; (2) passing test feedback back to the agent and allowing it to retry improves passed turn count by up to 12x; and (3) a good harness is required for strong performance: stronger models exhibit up to a 6x gap between their best and worst harness, while weaker models fail with any harness. We release the benchmark and the generated tasks to enable further research into multi-turn coding agent behavior. Benchmark code and data: github.com/amazon-science/StaminaBench.",
+      "authors": [
+        "Vlad Sobal",
+        "Shuo Yang",
+        "Yuting Zhang",
+        "Wei Xia",
+        "Stefano Soatto"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE",
+        "cs.AI"
+      ],
+      "published": "2026-06-17T21:36:09+00:00",
+      "link": "https://arxiv.org/pdf/2606.19613v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.18363v1",
+      "source": "arxiv",
+      "title": "Guava: An Effective and Universal Harness for Embodied Manipulation",
+      "abstract": "Language models trained on large-scale vision-language data have demonstrated strong potential for embodied agents. Harnessing models through embodied tools use offers a promising alternative to end-to-end vision-language-action systems by combining high-level reasoning with external modules for perception, planning, and control. However, it remains unclear what makes an effective harness for embodied manipulation, and to what extent such a harness can unlock embodied capabilities in a wide range of reasoning models. In this work, we present Guava, a harness framework for embodied tool use developed through systematic exploration of the design space of agent workflows, action spaces, and observation spaces. Our study identifies three key ingredients for effective embodied agents: iterative perception-reasoning-action loops, semantic action abstractions, and multimodal observations. To understand whether these design principles are universal even to small models, we develop an end-to-end training pipeline that distills embodied manipulation capabilities into a 4B open-source model using fewer than 2K trajectories collected entirely in simulation. Experimental results in both simulation and real-world environments show performance comparable to frontier proprietary models while exhibiting strong generalization to unseen objects, novel instructions, and long-horizon tasks. Results suggest that a well-designed harness can serve as a scalable, model-agnostic interface for embodied manipulation, enabling strong emergent embodied capabilities in compact open-source models with minimal training data.",
+      "authors": [
+        "Haowen Liu",
+        "Xirui Li",
+        "Shaoxiong Yao",
+        "Peng Shi",
+        "Tianyi Zhou",
+        "Jia-Bin Huang",
+        "Furong Huang",
+        "Jiayuan Mao"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-06-16T18:09:26+00:00",
+      "link": "https://arxiv.org/pdf/2606.18363v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.22678v1",
+      "source": "arxiv",
+      "title": "RigorBench: Benchmarking Engineering Process Discipline in Autonomous AI Coding Agents",
+      "abstract": "Agentic coding harnesses - such as Agent-Skills, Superpowers, and Agent-Rigor - are increasingly deployed to augment underlying LLMs for real-world software engineering tasks. Existing benchmarks evaluate these agents almost exclusively on outcome correctness: whether generated code passes tests or resolves issues. We argue that this outcome-only lens is insufficient: an agent that arrives at a correct solution through reckless trial-and-error, without planning, verification, or graceful recovery, is fundamentally less reliable than one that follows sound engineering discipline. We introduce RigorBench, the first benchmark designed to measure process discipline in AI coding agents. RigorBench evaluates these harnesses across five pillars: Planning Fidelity, Verification Coverage, Recovery Efficiency, Abstention Quality, and Atomic Transition Integrity. A composite RigorScore aggregates these dimensions into a single metric via a weighted sum. We curate a suite of 30 tasks spanning five categories - Plan-Then-Build, Verify-Or-Die, Doom Loop Gauntlet, Know When to Fold, and Don't Break the Build-and evaluate leading harnesses in a controlled with/without experimental design against baseline coding assistants. Our results show that structured process discipline not only improves process quality scores by an average of 41% but also raises downstream outcome correctness by 17%, providing the first quantitative evidence that how agents code matters as much as what they produce. We release the full benchmark, scoring rubrics, and trajectory analysis tools as open-source artifacts.",
+      "authors": [
+        "Meher Bhaskar Madiraju",
+        "Meher Sai Preetam Madiraju"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE",
+        "cs.AI"
+      ],
+      "published": "2026-06-21T21:41:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.22678v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.18619v1",
+      "source": "arxiv",
+      "title": "Code-Augur: Agentic Vulnerability Detection via Specification Inference",
+      "abstract": "The advent of agentic vulnerability detection is already becoming a watershed moment for software security. Audits conducted entirely by autonomous LLM agents are uncovering critical vulnerabilities in fundamental software underpinning digital society. Many of these vulnerabilities remained masked for years, surfacing only now with AI agents. Yet the reasoning behind these discoveries remains alarmingly opaque and unvalidated. What assumptions did the agent make about a function's inputs when it deemed that function to be secure? Failures in reasoning and incorrect assumptions can lead to missed vulnerabilities and reduce trust in agentic analysis.   We propose a security-specification-first paradigm that (1) exposes the agent's tacit assumptions explicitly as security specifications and (2) continuously refines those specifications via runtime falsification. We realize our approach in Code-Augur, a novel harness for agentic vulnerability detection. Given a codebase, Code-Augur analyzes each component of the system for vulnerable code. When it deems a component to be secure, it commits the local invariants behind that judgment as in-source assertions. In parallel, Code-Augur leverages a guided fuzzer to attempt to falsify those assumptions. When the fuzzer triggers an assertion, this either reveals a genuine vulnerability or a flawed specification to refine. In both cases, this process grounds the agent's understanding, aligning its view of code intent with how the code actually behaves. On real-world subjects, Code-Augur effectively leverages security specifications to detect more vulnerabilities than other state-of-the-art agents. Additionally, Code-Augur found 22 new vulnerabilities in key open-source projects. Compared to curated specialized models like Claude Mythos, Code-Augur offers effective agentic vulnerability detection built on widely available LLMs like Sonnet and DeepSeek.",
+      "authors": [
+        "Zhengxiong Luo",
+        "Mehtab Zafar",
+        "Dylan Wolff",
+        "Abhik Roychoudhury"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.SE"
+      ],
+      "published": "2026-06-17T02:32:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.18619v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ]
+    },
+    {
+      "id": "2606.23315v1",
+      "source": "arxiv",
+      "title": "Test-Driven, AI-Assisted Learning: Replacing Lectures with Weekly Closed-Book Tests",
+      "abstract": "This paper is an experience report on a 13-week Test-Driven, AI-Assisted (TDAA) redesign of DSAA 3071, Theory of Computation, an upper-level course at the Hong Kong University of Science and Technology (Guangzhou). The design is simple: the course replaces lectures with self-directed, AI-assisted learning, and frequent, independently completed tests create a high-frequency quality gate. AI agents help the instructor prepare the learning path, course website, tests, grading workflow, and repairs. Two conditions made this strict gate workable. Students needed a visible preparation path of learning sheets and aligned validation practice, so the closed-book tests felt fair rather than arbitrary. The instructor needed an AI-assisted materials harness, a version-controlled agent workspace, so that weekly drafting, review, test production, and grading could scale with human oversight. Evidence from a student survey ($N=18$), weekly scores, and the project's git history suggests that students treated the tests as useful accountability and that the harness made frequent closed-book testing operational. The evidence is limited to one small, proof-heavy course without a control group. The contribution is therefore a reusable design pattern: high-frequency tests preserve individual accountability, while AI agents make material production and marking scalable. We release the harness as a public starter template so that other instructors can reproduce it.",
+      "authors": [
+        "Jin-Guo Liu",
+        "Shang-Qi Lu",
+        "Xin-Ran Shi",
+        "Long-Li Zheng",
+        "Wei Wang"
+      ],
+      "primary_category": "cs.CY",
+      "categories": [
+        "cs.CY"
+      ],
+      "published": "2026-06-22T13:31:21+00:00",
+      "link": "https://arxiv.org/pdf/2606.23315v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.21856v1",
+      "source": "arxiv",
+      "title": "Harness-MU: A Safe, Governed, and Effective Harness for Multi-User LLM Agents",
+      "abstract": "The increasing deployment of large language model (LLM) agents in collaborative workflows demands robust multi-user, multi-principal interaction mechanisms capable of enforcing access permissions, resolving authoritative conflicts, and preventing unauthorized data disclosure. However, a fundamental mismatch exists between the single-user training paradigm of contemporary LLMs and the hard constraints required for multi-principal governance, rendering probabilistic, prompt-based safeguards vulnerable under multi-turn adversarial interactions.Our key insight is that governance constraints -- who is authorized, what is restricted, and whose instructions take precedence -- are deterministic runtime variables that should be enforced by execution hooks rather than entrusted to the LLM. We present \\textbf{Harness-MU}, the first model-agnostic, zero-tuning infrastructure framework for multi-user LLM agents. By decoupling language generation from safety orchestration, Harness-MU guarantees unbreakable permission boundaries while maximizing compliant demand satisfaction. Across four frontier open-weight and proprietary models on the \\textit{Muses-Bench} benchmark, Harness-MU achieves the goal of privacy preservation across all access-control attacks, outperforming the standard baseline by 0.28--0.39 in utility score and improving instruction-following accuracy by up to 48.9 percentage points. Harness-MU advances the philosophy of \\textit{Harness Engineering}, establishing that systematic infrastructure is essential for solving LLM multi-principal governance challenges. The code and data are available at https://github.com/YuanJrShiuan/Harness-MulUser.",
+      "authors": [
+        "Wangxuan Fan",
+        "Xiaoyu Nie",
+        "Zhongxiang Dai"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-20T03:24:24+00:00",
+      "link": "https://arxiv.org/pdf/2606.21856v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.17799v1",
+      "source": "arxiv",
+      "title": "Position: Coding Benchmarks Are Misaligned with Agentic Software Engineering",
+      "abstract": "Coding agents have become a major mode of software engineering, but the benchmarks we use to compare them were designed in a pre-agent era: they collapse model, harness, and environment into a single end-to-end score, typically computed against one reference solution, with no component-level signal for iteration. We argue that current coding benchmarks are misaligned with agentic software engineering. A coding agent in practice is not a model: it is a system harness -- a composite of models, harnesses, contexts, environments, and feedback signals, any one of which can move the benchmark score by margins comparable to those between adjacent model generations. We discuss three symptoms: (i) benchmark scores conflate the model with the rest of the harness; (ii) grading against a single reference solution penalises equally valid alternatives; and (iii) the absence of signal at the level of individual harness components makes the end-to-end system score difficult to iterate on.",
+      "authors": [
+        "Maria I. Gorinova",
+        "Macey Baker",
+        "Amy Heineike",
+        "Maksim Shaposhnikov",
+        "Rob Willoughby",
+        "Dru Knox"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-16T11:21:01+00:00",
+      "link": "https://arxiv.org/pdf/2606.17799v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.19980v1",
+      "source": "arxiv",
+      "title": "ENPIRE: Agentic Robot Policy Self-Improvement in the Real World",
+      "abstract": "Achieving dexterous robotic manipulation in the real world heavily relies on human supervision and algorithm engineering, which becomes a central bottleneck in the pursuit of general physical intelligence. Although emerging coding agents can generate code to automate algorithm search, their successes remain largely confined in digital environments. We conjecture that the missing abstraction to automate robotics research is a repeatable feedback loop for real-world policy improvement: reset the scene, execute a policy, verify the outcome, and refine the next iteration. To bridge this gap, we introduce ENPIRE, a harness framework for coding agents that instantiates this physical feedback routine with four core modules: an Environment module (EN) for automatic reset and verification, a Policy Improvement module (PI) that launches policy refinement, a Rollout module (R) to evaluate policies with one or multiple physical robots operating in parallel, and an Evolution module (E) in which coding agents analyze logs, consult literature, improve training infrastructure and algorithm code to address failure modes. This closed-loop system transforms real-world manipulation learning into a controllable optimization procedure, minimizing human effort while allowing fair ablations across training recipe and agent variants. Powered by ENPIRE, frontier coding agents can autonomously train a policy to achieve a 99% success rate on challenging, dexterous manipulation tasks, such as organizing a pin box, fastening a zip tie, and tool use, a process that further accelerates when we dispatch an agent team on a robot fleet. Our results suggest a practical and scalable path toward deploying coding agents to autonomously advancing robotics in the physical world.",
+      "authors": [
+        "Wenli Xiao",
+        "Jia Xie",
+        "Tonghe Zhang",
+        "Haotian Lin",
+        "Letian \"Max\" Fu",
+        "Haoru Xue",
+        "Jalen Lu",
+        "Yi Yang",
+        "Cunxi Dai",
+        "Zi Wang",
+        "Jimmy Wu",
+        "Guanzhi Wang",
+        "S. Shankar Sastry",
+        "Ken Goldberg",
+        "Linxi \"Jim\" Fan",
+        "Yuke Zhu",
+        "Guanya Shi"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-18T09:21:27+00:00",
+      "link": "https://arxiv.org/pdf/2606.19980v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.23654v1",
+      "source": "arxiv",
+      "title": "EnterpriseClawBench: Benchmarking Agents from Real Workplace Sessions",
+      "abstract": "Enterprise agents increasingly operate inside workspaces: they read heterogeneous files, invoke tools, and deliver business artifacts. We introduce EnterpriseClawBench, an enterprise agent benchmark constructed from proprietary, real-world agent sessions. Starting from a large archive of workplace sessions, the EnterpriseClawBench produces 852 reproducible tasks, each paired with recovered fixtures, rewritten prompts, role classes, skill subclasses, hard rules, and semantic rubrics. Because the sessions contain internal enterprise content, we do not release the benchmark data; instead, our reusable contribution is the construction and evaluation protocol. On EnterpriseClawBench, the best configuration reaches only 0.663 (Codex with GPT-5.5). These results show that enterprise agent evaluation must report harness--model combinations, artifact delivery, visual quality, cost, runtime, and skill-transfer behavior, rather than collapsing performance into a single score. Code: https://github.com/FrontisAI/EnterpriseClawBench",
+      "authors": [
+        "Jincheng Zhong",
+        "Weizhi Wang",
+        "Che Jiang",
+        "Kai Tian",
+        "Zhenzhao Yuan",
+        "Junlin Yang",
+        "Dianqiao Lei",
+        "Kaiyan Zhang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.SE"
+      ],
+      "published": "2026-06-22T17:39:43+00:00",
+      "link": "https://arxiv.org/pdf/2606.23654v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.17642v2",
+      "source": "arxiv",
+      "title": "FinAcumen: Financial Multimodal Reasoning via Self-Evolving Experience Memory Harness",
+      "abstract": "Financial multimodal reasoning requires agents to coordinate numerical computation, retrieval, visual interpretation, and temporal grounding across heterogeneous evidence sources. Existing tool-augmented agents improve execution fidelity, yet remain largely stateless across episodes, repeatedly rediscovering reasoning strategies and failure patterns. In high-stakes financial settings, this leads to unreliable tool routing, noisy retrieval, and hallucination-prone reasoning. We present FinAcumen, a financial reasoning agent framework centered on selective experience memory for tool-augmented multimodal reasoning. FinAcumen accumulates financially grounded reasoning experience from prior trajectories, distilling successful strategies and failure-derived cautionary rules into a persistent memory bank. During inference, retrieved experiences condition reasoning only when semantic relevance exceeds a calibrated threshold, while irrelevant memory is explicitly suppressed through a fallback mechanism. A deterministic financial tool environment further grounds numerical computation, retrieval, visual decoding, and answer verification.Across four financial multimodal reasoning benchmarks, FinAcumen consistently improves a frozen 8B vision-language model over finance-specialized models and approaches leading proprietary general-purpose models. Further analysis shows that selective experience activation improves reasoning reliability under retrieval uncertainty. Our code is anonymously available at https://anonymous.4open.science/r/FinAcumen",
+      "authors": [
+        "Pianran Guo",
+        "Pengcheng Zhou",
+        "Yucheng Jian",
+        "Shuhua Chen",
+        "Zhonfliang Yang",
+        "Linna Zhou"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-16T08:00:30+00:00",
+      "link": "https://arxiv.org/pdf/2606.17642v2",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.17642v1",
+      "source": "arxiv",
+      "title": "FinAcumen: Financial Multimodal Reasoning via Self-Evolving Experience Memory Harness",
+      "abstract": "Financial multimodal reasoning requires agents to coordinate numerical computation, retrieval, visual interpretation, and temporal grounding across heterogeneous evidence sources. Existing tool-augmented agents improve execution fidelity, yet remain largely stateless across episodes, repeatedly rediscovering reasoning strategies and failure patterns. In high-stakes financial settings, this leads to unreliable tool routing, noisy retrieval, and hallucination-prone reasoning. We present FinAcumen, a financial reasoning agent framework centered on selective experience memory for tool-augmented multimodal reasoning. FinAcumen accumulates financially grounded reasoning experience from prior trajectories, distilling successful strategies and failure-derived cautionary rules into a persistent memory bank. During inference, retrieved experiences condition reasoning only when semantic relevance exceeds a calibrated threshold, while irrelevant memory is explicitly suppressed through a fallback mechanism. A deterministic financial tool environment further grounds numerical computation, retrieval, visual decoding, and answer verification.Across four financial multimodal reasoning benchmarks, FinAcumen consistently improves a frozen 8B vision-language model over finance-specialized models and approaches leading proprietary general-purpose models. Further analysis shows that selective experience activation improves reasoning reliability under retrieval uncertainty. Our code is anonymously available at https://anonymous.4open.science/r/FinAcumen",
+      "authors": [
+        "Pianran Guo",
+        "Pengcheng Zhou",
+        "Yucheng Jian",
+        "Shuhua Chen"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-16T08:00:30+00:00",
+      "link": "https://arxiv.org/pdf/2606.17642v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.21228v1",
+      "source": "arxiv",
+      "title": "Sakana Fugu Technical Report",
+      "abstract": "The capabilities of frontier Large Language Models (LLMs) continue to advance, with different providers increasingly specializing in distinct domains. This raises a natural next objective: how to combine the individual specializations of various LLMs into a collectively intelligent system. To this end, we report the development of Sakana Fugu, a family of orchestrator models that harness and amplify the capabilities of an LLM agent team. Fugu models are themselves language models trained to understand user queries and dynamically devise agentic scaffolds to solve them. Through these adaptive scaffolds, Fugu accesses performance beyond any individual LLM agent, achieving state-of-the-art results compared to other publicly accessible models across a range of challenging tasks, including SWE-Bench Pro, Terminal Bench, LiveCodeBench, GPQA-Diamond, Humanity's Last Exam, and CharXiv Reasoning. We release two models: Fugu, which balances performance with latency for everyday use, and Fugu-Ultra, which prioritizes answer quality on the hardest problems. We describe our training paradigm, which encompasses large-scale fine-tuning, evolutionary algorithms, and reinforcement learning approaches, along with the infrastructure and core design principles that turn these methods into a production system. We hope this report encourages further research into multi-agent systems and dynamic, query-adaptive agentic scaffolds as a path toward the next frontier of AI capabilities, accessed through collective intelligence.",
+      "authors": [
+        "Yujin Tang",
+        "Edoardo Cetin",
+        "Jinglue Xu",
+        "Qi Sun",
+        "Stefan Nielsen",
+        "Vincent Richard",
+        "Haruto Goda",
+        "Iaroslav Tymchenko",
+        "Nhan Nguyen",
+        "Hyunin Lee",
+        "Mari Ashiga",
+        "Shashank Kotyan",
+        "So Kuroki",
+        "Tarin Clanuwat"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-19T08:47:40+00:00",
+      "link": "https://arxiv.org/pdf/2606.21228v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.21228v2",
+      "source": "arxiv",
+      "title": "Sakana Fugu Technical Report",
+      "abstract": "The capabilities of frontier Large Language Models (LLMs) continue to advance, with different providers increasingly specializing in distinct domains. This raises a natural next objective: how to combine the individual specializations of various LLMs into a collectively intelligent system. To this end, we report the development of Sakana Fugu, a family of orchestrator models that harness and amplify the capabilities of an LLM agent team. Fugu models are themselves language models trained to understand user queries and dynamically devise agentic scaffolds to solve them. Through these adaptive scaffolds, Fugu accesses performance beyond any individual LLM agent, achieving state-of-the-art results compared to other publicly accessible models across a range of challenging tasks, including SWE-Bench Pro, Terminal Bench, LiveCodeBench, GPQA-Diamond, Humanity's Last Exam, and CharXiv Reasoning. We release two models: Fugu, which balances performance with latency for everyday use, and Fugu-Ultra, which prioritizes answer quality on the hardest problems. We describe our training paradigm, which encompasses large-scale fine-tuning, evolutionary algorithms, and reinforcement learning approaches, along with the infrastructure and core design principles that turn these methods into a production system. We hope this report encourages further research into multi-agent systems and dynamic, query-adaptive agentic scaffolds as a path toward the next frontier of AI capabilities, accessed through collective intelligence.",
+      "authors": [
+        "Yujin Tang",
+        "Edoardo Cetin",
+        "Jinglue Xu",
+        "Qi Sun",
+        "Stefan Nielsen",
+        "Vincent Richard",
+        "Haruto Goda",
+        "Iaroslav Tymchenko",
+        "Nhan Nguyen",
+        "Hyunin Lee",
+        "Mari Ashiga",
+        "Shashank Kotyan",
+        "So Kuroki",
+        "Tarin Clanuwat"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-19T08:47:40+00:00",
+      "link": "https://arxiv.org/pdf/2606.21228v2",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.21140v1",
+      "source": "arxiv",
+      "title": "AgentMeter: Evaluating Model-CLI Matching for CLI-Based Local Task-Solving Agents",
+      "abstract": "LLM agents increasingly solve local tasks through command-line and CLI-based harness interfaces, including code editing, repository inspection, data analysis, and file workflows. Existing evaluations often emphasize task success, but deployed local agents are not models alone: the CLI mediates prompts, context replay, tool outputs, file access, terminal observations, and stopping behavior. As a result, the same model can produce different success, token, and cost profiles under different CLIs. We introduce AGENTMETER, a benchmark for evaluating model-CLI matching in CLI-mediated local task-solving agents, together with AgentMeter Score (AMS), a success-anchored, cost-aware metric over calibrated task-effort tiers. AgentMeter uses Benchmark90 as the full validation set and Core30 as a lower-cost subset for expanded comparison across 24 complete model-CLI configurations. On Core30, common deployment criteria select different configurations: highest Pass/30 selects GLM-5.1 with qwen-coder, lowest Tok./Pass selects GPT-5.3-Codex with kimi-cli, lowest billable USD/Pass selects Qwen3.6+ with Codex, while highest AMS selects Qwen3.6+ with kimi-cli. Benchmark90 validation preserves the Top-1 configuration and Top-3 set, with Spearman correlation 0.765, Kendall correlation 0.567, and AMS MAE 0.0383. These results show that model choice and CLI choice should not be decoupled, and that model-CLI configurations should be evaluated as the deployed unit.",
+      "authors": [
+        "Han Chi",
+        "Jiaxin Qi",
+        "Yan Cui",
+        "Baisheng Lai",
+        "Jianqiang Huang"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE",
+        "cs.AI"
+      ],
+      "published": "2026-06-19T06:26:32+00:00",
+      "link": "https://arxiv.org/pdf/2606.21140v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.23189v1",
+      "source": "arxiv",
+      "title": "Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?",
+      "abstract": "Computer-use agents (CUAs) now act on a user's behalf across personal applications such as email, calendars, and to-do lists. This cross-application access is useful, but it also creates a privacy risk that has been largely overlooked: when an agent works in one context, it can pull in information from another that is inappropriate in that context. Hence, we introduce AgentCIBench, an evaluation harness that turns this risk into executable, deterministically scored scenarios. We target three common failure modes in CUAs: visual co-location, where the agent pulls in prohibited items that sit next to the task target in the UI; task-ambiguity overshare, where the agent dumps dense personal state in response to an under-specified prompt; and recipient misalignment, where the agent sends content to an addressee for whom it is inappropriate. We evaluate 15 frontier agents and find a surprisingly high failure rate: 11 of 15 leak on more than 50% of scenarios, with an average leakage of 67.9%, and the same failures persist when agents act end-to-end in the environment to complete the task. We release AgentCIBench to encourage the development of safer computer-use agents and position contextual disclosure testing as a pre-deployment safety check.",
+      "authors": [
+        "Anmol Goel",
+        "Iryna Gurevych"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-22T11:36:58+00:00",
+      "link": "https://arxiv.org/pdf/2606.23189v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.20318v1",
+      "source": "arxiv",
+      "title": "AgenticDB: Agentic Performance Reconfiguration for Database Workloads",
+      "abstract": "Database configuration tuning is critical for workload performance, but practical tuning on real deployments remains difficult. Existing automatic tuners mostly formulate tuning as iterative search over DBMS knob values. This formulation leads to high execution cost, prematurely narrows the configuration space, and leaves practical requirements insufficiently addressed: diagnosing runtime bottlenecks from system feedback, exploring OS-level reconfiguration opportunities, executing changes robustly, and learning from previous trials and tasks.   We propose AgenticDB, an agentic framework for database workload reconfiguration. AgenticDB implements a context-grounded harness that interacts with the target database environment by proposing DBMS- and OS-level changes, applying them under safety constraints, observing workload performance and runtime states, and using execution feedback to guide subsequent decisions. This runtime interaction enables AgenticDB to diagnose bottlenecks, explore a broader DBMS- and OS-level reconfiguration space, avoid unsafe or unsupported actions, and accumulate experience within and across reconfiguration tasks. As a result, AgenticDB turns database tuning into a self-refining reconfiguration process in which runtime feedback iteratively improves later decisions.   We conduct extensive experiments on MySQL and PostgreSQL using YCSB, Sysbench, and TPC-H workloads. The results show that AgenticDB achieves the best final performance on all evaluated workloads, improving over the strongest baseline by 118.1% on average and reducing aggregate time-to-best by 22.6%. The results also demonstrate that its OS-level action space, robust execution lifecycle, and memory-enhanced planning contribute to more effective and practical database reconfiguration.",
+      "authors": [
+        "Xinyue Yang",
+        "Chaozheng Wang",
+        "Chen Zheng",
+        "Heng Zhang",
+        "Yanjun Wu"
+      ],
+      "primary_category": "cs.DB",
+      "categories": [
+        "cs.DB"
+      ],
+      "published": "2026-06-18T14:57:10+00:00",
+      "link": "https://arxiv.org/pdf/2606.20318v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.19245v2",
+      "source": "arxiv",
+      "title": "TxBench-PP: Analyzing AI Agent Performance on Small-Molecule Preclinical Pharmacology",
+      "abstract": "Artificial intelligence (AI) agents promise to accelerate drug discovery by compressing interpretation and decision-making loops, but practical deployment requires trusted evaluation on realistic program decisions. We introduce TherapeuticsBench Preclinical Pharmacology (TxBench-PP), a verifiable benchmark for small-molecule preclinical pharmacology and the first focused slice of a broader TherapeuticsBench effort across drug-discovery stages and therapeutic modalities. TxBench-PP tests whether agents can recover accurate conclusions from real-world assay data rather than memorized facts from literature. The benchmark contains 100 evaluations indexed by program stage, assay type, and task structure, spanning mechanism-of-action (MoA) and pharmacodynamic (PD) reasoning, compound-target engagement, causal target validation, developability and safety, and translational efficacy. Agents receive realistic workflow snapshots, inspect files in a coding environment, and return structured answers graded deterministically. Across 16 model-harness configurations, comprising 11 models and 4,800 trajectories, no system reliably recovered preclinical pharmacology decisions. The strongest configuration, Claude Opus 4.8 / Pi, passed 59.3\\% of endpoint attempts (178/300; 95\\% CI, 51.1-67.6), followed by GPT-5.5 / Pi at 55.3\\% (166/300; 47.0-63.6).",
+      "authors": [
+        "Hannah Le",
+        "Ramesh Ramasamy",
+        "Alex Urrutia",
+        "Mahsa Yazdani",
+        "Tim Proctor",
+        "Kenny Workman"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-17T16:23:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.19245v2",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.19245v1",
+      "source": "arxiv",
+      "title": "TxBench-PP: Analyzing AI Agent Performance on Small-Molecule Preclinical Pharmacology",
+      "abstract": "Artificial intelligence (AI) agents promise to accelerate drug discovery by compressing interpretation and decision-making loops, but practical deployment requires trusted evaluation on realistic program decisions. We introduce TherapeuticsBench Preclinical Pharmacology (TxBench-PP), a verifiable benchmark for small-molecule preclinical pharmacology and the first focused slice of a broader TherapeuticsBench effort across drug-discovery stages and therapeutic modalities. TxBench-PP tests whether agents can recover accurate conclusions from real-world assay data rather than memorized facts from literature. The benchmark contains 100 evaluations indexed by program stage, assay type, and task structure, spanning mechanism-of-action (MoA) and pharmacodynamic (PD) reasoning, compound-target engagement, causal target validation, developability and safety, and translational efficacy. Agents receive realistic workflow snapshots, inspect files in a coding environment, and return structured answers graded deterministically. Across 16 model-harness configurations, comprising 11 models and 4,800 trajectories, no system reliably recovered preclinical pharmacology decisions. The strongest configuration, Claude Opus 4.8 / Pi, passed 59.3\\% of endpoint attempts (178/300; 95\\% CI, 51.1-67.6), followed by GPT-5.5 / Pi at 55.3\\% (166/300; 47.0-63.6).",
+      "authors": [
+        "Hannah Le",
+        "Ramesh Ramasamy",
+        "Alex Urrutia",
+        "Mahsa Yazdani",
+        "Tim Proctor",
+        "Kenny Workman"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-17T16:23:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.19245v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.20785v1",
+      "source": "arxiv",
+      "title": "Fara-1.5: Scalable Learning Environments for Computer Use Agents",
+      "abstract": "Collecting computer use data from human demonstrations is expensive and slow, motivating the need for scalable generation strategies. This requires two key ingredients: environments in which agents can act and verifiers that can judge whether their demonstrations succeeded. We introduce FaraGen1.5, a scalable data pipeline for computer use agents composed of three modular components: environments, solvers, and verifiers. FaraGen1.5 uses both live websites and synthetic environments that faithfully simulate domains gated by authentication or that require irreversible actions. It employs a solver harness that can be powered by multiple models, including strong frontier models such as GPT-5.4, and also incorporates a user simulator to enable multi-turn rollouts. Finally, FaraGen1.5 scores the resulting trajectories with three complementary verifiers covering task correctness, efficiency, and critical-point adherence. Using data produced by this pipeline, we train Fara1.5, a family of native computer use agents (CUAs) at three scales built on Qwen3.5 (4B, 9B, and 27B). To train these models, we employ a supervised finetuning (SFT) recipe that carefully balances data from FaraGen1.5 for broad coverage, specific high-value tasks, and target model deficiencies in an iterative approach. Each model sets a new state of the art for its size class on browser-use benchmarks: Fara1.5-9B reaches 63.4% on Online-Mind2Web and 86.6% on WebVoyager, while Fara1.5-27B achieves 72.3% on Online-Mind2Web, which is competitive with much larger proprietary systems.",
+      "authors": [
+        "Ahmed Awadallah",
+        "Sahil Gupta",
+        "Yash Lara",
+        "Yadong Lu",
+        "Hussein Mozannar",
+        "Akshay Nambi",
+        "Zach Nussbaum",
+        "Yash Pandya",
+        "Aravind Rajeswaran",
+        "Corby Rosset",
+        "Alexey Taymanov",
+        "Luiz do Valle",
+        "Vibhav Vineet",
+        "Spencer Whitehead",
+        "Andrew Zhao"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-18T17:53:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.20785v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.20950v1",
+      "source": "arxiv",
+      "title": "Power Systems Agent Benchmark: Executable Evaluation of AI Agents in Electric Power Engineering",
+      "abstract": "Executable evaluation -- checking the consequences of an agent's actions with a program rather than grading its prose -- has become a prominent way to assess tool-using AI agents in software settings. Electric power engineering has not yet had an analogous benchmark: language-model use is still dominated by retrieval and text question answering, while agents acting on power-system artifacts remain mostly academic prototypes. We introduce the Power Systems Agent Benchmark, an executable benchmark for power-engineering agents. An agent receives a structured task and returns a structured solution; a deterministic evaluator recomputes the engineering quantities, checks operational constraints, and returns a feasibility flag, a normalized score, and explicit violations.   The benchmark contains 41 task families across eight areas of power engineering, from power flow and protection to stability, microgrids, reliability, power quality, and forecasting. Each task is grounded in a citable source, standard, or documented engineering formulation. To resist contamination, held-out cases are synthesized on demand by per-family generators from private seeds: the construction is inspectable, but the instances remain private. In a reference evaluation with three command-line agents, the strongest score near the compact tier's ceiling, a smaller open model trails, and public and held-out performance are broadly consistent; a separate public-split grid with OpenCode and Aider probes harness effects. The reference evaluation doubles as quality control: unanimous failures flag candidate task or evaluator defects, and it exposed a latent evaluator bug missed by self-consistency checks. The evaluators are compact deterministic surrogates, but the task contract allows their internals to be upgraded to simulator-backed checks without changing how tasks are posed or solved.",
+      "authors": [
+        "Sergei Trashchenkov"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "eess.SY"
+      ],
+      "published": "2026-06-18T21:30:39+00:00",
+      "link": "https://arxiv.org/pdf/2606.20950v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.24535v1",
+      "source": "arxiv",
+      "title": "Governed Shared Memory for Multi-Agent LLM Systems",
+      "abstract": "Multi-agent LLM environments require robust mechanisms for shared knowledge management. This paper formalizes the fleet-memory problem and identifies four foundational failure modes: unauthorized leakage, stale propagation, contradiction persistence, and provenance collapse. To address these, we define explicit systems-level primitives: scoped retrieval, temporal supersession, provenance tracking, and policy-governed memory propagation. These primitives are implemented in MemClaw, a production multi-tenant memory service, and evaluated via ArgusFleet, a reproducible harness testing four governance dimensions. Rather than a baseline comparison, this study measures a live production service, emphasizing real-world architectural insights and negative results. Key Evaluation Results Provenance: Successfully reconstructed 100% of depth-four derivation chains with correct writer identity at sub-second per-hop latency. Propagation: Demonstrated high intra-fleet visibility with zero cross-fleet leakage. Under strong write mode, write-to-visible latency was optimized to a single search round-trip. Production Architectural Issues Discovered Asymmetric Scope Enforcement: Tenant isolation held, but sub-tenant scope was initially bypassed on direct GET-by-id requests for agent-scoped credentials (disclosed and remediated during the study). Pipeline Ordering Conflict: While contradiction supersession works for admitted writes, a synchronous near-duplicate gate can prematurely reject contradictory writes before the asynchronous contradiction detector can evaluate them. Conclusion: Long-context retrieval alone is insufficient for production multi-agent memory. Governed shared memory demands explicit systems-level abstractions, and live evaluation is vital to expose enforcement and pipeline-ordering failures missed by design-only treatments.",
+      "authors": [
+        "Yanki Margalit",
+        "Nurit Cohen-Inger",
+        "Erni Avram",
+        "Ran Taig",
+        "Oded Margalit"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-23T13:04:14+00:00",
+      "link": "https://arxiv.org/pdf/2606.24535v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.24322v1",
+      "source": "arxiv",
+      "title": "Securing LLM-Agent Long-Term Memory Against Poisoning: Non-Malleable, Origin-Bound Authority with Machine-Checked Guarantees",
+      "abstract": "LLM agents increasingly rely on persistent long-term memory, which creates a critical vulnerability that we study here: memory poisoning. An adversary can store untrusted content in one session that later steers a consequential action, such as a payment, a setting change, or data exfiltration, in a future session. Existing defenses base a memory item's authority to act on either its content (detection or trust-scoring) or its derivation history (lineage). We show that both signals are malleable. An attacker can launder an untrusted origin through three channels specific to LLM agents: the agent's own summarization, a trusted-tool echo, and manufactured corroboration. Each makes the content look benign and breaks or flips its derivation edge to ``trusted.'' We formalize malleability for the memory write-retrieve-act pipeline and prove a machine-checked separation theorem. No content- or lineage-based defense is sound under laundering (T1), write-time origin binding is necessary (T2), and non-malleable origin-bound authority with Sybil-resistant corroboration-gated elevation is sufficient (T3). Our construction, TMA-NM (Tamper-evident Memory Authority, Non-Malleable), instantiates non-malleable information-flow control (IFC) for LLM-agent memory. A cross-defense, cross-attack, and cross-model benchmark over eight frontier models shows that existing defenses fail exactly where the theory predicts (up to 68% laundering attack-success), while TMA-NM reaches 0% attack success on both direct and laundering attacks across all models and channels, at full legitimate utility. We release the benchmark, harness, and machine-checked TLA+ models to support reproducibility.",
+      "authors": [
+        "Yedidel Louck"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-06-23T08:57:50+00:00",
+      "link": "https://arxiv.org/pdf/2606.24322v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ]
+    },
+    {
+      "id": "2606.19616v1",
+      "source": "arxiv",
+      "title": "Before the Pull Request: Mining Multi-Agent Coordination",
+      "abstract": "Autonomous coding agents now open millions of pull requests, yet large-scale studies find their PRs are produced faster but accepted less often - a coordination and trust gap that pull-request-level telemetry cannot explain. We argue the missing signal lives before the PR, in how concurrent agents claim, divide, and collide over shared work. We study this process through grite, our open-source coordination substrate that needs no central server and stores its records inside git itself, so its append-only, signed event log captures the coordination process directly. We show that (i) this shared substrate reduces duplicate and conflicting work at bounded overhead - the share of work that merely re-does a teammate's task falls from 78% to 0% while useful throughput more than triples; (ii) every agent's copy of the log converges to the same state with no write silently dropped, where a file-based tracker loses concurrent writes; and (iii) the log is a mineable artefact from which concrete failure modes - conflicting edits, lock starvation, redundant rediscovery, race-to-close - are automatically recoverable with provenance, several invisible in pull-request history. We release the dataset, harness, and mining toolkit.",
+      "authors": [
+        "Dipankar Sarkar"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE",
+        "cs.AI",
+        "cs.MA"
+      ],
+      "published": "2026-06-17T21:47:53+00:00",
+      "link": "https://arxiv.org/pdf/2606.19616v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.19501v1",
+      "source": "arxiv",
+      "title": "DeXposure-Claw: An Agentic System for DeFi Risk Supervision",
+      "abstract": "Decentralized finance exposes supervisors to fast-moving, networked credit risks. General-purpose LLM agents fit this setting poorly: they over-read weak evidence and recommend high-stakes interventions, while existing evaluations offer no regulator-aligned way to measure the resulting false alarms. We introduce DeXposure-Claw, a forecast-grounded agentic supervision system that routes LLM decisions through structured evidence: (1) DeXposure-FM, a graph time-series foundation model, forecasts future exposure networks; (2) deterministic monitors and stress scenarios then turn those forecasts into typed alerts, attribution signals, and scenario evidence; and (3) data-health and confidence gates constrain escalation before DeXposure-Claw emits auditable supervisory tickets with rationales. We further develop DeXposure-Bench, a six-axis evaluation harness, whose decision axis scores tickets against a regulator-aligned absolute-loss ground truth and an explicit false-intervention rate. Experiments on five years of weekly real data fully support our system. Code is at https://github.com/EVIEHub/DeXposure-Claw.",
+      "authors": [
+        "Aijie Shu",
+        "Bowei Chen",
+        "Wenbin Wu",
+        "Cathy Yi-Hsuan Chen",
+        "Fengxiang He"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.LG",
+        "q-fin.RM"
+      ],
+      "published": "2026-06-17T18:40:08+00:00",
+      "link": "https://arxiv.org/pdf/2606.19501v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.19338v1",
+      "source": "arxiv",
+      "title": "Beyond the Current Observation: Evaluating Multimodal Large Language Models in Controllable Non-Markov Games",
+      "abstract": "Deploying multimodal foundation models as closed-loop policies increasingly requires conditioning actions on observations that are no longer visible. However, existing benchmarks either expose the full state, conflate hidden-state reconstruction with other agent skills, or test recall only after an episode has ended. We introduce RNG-Bench (Reconstructive Non-Markov Games), a benchmark suite designed to isolate a base model's ability to reconstruct past observations and act on them during multi-step interaction. RNG-Bench includes two complementary games: Matching Pairs, where card identities briefly revealed at specific locations must later be recalled, and 3D Maze, where egocentric views must be integrated into a spatial map. Both games are evaluated under a unified harness with three controlled difficulty axes: grid size, visual pattern, and observation modality. The benchmark further introduces a head-to-head duel protocol to control for instance-level variance and a Memory Gap metric that disentangles forgetting from poor action selection. The hardest configurations require contexts of roughly 128K tokens and 350 image inputs per episode, and remain far from saturated by frontier MLLMs. Memory Gap analysis shows that most residual errors stem from forgetting earlier observations rather than from suboptimal decision making. Finally, fine-tuning Qwen3.5-9B on optimal-policy rollouts and filtered model demonstrations improves performance on RNG-Bench and transfers to existing benchmarks without degrading general multimodal capability.",
+      "authors": [
+        "Shengyuan Ding",
+        "Xilin Wei",
+        "Xinyu Fang",
+        "Haodong Duan",
+        "Dahua Lin",
+        "Jiaqi Wang",
+        "Yuhang Zang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-17T17:59:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.19338v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.19749v1",
+      "source": "arxiv",
+      "title": "Benchmarking Agentic Review Systems",
+      "abstract": "A new class of agentic review systems are emerging as a remedy to the pressure placed on peer review systems by AI-assisted research, but it is unclear how they should be evaluated. We evaluate two open-source systems (OpenAIReview and coarse), one proprietary system (Reviewer3), and a zero-shot baseline, across six LLMs spanning frontier and efficient models. First, we study whether AI reviews on ICLR/NeurIPS papers track with papers' quality as approximated by external signals such as citations and acceptance decisions. Every system performs above chance in pairwise accuracy, and the best is OpenAIReview + GPT-5.5 at 83.0%. Second, to test whether systems can catch errors with known ground truth, we construct a perturbation benchmark that injects four categories of errors into papers across eight arXiv subject classes and measure detection recall. The strongest configuration (OpenAIReview + GPT-5.5) catches 71.6% of injected errors, leaving substantial room for improvement. The union of detections across six models reaches 83.3% recall, suggesting different models detect different errors and better harness design can potentially increase performance. Beyond these benchmarks, we study a public deployment of OpenAIReview with real users. Votes on its comments skew positive at 1.44 to 1, and the most common complaints are about false positives and minor nitpicks. Together, by evaluating full review systems backed by state-of-the-art models on real research papers, we show that while AI reviews still have room for improvement, they can already track human quality judgments well, catch important errors, and earn positive feedback from real users.",
+      "authors": [
+        "Dang Nguyen",
+        "Wanqing Hao",
+        "Yanai Elazar",
+        "Chenhao Tan"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-18T03:30:06+00:00",
+      "link": "https://arxiv.org/pdf/2606.19749v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.23583v1",
+      "source": "arxiv",
+      "title": "Evaluation Awareness Is Not One Capability: Evidence from Open Language Models",
+      "abstract": "Safety benchmarks assume that test-condition behavior predicts deployment behavior, an assumption that fails if models detect evaluation cues and adapt. This opens a gap between benchmark performance and deployment behavior: compliance measured under test conditions becomes an optimistic upper bound that overstates how safely a model behaves once the evaluation harness is removed. We characterize this evaluation awareness through eight experiments across 37 open-weight models and seven families. (i)Detection is moderate and training-driven (24/37 models exceed chance, best AUROC 0.714 vs.0.819 human, with instruction tuning dominating over scale). (ii)Detection shifts safety behavior (hard refusal drops 5.8 percentage points under hypothetical framing, and 21/140 HarmBench framing effects are significant, with compliance rising up to +30 percentage points. (iii)Representations survive behavioral collapse (probes retain AUROC 0.98 under rewrites that drive behavior below chance, and multi-layer steering causally moves three downstream tasks while random controls do not). (iv)These axes are weakly coupled (only 1/15 correlations are significant, the sole robust link being behavioral detection versus framing resistance, $ρ=-0.79$, $p<0.001$). We call this gap the benchmark illusion: because detectability, behavioral manifestation, and controllability vary independently, it is multivariate rather than a single number, so no single awareness score is a reliable proxy for deployment safety.",
+      "authors": [
+        "Nilesh Nayan",
+        "Aishwarya Sampath Kumar",
+        "Rishiraj Girmal",
+        "Shivani Anilkumar",
+        "Sankaran Vaidyanathan",
+        "David A. Nader Palacio",
+        "Reshmi Ghosh",
+        "Soundararajan Srinivasan"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-22T16:48:43+00:00",
+      "link": "https://arxiv.org/pdf/2606.23583v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.20905v1",
+      "source": "arxiv",
+      "title": "Vesta: A Generalist Embodied Reasoning Model",
+      "abstract": "Robots operating in open-world environments must seamlessly integrate localization, spatial reasoning, navigation, and long-horizon planning. While specialist models excel at individual tasks, deploying a multi-model stack is computationally expensive and prone to cascading errors. We present Vesta, a unified embodied generalist that consolidates these capabilities into a single foundation model. Our approach combines a diverse and massive curated corpus designed to induce spatial grounding and a simple multimodal memory harness that enables reasoning over extended time horizons. Across diverse benchmarks, Vesta on average beats individual SOTA baselines by >$20\\%$ and beats an ensemble of per-category-best baselines by $>10\\%$ -- thus demonstrating that a generalist model can match or exceed specialists. On real-world robotic tasks requiring memory and reasoning, Vesta improves task success by >35\\%. Our work thus demonstrates that a single generalist is a feasible, scalable, and arguably preferable alternative to combining specialists.",
+      "authors": [
+        "Johan Bjorck",
+        "Zhiqi Li",
+        "Yunze Man",
+        "Jing Wang",
+        "An-Chieh Cheng",
+        "Sifei Liu",
+        "Shihao Wang",
+        "Zhiding Yu",
+        "Abhishek Badki",
+        "Stan Birchfield",
+        "Valts Blukis",
+        "Yevgen Chebotar",
+        "Siyi Chen",
+        "Sicong Leng",
+        "Yu-Cheng Chou",
+        "Tianli Ding",
+        "Boyi Li",
+        "Zhengyi Luo",
+        "Hang Su",
+        "Jonathan Tremblay",
+        "Tingwu Wang",
+        "Bowen Wen",
+        "Jimmy Wu",
+        "Xianghui Xie",
+        "Hanrong Ye",
+        "Hongxu Yin",
+        "K. R. Zentner",
+        "Liangyan Gui",
+        "Yu-Xiong Wang",
+        "Yuke Zhu",
+        "Linxi \"Jim\" Fan",
+        "Jan Kautz"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-06-18T20:01:32+00:00",
+      "link": "https://arxiv.org/pdf/2606.20905v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.24336v1",
+      "source": "arxiv",
+      "title": "TIGER: Taming Identity, Geometry, and Generative Priors for High-Quality Face Video Restoration",
+      "abstract": "Face Video Restoration (FVR) aims to recover high-fidelity facial videos from degraded input while preserving identity and semantic consistency across frames. Existing methods often struggle to simultaneously address three key challenges: identity shift, viewpoint-entangled guidance, and perceptual realism. To tackle these issues, we propose TIGER, a structured tri-prior fusion framework that Tames Identity, Geometry, and gEnerative pRiors for high-quality FVR. Specifically, an Identity Prior is first established by injecting subject-discriminative embeddings into the latent space, effectively anchoring the subject's identity against severe degradations. Then, to provide temporally consistent structural guidance for dynamic videos, TIGER constructs a Geometry Prior by lifting 2D reference cues into a disentangled 3D parameter space, creating a geometric anchor through cross-source parameter fusion. Moreover, to achieve maximum efficiency without compromising realism, we harness the video generation model's Generative Prior through a one-step rectified flow. We further design a progressive three-stage training optimization strategy that refines structural fidelity, textural reconstruction, and distribution-level realism to ensure robust optimization. We also construct a large-scale FVR dataset to facilitate robust training and standardized evaluation. Extensive experiments demonstrate that TIGER achieves state-of-the-art performance in both identity fidelity and temporal stability, delivering a high-quality, efficient and identity-consistent FVR. Project page: https://yzhoulv.github.io/Tiger/.",
+      "authors": [
+        "Yang Zhou",
+        "Wenxue Li",
+        "Peng Zhang",
+        "Yifei Chen",
+        "Fei Wang",
+        "Daiguo Zhou"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-23T09:21:36+00:00",
+      "link": "https://arxiv.org/pdf/2606.24336v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.18874v1",
+      "source": "arxiv",
+      "title": "Externalizing Research Synthesis and Validation in AI Scientists through a Research Harness",
+      "abstract": "AI systems can increasingly automate scientific workflows, but the reasoning that links prior evidence, generated ideas, experiments and final claims often remains implicit inside model inference. Here we introduce Xcientist, a research harness that externalizes research synthesis and experimental validation into inspectable, contract-governed processes. Xcientist organizes literature evidence, idea states, implementation plans, ablation records and repair traces as persistent research artifacts, so that generated mechanisms can be grounded, executed, tested and revised without losing their evidential basis. We identify claim drift as a failure mode of automated research, where runnable artifacts no longer support the mechanism originally claimed. Across training-free memory systems, graph-structured traffic forecasting and multi-scale physics-informed neural networks, Xcientist preserves traceable trajectories from problem formulation to mechanism design, validation and bounded revision. These results suggest that AI scientists should be evaluated not only by their final artifacts, but by whether their synthesis and validation processes remain attributable, inspectable and scientifically accountable.",
+      "authors": [
+        "Zijian Wang",
+        "Hanqi Li",
+        "Ziyue Yang",
+        "Zijian Hu",
+        "Shenghan Zuo",
+        "Yunzhe Zhang",
+        "Da Ma",
+        "Danyu Luo",
+        "Chenrun Wang",
+        "Jing Peng",
+        "Tiancheng Huang",
+        "Sijia Guo",
+        "Huayang Wang",
+        "Zichen Zhu",
+        "Senyu Han",
+        "Yilu Cao",
+        "Kai Yu",
+        "Lu Chen"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-17T09:52:14+00:00",
+      "link": "https://arxiv.org/pdf/2606.18874v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.24531v1",
+      "source": "arxiv",
+      "title": "Unified Position-Invariant Random Access Through Two Compression Layers via Absolute-Offset Coordinates: A Bit-Perfect Device-Resident Proof",
+      "abstract": "Random access into compressed data is normally confined to a single layer. Entropy-layer methods (Recoil) seek within rANS by storing intermediate decoder states; dictionary/match-layer methods seek within LZ-style references. We are not aware of a format that supports a single position-invariant seek through both an entropy layer and a match layer addressed by one coordinate. We show that ACEAPEX's absolute-offset design provides exactly this: because the match layer resolves every back-reference to an absolute position at encode time, and the entropy layer is applied per block, an arbitrary block can be decoded through both layers using one coordinate, bit-perfect, in isolation. We prove this with a three-phase verification that closes the empty-buffer trap. The seek of one 16KB block through ANS-entropy and match completes in 0.334ms. We verify the full entropy+match pipeline end-to-end on four data profiles and characterize the hardware ceiling the format reaches: the absolute-offset structure unrolls to as many as 25,344 independent parsers on one H100, which sequential LZ77 cannot do. We state explicitly what is not claimed: this is a round-trip correctness proof, not a disk-archive format; throughput figures are match-phase; and the unified-seek result is demonstrated for two layers, with three-layer generalization left as a hypothesis. Code and the verification harness are in the project repository.",
+      "authors": [
+        "Yakiv Shavidze"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-06-23T12:59:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.24531v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    },
+    {
+      "id": "2606.22837v1",
+      "source": "arxiv",
+      "title": "CLIP-guided Diffusion Model for Backdoor Generation in Sensor-based Human Activity Recognition",
+      "abstract": "Sensors are critical components of modern intelligent devices. The proliferation of the Internet of Things (IoT) and wearable mobile devices has enabled the integration of such sensors to monitor the environment and enable users to take predictive actions. Human activity recognition (HAR) is a popular application in which Inertial Measurement Unit (IMU)-based sensors, such as accelerometers and gyroscopes, are used to provide insights into health, training, and medical diagnosis. However, the accuracy of such a model is hindered by the lack of data. The diffusion model-based technique has proven successful in generating synthetic data for training HAR models. In this paper, we propose a backdoor training technique, IMU-DM-CLIP, that leverages a diffusion model to enable trigger-based attacks on HAR models. Our empirical analysis shows that the attack is successful even with a very small backdoor injection rate of 10\\% and 10\\% of the data guided for the diffusion model.",
+      "authors": [
+        "Toby Briston",
+        "Illya Kosyk",
+        "Kuniyih S"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CR"
+      ],
+      "published": "2026-06-22T04:20:30+00:00",
+      "link": "https://arxiv.org/pdf/2606.22837v1",
+      "tags": [
+        "keyword:harness"
+      ]
+    }
+  ],
+  "queries": [
+    {
+      "type": "keyword",
+      "tag": "harness",
+      "paper_tag": "keyword:harness",
+      "paper_sources": [
+        "arxiv"
+      ],
+      "query_text": "agent harness",
+      "logic_cn": "",
+      "boolean_expr": "",
+      "bm25_mode": "supabase",
+      "sim_scores": {
+        "2606.23032v2": {
+          "score": 0.256302952766418,
+          "rank": 1
+        },
+        "2606.23032v1": {
+          "score": 0.256277054548264,
+          "rank": 2
+        },
+        "2606.23449v1": {
+          "score": 0.247222229838371,
+          "rank": 3
+        },
+        "2606.21005v1": {
+          "score": 0.231753841042519,
+          "rank": 4
+        },
+        "2606.17546v1": {
+          "score": 0.201612904667854,
+          "rank": 5
+        },
+        "2606.22417v1": {
+          "score": 0.150406166911125,
+          "rank": 6
+        },
+        "2606.22610v1": {
+          "score": 0.135606065392494,
+          "rank": 7
+        },
+        "2606.19613v1": {
+          "score": 0.113238774240017,
+          "rank": 8
+        },
+        "2606.18363v1": {
+          "score": 0.112503841519356,
+          "rank": 9
+        },
+        "2606.22678v1": {
+          "score": 0.102272726595402,
+          "rank": 10
+        },
+        "2606.18619v1": {
+          "score": 0.0537037029862404,
+          "rank": 11
+        },
+        "2606.23315v1": {
+          "score": 0.0366774350404739,
+          "rank": 12
+        },
+        "2606.21856v1": {
+          "score": 0.0346310064196587,
+          "rank": 13
+        },
+        "2606.17799v1": {
+          "score": 0.0320320874452591,
+          "rank": 14
+        },
+        "2606.19980v1": {
+          "score": 0.0266949161887169,
+          "rank": 15
+        },
+        "2606.23654v1": {
+          "score": 0.025000000372529,
+          "rank": 16
+        },
+        "2606.17642v2": {
+          "score": 0.0199999995529652,
+          "rank": 17
+        },
+        "2606.17642v1": {
+          "score": 0.0199999995529652,
+          "rank": 18
+        },
+        "2606.21228v1": {
+          "score": 0.0125000001862645,
+          "rank": 19
+        },
+        "2606.21228v2": {
+          "score": 0.0125000001862645,
+          "rank": 20
+        },
+        "2606.21140v1": {
+          "score": 0.0124542126432061,
+          "rank": 21
+        },
+        "2606.23189v1": {
+          "score": 0.00833333376795053,
+          "rank": 22
+        },
+        "2606.20318v1": {
+          "score": 0.00833333376795053,
+          "rank": 23
+        },
+        "2606.19245v2": {
+          "score": 0.00476190494373441,
+          "rank": 24
+        },
+        "2606.19245v1": {
+          "score": 0.00476190494373441,
+          "rank": 25
+        },
+        "2606.20785v1": {
+          "score": 0.00455407984554768,
+          "rank": 26
+        },
+        "2606.20950v1": {
+          "score": 0.00277777784503996,
+          "rank": 27
+        },
+        "2606.24535v1": {
+          "score": 0.00226878258399665,
+          "rank": 28
+        },
+        "2606.24322v1": {
+          "score": 0.00161290320102125,
+          "rank": 29
+        },
+        "2606.19616v1": {
+          "score": 0.00156250002328306,
+          "rank": 30
+        },
+        "2606.19501v1": {
+          "score": 0.0013513513840735,
+          "rank": 31
+        },
+        "2606.19338v1": {
+          "score": 0.00116279069334269,
+          "rank": 32
+        },
+        "2606.19749v1": {
+          "score": 0.000598802405875176,
+          "rank": 33
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "harness",
+      "paper_tag": "keyword:harness",
+      "paper_sources": [
+        "arxiv"
+      ],
+      "query_text": "harness safety",
+      "logic_cn": "",
+      "boolean_expr": "",
+      "bm25_mode": "supabase",
+      "sim_scores": {
+        "2606.21856v1": {
+          "score": 0.03768115863204,
+          "rank": 1
+        },
+        "2606.20318v1": {
+          "score": 0.00526315812021494,
+          "rank": 2
+        },
+        "2606.23583v1": {
+          "score": 0.00409698998555541,
+          "rank": 3
+        },
+        "2606.19245v2": {
+          "score": 0.00400000018998981,
+          "rank": 4
+        },
+        "2606.19245v1": {
+          "score": 0.00400000018998981,
+          "rank": 5
+        },
+        "2606.23449v1": {
+          "score": 0.00376984127797186,
+          "rank": 6
+        },
+        "2606.23189v1": {
+          "score": 0.000694444461259991,
+          "rank": 7
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "harness",
+      "paper_tag": "keyword:harness",
+      "paper_sources": [
+        "arxiv"
+      ],
+      "query_text": "harness design",
+      "logic_cn": "",
+      "boolean_expr": "",
+      "bm25_mode": "supabase",
+      "sim_scores": {
+        "2606.18363v1": {
+          "score": 0.108333334326744,
+          "rank": 1
+        },
+        "2606.21005v1": {
+          "score": 0.100000001490116,
+          "rank": 2
+        },
+        "2606.19749v1": {
+          "score": 0.100000001490116,
+          "rank": 3
+        },
+        "2606.22678v1": {
+          "score": 0.0261111110448837,
+          "rank": 4
+        },
+        "2606.23449v1": {
+          "score": 0.0127922082319856,
+          "rank": 5
+        },
+        "2606.23032v1": {
+          "score": 0.0112500004470348,
+          "rank": 6
+        },
+        "2606.23032v2": {
+          "score": 0.0112500004470348,
+          "rank": 7
+        },
+        "2606.17799v1": {
+          "score": 0.00999999977648258,
+          "rank": 8
+        },
+        "2606.20905v1": {
+          "score": 0.00999999977648258,
+          "rank": 9
+        },
+        "2606.23315v1": {
+          "score": 0.0094296932220459,
+          "rank": 10
+        },
+        "2606.24336v1": {
+          "score": 0.0058823530562222,
+          "rank": 11
+        },
+        "2606.19338v1": {
+          "score": 0.00161290320102125,
+          "rank": 12
+        },
+        "2606.18874v1": {
+          "score": 0.00103092787321657,
+          "rank": 13
+        },
+        "2606.21228v2": {
+          "score": 0.000781250011641532,
+          "rank": 14
+        },
+        "2606.21228v1": {
+          "score": 0.000781250011641532,
+          "rank": 15
+        },
+        "2606.24531v1": {
+          "score": 0.000578034669160843,
+          "rank": 16
+        },
+        "2606.24535v1": {
+          "score": 0.000537634419742972,
+          "rank": 17
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "harness",
+      "paper_tag": "keyword:harness",
+      "paper_sources": [
+        "arxiv"
+      ],
+      "query_text": "harness attack",
+      "logic_cn": "",
+      "boolean_expr": "",
+      "bm25_mode": "supabase",
+      "sim_scores": {
+        "2606.22837v1": {
+          "score": 0.0665000006556511,
+          "rank": 1
+        },
+        "2606.21856v1": {
+          "score": 0.011858974583447,
+          "rank": 2
+        },
+        "2606.24322v1": {
+          "score": 0.00714285718277097,
+          "rank": 3
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "harness",
+      "paper_tag": "keyword:harness",
+      "paper_sources": [
+        "arxiv"
+      ],
+      "query_text": "harness vulnerability",
+      "logic_cn": "",
+      "boolean_expr": "",
+      "bm25_mode": "supabase",
+      "sim_scores": {
+        "2606.18619v1": {
+          "score": 0.0355072468519211,
+          "rank": 1
+        },
+        "2606.21856v1": {
+          "score": 0.00359208532609046,
+          "rank": 2
+        },
+        "2606.24322v1": {
+          "score": 0.000393700785934925,
+          "rank": 3
+        }
+      }
+    },
+    {
+      "type": "intent_query",
+      "tag": "harness",
+      "paper_tag": "query:harness",
+      "paper_sources": [
+        "arxiv"
+      ],
+      "query_text": "how to implement safety harness for AI agents",
+      "logic_cn": "",
+      "boolean_expr": "",
+      "bm25_mode": "supabase",
+      "sim_scores": {}
+    },
+    {
+      "type": "intent_query",
+      "tag": "harness",
+      "paper_tag": "query:harness",
+      "paper_sources": [
+        "arxiv"
+      ],
+      "query_text": "agent harness security",
+      "logic_cn": "",
+      "boolean_expr": "",
+      "bm25_mode": "supabase",
+      "sim_scores": {
+        "2606.23449v1": {
+          "score": 0.0370747707784176,
+          "rank": 1
+        },
+        "2606.18619v1": {
+          "score": 0.0122377621009946,
+          "rank": 2
+        },
+        "2606.24322v1": {
+          "score": 0.000350877206074074,
+          "rank": 3
+        }
+      }
+    },
+    {
+      "type": "intent_query",
+      "tag": "harness",
+      "paper_tag": "query:harness",
+      "paper_sources": [
+        "arxiv"
+      ],
+      "query_text": "What are the common harness attack methods and how to prevent them?",
+      "logic_cn": "",
+      "boolean_expr": "",
+      "bm25_mode": "supabase",
+      "sim_scores": {}
+    },
+    {
+      "type": "intent_query",
+      "tag": "harness",
+      "paper_tag": "query:harness",
+      "paper_sources": [
+        "arxiv"
+      ],
+      "query_text": "What are the best practices for harness vulnerability management?",
+      "logic_cn": "",
+      "boolean_expr": "",
+      "bm25_mode": "supabase",
+      "sim_scores": {}
+    }
+  ]
+}

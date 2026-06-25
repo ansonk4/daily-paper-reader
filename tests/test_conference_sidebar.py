@@ -137,7 +137,7 @@ class ConferenceSidebarTest(unittest.TestCase):
             self.assertIn("result:", md_text)
             self.assertIn("conclusion:", md_text)
             self.assertIn("## Abstract", md_text)
-            self.assertIn("## 论文详细总结（自动生成）", md_text)
+            self.assertIn("## Detailed Summary (AI-generated)", md_text)
             self.assertIn("### 1. Retrieval Relevance", md_text)
             self.assertIn("### 4. Source and Original Text", md_text)
             self.assertNotIn("# A Conference Paper", md_text)

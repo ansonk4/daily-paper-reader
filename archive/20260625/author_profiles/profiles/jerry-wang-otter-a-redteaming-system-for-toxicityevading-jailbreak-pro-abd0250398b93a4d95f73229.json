@@ -1,0 +1,22 @@
+{
+  "name": "Jerry Wang",
+  "role": "first_author",
+  "affiliation": "1 National Chengchi University, Taipei, Taiwan; 2 University of Illinois Urbana-Champaign",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Jerry Wang",
+    "affiliations": [
+      "1 National Chengchi University, Taipei, Taiwan",
+      "2 University of Illinois Urbana-Champaign"
+    ],
+    "author_row": "Jerry Wang 1,2 , Hsin-Ling Hsu 1 , Yi-Cheng Lai 1 , Nai-Chia Chen 1 , Fang Yu 1"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Thiago D. Simão",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=16; Semantic Scholar paper_count=15",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "CRAX: Fast Safe Reinforcement Learning Benchmarking",
+    "paper_year": "2026",
+    "name": "Thiago D. Simão",
+    "affiliations": [],
+    "paper_count": 15,
+    "citation_count": 16,
+    "author_id": "2275196126",
+    "lookup": "author_search"
+  }
+}

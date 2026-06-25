@@ -10,6 +10,7 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List
 
+from author_profile import AuthorProfileRater, combine_relevance_author_scores, clamp_score
 from llm import DeepSeekClient, resolve_max_output_tokens
 from subscription_plan import build_pipeline_inputs
 
@@ -29,6 +30,7 @@ DEFAULT_FILTER_MODEL = (
 DEFAULT_DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL") or os.getenv("SUMMARY_BASE_URL") or "https://api.deepseek.com"
 DEFAULT_FILTER_CONCURRENCY = 4
 MAX_FILTER_RETRIES = 3
+AUTHOR_PROFILE_CACHE_DIR = os.path.join(ARCHIVE_DIR, "author_profiles")
 
 
 class FilterOutputTruncatedError(ValueError):
@@ -348,20 +350,7 @@ def call_filter(
                         "conclusion_cn": {"type": "string"},
                         "score": {"type": "number"},
                     },
-                    "required": [
-                        "id",
-                        "matched_requirement_index",
-                        "evidence_en",
-                        "evidence_cn",
-                        "tldr_en",
-                        "tldr_cn",
-                        "title_zh",
-                        "motivation_cn",
-                        "method_cn",
-                        "result_cn",
-                        "conclusion_cn",
-                        "score",
-                    ],
+                    "required": ["id"],
                     "additionalProperties": False,
                 },
             }
@@ -498,11 +487,7 @@ def call_filter(
 
 
 def _coerce_score(value: Any) -> float:
-    try:
-        score = float(value)
-    except Exception:
-        score = 0.0
-    return max(0.0, min(10.0, score))
+    return clamp_score(value)
 
 
 def _coerce_int(value: Any, default: int = 0) -> int:
@@ -719,7 +704,9 @@ def merge_filter_result(
     if (prev is None) or (score > float(prev.get("score", 0))):
         merged[pid] = {
             "paper_id": pid,
-            "score": score,
+            "relevance_score": score,
+            "author_score": 4.5,
+            "score": combine_relevance_author_scores(score, 4.5),
             "evidence_en": evidence_en,
             "evidence_cn": evidence_cn,
             "canonical_evidence": evidence_en or evidence_cn or legacy,
@@ -734,6 +721,35 @@ def merge_filter_result(
             "matched_query_tag": matched_tag,
             "matched_query_text": matched_query,
         }
+
+
+def apply_author_ratings(
+    merged: Dict[str, Dict[str, Any]],
+    paper_map: Dict[str, Dict[str, Any]],
+    rater: AuthorProfileRater,
+) -> None:
+    for pid, item in merged.items():
+        paper = paper_map.get(pid) or {}
+        relevance_score = _coerce_score(item.get("relevance_score", item.get("score")))
+        try:
+            rating = rater.rate_paper(paper)
+        except Exception as exc:
+            rating = {
+                "author_score": 4.5,
+                "author_rating_explanation": (
+                    f"Author rating failed during metadata lookup or synthesis: {exc}. "
+                    "Assigned a neutral low-confidence author rating."
+                ),
+                "author_profiles": [],
+            }
+
+        author_score = _coerce_score(rating.get("author_score", 4.5))
+        item["relevance_score"] = relevance_score
+        item["author_score"] = author_score
+        item["score"] = combine_relevance_author_scores(relevance_score, author_score)
+        item["author_rating_explanation"] = _norm_text(rating.get("author_rating_explanation"))
+        profiles = rating.get("author_profiles")
+        item["author_profiles"] = profiles if isinstance(profiles, list) else []
 
 
 def _filter_batch(
@@ -917,6 +933,15 @@ def process_file(
         save_json(data, output_path)
         group_end()
         return
+
+    author_client = _make_filter_client(api_key, filter_model, max_output_tokens)
+    author_rater = AuthorProfileRater(
+        cache_dir=AUTHOR_PROFILE_CACHE_DIR,
+        client=author_client,
+    )
+    log(f"[INFO] start author background rating: papers={len(merged)}")
+    apply_author_ratings(merged, paper_map, author_rater)
+    log("[INFO] author background rating completed")
 
     llm_ranked = sorted(merged.values(), key=lambda x: x.get("score", 0), reverse=True)
     data["llm_ranked"] = llm_ranked

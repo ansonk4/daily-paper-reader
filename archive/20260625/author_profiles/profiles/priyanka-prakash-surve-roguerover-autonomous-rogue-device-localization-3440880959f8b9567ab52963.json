@@ -1,0 +1,32 @@
+{
+  "name": "Priyanka Prakash Surve",
+  "role": "first_author",
+  "affiliation": "Asaf Shabtai 1 0000-0003-0630-4059; Yuval Elovici 1 0000-0002-9641-128X",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=10; Semantic Scholar paper_count=4",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Priyanka Prakash Surve",
+    "affiliations": [
+      "Asaf Shabtai 1 0000-0003-0630-4059",
+      "Yuval Elovici 1 0000-0002-9641-128X"
+    ],
+    "author_row": "Priyanka Prakash Surve 1 0009-0001-5673-2687"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "RogueRover: Autonomous Rogue Device Localization for Incident Response",
+    "paper_year": "2026",
+    "name": "Priyanka Surve",
+    "affiliations": [],
+    "paper_count": 4,
+    "citation_count": 10,
+    "author_id": "2265579553",
+    "lookup": "author_search"
+  }
+}

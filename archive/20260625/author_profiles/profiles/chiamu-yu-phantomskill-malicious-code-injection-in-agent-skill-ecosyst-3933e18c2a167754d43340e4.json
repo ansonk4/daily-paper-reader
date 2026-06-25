@@ -1,0 +1,21 @@
+{
+  "name": "Chia-Mu Yu",
+  "role": "last_author",
+  "affiliation": "National Yang Ming Chiao Tung University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Chia-Mu Yu",
+    "affiliations": [
+      "National Yang Ming Chiao Tung University"
+    ],
+    "author_row": "Yu-Ting Lin Chia-Mu Yu"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

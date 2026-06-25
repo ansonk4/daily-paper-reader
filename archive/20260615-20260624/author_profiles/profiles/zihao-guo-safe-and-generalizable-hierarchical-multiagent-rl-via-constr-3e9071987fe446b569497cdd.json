@@ -1,0 +1,24 @@
+{
+  "name": "Zihao Guo",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=463; Semantic Scholar paper_count=62",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Safe and Generalizable Hierarchical Multi-Agent RL via Constraint Manifold Control",
+    "paper_year": "2026",
+    "name": "Zihao Guo",
+    "affiliations": [],
+    "paper_count": 62,
+    "citation_count": 463,
+    "author_id": "2009298394",
+    "lookup": "author_search"
+  }
+}

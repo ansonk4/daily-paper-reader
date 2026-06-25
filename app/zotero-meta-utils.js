@@ -59,6 +59,7 @@
       aiSummaryText: pickFirstSectionText(
         sections,
         (title) =>
+          title.includes('detailed summary') ||
           title.includes('论文详细总结') ||
           title.includes('ai summary'),
       ),
@@ -75,7 +76,7 @@
       ),
       chineseAbstractText: pickFirstSectionText(
         sections,
-        (title) => title === '摘要',
+        (title) => title === 'chinese abstract' || title === '摘要',
       ),
     };
   };

@@ -1,0 +1,24 @@
+{
+  "name": "Usman Rauf",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=69; Semantic Scholar paper_count=7",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Quantifying the Impact of Stealthy BLE Spam & Flooding Attacks on IoT Environments",
+    "paper_year": "2026",
+    "name": "Usman Rauf",
+    "affiliations": [],
+    "paper_count": 7,
+    "citation_count": 69,
+    "author_id": "2274005389",
+    "lookup": "author_search"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Wenli Xiao",
+      "role": "first_author",
+      "affiliation": "Jimmy Wu; Cunxi Dai",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=197; Semantic Scholar paper_count=13",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Wenli Xiao",
+        "affiliations": [
+          "Jimmy Wu",
+          "Cunxi Dai"
+        ],
+        "author_row": "Wenli Xiao"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "ENPIRE: Agentic Robot Policy Self-Improvement in the Real World",
+        "paper_year": "2026",
+        "name": "Wenli Xiao",
+        "affiliations": [],
+        "paper_count": 13,
+        "citation_count": 197,
+        "author_id": "49616972",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Guanya Shi",
+      "role": "last_author",
+      "affiliation": "Cunxi Dai",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=1933; Semantic Scholar paper_count=30",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Guanya Shi",
+        "affiliations": [
+          "Cunxi Dai"
+        ],
+        "author_row": "Guanya Shi"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "ENPIRE: Agentic Robot Policy Self-Improvement in the Real World",
+        "paper_year": "2026",
+        "name": "Guanya Shi",
+        "affiliations": [],
+        "paper_count": 30,
+        "citation_count": 1933,
+        "author_id": "2249759531",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T14:06:40.444153+00:00"
+}

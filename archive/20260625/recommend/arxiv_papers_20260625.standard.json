@@ -1,0 +1,1132 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-25T05:14:05.906582+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 44,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2606.21856v1",
+      "source": "arxiv",
+      "title": "Harness-MU: A Safe, Governed, and Effective Harness for Multi-User LLM Agents",
+      "abstract": "The increasing deployment of large language model (LLM) agents in collaborative workflows demands robust multi-user, multi-principal interaction mechanisms capable of enforcing access permissions, resolving authoritative conflicts, and preventing unauthorized data disclosure. However, a fundamental mismatch exists between the single-user training paradigm of contemporary LLMs and the hard constraints required for multi-principal governance, rendering probabilistic, prompt-based safeguards vulnerable under multi-turn adversarial interactions.Our key insight is that governance constraints -- who is authorized, what is restricted, and whose instructions take precedence -- are deterministic runtime variables that should be enforced by execution hooks rather than entrusted to the LLM. We present \\textbf{Harness-MU}, the first model-agnostic, zero-tuning infrastructure framework for multi-user LLM agents. By decoupling language generation from safety orchestration, Harness-MU guarantees unbreakable permission boundaries while maximizing compliant demand satisfaction. Across four frontier open-weight and proprietary models on the \\textit{Muses-Bench} benchmark, Harness-MU achieves the goal of privacy preservation across all access-control attacks, outperforming the standard baseline by 0.28--0.39 in utility score and improving instruction-following accuracy by up to 48.9 percentage points. Harness-MU advances the philosophy of \\textit{Harness Engineering}, establishing that systematic infrastructure is essential for solving LLM multi-principal governance challenges. The code and data are available at https://github.com/YuanJrShiuan/Harness-MulUser.",
+      "authors": [
+        "Wangxuan Fan",
+        "Xiaoyu Nie",
+        "Zhongxiang Dai"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-20T03:24:24+00:00",
+      "link": "https://arxiv.org/pdf/2606.21856v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.8,
+      "llm_evidence_en": "safe governed multi-user LLM agent harness with runtime governance hooks",
+      "llm_evidence_cn": "safe governed multi-user LLM agent harness with runtime governance hooks",
+      "llm_evidence": "safe governed multi-user LLM agent harness with runtime governance hooks",
+      "canonical_evidence": "safe governed multi-user LLM agent harness with runtime governance hooks",
+      "llm_tldr_en": "Harness-MU proposes a multi-user LLM agent harness that enforces access control, authority resolution, and data protection via deterministic runtime hooks.",
+      "llm_tldr_cn": "The paper addresses the governance gap when LLM agents are deployed in multi-user, multi-principal collaborative workflows. It argues that prompt-based safeguards are too weak under adversarial interaction and that authorization, precedence, and access constraints should be enforced as deterministic runtime variables. Harness-MU proposes a harness architecture that uses execution hooks and runtime governance mechanisms to implement these constraints. The contribution is a harness design direction focused on multi-principal safety and policy enforcement for LLM agents.",
+      "llm_tldr": "Harness-MU proposes a multi-user LLM agent harness that enforces access control, authority resolution, and data protection via deterministic runtime hooks.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 10.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+      "author_profiles": [
+        {
+          "name": "Wangxuan Fan",
+          "role": "first_author",
+          "affiliation": "The Chinese University of Hong Kong, Shenzhen\\\\ Emails: Wangxuan Fan fanwx@cuhk.edu.cn , Xiaoyu Nie xiaoyunie@link.cuhk.edu.cn , Zhongxiang Dai daizhongxiang@cuhk.edu.cn",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Wangxuan Fan",
+            "affiliations": [
+              "The Chinese University of Hong Kong, Shenzhen\\\\ Emails: Wangxuan Fan fanwx@cuhk.edu.cn , Xiaoyu Nie xiaoyunie@link.cuhk.edu.cn , Zhongxiang Dai daizhongxiang@cuhk.edu.cn"
+            ],
+            "author_row": "Wangxuan Fan, Xiaoyu Nie, Zhongxiang Dai Corresponding author."
+          },
+          "openalex": {},
+          "semantic_scholar": {}
+        },
+        {
+          "name": "Zhongxiang Dai",
+          "role": "last_author",
+          "affiliation": "The Chinese University of Hong Kong, Shenzhen\\\\ Emails: Wangxuan Fan fanwx@cuhk.edu.cn , Xiaoyu Nie xiaoyunie@link.cuhk.edu.cn , Zhongxiang Dai daizhongxiang@cuhk.edu.cn",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Zhongxiang Dai",
+            "affiliations": [
+              "The Chinese University of Hong Kong, Shenzhen\\\\ Emails: Wangxuan Fan fanwx@cuhk.edu.cn , Xiaoyu Nie xiaoyunie@link.cuhk.edu.cn , Zhongxiang Dai daizhongxiang@cuhk.edu.cn"
+            ],
+            "author_row": "Wangxuan Fan, Xiaoyu Nie, Zhongxiang Dai Corresponding author."
+          },
+          "openalex": {},
+          "semantic_scholar": {}
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.18356v1",
+      "source": "arxiv",
+      "title": "SafeClawBench: Separating Semantic, Audit-Evidence, and Sandbox Harm in Tool-Using LLM Agents",
+      "abstract": "Tool-using language-model agents introduce security failures that go beyond unsafe text: they can disclose protected objects, write persistent memory, send messages, modify databases, or trigger harmful code and tool effects. Existing evaluations often collapse these stages into a single attack success rate, making it difficult to tell whether a model merely agreed with an attacker or actually produced observable harm. We introduce SafeClawBench, a staged benchmark for tool-using agent security with 600 controlled adversarial tasks across six attack families: direct and indirect prompt injection, tool-return injection, memory poisoning, memory extraction, and ambiguity-driven unsafe inference. SafeClawBench reports three separate endpoints: semantic attack acceptance, audit-visible harm evidence, and sandbox-observed tool/state harm. Evaluating five agent endpoints under four prompt-level policies, we find that these endpoints capture different failure modes. Without additional prompt protection, semantic failure rates vary widely across models, from 9.0% to 44.2%. Audited harm evidence is narrower than semantic failure, and under a separate executable protocol some matched task identities produce sandbox harm despite passing the Semantic Core call: in a 12,000-row matched analysis, 291 of 347 observed sandbox harms occur in rows that pass the semantic check. Prompt policies change endpoint outcomes, but their effects depend on both model and protocol. SafeClawBench provides a reproducible framework for comparing agent models and prompt-policy conditions without conflating textual compliance, evidence-supported harm, and executable state changes. The open-source dataset is available at https://huggingface.co/datasets/sairights/safeclawbench.",
+      "authors": [
+        "Yuchuan Tian",
+        "Mengyu Zheng",
+        "Haocheng Mei",
+        "Ye Yuan",
+        "Chao Xu",
+        "Xinghao Chen",
+        "Hanting Chen",
+        "Yu Wang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-16T18:04:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.18356v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.6,
+      "llm_evidence_en": "staged security benchmark for tool-using LLM agents",
+      "llm_evidence_cn": "staged security benchmark for tool-using LLM agents",
+      "llm_evidence": "staged security benchmark for tool-using LLM agents",
+      "canonical_evidence": "staged security benchmark for tool-using LLM agents",
+      "llm_tldr_en": "This paper introduces SafeClawBench, a staged security benchmark for tool-using LLM agents that separates prompt injection, memory poisoning, memory extraction, and other attack families relevant to harness attacks.",
+      "llm_tldr_cn": "The paper addresses the limitation of existing evaluations that collapse tool-using agent security into a single attack success rate. It introduces SafeClawBench, a staged benchmark with 600 controlled adversarial tasks across six attack families: direct prompt injection, indirect prompt injection, tool-return injection, memory poisoning, memory extraction, and ambiguity-driven unsafe inference. The benchmark reports three separate harm dimensions: semantic agreement, audit-evidence harm, and sandbox harm. This structure enables finer-grained evaluation of harness attack methods and defenses.",
+      "llm_tldr": "This paper introduces SafeClawBench, a staged security benchmark for tool-using LLM agents that separates prompt injection, memory poisoning, memory extraction, and other attack families relevant to harness attacks.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "What are the common harness attack methods and how to prevent them?",
+      "matched_requirement_id": "req-8",
+      "relevance_score": 8.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+      "author_profiles": [
+        {
+          "name": "Yuchuan Tian",
+          "role": "first_author",
+          "affiliation": "Peking University",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=483; Semantic Scholar paper_count=26",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Yuchuan Tian",
+            "affiliations": [
+              "Peking University"
+            ],
+            "author_row": "textbf Yuchuan Tian"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "SafeClawBench: Separating Semantic, Audit-Evidence, and Sandbox Harm in Tool-Using LLM Agents",
+            "paper_year": "2026",
+            "name": "Yuchuan Tian",
+            "affiliations": [],
+            "paper_count": 26,
+            "citation_count": 483,
+            "author_id": "4871558",
+            "lookup": "author_search"
+          }
+        },
+        {
+          "name": "Yu Wang",
+          "role": "last_author",
+          "affiliation": "Tsinghua University",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Yu Wang",
+            "affiliations": [
+              "Tsinghua University"
+            ],
+            "author_row": "Yu Wang"
+          },
+          "openalex": {},
+          "semantic_scholar": {}
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.17546v1",
+      "source": "arxiv",
+      "title": "SEAGym: An Evaluation Environment for Self-Evolving LLM Agents",
+      "abstract": "Self-evolving LLM-based agents improve mainly by changing their agent harness: the structured execution layer around a base model, including prompts, memory, tools, middleware, runtime state, and the model-tool interaction loop. Existing evaluations often reduce this process to isolated task scores or a single sequential curve, obscuring whether an update produces reusable improvement, overfits recent tasks, increases cost, or harms older behavior. We introduce SEAGym, an evaluation environment for measuring agent harness updates across training, validation, test, replay, and cost records. SEAGym turns Harbor-compatible benchmarks into dynamic self-evolution task sources with train batches, frozen update-validation, held-out ID and OOD transfer views, replay diagnostics, and saved snapshot and metric records. Instantiating SEAGym on Terminal-Bench 2.0 and HLE, we compare ACE, TF-GRPO, and AHE under a shared epoch/batch protocol. The results show that these evaluation views provide complementary signals about the evolution process: frequent updates may fail to improve held-out performance, useful intermediate snapshots may collapse later, and source diversity and model backend can affect harness reliability.",
+      "authors": [
+        "Congjie Zheng",
+        "Chuanyi Xue",
+        "Bin Liang",
+        "Jun Yang",
+        "Changshui Zhang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-16T05:50:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.17546v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.2,
+      "llm_evidence_en": "evaluation environment for agent harness updates",
+      "llm_evidence_cn": "evaluation environment for agent harness updates",
+      "llm_evidence": "evaluation environment for agent harness updates",
+      "canonical_evidence": "evaluation environment for agent harness updates",
+      "llm_tldr_en": "SEAGym is an evaluation environment for measuring agent harness updates across training, validation, test, replay, and cost records for self-evolving LLM agents.",
+      "llm_tldr_cn": "The paper addresses the limitation that existing evaluations reduce self-evolving LLM agent updates to isolated task scores, obscuring reusable improvement, overfitting, cost, or regressions. It introduces SEAGym, an evaluation environment for measuring agent harness updates across training, validation, test, replay, and cost records. SEAGym turns Harbor-compatible benchmarks into dynamic self-evolution task sources with train batches, frozen update-validation, held-out ID and OOD transfer views, and replay datasets. This provides infrastructure for evaluating harness design changes and safety-relevant behavior over time.",
+      "llm_tldr": "SEAGym is an evaluation environment for measuring agent harness updates across training, validation, test, replay, and cost records for self-evolving LLM agents.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 9.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+      "author_profiles": [
+        {
+          "name": "Congjie Zheng",
+          "role": "first_author",
+          "affiliation": "[-0.15em] 1 Department of Automation, Tsinghua University, Beijing, 100084, China; [-0.15em] 2 Beijing National Research Center for Information Science and Technology (BNRist); [-0.15em] Tsinghua University, Beijing, 100084, China",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Congjie Zheng",
+            "affiliations": [
+              "[-0.15em] 1 Department of Automation, Tsinghua University, Beijing, 100084, China",
+              "[-0.15em] 2 Beijing National Research Center for Information Science and Technology (BNRist)",
+              "[-0.15em] Tsinghua University, Beijing, 100084, China"
+            ],
+            "author_row": "Congjie Zheng 1,* Chuanyi Xue 1,* Bin Liang 1 Jun Yang 1, Changshui Zhang 1,2"
+          },
+          "openalex": {},
+          "semantic_scholar": {}
+        },
+        {
+          "name": "Changshui Zhang",
+          "role": "last_author",
+          "affiliation": "[-0.15em] 1 Department of Automation, Tsinghua University, Beijing, 100084, China; [-0.15em] 2 Beijing National Research Center for Information Science and Technology (BNRist); [-0.15em] Tsinghua University, Beijing, 100084, China",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Changshui Zhang",
+            "affiliations": [
+              "[-0.15em] 1 Department of Automation, Tsinghua University, Beijing, 100084, China",
+              "[-0.15em] 2 Beijing National Research Center for Information Science and Technology (BNRist)",
+              "[-0.15em] Tsinghua University, Beijing, 100084, China"
+            ],
+            "author_row": "Congjie Zheng 1,* Chuanyi Xue 1,* Bin Liang 1 Jun Yang 1, Changshui Zhang 1,2"
+          },
+          "openalex": {},
+          "semantic_scholar": {}
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.19980v1",
+      "source": "arxiv",
+      "title": "ENPIRE: Agentic Robot Policy Self-Improvement in the Real World",
+      "abstract": "Achieving dexterous robotic manipulation in the real world heavily relies on human supervision and algorithm engineering, which becomes a central bottleneck in the pursuit of general physical intelligence. Although emerging coding agents can generate code to automate algorithm search, their successes remain largely confined in digital environments. We conjecture that the missing abstraction to automate robotics research is a repeatable feedback loop for real-world policy improvement: reset the scene, execute a policy, verify the outcome, and refine the next iteration. To bridge this gap, we introduce ENPIRE, a harness framework for coding agents that instantiates this physical feedback routine with four core modules: an Environment module (EN) for automatic reset and verification, a Policy Improvement module (PI) that launches policy refinement, a Rollout module (R) to evaluate policies with one or multiple physical robots operating in parallel, and an Evolution module (E) in which coding agents analyze logs, consult literature, improve training infrastructure and algorithm code to address failure modes. This closed-loop system transforms real-world manipulation learning into a controllable optimization procedure, minimizing human effort while allowing fair ablations across training recipe and agent variants. Powered by ENPIRE, frontier coding agents can autonomously train a policy to achieve a 99% success rate on challenging, dexterous manipulation tasks, such as organizing a pin box, fastening a zip tie, and tool use, a process that further accelerates when we dispatch an agent team on a robot fleet. Our results suggest a practical and scalable path toward deploying coding agents to autonomously advancing robotics in the physical world.",
+      "authors": [
+        "Wenli Xiao",
+        "Jia Xie",
+        "Tonghe Zhang",
+        "Haotian Lin",
+        "Letian \"Max\" Fu",
+        "Haoru Xue",
+        "Jalen Lu",
+        "Yi Yang",
+        "Cunxi Dai",
+        "Zi Wang",
+        "Jimmy Wu",
+        "Guanzhi Wang",
+        "S. Shankar Sastry",
+        "Ken Goldberg",
+        "Linxi \"Jim\" Fan",
+        "Yuke Zhu",
+        "Guanya Shi"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-18T09:21:27+00:00",
+      "link": "https://arxiv.org/pdf/2606.19980v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.6,
+      "llm_evidence_en": "explicitly proposes a harness framework for coding agents with environment and feedback modules",
+      "llm_evidence_cn": "明確提出一個用於編碼Agent嘅Harness框架，包含環境模組同回饋機制",
+      "llm_evidence": "explicitly proposes a harness framework for coding agents with environment and feedback modules",
+      "canonical_evidence": "explicitly proposes a harness framework for coding agents with environment and feedback modules",
+      "llm_tldr_en": "ENPIRE introduces a harness framework for coding agents that structures a repeatable real-world feedback loop of resetting, executing, verifying, and refining robotic policy iterations.",
+      "llm_tldr_cn": "The paper addresses the bottleneck of human supervision in real-world robotic manipulation by proposing ENPIRE, a harness framework for coding agents that automates policy improvement through physical feedback. It introduces four core modules: an Environment module for automatic scene reset, a Policy module, a Verification module for outcome checking, and a Refinement module for iterative improvement. The framework enables coding agents to close the loop between digital code generation and real-world execution. The authors argue that this abstraction of a repeatable physical feedback routine is a key missing piece for automating robotics research.",
+      "llm_tldr": "ENPIRE introduces a harness framework for coding agents that structures a repeatable real-world feedback loop of resetting, executing, verifying, and refining robotic policy iterations.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 8.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+      "author_profiles": [
+        {
+          "name": "Wenli Xiao",
+          "role": "first_author",
+          "affiliation": "Jimmy Wu; Cunxi Dai",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=197; Semantic Scholar paper_count=13",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Wenli Xiao",
+            "affiliations": [
+              "Jimmy Wu",
+              "Cunxi Dai"
+            ],
+            "author_row": "Wenli Xiao"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "ENPIRE: Agentic Robot Policy Self-Improvement in the Real World",
+            "paper_year": "2026",
+            "name": "Wenli Xiao",
+            "affiliations": [],
+            "paper_count": 13,
+            "citation_count": 197,
+            "author_id": "49616972",
+            "lookup": "author_search"
+          }
+        },
+        {
+          "name": "Guanya Shi",
+          "role": "last_author",
+          "affiliation": "Cunxi Dai",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=1933; Semantic Scholar paper_count=30",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Guanya Shi",
+            "affiliations": [
+              "Cunxi Dai"
+            ],
+            "author_row": "Guanya Shi"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "ENPIRE: Agentic Robot Policy Self-Improvement in the Real World",
+            "paper_year": "2026",
+            "name": "Guanya Shi",
+            "affiliations": [],
+            "paper_count": 30,
+            "citation_count": 1933,
+            "author_id": "2249759531",
+            "lookup": "author_search"
+          }
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.23449v1",
+      "source": "arxiv",
+      "title": "AOHP: An Open-Source OS-Level Agent Harness for Personalized, Efficient and Secure Interaction",
+      "abstract": "AI agents are driving a new software paradigm, with the ability to autonomously call tools, extract information, manage memory, and complete tasks that span applications and data sources. Most existing end-user operating systems, however, are designed for application-centric workflows and offer little native support for AI agents. This mismatch limits the wider adoption of agents and leads to execution overhead and safety risks when running agents on conventional systems. While the concept of agent-native operating systems is emerging, the research community lacks an open testbed to explore the architectural primitives desired for agent-mediated interaction. We present AOHP (Android Open Harness Project), an OS-level agent harness built on the Android Open Source Project (AOSP). The core design principle of AOHP is to treat agents as first-class OS actors, enabling adaptive user interfaces and agent-friendly runtime environments. AOHP preserves the mature Android software and hardware ecosystem while introducing three agent-oriented system mechanisms: personalized service composition, efficient agent interfaces, and secure information flow. Based on preliminary experiments on challenging tasks covering key capabilities of OS agents, AOHP shows clear advantages in task completion (+21.12% completion rate), execution cost (-51.55% token cost), and security-policy compliance.",
+      "authors": [
+        "Shanhui Zhao",
+        "Jiacheng Liu",
+        "Guohong Liu",
+        "Jichao Yan",
+        "Jialei Ye",
+        "Yuhao Yang",
+        "Hao Wen",
+        "Shizuo Tian",
+        "Yizhen Yuan",
+        "Yuxuan Chen",
+        "Yunxin Liu",
+        "Ju Ren",
+        "Ya-Qin Zhang",
+        "Chao Huang",
+        "Yao Guo",
+        "Yuanchun Li"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.OS"
+      ],
+      "published": "2026-06-22T15:02:42+00:00",
+      "link": "https://arxiv.org/pdf/2606.23449v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.2,
+      "llm_evidence_en": "OS-level agent harness with secure interaction",
+      "llm_evidence_cn": "OS-level agent harness with secure interaction",
+      "llm_evidence": "OS-level agent harness with secure interaction",
+      "canonical_evidence": "OS-level agent harness with secure interaction",
+      "llm_tldr_en": "AOHP is an open-source OS-level agent harness that aims to support personalized, efficient and secure interaction for AI agents.",
+      "llm_tldr_cn": "The paper addresses the gap between conventional application-centric operating systems and the emerging need for agent-native execution environments that can safely support tool use, memory, and cross-application tasks. It presents AOHP, an open-source OS-level agent harness designed to explore architectural primitives for agent-mediated interaction while reducing execution overhead and safety risks. By providing an open testbed, the work enables research on how agent harnesses can be structured to support secure and efficient agent operation. This is directly central to harness framework, safety, and architectural design considerations.",
+      "llm_tldr": "AOHP is an open-source OS-level agent harness that aims to support personalized, efficient and secure interaction for AI agents.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 9.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+      "author_profiles": [
+        {
+          "name": "Shanhui Zhao",
+          "role": "first_author",
+          "affiliation": "1 Tsinghua University~~~~ 2 Peking University~~~~ 3 The University of Hong Kong; ~; Source Code : https://github.com/aohp-os/aohp",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=928; Semantic Scholar paper_count=35",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Shanhui Zhao",
+            "affiliations": [
+              "1 Tsinghua University~~~~ 2 Peking University~~~~ 3 The University of Hong Kong",
+              "~",
+              "Source Code : https://github.com/aohp-os/aohp",
+              "~"
+            ],
+            "author_row": "Shanhui Zhao 1 * , Jiacheng Liu 2 * , Guohong Liu 1 * , Jichao Yan 1 , Jialei Ye 2 , Yuhao Yang 3 , Hao Wen 1 , Shizuo Tian 1 , Yizhen Yuan 1 , Yuxuan Chen 1 , Yunxin Liu 1 , Ju Ren 1 , Ya-Qin Zhang 1 , Chao Huang 3 , Yao Guo 2 , Yuanchun Li 1"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "AOHP: An Open-Source OS-Level Agent Harness for Personalized, Efficient and Secure Interaction",
+            "paper_year": "2026",
+            "name": "Shanhui Zhao",
+            "affiliations": [],
+            "paper_count": 35,
+            "citation_count": 928,
+            "author_id": "92736469",
+            "lookup": "author_search"
+          }
+        },
+        {
+          "name": "Yuanchun Li",
+          "role": "last_author",
+          "affiliation": "1 Tsinghua University~~~~ 2 Peking University~~~~ 3 The University of Hong Kong; ~; Source Code : https://github.com/aohp-os/aohp",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=2043; Semantic Scholar paper_count=210",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Yuanchun Li",
+            "affiliations": [
+              "1 Tsinghua University~~~~ 2 Peking University~~~~ 3 The University of Hong Kong",
+              "~",
+              "Source Code : https://github.com/aohp-os/aohp",
+              "~"
+            ],
+            "author_row": "Shanhui Zhao 1 * , Jiacheng Liu 2 * , Guohong Liu 1 * , Jichao Yan 1 , Jialei Ye 2 , Yuhao Yang 3 , Hao Wen 1 , Shizuo Tian 1 , Yizhen Yuan 1 , Yuxuan Chen 1 , Yunxin Liu 1 , Ju Ren 1 , Ya-Qin Zhang 1 , Chao Huang 3 , Yao Guo 2 , Yuanchun Li 1"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "AOHP: An Open-Source OS-Level Agent Harness for Personalized, Efficient and Secure Interaction",
+            "paper_year": "2026",
+            "name": "Yuan-chun Li",
+            "affiliations": [],
+            "paper_count": 210,
+            "citation_count": 2043,
+            "author_id": "152998417",
+            "lookup": "author_search"
+          }
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.20243v2",
+      "source": "arxiv",
+      "title": "Phoenix: Safe GitHub Issue Resolution via Multi-Agent LLMs",
+      "abstract": "We present Phoenix, a multi-agent LLM system that resolves GitHub issues from triage through pull-request creation, combining seven layered safety controls with a baseline-aware test evaluation strategy. Phoenix decomposes the work across six specialized agents. Planner, reproducer, coder, tester, failure analyst and Pull Request (PR) agent, all coordinated by a label-based GitHub webhook state machine. Every change is checked against a baseline test run before a pull request is opened. On a 24-instance slice of SWE-bench Lite. run on the production webhook path, Phoenix oracle-resolves 75% of instances with no pass-to-pass regressions on successful runs; this curated slice is not directly comparable to full-split leaderboard results, and we discuss the limits of the comparison. A complementary pilot on 42 real issues across 14 repositories yields 100% correctness preservation (CP; mean 122s on the hard tier). Manual inspection shows that about half of the resulting pull requests are well-targeted fixes. The other half place code at incorrect paths, a planner localization limitation we are addressing with retrieval. We also report the deployment failure modes (WAF filtering, token expiry, permission boundaries, flaky CI) that motivated each safety mechanism.",
+      "authors": [
+        "Kipngeno Koech",
+        "Muhammad Adam",
+        "Baimam Boukar Jean Jacques",
+        "Joao Barros"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE",
+        "cs.MA"
+      ],
+      "published": "2026-06-18T13:56:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.20243v2",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.6,
+      "llm_evidence_en": "multi-agent LLM system with layered safety controls",
+      "llm_evidence_cn": "multi-agent LLM system with layered safety controls",
+      "llm_evidence": "multi-agent LLM system with layered safety controls",
+      "canonical_evidence": "multi-agent LLM system with layered safety controls",
+      "llm_tldr_en": "Phoenix is a multi-agent LLM system for safe GitHub issue resolution that combines seven layered safety controls and baseline-aware test evaluation to prevent regressions.",
+      "llm_tldr_cn": "This paper addresses the challenge of using multi-agent LLM systems for software engineering tasks while avoiding regressions and unsafe changes. The authors present Phoenix, a multi-agent system that decomposes GitHub issue resolution into six specialized agents coordinated by a label-based GitHub webhook state machine. The core method combines seven layered safety controls with a baseline-aware test evaluation strategy so that every change is checked against a baseline test run before a pull request is opened. On a 24-instance slice of SWE-bench Lite, Phoenix oracle-resolves 75% of instances with no pass-to-pass regressions on successful runs. The work demonstrates how layered safety mechanisms can be integrated into an agent harness for controlled autonomous coding.",
+      "llm_tldr": "Phoenix is a multi-agent LLM system for safe GitHub issue resolution that combines seven layered safety controls and baseline-aware test evaluation to prevent regressions.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 8.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+      "author_profiles": [
+        {
+          "name": "Kipngeno Koech",
+          "role": "first_author",
+          "affiliation": "Department of Electrical and Computer Engineering",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=4; Semantic Scholar paper_count=3",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Kipngeno Koech",
+            "affiliations": [
+              "Department of Electrical and Computer Engineering"
+            ],
+            "author_row": "kipngeno koech"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "Phoenix: Safe GitHub Issue Resolution via Multi-Agent LLMs",
+            "paper_year": "2026",
+            "name": "Kipngeno Koech",
+            "affiliations": [],
+            "paper_count": 3,
+            "citation_count": 4,
+            "author_id": "2337795259",
+            "lookup": "author_search"
+          }
+        },
+        {
+          "name": "Joao Barros",
+          "role": "last_author",
+          "affiliation": "Department of Electrical and Computer Engineering",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=8443; Semantic Scholar paper_count=183",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Joao Barros",
+            "affiliations": [
+              "Department of Electrical and Computer Engineering"
+            ],
+            "author_row": "\\; Joao Barros"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "Phoenix: Safe GitHub Issue Resolution via Multi-Agent LLMs",
+            "paper_year": "2026",
+            "name": "J. Barros",
+            "affiliations": [],
+            "paper_count": 183,
+            "citation_count": 8443,
+            "author_id": "143965919",
+            "lookup": "author_search"
+          }
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.24496v1",
+      "source": "arxiv",
+      "title": "Red-Teaming the Agentic Red-Team",
+      "abstract": "The use of agentic systems to perform offensive security operations has moved from a theoretical possibility to a commoditized capability. However, while the community has focused on creating more and more capable agents, less attention has been allocated to assessing the security of those systems.   In this work, we present the first in-depth security analysis of the most widely used agentic systems for offensive security operations. We show that most of these tools share common design flaws that enable an active adversary to exfiltrate API keys, establish persistent footholds, and fully compromise the operator's machine, even when the agent operates inside a sandboxed container. To support our analysis, we introduce a full cyber kill chain for such agentic systems, capturing the progression from initial LLM manipulation to lateral movement, persistence, guardrail bypass, and sandbox escape.   Building on our security analysis, we derive a robust architecture for agentic offensive-security tools and propose actionable, broadly applicable design principles that mitigate the disclosed attack paths at the architectural level.",
+      "authors": [
+        "Dario Pasquini",
+        "Michal Bazyli",
+        "Taras Fedynyshyn",
+        "Artem Sorokin"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-23T12:27:58+00:00",
+      "link": "https://arxiv.org/pdf/2606.24496v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.2,
+      "llm_evidence_en": "security analysis of agentic offensive-security tools and cyber kill chain",
+      "llm_evidence_cn": "對攻擊性安全智能體工具嘅網絡安全分析同kill chain",
+      "llm_evidence": "security analysis of agentic offensive-security tools and cyber kill chain",
+      "canonical_evidence": "security analysis of agentic offensive-security tools and cyber kill chain",
+      "llm_tldr_en": "This paper red-teams widely used agentic offensive-security tools, showing common design flaws that allow API-key exfiltration, persistent footholds, and full operator-machine compromise even inside sandboxes, and proposes a cyber kill chain for such systems.",
+      "llm_tldr_cn": "論文對常用嘅攻擊性安全智能體工具進行咗深入安全分析，搵出佢哋共享嘅設計缺陷。雖然智能體可能運行喺沙箱入面，攻擊者仍然可以竊取API key、建立持久據點，完全控制操作員機器。作者為呢類系統建立咗完整嘅網絡攻擊kill chain。研究結果對智能體安全設計、風險管理同防禦實踐都好重要。",
+      "llm_tldr": "This paper red-teams widely used agentic offensive-security tools, showing common design flaws that allow API-key exfiltration, persistent footholds, and full operator-machine compromise even inside sandboxes, and proposes a cyber kill chain for such systems.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 9.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+      "author_profiles": [
+        {
+          "name": "Dario Pasquini",
+          "role": "first_author",
+          "affiliation": "Cracken; Michał Bazyli; Taras Fedynyshyn",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=809; Semantic Scholar paper_count=21",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Dario Pasquini",
+            "affiliations": [
+              "Cracken",
+              "Michał Bazyli",
+              "Cracken",
+              "Taras Fedynyshyn"
+            ],
+            "author_row": "Dario Pasquini"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "Red-Teaming the Agentic Red-Team",
+            "paper_year": "2026",
+            "name": "Dario Pasquini",
+            "affiliations": [],
+            "paper_count": 21,
+            "citation_count": 809,
+            "author_id": "50610174",
+            "lookup": "author_search"
+          }
+        },
+        {
+          "name": "Artem Sorokin",
+          "role": "last_author",
+          "affiliation": "",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "",
+          "confidence": "low",
+          "evidence_source": "metadata lookup unavailable",
+          "arxiv_source": {},
+          "openalex": {},
+          "semantic_scholar": {}
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.20408v1",
+      "source": "arxiv",
+      "title": "LLM agent safety, multi-turn red-teaming, jailbreak benchmarks, adversarial robustness, safety-critical systems",
+      "abstract": "Large language model (LLM) agents are increasingly proposed as supervisory components for safety-critical systems, yet their robustness under sustained, adaptive adversarial pressure remains poorly characterized. We present NRT-Bench, a benchmark for multi-turn red-teaming of LLM agents acting as operators of a safety-critical system, instantiated in a simulated nuclear power plant control room. A five-role operator team, each backed by a configurable LLM, runs a plant governed by six critical safety functions (CSFs), while adversaries inject messages over four channels in bounded multi-turn sessions with per-turn feedback. Harm is an objective signal rather than LLM-judged text: a run terminates the moment any CSF is lost, attributed to the causing message. Evaluating four frontier operator models under a fixed-attack paired-replay protocol, we find that adaptive multi-turn attacks reliably push the operator team past a safety limit: across the four models, between 8.7% and 12.1% of attack sessions end with the plant losing a critical safety function. Although the four models look almost equally robust by this aggregate rate, their failures barely overlap: of $149$ sessions, none defeat all four models while a third defeat at least one, so vulnerabilities are nearly disjoint across models rather than nested. The effect of added defences is strongly model-dependent: the same guardrail stack or safety-advisor agent that lowers attack success for one model can raise it for another. We release the simulation venue, attack dataset, and replay tooling for reproducible safety evaluation of LLM agents.",
+      "authors": [
+        "Hanwool Lee",
+        "Dasol Choi",
+        "Bokyeong Kim",
+        "Seung Geun Kim",
+        "Haon Park"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-18T15:57:53+00:00",
+      "link": "https://arxiv.org/pdf/2606.20408v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.6,
+      "llm_evidence_en": "multi-turn red-teaming benchmark for LLM agents",
+      "llm_evidence_cn": "agent adversarial robustness benchmark",
+      "llm_evidence": "multi-turn red-teaming benchmark for LLM agents",
+      "canonical_evidence": "multi-turn red-teaming benchmark for LLM agents",
+      "llm_tldr_en": "This paper presents NRT-Bench, a benchmark for multi-turn red-teaming of LLM agents in safety-critical systems, directly informing harness attack and safety evaluation.",
+      "llm_tldr_cn": "The paper addresses the lack of characterization of LLM agent robustness under sustained, adaptive adversarial pressure in safety-critical settings. It introduces NRT-Bench, a benchmark for multi-turn red-teaming of LLM agents acting as operators in a simulated nuclear power plant control room. The benchmark models a five-role operator team, configurable LLMs, and adversaries that inject messages over multiple channels with per-turn feedback. Harm is measured with objective signals rather than LLM-judged text. This work is central to the combined harness safety and harness attack theme because it evaluates how agent systems behave under adversarial interaction and where safety mechanisms fail.",
+      "llm_tldr": "This paper presents NRT-Bench, a benchmark for multi-turn red-teaming of LLM agents in safety-critical systems, directly informing harness attack and safety evaluation.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 8.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+      "author_profiles": [
+        {
+          "name": "Hanwool Lee",
+          "role": "first_author",
+          "affiliation": "AIM Intelligence",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Hanwool Lee",
+            "affiliations": [
+              "AIM Intelligence"
+            ],
+            "author_row": "Hanwool Lee"
+          },
+          "openalex": {},
+          "semantic_scholar": {}
+        },
+        {
+          "name": "Haon Park",
+          "role": "last_author",
+          "affiliation": "AIM Intelligence",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=391; Semantic Scholar paper_count=12",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Haon Park",
+            "affiliations": [
+              "AIM Intelligence"
+            ],
+            "author_row": "Haon Park"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "LLM agent safety, multi-turn red-teaming, jailbreak benchmarks, adversarial robustness, safety-critical systems",
+            "paper_year": "2026",
+            "name": "Haon Park",
+            "affiliations": [
+              "AIM Intelligence"
+            ],
+            "paper_count": 12,
+            "citation_count": 391,
+            "author_id": "151496697",
+            "lookup": "author_search"
+          }
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.20470v1",
+      "source": "arxiv",
+      "title": "Analyzing Defensive Misdirection Against Model-Guided Automated Attacks on Agentic AI Systems",
+      "abstract": "Agentic AI systems increasingly rely on language-model components to interpret instructions, process external data, invoke tools, and coordinate with other agents. These capabilities make prompt-injection and jailbreak attacks more consequential, especially as attackers adopt model-guided automation to scale probing, prompt refinement, and response evaluation. This work analyzes the resulting attack-defense setting through a probabilistic model of a target system, its defense mechanism, and the attacker's automated judge. Our analysis shows that conventional detect-and-block defenses can allow attacker success rate (ASR) to approach one as the query budget grows, since predictable refusals provide useful feedback to automated search. We then examine detect-and-misdirect, where detected malicious interactions receive controlled, non-operational responses designed to induce false-positive errors in the attacker's judge. This strategy reduces the positive predictive value of attacker-selected candidates and yields a bounded asymptotic ASR. We evaluate a proof-of-concept realization of this strategy through Contextual Misdirection via Progressive Engagement (CMPE), a lightweight conversational misdirection method designed to replace predictable refusal text with safe but strategically misleading responses in automated jailbreak settings. On jailbreak benchmarks, CMPE reduces estimated ASR upper bounds by up to two orders of magnitude and nearly eliminates verified attack success in end-to-end PAIR and GPTFuzz attack runs.",
+      "authors": [
+        "Reza Soosahabi",
+        "Vivek Namsani"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-18T16:50:28+00:00",
+      "link": "https://arxiv.org/pdf/2606.20470v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.6,
+      "llm_evidence_en": "analyzes model-guided automated attacks and defenses on agentic AI",
+      "llm_evidence_cn": "analyzes model-guided automated attacks and defenses on agentic AI",
+      "llm_evidence": "analyzes model-guided automated attacks and defenses on agentic AI",
+      "canonical_evidence": "analyzes model-guided automated attacks and defenses on agentic AI",
+      "llm_tldr_en": "This paper models model-guided automated prompt-injection and jailbreak attacks against agentic AI and shows that conventional detect-and-block defenses can become increasingly leaky as attacker query budget grows.",
+      "llm_tldr_cn": "The paper studies agentic AI systems under model-guided automated attacks that iteratively probe and refine prompts. It builds a probabilistic model of the target system, its defense, and the attacker's automated judge. The analysis shows that conventional detect-and-block defenses can allow attacker success rate to approach one as query budget increases because predictable refusals leak useful feedback. The work highlights a fundamental weakness in static safety mechanisms and suggests that defense design must account for adaptive automated attackers.",
+      "llm_tldr": "This paper models model-guided automated prompt-injection and jailbreak attacks against agentic AI and shows that conventional detect-and-block defenses can become increasingly leaky as attacker query budget grows.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "What are the common harness attack methods and how to prevent them?",
+      "matched_requirement_id": "req-8",
+      "relevance_score": 8.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+      "author_profiles": [
+        {
+          "name": "Reza Soosahabi",
+          "role": "first_author",
+          "affiliation": "Application & Threat Intelligence Research Center; Keysight Technologies Inc., USA",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Reza Soosahabi",
+            "affiliations": [
+              "Application & Threat Intelligence Research Center",
+              "Keysight Technologies Inc., USA"
+            ],
+            "author_row": "Reza Soosahabi, Vivek Namsani"
+          },
+          "openalex": {},
+          "semantic_scholar": {}
+        },
+        {
+          "name": "Vivek Namsani",
+          "role": "last_author",
+          "affiliation": "Application & Threat Intelligence Research Center; Keysight Technologies Inc., USA",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Vivek Namsani",
+            "affiliations": [
+              "Application & Threat Intelligence Research Center",
+              "Keysight Technologies Inc., USA"
+            ],
+            "author_row": "Reza Soosahabi, Vivek Namsani"
+          },
+          "openalex": {},
+          "semantic_scholar": {}
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.20922v1",
+      "source": "arxiv",
+      "title": "Think Twice Before You Act: Protecting LLM Agents Against Tool Description Poisoning via Isolated Planning",
+      "abstract": "The integration of external tools has substantially expanded the capabilities of large language model (LLM) agents, but it also introduces new attack surfaces beyond prompt injection. In particular, cross-tool description poisoning can manipulate planner-visible tool metadata to steer an agent's trajectory, even if the poisoned tool itself is never chosen. To understand the effectiveness of existing defenses against this emerging threat, we first evaluate several prompt-injection defenses and find that they transfer poorly to cross-tool description poisoning. A key observation is that poisoned descriptions persist in the planning context across steps, enabling continuous influence over subsequent tool choices. Building on this insight, we propose Tool-Guard, a novel system-level defense based on a new concept called isolated planning, in which tool invocations that are detected as misaligned or suspicious cause the corresponding tool to be placed in a quarantined list (the influenced list), breaking further influence from poisoned descriptions. With this influence isolated, the tool can continue to be used to support the task, enabling a robust defense that preserves legitimate tool utility. Experiments on the AgentDojo and ASB benchmarks show that Tool-Guard substantially reduces attack success while maintaining high task utility. Our code is available at https://github.com/shishishi123/Tool-Guard.",
+      "authors": [
+        "Shanghao Shi",
+        "Xiao Wang",
+        "Chaoyu Zhang",
+        "Hao Li",
+        "Wenjing Lou",
+        "Thomas Hou",
+        "Yevgeniy Vorobeychik",
+        "Chongjie Zhang",
+        "Ning Zhang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-06-18T20:31:08+00:00",
+      "link": "https://arxiv.org/pdf/2606.20922v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.6,
+      "llm_evidence_en": "Studies cross-tool description poisoning as an attack on LLM agent planning",
+      "llm_evidence_cn": "Studies cross-tool description poisoning as an attack on LLM agent planning",
+      "llm_evidence": "Studies cross-tool description poisoning as an attack on LLM agent planning",
+      "canonical_evidence": "Studies cross-tool description poisoning as an attack on LLM agent planning",
+      "llm_tldr_en": "This paper analyzes cross-tool description poisoning attacks against LLM agents and proposes an isolated planning defense, directly addressing harness attack methods and prevention.",
+      "llm_tldr_cn": "This paper investigates a class of attacks on LLM agents beyond prompt injection, where adversaries poison tool descriptions visible to the planner. The authors show that cross-tool description poisoning can manipulate planner-visible tool metadata and steer agent trajectories even when the poisoned tool is never selected. They first evaluate several prompt-injection defenses and find that they transfer poorly to this threat. A key observation is that poisoned descriptions persist in the planning context across steps, enabling continuous influence over subsequent tool choices. Based on this, the paper proposes a defense centered on isolated planning to reduce exposure to poisoned tool metadata. This work is highly relevant to harness attack methods and prevention because it studies how agent tool interfaces can be weaponized and how to constrain agent behavior accordingly.",
+      "llm_tldr": "This paper analyzes cross-tool description poisoning attacks against LLM agents and proposes an isolated planning defense, directly addressing harness attack methods and prevention.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "What are the common harness attack methods and how to prevent them?",
+      "matched_requirement_id": "req-8",
+      "relevance_score": 8.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+      "author_profiles": [
+        {
+          "name": "Shanghao Shi",
+          "role": "first_author",
+          "affiliation": "Washington University in St. Louis, St. Louis, MO, USA",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=263; Semantic Scholar paper_count=21",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Shanghao Shi",
+            "affiliations": [
+              "Washington University in St. Louis, St. Louis, MO, USA"
+            ],
+            "author_row": "Shanghao Shi"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "Think Twice Before You Act: Protecting LLM Agents Against Tool Description Poisoning via Isolated Planning",
+            "paper_year": "2026",
+            "name": "Shanghao Shi",
+            "affiliations": [],
+            "paper_count": 21,
+            "citation_count": 263,
+            "author_id": "2033471490",
+            "lookup": "author_search"
+          }
+        },
+        {
+          "name": "Ning Zhang",
+          "role": "last_author",
+          "affiliation": "Washington University in St. Louis, St. Louis, MO, USA",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=130; Semantic Scholar paper_count=14",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Ning Zhang",
+            "affiliations": [
+              "Washington University in St. Louis, St. Louis, MO, USA"
+            ],
+            "author_row": "Ning Zhang"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "Think Twice Before You Act: Protecting LLM Agents Against Tool Description Poisoning via Isolated Planning",
+            "paper_year": "2026",
+            "name": "Ning Zhang",
+            "affiliations": [],
+            "paper_count": 14,
+            "citation_count": 130,
+            "author_id": "2153011804",
+            "lookup": "author_search"
+          }
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.21005v1",
+      "source": "arxiv",
+      "title": "Building Agent Harnesses for Scientific Curation from Multimodal Sources",
+      "abstract": "Scientific discovery workflows often depend on structured curation from the literature. This is difficult for current agents because the key evidence is scattered across long text, dense tables, and figures, and the final records often require reasoning across multiple evidence fragments rather than copying a single span. We study scientific curation from multimodal sources and introduce Beaver, an agent harness that extracts structured information from scientific papers while preserving provenance to the supporting evidence. Beaver combines a frontier agent with multimodal evidence tooling, task scaffolding, and artifact-grounded autoresearch. These components turn curation into a staged, auditable workflow and enable an iterative evaluate--diagnose--revise loop, where persistent run artifacts expose stage-localized failures and guide harness updates. Experiments show that Beaver reaches 81.0 on Gold-Referenced Attribute Score (GRAS), an attribute-level measure of agreement with gold curated records, outperforming frontier agents by over 23 absolute points. Ablations show that task scaffolding, multimodal evidence tooling, and provenance traces each contribute meaningfully to performance, while attribute-level analysis shows the largest gains on high-value attributes that require cross-modal reasoning and normalization. These results show that, for scientific curation from papers with multimodal evidence, harness design is a central determinant of agent performance.",
+      "authors": [
+        "Sheng Zhang",
+        "Qin Liu",
+        "Renqian Luo",
+        "Shufang Xie",
+        "Reuben Tan",
+        "Sean Hayes",
+        "Gregory Bryman",
+        "Wendong Ge",
+        "Roxy Zhang",
+        "Oluwaseun Egbelowo",
+        "Kelly Yee",
+        "Hoifung Poon"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-19T00:36:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.21005v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.6,
+      "llm_evidence_en": "agent harness design for scientific curation workflow",
+      "llm_evidence_cn": "agent harness architecture",
+      "llm_evidence": "agent harness design for scientific curation workflow",
+      "canonical_evidence": "agent harness design for scientific curation workflow",
+      "llm_tldr_en": "This paper introduces Beaver, an agent harness that combines multimodal evidence tooling, task scaffolding, and staged auditable workflows for scientific curation from papers.",
+      "llm_tldr_cn": "The paper addresses the difficulty of structured scientific curation when evidence is scattered across long text, tables, and figures. It introduces Beaver, an agent harness designed to extract structured information from scientific papers while preserving evidence provenance. Beaver combines a frontier agent with multimodal evidence tooling, task scaffolding, and artifact-grounded autoresearch to create a staged, auditable workflow. The system supports iterative evaluation and diagnosis of curation results. This work is relevant to agent harness frameworks and design principles because it shows how a harness can structure tasks, tools, and evidence flow around an AI agent.",
+      "llm_tldr": "This paper introduces Beaver, an agent harness that combines multimodal evidence tooling, task scaffolding, and staged auditable workflows for scientific curation from papers.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 8.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+      "author_profiles": [
+        {
+          "name": "Sheng Zhang",
+          "role": "first_author",
+          "affiliation": "Microsoft Research",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Sheng Zhang",
+            "affiliations": [
+              "Microsoft Research"
+            ],
+            "author_row": "Sheng Zhang"
+          },
+          "openalex": {},
+          "semantic_scholar": {}
+        },
+        {
+          "name": "Hoifung Poon",
+          "role": "last_author",
+          "affiliation": "Microsoft Research",
+          "group": "",
+          "school": "",
+          "company": "",
+          "citation_hints": "Semantic Scholar citation_count=16692; Semantic Scholar paper_count=115",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar",
+          "arxiv_source": {
+            "source": "arxiv_source",
+            "name": "Hoifung Poon",
+            "affiliations": [
+              "Microsoft Research"
+            ],
+            "author_row": "textbf Hoifung Poon"
+          },
+          "openalex": {},
+          "semantic_scholar": {
+            "source": "semantic_scholar",
+            "paper_title": "Building Agent Harnesses for Scientific Curation from Multimodal Sources",
+            "paper_year": "2026",
+            "name": "Hoifung Poon",
+            "affiliations": [],
+            "paper_count": 115,
+            "citation_count": 16692,
+            "author_id": "1759772",
+            "lookup": "author_search"
+          }
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

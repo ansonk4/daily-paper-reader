@@ -1,0 +1,24 @@
+{
+  "name": "Petar Radanliev",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=2801; Semantic Scholar paper_count=98",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Execution-bound advisory automation for agentic AI: a reproducible AIBOM-driven CSAF-VEX framework",
+    "paper_year": "2026",
+    "name": "P. Radanliev",
+    "affiliations": [],
+    "paper_count": 98,
+    "citation_count": 2801,
+    "author_id": "51002836",
+    "lookup": "author_search"
+  }
+}

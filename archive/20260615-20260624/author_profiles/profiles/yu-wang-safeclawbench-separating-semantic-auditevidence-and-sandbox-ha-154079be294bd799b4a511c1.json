@@ -1,0 +1,31 @@
+{
+  "name": "Yu Wang",
+  "role": "last_author",
+  "affiliation": "Tsinghua University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=6388; Semantic Scholar paper_count=80",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yu Wang",
+    "affiliations": [
+      "Tsinghua University"
+    ],
+    "author_row": "Yu Wang"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "SafeClawBench: Separating Semantic, Audit-Evidence, and Sandbox Harm in Tool-Using LLM Agents",
+    "paper_year": "2026",
+    "name": "Yu Wang",
+    "affiliations": [],
+    "paper_count": 80,
+    "citation_count": 6388,
+    "author_id": "2153607758",
+    "lookup": "author_search"
+  }
+}

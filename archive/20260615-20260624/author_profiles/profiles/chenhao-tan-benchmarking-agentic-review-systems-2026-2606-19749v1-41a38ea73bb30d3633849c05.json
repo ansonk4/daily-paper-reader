@@ -1,0 +1,30 @@
+{
+  "name": "Chenhao Tan",
+  "role": "last_author",
+  "affiliation": "University of Chicago",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=0; Semantic Scholar paper_count=1",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Chenhao Tan",
+    "affiliations": [
+      "University of Chicago"
+    ],
+    "author_row": "quad Chenhao Tan"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Agentic AI in Action: A Review of Architectures, Communication, and Coordination in Intelligent Multi-Agent Systems",
+    "paper_year": 2025,
+    "name": "Sanmati Boraganve",
+    "affiliations": [],
+    "paper_count": 1,
+    "citation_count": 0,
+    "author_id": "2405922582"
+  }
+}

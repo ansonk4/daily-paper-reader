@@ -1,0 +1,21 @@
+{
+  "name": "Anoop Deoras",
+  "role": "last_author",
+  "affiliation": "AWS AI Labs",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Anoop Deoras",
+    "affiliations": [
+      "AWS AI Labs"
+    ],
+    "author_row": "Gaurav Gupta Vatshank Chaturvedi Jun Huan Anoop Deoras"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

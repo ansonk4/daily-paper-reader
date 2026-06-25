@@ -1,0 +1,69 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Yujin Zhang",
+      "role": "first_author",
+      "affiliation": "University of California, Irvine",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=1600; Semantic Scholar paper_count=10",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Yujin Zhang",
+        "affiliations": [
+          "University of California, Irvine"
+        ],
+        "author_row": "Yujin Zhang"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "HANSEL: Extracting Breadcrumbs from Web Agent Trajectories for Interactive Verification",
+        "paper_year": "2026",
+        "name": "Yu-Jin Zhang",
+        "affiliations": [],
+        "paper_count": 10,
+        "citation_count": 1600,
+        "author_id": "2108259416",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Daye Nam",
+      "role": "last_author",
+      "affiliation": "University of California, Irvine",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=717; Semantic Scholar paper_count=13",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Daye Nam",
+        "affiliations": [
+          "University of California, Irvine"
+        ],
+        "author_row": "Daye Nam"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "HANSEL: Extracting Breadcrumbs from Web Agent Trajectories for Interactive Verification",
+        "paper_year": "2026",
+        "name": "Daye Nam",
+        "affiliations": [],
+        "paper_count": 13,
+        "citation_count": 717,
+        "author_id": "27315296",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T14:05:37.521557+00:00"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "Jianping Wu",
+  "role": "last_author",
+  "affiliation": "INSC & State Key Laboratory of Internet Architecture, Tsinghua University, Zhongguancun Laboratory",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=418; Semantic Scholar paper_count=9",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Jianping Wu",
+    "affiliations": [
+      "INSC & State Key Laboratory of Internet Architecture, Tsinghua University, Zhongguancun Laboratory"
+    ],
+    "author_row": "Jianping Wu"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Understanding the Stealthy BGP Hijacking Risk in the ROV Era",
+    "paper_year": "2026",
+    "name": "Jianping Wu",
+    "affiliations": [],
+    "paper_count": 9,
+    "citation_count": 418,
+    "author_id": "2158877245",
+    "lookup": "author_search"
+  }
+}

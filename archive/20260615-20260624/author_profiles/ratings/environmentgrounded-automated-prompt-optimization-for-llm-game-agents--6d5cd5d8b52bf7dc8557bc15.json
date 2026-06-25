@@ -1,0 +1,66 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Rean Clive Fernandes",
+      "role": "first_author",
+      "affiliation": "Renmin University of China; Gaoling School of Artificial Intelligence, Renmin University of China, Beijing, 100872, China",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=5; Semantic Scholar paper_count=2",
+      "confidence": "medium",
+      "evidence_source": "openalex, semantic_scholar",
+      "openalex": {
+        "source": "openalex",
+        "paper_title": "A survey on large language model based autonomous agents",
+        "paper_year": 2024,
+        "name": "Lei Wang",
+        "affiliations": [
+          "Renmin University of China",
+          "Gaoling School of Artificial Intelligence, Renmin University of China, Beijing, 100872, China"
+        ],
+        "works_count": null,
+        "cited_by_count": null,
+        "author_id": "https://openalex.org/A5101394605"
+      },
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Constitutional Black-Box Monitoring for Scheming in LLM Agents",
+        "paper_year": 2026,
+        "name": "Simon Storf",
+        "affiliations": [],
+        "paper_count": 2,
+        "citation_count": 5,
+        "author_id": "2421615022"
+      }
+    },
+    {
+      "name": "Matthias Feurer",
+      "role": "last_author",
+      "affiliation": "Renmin University of China; Gaoling School of Artificial Intelligence, Renmin University of China, Beijing, 100872, China",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "openalex",
+      "openalex": {
+        "source": "openalex",
+        "paper_title": "A survey on large language model based autonomous agents",
+        "paper_year": 2024,
+        "name": "Hao Yang",
+        "affiliations": [
+          "Renmin University of China",
+          "Gaoling School of Artificial Intelligence, Renmin University of China, Beijing, 100872, China"
+        ],
+        "works_count": null,
+        "cited_by_count": null,
+        "author_id": "https://openalex.org/A5101551028"
+      },
+      "semantic_scholar": {}
+    }
+  ],
+  "rated_at": "2026-06-24T09:23:57.907404+00:00"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "Romain Guittienne",
+  "role": "last_author",
+  "affiliation": "Nancy, France",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=0; Semantic Scholar paper_count=1",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Romain Guittienne",
+    "affiliations": [
+      "Nancy, France"
+    ],
+    "author_row": "Mathieu Jeannot, Jean-Yves Marion, Manon Pamar, Maira Nassau, Pierre Marty, Romain Guittienne Université de Lorraine, CNRS, LORIA"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Inside Crypter-as-a-Service: An Ecosystem Analysis of the exploit.in Underground Forum Research Talks",
+    "paper_year": "2026",
+    "name": "Romain Guittienne",
+    "affiliations": [],
+    "paper_count": 1,
+    "citation_count": 0,
+    "author_id": "2364760836",
+    "lookup": "author_search"
+  }
+}

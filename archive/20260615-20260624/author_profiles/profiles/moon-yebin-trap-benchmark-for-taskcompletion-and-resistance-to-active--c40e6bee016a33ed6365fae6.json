@@ -1,0 +1,22 @@
+{
+  "name": "Moon Ye-Bin",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "openalex",
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "TRAP: Benchmark for Task-completion and Resistance to Active Privacy-extraction",
+    "paper_year": 2026,
+    "name": "Moon Ye-Bin",
+    "affiliations": [],
+    "works_count": null,
+    "cited_by_count": null,
+    "author_id": "https://openalex.org/A5138998981"
+  },
+  "semantic_scholar": {}
+}

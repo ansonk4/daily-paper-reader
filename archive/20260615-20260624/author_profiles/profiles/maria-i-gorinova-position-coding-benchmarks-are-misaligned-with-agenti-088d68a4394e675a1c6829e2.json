@@ -1,0 +1,21 @@
+{
+  "name": "Maria I. Gorinova",
+  "role": "first_author",
+  "affiliation": "Tessl",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Maria I. Gorinova",
+    "affiliations": [
+      "Tessl"
+    ],
+    "author_row": "Maria I. Gorinova"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

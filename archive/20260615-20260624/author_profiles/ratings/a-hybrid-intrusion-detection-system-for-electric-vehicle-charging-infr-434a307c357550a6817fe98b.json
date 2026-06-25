@@ -1,0 +1,45 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Charukeshi Joglekar",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=59; Semantic Scholar paper_count=8",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "A Hybrid Intrusion Detection System for Electric Vehicle Charging Infrastructure",
+        "paper_year": "2026",
+        "name": "Charukeshi Joglekar",
+        "affiliations": [],
+        "paper_count": 8,
+        "citation_count": 59,
+        "author_id": "81088583",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Antonello Monti",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {}
+    }
+  ],
+  "rated_at": "2026-06-24T13:40:32.180259+00:00"
+}

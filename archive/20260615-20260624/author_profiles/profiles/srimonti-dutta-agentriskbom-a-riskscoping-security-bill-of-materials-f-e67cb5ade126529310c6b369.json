@@ -1,0 +1,37 @@
+{
+  "name": "Srimonti Dutta",
+  "role": "first_author",
+  "affiliation": "WAI USA; Austin, USA; Akshata Kishore Moharir WAI USA Research Labs; IIT Guwahati",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=12; Semantic Scholar paper_count=5",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Srimonti Dutta",
+    "affiliations": [
+      "WAI USA",
+      "Austin, USA",
+      "Akshata Kishore Moharir WAI USA Research Labs",
+      "WAI USA"
+    ],
+    "author_row": "Srimonti Dutta WAI USA Research Labs"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "AgentRiskBOM: A Risk-Scoping Security Bill of Materials for Agentic AI Systems",
+    "paper_year": "2026",
+    "name": "Srimonti Dutta",
+    "affiliations": [
+      "IIT Guwahati",
+      "WAI USA"
+    ],
+    "paper_count": 5,
+    "citation_count": 12,
+    "author_id": "2298261814",
+    "lookup": "author_search"
+  }
+}

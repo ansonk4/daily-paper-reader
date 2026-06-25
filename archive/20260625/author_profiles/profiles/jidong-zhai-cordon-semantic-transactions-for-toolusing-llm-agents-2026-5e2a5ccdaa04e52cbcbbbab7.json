@@ -1,0 +1,43 @@
+{
+  "name": "Jidong Zhai",
+  "role": "last_author",
+  "affiliation": "Tsinghua University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=2921; OpenAlex works_count=194; Semantic Scholar citation_count=4745; Semantic Scholar paper_count=141",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Jidong Zhai",
+    "affiliations": [
+      "Tsinghua University"
+    ],
+    "author_row": "Jidong Zhai"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Cordon: Semantic Transactions for Tool-Using LLM Agents",
+    "paper_year": "2026",
+    "name": "Jidong Zhai",
+    "affiliations": [
+      "Tsinghua University"
+    ],
+    "works_count": 194,
+    "cited_by_count": 2921,
+    "author_id": "https://openalex.org/A5071200777",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Cordon: Semantic Transactions for Tool-Using LLM Agents",
+    "paper_year": "2026",
+    "name": "Jidong Zhai",
+    "affiliations": [],
+    "paper_count": 141,
+    "citation_count": 4745,
+    "author_id": "2467444",
+    "lookup": "author_search"
+  }
+}

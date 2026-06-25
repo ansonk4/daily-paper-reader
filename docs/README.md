@@ -1,73 +1,67 @@
 <div class="dpr-home-notice-card">
   <h3 class="dpr-home-notice-title">🚀 Start Here</h3>
   <ul class="dpr-home-notice-list">
-    <li><a href="#/tutorial/README">使用教程</a></li>
+    <li><a href="#/tutorial/README">Tutorial</a></li>
   </ul>
 </div>
 
-## 每次日报
-- 最新运行日期：2026-06-13
-- 运行时间：2026-06-13 19:54:14 UTC
-- 运行状态：成功
-- 本次总论文数：14
-- 精读区：7
-- 速读区：7
+## Daily Report
+- Latest run date: 2026-06-16 ~ 2026-06-25
+- Run time: 2026-06-25 08:47:17 UTC
+- Run status: success
+- Total papers: 12
+- Deep reads: 1
+- Quick reads: 11
 
-### 今日简报（AI）
-今日聚焦智能体训练框架（harness）与技能进化，精读两篇9.0高分论文。最值得关注的方向是《Bayesian-Agent》的后验引导技能进化与《Self-Harness》的自我改进框架。建议后续关注同类框架在恶意技能检测（MalSkillBench）及长视频生成（VideoWeaver）中的实用化落地。
-- 详情：[/202606/13/README](/202606/13/README)
+### Daily Brief (AI)
+OWL generated a daily digest of 12 AI safety and agent alignment papers, highlighting a deep-read on execution-time alignment for escapable AI systems. The top takeaways center on practical safety mechanisms for LLM agents, including governed harnesses, evolving safety rules, and OS-level policy enforcement. Readers interested in AI safety should start with the deep-read on execution-time alignment to understand how to constrain agents that might escape their intended boundaries.
+- Details: [/20260616-20260625/README](/20260616-20260625/README)
 
-### 精读区论文标签
-1. [Bayesian-Agent: Posterior-Guided Skill Evolution for LLM Agent Harnesses](/202606/13/2606.08348v1-bayesian-agent-posterior-guided-skill-evolution-for-llm-agent-harnesses)  
-   标签：评分：9.0/10、query:harness
-   evidence：基于后验引导进化的LLM智能体护具框架
-2. [Self-Harness: Harnesses That Improve Themselves](/202606/13/2606.09498v1-self-harness-harnesses-that-improve-themselves)  
-   标签：评分：9.0/10、query:harness
-   evidence：LLM智能体自改进护具
-3. [Claw-SWE-Bench: A Benchmark for Evaluating OpenClaw-style Agent Harnesses on Coding Tasks](/202606/13/2606.12344v1-claw-swe-bench-a-benchmark-for-evaluating-openclaw-style-agent-harnesses-on-coding-tasks)  
-   标签：评分：9.0/10、query:harness
-   evidence：提出了Claw-SWE-Bench，一个专门用于评估代码任务上代理护具的基准
-4. [The Cold-Start Safety Gap in LLM Agents](/202606/13/2606.07867v1-the-cold-start-safety-gap-in-llm-agents)  
-   标签：评分：8.0/10、query:agent-safety
-   evidence：提出SODA基准测试，控制安全威胁前的任务深度
-5. [Hardening Agent Benchmarks with Adversarial Hacker-Fixer Loops](/202606/13/2606.08960v1-hardening-agent-benchmarks-with-adversarial-hacker-fixer-loops)  
-   标签：评分：8.0/10、query:agent-safety
-   evidence：通过对抗循环加固代理基准测试，涉及包括内存安全在内的基准评估
-6. [Baichuan-M4: A Clinical-Grade Medical Agent System for Continuous Care](/202606/13/2606.08982v2-baichuan-m4-a-clinical-grade-medical-agent-system-for-continuous-care)  
-   标签：评分：8.0/10、query:harness
-   evidence：百川护具强制执行动作约束和记忆安全
-7. [RedAct: Redacting Agent Capability Traces for Procedural Skill Protection](/202606/13/2606.10813v2-redact-redacting-agent-capability-traces-for-procedural-skill-protection)  
-   标签：评分：8.0/10、query:agent-safety
-   evidence：引入CapTraceBench基准测试，用于保护agent过程技能免受轨迹泄露
+### Deep-Read Paper Tags
+1. [The Unfireable Safety Kernel: Execution-Time AI Alignment for AI Agents and Other Escapable AI Systems](/20260616-20260625/2606.26057v1-the-unfireable-safety-kernel-execution-time-ai-alignment-for-ai-agents-and-other-escapable-ai-systems)  
+   tags: Score: 8.2/10, query:harness
+   evidence: execution-time safety kernel for AI agents
 
-### 速读区论文标签
-1. [What makes a harness a harness: necessary and sufficient conditions for an agent harness](/202606/13/2606.10106v1-what-makes-a-harness-a-harness-necessary-and-sufficient-conditions-for-an-agent-harness)  
-   标签：评分：8.0/10、query:harness
-   evidence：定义智能体护具概念，为护具安全与基准测试奠定基础
-2. [MalSkillBench: A Runtime-Verified Benchmark of Malicious Agent Skills](/202606/13/2606.07131v2-malskillbench-a-runtime-verified-benchmark-of-malicious-agent-skills)  
-   标签：评分：7.0/10、query:agent-safety
-   evidence：MalSkillBench提供了恶意代理技能的运行时验证基准
-3. [VideoWeaver: Evaluating and Evolving Skills for Agentic Long Video Generation](/202606/13/2606.08091v1-videoweaver-evaluating-and-evolving-skills-for-agentic-long-video-generation)  
-   标签：评分：7.0/10、query:harness
-   evidence：用于评估和进化长视频生成技能的代理护具和基准测试
-4. [SkillHone: A Harness for Continual Agent Skill Evolution Through Persistent Decision History](/202606/13/2606.08671v1-skillhone-a-harness-for-continual-agent-skill-evolution-through-persistent-decision-history)  
-   标签：评分：7.0/10、query:harness
-   evidence：提出用于智能体技能演进的护具，直接相关于护具系统
-5. [OmniGameArena: A Unified UE5 Benchmark for VLM Game Agents with Improvement Dynamics](/202606/13/2606.09826v1-omnigamearena-a-unified-ue5-benchmark-for-vlm-game-agents-with-improvement-dynamics)  
-   标签：评分：7.0/10、query:harness
-   evidence：引入OmniGameArena基准测试和改进动力学曲线护具
-6. [VATS: Exploiting Implicit Authority in Error-Path Injection via Systematic Mutation](/202606/13/2606.07992v1-vats-exploiting-implicit-authority-in-error-path-injection-via-systematic-mutation)  
-   标签：评分：6.0/10、query:agent-safety
-   evidence：通过工具调用错误路径实施的注入攻击
-7. [Context-Fractured Decomposition Attacks on Tool-Using LLM Agents: Exploiting Artifact Provenance Gaps](/202606/13/2606.09084v1-context-fractured-decomposition-attacks-on-tool-using-llm-agents-exploiting-artifact-provenance-gaps)  
-   标签：评分：6.0/10、query:agent-safety
-   evidence：利用工具使用代理中溯源漏洞的攻击，与代理安全和记忆操纵相关
+### Quick-Read Paper Tags
+1. [Harness-MU: A Safe, Governed, and Effective Harness for Multi-User LLM Agents](/20260616-20260625/2606.21856v1-harness-mu-a-safe-governed-and-effective-harness-for-multi-user-llm-agents)  
+   tags: Score: 7.8/10, query:harness
+   evidence: safe governed harness for multi-user LLM agents
+2. [AutoSpec: Safety Rule Evolution for LLM Agents via Inductive Logic Programming](/20260616-20260625/2606.24245v2-autospec-safety-rule-evolution-for-llm-agents-via-inductive-logic-programming)  
+   tags: Score: 7.8/10, query:harness
+   evidence: framework that evolves safety rules for LLM agents
+3. [ActPlane: Programmable OS-Level Policy Enforcement for Agent Harnesses](/20260616-20260625/2606.25189v1-actplane-programmable-os-level-policy-enforcement-for-agent-harnesses)  
+   tags: Score: 7.8/10, query:harness
+   evidence: OS-level policy enforcement for agent harnesses
+4. [NRT-Bench: Benchmarking Multi-Turn Red-Teaming of LLM Operator Agents in Safety-Critical Control Rooms](/20260616-20260625/2606.20408v2-nrt-bench-benchmarking-multi-turn-red-teaming-of-llm-operator-agents-in-safety-critical-control-rooms)  
+   tags: Score: 7.6/10, query:harness
+   evidence: multi-turn red-teaming benchmark for LLM operator agents
+5. [The Interplay of Harness Design and Post-Training in LLM Agents](/20260616-20260625/2606.25447v1-the-interplay-of-harness-design-and-post-training-in-llm-agents)  
+   tags: Score: 7.6/10, query:harness
+   evidence: paper directly studies harness as controllable design dimension and its interaction with post-training in LLM agents
+6. [AgentRiskBOM: A Risk-Scoping Security Bill of Materials for Agentic AI Systems](/20260616-20260625/2606.21877v1-agentriskbom-a-risk-scoping-security-bill-of-materials-for-agentic-ai-systems)  
+   tags: Score: 7.4/10, query:harness
+   evidence: security BOM for risk-scoping tool-using AI agents
+7. [Agentra: A Supervisable Multi-Agent Framework for Enterprise Intrusion Response](/20260616-20260625/2606.18325v1-agentra-a-supervisable-multi-agent-framework-for-enterprise-intrusion-response)  
+   tags: Score: 6.8/10, query:harness
+   evidence: supervisable multi-agent framework with security gateway
+8. [Agentra: A Supervisable Multi-Agent Framework for Enterprise Intrusion Response](/20260616-20260625/2606.18325v2-agentra-a-supervisable-multi-agent-framework-for-enterprise-intrusion-response)  
+   tags: Score: 6.8/10, query:harness
+   evidence: supervisable multi-agent intrusion response framework
+9. [Phoenix: Safe GitHub Issue Resolution via Multi-Agent LLMs](/20260616-20260625/2606.20243v1-phoenix-safe-github-issue-resolution-via-multi-agent-llms)  
+   tags: Score: 6.8/10, query:harness
+   evidence: paper presents multi-agent issue-resolution system with layered safety controls relevant to safe harness implementation
+10. [Phoenix: Safe GitHub Issue Resolution via Multi-Agent LLMs](/20260616-20260625/2606.20243v2-phoenix-safe-github-issue-resolution-via-multi-agent-llms)  
+   tags: Score: 6.8/10, query:harness
+   evidence: multi-agent LLM system with layered safety controls
+11. [SoK: AI Secure Code Generation: Progress, Pitfalls, and Paths Forward](/20260616-20260625/2606.25195v1-sok-ai-secure-code-generation-progress-pitfalls-and-paths-forward)  
+   tags: Score: 6.8/10, query:harness
+   evidence: systematization of AI secure code generation failures
 
 
 <div class="dpr-home-promo-card">
-  <h3 class="dpr-home-promo-title">💬 社区与支持</h3>
+  <h3 class="dpr-home-promo-title">💬 Community and Support</h3>
   <ul class="dpr-home-promo-list">
-    <li>欢迎 Star / Fork / Issue / PR</li>
-    <li>QQ群：583867967（欢迎交流，已有：1151人）</li>
+    <li>Stars, forks, issues, and PRs are welcome</li>
+    <li>QQ group: 583867967</li>
   </ul>
 </div>

@@ -1,0 +1,57 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Xiaolin Zhou",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=2235; Semantic Scholar paper_count=91",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "HoloAgent-0: A Unified Embodied Agent Framework with 3D Spatial Memory",
+        "paper_year": "2026",
+        "name": "Xiaolin Zhou",
+        "affiliations": [],
+        "paper_count": 91,
+        "citation_count": 2235,
+        "author_id": "2154910677",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Zhizhong Su",
+      "role": "last_author",
+      "affiliation": "Horizon Robotics",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=3334; Semantic Scholar paper_count=18",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "HoloAgent-0: A Unified Embodied Agent Framework with 3D Spatial Memory",
+        "paper_year": "2026",
+        "name": "Zhizhong Su",
+        "affiliations": [
+          "Horizon Robotics"
+        ],
+        "paper_count": 18,
+        "citation_count": 3334,
+        "author_id": "3118650",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:02:12.119980+00:00"
+}

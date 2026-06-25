@@ -1,0 +1,43 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Nafiseh Kahani",
+      "role": "first_author",
+      "affiliation": "Masoud Barati 1 0000-0001-7829-2240; Diana Addae 1 0009-0009-8833-0488",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Nafiseh Kahani",
+        "affiliations": [
+          "Masoud Barati 1 0000-0001-7829-2240",
+          "Diana Addae 1 0009-0009-8833-0488"
+        ],
+        "author_row": "Nafiseh Kahani 1 0000-0002-9322-0699"
+      },
+      "openalex": {},
+      "semantic_scholar": {}
+    },
+    {
+      "name": "Diana Addae",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {}
+    }
+  ],
+  "rated_at": "2026-06-24T13:16:08.064720+00:00"
+}

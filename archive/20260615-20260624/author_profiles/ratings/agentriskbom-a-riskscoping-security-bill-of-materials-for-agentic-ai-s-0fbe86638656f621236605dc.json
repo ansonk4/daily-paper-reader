@@ -1,0 +1,70 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Srimonti Dutta",
+      "role": "first_author",
+      "affiliation": "WAI USA; Austin, USA; Akshata Kishore Moharir WAI USA Research Labs; IIT Guwahati",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=12; Semantic Scholar paper_count=5",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Srimonti Dutta",
+        "affiliations": [
+          "WAI USA",
+          "Austin, USA",
+          "Akshata Kishore Moharir WAI USA Research Labs",
+          "WAI USA"
+        ],
+        "author_row": "Srimonti Dutta WAI USA Research Labs"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "AgentRiskBOM: A Risk-Scoping Security Bill of Materials for Agentic AI Systems",
+        "paper_year": "2026",
+        "name": "Srimonti Dutta",
+        "affiliations": [
+          "IIT Guwahati",
+          "WAI USA"
+        ],
+        "paper_count": 5,
+        "citation_count": 12,
+        "author_id": "2298261814",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Akshata Kishore Moharir",
+      "role": "last_author",
+      "affiliation": "Microsoft",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=19; Semantic Scholar paper_count=19",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "AgentRiskBOM: A Risk-Scoping Security Bill of Materials for Agentic AI Systems",
+        "paper_year": "2026",
+        "name": "Akshata Kishore Moharir",
+        "affiliations": [
+          "Microsoft"
+        ],
+        "paper_count": 19,
+        "citation_count": 19,
+        "author_id": "1961500932",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:44:24.982202+00:00"
+}

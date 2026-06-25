@@ -1,0 +1,24 @@
+{
+  "name": "Ahmad Farooq",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=14; Semantic Scholar paper_count=7",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Formal Verification of Learned Multi-Agent Communication Policies via Decision Tree Distillation",
+    "paper_year": "2026",
+    "name": "Ahmad Farooq",
+    "affiliations": [],
+    "paper_count": 7,
+    "citation_count": 14,
+    "author_id": "2283184112",
+    "lookup": "author_search"
+  }
+}

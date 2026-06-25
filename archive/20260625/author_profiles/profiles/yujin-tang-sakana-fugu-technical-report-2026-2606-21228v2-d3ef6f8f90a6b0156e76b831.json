@@ -1,0 +1,24 @@
+{
+  "name": "Yujin Tang",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=250; Semantic Scholar paper_count=13",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Sakana Fugu Technical Report",
+    "paper_year": "2026",
+    "name": "Yu-Jin Tang",
+    "affiliations": [],
+    "paper_count": 13,
+    "citation_count": 250,
+    "author_id": "7868466",
+    "lookup": "author_search"
+  }
+}

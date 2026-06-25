@@ -1,0 +1,28 @@
+{
+  "name": "He Wen",
+  "role": "first_author",
+  "affiliation": "Hunan University; Changsha University of Science and Technology; University of Hong Kong",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=8854; OpenAlex works_count=423",
+  "confidence": "medium",
+  "evidence_source": "openalex",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Toward Machine Risk Perception: Integrating Trust Calibration and Precursor-Based Risk Estimation for Humanoid",
+    "paper_year": "2026",
+    "name": "He Wen",
+    "affiliations": [
+      "Hunan University",
+      "Changsha University of Science and Technology",
+      "University of Hong Kong"
+    ],
+    "works_count": 423,
+    "cited_by_count": 8854,
+    "author_id": "https://openalex.org/A5100682305",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

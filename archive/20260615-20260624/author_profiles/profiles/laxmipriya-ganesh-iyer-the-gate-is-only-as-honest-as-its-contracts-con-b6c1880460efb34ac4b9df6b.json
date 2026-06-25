@@ -1,0 +1,23 @@
+{
+  "name": "Laxmipriya Ganesh Iyer",
+  "role": "first_author",
+  "affiliation": "United States of America; Rahul Suresh Babu Independent Researcher",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Laxmipriya Ganesh Iyer",
+    "affiliations": [
+      "United States of America",
+      "Rahul Suresh Babu Independent Researcher",
+      "United States of America"
+    ],
+    "author_row": "Laxmipriya Ganesh Iyer Independent Researcher"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

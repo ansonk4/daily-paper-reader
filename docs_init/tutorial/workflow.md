@@ -1,8 +1,8 @@
-# 推荐链路说明
+# Recommendation Workflow
 
-当前为占位页，后续可以放：
+This placeholder page can later cover:
 
-- 抓取、召回、重排、LLM refine 的整体流程
-- quick skim / deep dive 的区别
-- 工作流触发后前端面板怎么看
-- 常见失败场景与排查方法
+- Overall fetch, retrieval, rerank, and LLM refine flow
+- Difference between quick skim and deep dive
+- How to read the frontend panel after triggering a workflow
+- Common failure cases and troubleshooting steps

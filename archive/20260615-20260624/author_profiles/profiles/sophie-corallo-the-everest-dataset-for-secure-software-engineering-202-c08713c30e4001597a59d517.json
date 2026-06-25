@@ -1,0 +1,24 @@
+{
+  "name": "Sophie Corallo",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=68; Semantic Scholar paper_count=13",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "The EVerest Dataset for Secure Software Engineering",
+    "paper_year": "2026",
+    "name": "Sophie Corallo",
+    "affiliations": [],
+    "paper_count": 13,
+    "citation_count": 68,
+    "author_id": "2192532244",
+    "lookup": "author_search"
+  }
+}

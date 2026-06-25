@@ -1,0 +1,24 @@
+{
+  "name": "Kenny Workman",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=5; Semantic Scholar paper_count=6",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "TxBench-PP: Analyzing AI Agent Performance on Small-Molecule Preclinical Pharmacology",
+    "paper_year": "2026",
+    "name": "Kenny Workman",
+    "affiliations": [],
+    "paper_count": 6,
+    "citation_count": 5,
+    "author_id": "2190830836",
+    "lookup": "author_search"
+  }
+}

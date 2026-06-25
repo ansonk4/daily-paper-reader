@@ -1,0 +1,31 @@
+{
+  "name": "Yuchuan Tian",
+  "role": "first_author",
+  "affiliation": "Peking University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=483; Semantic Scholar paper_count=26",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yuchuan Tian",
+    "affiliations": [
+      "Peking University"
+    ],
+    "author_row": "textbf Yuchuan Tian"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "SafeClawBench: Separating Semantic, Audit-Evidence, and Sandbox Harm in Tool-Using LLM Agents",
+    "paper_year": "2026",
+    "name": "Yuchuan Tian",
+    "affiliations": [],
+    "paper_count": 26,
+    "citation_count": 483,
+    "author_id": "4871558",
+    "lookup": "author_search"
+  }
+}

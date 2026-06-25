@@ -1,0 +1,31 @@
+{
+  "name": "Stefan Beyer",
+  "role": "first_author",
+  "affiliation": "Oak Security",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=333; Semantic Scholar paper_count=9",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Stefan Beyer",
+    "affiliations": [
+      "Oak Security"
+    ],
+    "author_row": "Stefan Beyer"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "TRACE: A Threat Modelling Methodology for Distributed, Cloud-First, and Decentralized Organisations",
+    "paper_year": "2026",
+    "name": "Stefan Beyer",
+    "affiliations": [],
+    "paper_count": 9,
+    "citation_count": 333,
+    "author_id": "46901439",
+    "lookup": "author_search"
+  }
+}

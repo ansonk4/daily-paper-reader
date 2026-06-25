@@ -1,0 +1,21 @@
+{
+  "name": "Meng Yee Michael Chuah",
+  "role": "last_author",
+  "affiliation": "Institute for Infocomm Research, Agency for Science Technology and Research, Singapore",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Meng Yee Michael Chuah",
+    "affiliations": [
+      "Institute for Infocomm Research, Agency for Science Technology and Research, Singapore"
+    ],
+    "author_row": "Meng Yee (Michael) Chuah"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

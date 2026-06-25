@@ -1,0 +1,21 @@
+{
+  "name": "Yang Yue",
+  "role": "first_author",
+  "affiliation": "Beijing University of Posts and Telecommunications",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yang Yue",
+    "affiliations": [
+      "Beijing University of Posts and Telecommunications"
+    ],
+    "author_row": "Yang Yue"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

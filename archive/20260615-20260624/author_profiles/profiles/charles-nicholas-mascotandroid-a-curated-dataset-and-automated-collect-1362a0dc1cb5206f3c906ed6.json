@@ -1,0 +1,22 @@
+{
+  "name": "Charles Nicholas",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "openalex",
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "MASCOT-Android: A Curated Dataset and Automated Collection Pipeline for Android Malware Source Code Specimens",
+    "paper_year": 2026,
+    "name": "Charles Nicholas",
+    "affiliations": [],
+    "works_count": null,
+    "cited_by_count": null,
+    "author_id": "https://openalex.org/A5138841675"
+  },
+  "semantic_scholar": {}
+}

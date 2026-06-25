@@ -1,0 +1,30 @@
+{
+  "name": "Stefano Soatto",
+  "role": "last_author",
+  "affiliation": "[0.5em] AWS Agentic AI",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=65; Semantic Scholar paper_count=8",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Stefano Soatto",
+    "affiliations": [
+      "[0.5em] AWS Agentic AI"
+    ],
+    "author_row": "Vlad Sobal Shuo Yang Yuting Zhang Wei Xia Stefano Soatto"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "DrawingBench: Evaluating Spatial Reasoning and UI Interaction Capabilities of Large Language Models through Mouse-Based Drawing Tasks",
+    "paper_year": 2025,
+    "name": "S. Ryu",
+    "affiliations": [],
+    "paper_count": 8,
+    "citation_count": 65,
+    "author_id": "2113586613"
+  }
+}

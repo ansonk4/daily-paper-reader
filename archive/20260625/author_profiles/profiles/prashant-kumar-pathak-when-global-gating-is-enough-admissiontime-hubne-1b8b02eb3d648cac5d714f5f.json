@@ -1,0 +1,21 @@
+{
+  "name": "Prashant Kumar Pathak",
+  "role": "first_author",
+  "affiliation": "[3pt] Santa Clara, CA, USA & Colonia, NJ, USA",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Prashant Kumar Pathak",
+    "affiliations": [
+      "[3pt] Santa Clara, CA, USA & Colonia, NJ, USA"
+    ],
+    "author_row": "tabular [t] @ c@ 3em c@ Prashant Kumar Pathak & Tarun Kumar Sharma"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

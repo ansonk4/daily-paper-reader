@@ -1,0 +1,45 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Ahmad Farooq",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {}
+    },
+    {
+      "name": "Kamran Iqbal",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=1730; Semantic Scholar paper_count=125",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "AI 2003 : advances in artificial intelligence : 16th Australian Conference on AI, Perth, Australia, December 3-5, 2003 : proceedings",
+        "paper_year": 2003,
+        "name": "L. Fung",
+        "affiliations": [],
+        "paper_count": 125,
+        "citation_count": 1730,
+        "author_id": "1866074"
+      }
+    }
+  ],
+  "author_rating_status": "fallback",
+  "rated_at": "2026-06-25T04:53:25.557155+00:00"
+}

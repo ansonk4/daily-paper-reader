@@ -1,4 +1,4 @@
-// Docsify 配置与公共插件（评论区 + Zotero 元数据）
+// Docsify 配置与公共插件 (评论区 + Zotero 元数据)
 window.$docsify = {
   name: 'Daily Paper Reader',
   repo: '',
@@ -9,13 +9,13 @@ window.$docsify = {
   alias: {
     '/.*/_sidebar.md': '/_sidebar.md',
   },
-  // 只在侧边栏展示论文列表标题，不展示文内小节（例如 Abstract）
+  // 只在侧边栏展示论文列表标题，不展示文内小节 (例如 Abstract)
   subMaxLevel: 0,
 
   // --- 核心：注册自定义插件 ---
   plugins: [
     function (hook, vm) {
-      // 确保 marked 开启 GFM 表格支持，并允许内联 HTML（用于聊天区 Markdown 渲染）
+      // 确保 marked 开启 GFM 表格支持，并允许内联 HTML (用于聊天区 Markdown 渲染)
       if (window.marked && window.marked.setOptions) {
         const baseOptions =
           (window.marked.getDefaults && window.marked.getDefaults()) || {};
@@ -249,8 +249,8 @@ window.$docsify = {
             (title) => {
               const t = normalizeTextForMeta(title).replace(/^\s*#{1,6}\s*/, '').trim().toLowerCase();
               return (
-                t.includes('论文详细总结') ||
-                t.includes('论文详细总结（自动生成）') ||
+                t.includes('Detailed Summary') ||
+                t.includes('论文详细总结 (自动生成)') ||
                 t.includes('ai summary') ||
                 t.includes('🤖 ai summary')
               );
@@ -265,7 +265,7 @@ window.$docsify = {
                 .toLowerCase();
               return (
                 t === 'abstract' ||
-                t.includes('原文摘要') ||
+                t.includes('Original Abstract') ||
                 t.includes('original abstract')
               );
             },
@@ -294,11 +294,11 @@ window.$docsify = {
             'paper-title-row',
             'paper-meta-row',
             'paper-glance-section',
-            '互动区',
-            '页面导航与交互层',
-            '原文摘要',
+            'Discussion',
+            'Page Navigation and Interaction Layer',
+            'Original Abstract',
             'original abstract',
-            '论文详细总结',
+            'Detailed Summary',
             'ai summary',
             'chat history',
           ];
@@ -316,7 +316,7 @@ window.$docsify = {
               node.classList.contains('paper-title-en'))
           );
         const sections = [];
-        let currentTitle = '📝 论文正文';
+        let currentTitle = '📝 Paper Body';
         let currentContent = [];
         let seenHeading = false;
         let skipCurrentSection = false;
@@ -395,7 +395,7 @@ window.$docsify = {
         rawPaperContent = '',
       ) => {
         try {
-          // 优先使用自定义标题条（避免 h1 被隐藏/改造后 innerText 不稳定）
+          // 优先使用自定义标题条 (避免 h1 被隐藏/改造后 innerText 不稳定)
           const dprEn = document.querySelector('.dpr-title-en');
           const dprCn = document.querySelector('.dpr-title-cn');
           let title = '';
@@ -535,7 +535,7 @@ window.$docsify = {
                     : ({ roleText = '', className = '' } = {}) => {
                         const role = String(roleText || '').trim();
                         const cls = String(className || '').trim();
-                        if (role.includes('思考过程')) return '';
+                        if (role.includes('Reasoning')) return '';
                         if (role.includes('你')) return 'User';
                         if (role.includes('助手')) return 'AI';
                         if (/\bmsg-content-user\b/.test(cls)) return 'User';
@@ -597,8 +597,8 @@ window.$docsify = {
               if (raw === CHAT_MARKER) return "💬 Chat History";
               if (raw === ORIG_MARKER) return "📄 Original Abstract";
               if (raw === TLDR_MARKER) return "📝 TLDR";
-              if (raw === GLANCE_MARKER || raw === GLANCE_MARKER_LEGACY) return "🧭 速览区";
-              if (raw === DETAIL_MARKER || raw === DETAIL_MARKER_LEGACY) return "🧩 论文详细总结区";
+              if (raw === GLANCE_MARKER || raw === GLANCE_MARKER_LEGACY) return "🧭 Glance";
+              if (raw === DETAIL_MARKER || raw === DETAIL_MARKER_LEGACY) return "🧩 Detailed Summary";
               return raw.replace(/^#{1,6}\s*/, '');
             };
             const addRawMetaBlock = (label, content) => {
@@ -702,13 +702,13 @@ window.$docsify = {
                 col.querySelector('.paper-glance-content'),
               );
               if (!label && !content) return '';
-              return `- **${label || '项'}**: ${content || '-'}`;
+              return `- **${label || 'Item'}**: ${content || '-'}`;
             });
             const fallbackArray = (value, label = '') =>
               value ? [`- **${label}**: ${Array.isArray(value) ? value.join(' / ') : String(value)}`] : [];
 
             const titleRowText = [
-              `- **中英文标题**: ${titleZhText || frontmatterPaperMeta.title_zh || '-'} / ${titleEnText || frontmatterPaperMeta.title || '-'}`,
+              `- **Chinese/English Title**: ${titleZhText || frontmatterPaperMeta.title_zh || '-'} / ${titleEnText || frontmatterPaperMeta.title || '-'}`,
             ].filter(Boolean);
 
             const metaPairs = collectLabeledPairs([...metaLeftRows, ...metaRightRows]);
@@ -716,12 +716,16 @@ window.$docsify = {
               ...fallbackArray(frontmatterPaperMeta.evidence, 'Evidence'),
               ...fallbackArray(frontmatterPaperMeta.tldr, 'TLDR'),
               ...fallbackArray(frontmatterPaperMeta.authors, 'Authors'),
+              ...fallbackArray(frontmatterPaperMeta.author_affiliations, 'Author Affiliations'),
               ...fallbackArray(frontmatterPaperMeta.date, 'Date'),
               ...fallbackArray(frontmatterPaperMeta.pdf, 'PDF'),
               ...fallbackArray(frontmatterPaperMeta.tags, 'Tags'),
               ...fallbackArray(frontmatterPaperMeta.score, 'Score'),
+              ...fallbackArray(frontmatterPaperMeta.relevance_score, 'Relevance Score'),
+              ...fallbackArray(frontmatterPaperMeta.author_score, 'Author Score'),
+              ...fallbackArray(frontmatterPaperMeta.author_rating_explanation, 'Author Rating'),
             ]);
-            ['Evidence', 'TLDR', 'Authors', 'Date', 'PDF', 'Tags', 'Score'].forEach(
+            ['Evidence', 'TLDR', 'Authors', 'Author Affiliations', 'Date', 'PDF', 'Tags', 'Score', 'Relevance Score', 'Author Score', 'Author Rating'].forEach(
               (label) => {
                 const key = label.toLowerCase();
                 if (!metaPairs.has(key)) {
@@ -754,25 +758,25 @@ window.$docsify = {
             const chatContainerEl = document.getElementById('paper-chat-container');
             const chatHistoryEl = document.getElementById('chat-history');
             const uiRows = [
-              `- **dpr-title-bar**: ${titleBarEl ? '已挂载' : '未检测到'}`,
-              `- **dpr-page-content**: ${pageContentEl ? '已挂载' : '未检测到'}`,
-              `- **paper-title-row**: ${document.querySelector('.paper-title-row') ? '已挂载' : '未检测到'}`,
-              `- **paper-meta-row**: ${document.querySelector('.paper-meta-row') ? '已挂载' : '未检测到'}`,
-              `- **paper-glance-section**: ${document.querySelector('.paper-glance-section') ? '已挂载' : '未检测到'}`,
-              `- **#paper-chat-container**: ${chatContainerEl ? '已挂载' : '未检测到'}`,
-              `- **#chat-history**: ${chatHistoryEl ? '已挂载' : '未检测到'}`,
+              `- **dpr-title-bar**: ${titleBarEl ? 'Mounted' : 'Not detected'}`,
+              `- **dpr-page-content**: ${pageContentEl ? 'Mounted' : 'Not detected'}`,
+              `- **paper-title-row**: ${document.querySelector('.paper-title-row') ? 'Mounted' : 'Not detected'}`,
+              `- **paper-meta-row**: ${document.querySelector('.paper-meta-row') ? 'Mounted' : 'Not detected'}`,
+              `- **paper-glance-section**: ${document.querySelector('.paper-glance-section') ? 'Mounted' : 'Not detected'}`,
+              `- **#paper-chat-container**: ${chatContainerEl ? 'Mounted' : 'Not detected'}`,
+              `- **#chat-history**: ${chatHistoryEl ? 'Mounted' : 'Not detected'}`,
             ];
 
             addMetaSectionBlock(
-              'paper-title-row（双语标题区域）',
+              'paper-title-row (bilingual title area)',
               titleRowText.join('\n'),
             );
             addMetaSectionBlock(
-              'paper-meta-row（中间信息区）',
+              'paper-meta-row (middle info area)',
               cleanText(
                 buildLabeledText(
                   metaPairs,
-                  ['evidence', 'tldr', 'authors', 'date', 'pdf', 'tags', 'score'],
+                  ['evidence', 'tldr', 'authors', 'author affiliations', 'date', 'pdf', 'tags', 'score', 'relevance score', 'author score', 'author rating'],
                 ),
               ),
             );
@@ -801,7 +805,7 @@ window.$docsify = {
               addRawMetaBlock(GLANCE_MARKER, glanceText);
             }
             addMetaSectionBlock(
-              '页面导航与交互层',
+              'Page Navigation and Interaction Layer',
               cleanText(uiRows.join('\n')),
             );
 
@@ -837,7 +841,7 @@ window.$docsify = {
             }
 
             // 兜底 raw 聚合：确保保留 AI Summary / Original Abstract 原始 Markdown
-            // （避免经过 DOM 文本化路径后公式被改写）
+            //  (避免经过 DOM 文本化路径后公式被改写)
             abstractText = parts.join('\n\n\n').trim();
             abstractTextForMetaRaw = rawParts.join('\n\n\n').trim();
           }
@@ -877,7 +881,7 @@ window.$docsify = {
         }
       };
 
-      // 导出给其它前端模块（例如聊天模块）主动刷新 Zotero 元数据
+      // 导出给其它前端模块 (例如聊天模块)主动刷新 Zotero 元数据
       window.DPRZoteroMeta = window.DPRZoteroMeta || {};
       window.DPRZoteroMeta.updateFromPage = (paperId, vmRouteFile) =>
         Promise.resolve(
@@ -899,8 +903,8 @@ window.$docsify = {
       };
 
       // 公共工具：简单表格 + 标记修正：
-      // 1）移除协议标记 [ANS]/[THINK]
-      // 2）移除表格行之间多余空行，避免把同一张表拆成两块
+      // 1)移除协议标记 [ANS]/[THINK]
+      // 2)移除表格行之间多余空行，避免把同一张表拆成两块
       const normalizeTables = (markdown) => {
         if (!markdown) return '';
         // 清理历史遗留的协议标记
@@ -954,7 +958,7 @@ window.$docsify = {
           return `%%LATEX_BLOCK_${idx}%%`;
         });
 
-        // 保护行内公式 $...$（不跨行）
+        // 保护行内公式 $...$ (不跨行)
         protectedText = protectedText.replace(/\$([^\$\n]+?)\$/g, (match) => {
           const idx = latexBlocks.length;
           latexBlocks.push(match);
@@ -1085,14 +1089,14 @@ window.$docsify = {
         });
       };
 
-      // 导出给外部模块（例如聊天模块）复用
+      // 导出给外部模块 (例如聊天模块)复用
       window.DPRMarkdown = {
         normalizeTables,
         renderMarkdownWithTables,
         renderMathInEl,
       };
 
-      // 3. 小屏下：点击侧边栏条目后自动收起侧边栏（全屏列表 → 正文）
+      // 3. 小屏下：点击侧边栏条目后自动收起侧边栏 (Fullscreen列表 → 正文)
       const setupMobileSidebarAutoCloseOnItemClick = () => {
         const nav = document.querySelector('.sidebar-nav');
         if (!nav) return;
@@ -1104,12 +1108,12 @@ window.$docsify = {
           if (!link) return;
 
           const href = link.getAttribute('href') || '';
-          // 只处理 Docsify 内部路由（#/ 开头），避免影响外链
+          // 只处理 Docsify 内部路由 (#/ 开头)，避免影响外链
           if (!href.includes('#/')) return;
 
           const width =
             window.innerWidth || document.documentElement.clientWidth || 0;
-          // 统一“微宽屏 + 窄屏”为同一套逻辑：<1024 时点击条目后自动收起 sidebar（全屏列表 → 正文）
+          // 统一“微宽屏 + 窄屏”为同一套逻辑：<1024 时点击条目后自动收起 sidebar (Fullscreen列表 → 正文)
           if (width >= 1024) return;
 
           // 让 Docsify 先完成路由跳转，再收起侧边栏
@@ -1279,13 +1283,21 @@ window.$docsify = {
           ).trim();
           const authors = normalizeAuthorsForExport(meta.authors || meta.author);
           const score = String(meta.score || '').trim();
+          const relevance_score = String(meta.relevance_score || '').trim();
+          const author_score = String(meta.author_score || '').trim();
+          const author_affiliations = String(meta.author_affiliations || '').trim();
+          const author_rating_explanation = String(meta.author_rating_explanation || '').trim();
           const evidence = String(meta.evidence || '').trim();
           const tldr = String(meta.tldr || meta.summary || '').trim();
 
           const abstractFromBody = trimBeforeMarkers(
             extractSectionByTitle(body, (title) => {
               const normalized = String(title || '').trim().toLowerCase();
-              return normalized === 'abstract' || normalized === '摘要';
+              return (
+                normalized === 'abstract' ||
+                normalized === 'chinese abstract' ||
+                normalized === '摘要'
+              );
             }),
             [],
           ).trim();
@@ -1300,6 +1312,10 @@ window.$docsify = {
             date: normalizeDateField(meta.date || ''),
             pdf: String(meta.pdf || meta.PDF || '').trim(),
             score,
+            relevance_score,
+            author_score,
+            author_affiliations,
+            author_rating_explanation,
             evidence,
             tldr,
             tags: normalizeTagsForExport(meta.tags || []),
@@ -1486,13 +1502,13 @@ window.$docsify = {
           const oldText = menuDownload ? menuDownload.textContent : null;
           if (menuDownload) {
             menuDownload.disabled = true;
-            menuDownload.textContent = '下载中...';
+            menuDownload.textContent = 'Downloading...';
           }
           try {
             if (!dayPaperItems.length) {
               payload.errors.push({
                 paper_id: '',
-                error: '本日分组下未找到可导出的论文',
+                error: 'No exportable papers found in this date group',
               });
             } else {
               const baseHref = window.location.href.split('#')[0];
@@ -1546,31 +1562,128 @@ window.$docsify = {
             if (rowLi) {
               const trigger = rowLi.querySelector('.sidebar-day-menu-trigger');
               if (trigger) {
-                trigger.title = `已下载：${payload.count || 0} 篇`;
+                trigger.title = `Downloaded: ${payload.count || 0} papers`;
               }
             }
           } catch (err) {
             if (rowLi) {
               const trigger = rowLi.querySelector('.sidebar-day-menu-trigger');
               if (trigger) {
-                trigger.title = `下载失败（见控制台）：${String(
+                trigger.title = `Download failed (see console): ${String(
                   err && err.message ? err.message : err,
                 )}`;
               }
             }
-            console.warn('[DPR Export] 下载失败：', err);
+            console.warn('[DPR Export] Download failed: ', err);
             throw err;
           } finally {
             if (menuDownload) {
               menuDownload.disabled = false;
-              menuDownload.textContent = oldText || '下载 JSON';
+              menuDownload.textContent = oldText || 'Download JSON';
             }
           }
         };
 
-        const deleteDaySection = ({ rowLi, rowText, dayKey }) => {
+        const isLocalDebugPage = () => {
+          if (window.DPR_LOCAL_API_BASE) return true;
+          const host = String((window.location && window.location.hostname) || '').toLowerCase();
+          if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') return true;
+          if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+          if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+          if (/^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+          return false;
+        };
+
+        const getLocalApiUrl = (path) => {
+          const base = String(window.DPR_LOCAL_API_BASE || '').trim().replace(/\/$/, '');
+          if (!base && isLocalDebugPage()) {
+            const protocol = String((window.location && window.location.protocol) || 'http:');
+            const hostname = String((window.location && window.location.hostname) || '127.0.0.1');
+            return `${protocol}//${hostname}:8567${path}`;
+          }
+          if (!base) return path;
+          return `${base}${path}`;
+        };
+
+        const normalizeDateToken = (dateText) => {
+          const m = String(dateText || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          return m ? `${m[1]}${m[2]}${m[3]}` : '';
+        };
+
+        const resultTokenFromDayLabel = (rowText) => {
+          const text = String(rowText || '').trim();
+          const range = text.match(
+            /^(\d{4}-\d{2}-\d{2})\s*~\s*(\d{4}-\d{2}-\d{2})$/,
+          );
+          if (range) {
+            const start = normalizeDateToken(range[1]);
+            const end = normalizeDateToken(range[2]);
+            return start && end ? `${start}-${end}` : '';
+          }
+          return normalizeDateToken(text);
+        };
+
+        const routePrefixFromResultToken = (token) => {
+          const value = String(token || '').trim();
+          if (!value) return '';
+          if (value.includes('-')) return value;
+          if (/^\d{8}$/.test(value)) return `${value.slice(0, 6)}/${value.slice(6)}`;
+          return '';
+        };
+
+        const deleteDayResult = async ({ rowLi, rowText, dayKey, deleteBtn }) => {
+          const token = resultTokenFromDayLabel(rowText);
+          if (!token) {
+            window.alert('Cannot determine the result date for this sidebar entry.');
+            return;
+          }
+          if (!isLocalDebugPage()) {
+            window.alert('Deleting generated result files is only available from the local debug server.');
+            return;
+          }
+          const confirmed = window.confirm(
+            `Delete the generated result for ${rowText}?\n\nThis removes the matching docs and archive files from this local checkout.`,
+          );
+          if (!confirmed) return;
+
+          const oldText = deleteBtn ? deleteBtn.textContent : '';
+          if (deleteBtn) {
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = 'Deleting...';
+          }
+          try {
+            const deleteUrl = getLocalApiUrl(`/api/local/results/${encodeURIComponent(token)}`);
+            let res = await fetch(deleteUrl, { method: 'DELETE' });
+            if (res.status === 501 || res.status === 405) {
+              res = await fetch(`${deleteUrl}/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token }),
+              });
+            }
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.ok) {
+              throw new Error((data && data.error) || `HTTP ${res.status}`);
+            }
+            deleteDaySection({ rowLi, rowText, dayKey, persistHidden: false });
+            const prefix = routePrefixFromResultToken(token);
+            const route = String((window.location && window.location.hash) || '').replace(/^#\/?/, '');
+            if (prefix && route.startsWith(prefix)) {
+              window.location.hash = '#/';
+            }
+          } catch (err) {
+            window.alert(`Delete failed: ${String(err && err.message ? err.message : err)}`);
+          } finally {
+            if (deleteBtn) {
+              deleteBtn.disabled = false;
+              deleteBtn.textContent = oldText || 'Delete Result';
+            }
+          }
+        };
+
+        const deleteDaySection = ({ rowLi, rowText, dayKey, persistHidden = true }) => {
           if (!rowLi) return;
-          if (dayKey) hiddenDays.add(dayKey);
+          if (persistHidden && dayKey) hiddenDays.add(dayKey);
           if (dayKey) delete state[dayKey];
           if (rowText) delete state[rowText];
           markDayPapersUnrecommended(collectDayPaperItems(rowLi));
@@ -1630,7 +1743,7 @@ window.$docsify = {
           if (childUl) childUl.classList.add('sidebar-day-content');
           const key = dayKey || rawText;
 
-          // 复用或创建 wrapper（包含日期文字和小箭头）
+          // 复用或创建 wrapper (包含日期文字和小箭头)
           let wrapper = li.querySelector(':scope > .sidebar-day-toggle');
           if (!wrapper) {
             wrapper = document.createElement('div');
@@ -1643,8 +1756,8 @@ window.$docsify = {
             const menuTrigger = document.createElement('button');
             menuTrigger.type = 'button';
             menuTrigger.className = 'sidebar-day-menu-trigger';
-            menuTrigger.title = '更多操作';
-            menuTrigger.setAttribute('aria-label', '更多操作');
+            menuTrigger.title = 'More actions';
+            menuTrigger.setAttribute('aria-label', 'More actions');
             menuTrigger.textContent = '⋮';
 
             const menu = document.createElement('span');
@@ -1653,8 +1766,14 @@ window.$docsify = {
             const downloadBtn = document.createElement('button');
             downloadBtn.type = 'button';
             downloadBtn.className = 'sidebar-day-menu-item sidebar-day-menu-item-download';
-            downloadBtn.textContent = '下载 JSON';
-            downloadBtn.setAttribute('aria-label', '下载论文元数据 JSON');
+            downloadBtn.textContent = 'Download JSON';
+            downloadBtn.setAttribute('aria-label', 'Download paper metadata JSON');
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'sidebar-day-menu-item sidebar-day-menu-item-delete';
+            deleteBtn.textContent = 'Delete Result';
+            deleteBtn.setAttribute('aria-label', 'Delete generated run result');
 
             const arrowSpan = document.createElement('span');
             arrowSpan.className = 'sidebar-day-toggle-arrow';
@@ -1664,6 +1783,7 @@ window.$docsify = {
             actions.className = 'sidebar-day-toggle-actions';
             actions.appendChild(menuTrigger);
             menu.appendChild(downloadBtn);
+            menu.appendChild(deleteBtn);
             actions.appendChild(menu);
             actions.appendChild(arrowSpan);
 
@@ -1682,6 +1802,15 @@ window.$docsify = {
           const menuTrigger = wrapper.querySelector('.sidebar-day-menu-trigger');
           const menu = wrapper.querySelector('.sidebar-day-menu');
           const downloadBtn = wrapper.querySelector('.sidebar-day-menu-item-download');
+          let deleteBtn = wrapper.querySelector('.sidebar-day-menu-item-delete');
+          if (menu && !deleteBtn) {
+            deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'sidebar-day-menu-item sidebar-day-menu-item-delete';
+            deleteBtn.textContent = 'Delete Result';
+            deleteBtn.setAttribute('aria-label', 'Delete generated run result');
+            menu.appendChild(deleteBtn);
+          }
 
           if (menuTrigger && !menuTrigger.dataset.dprDayMenuTriggerBound) {
             menuTrigger.dataset.dprDayMenuTriggerBound = '1';
@@ -1722,10 +1851,29 @@ window.$docsify = {
             });
           }
 
+          if (deleteBtn && !deleteBtn.dataset.dprDeleteBound) {
+            deleteBtn.dataset.dprDeleteBound = '1';
+            deleteBtn.addEventListener('click', async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+              if (deleteBtn.disabled) return;
+              if (menu) {
+                menu.classList.remove('is-open');
+              }
+              await deleteDayResult({
+                rowLi: li,
+                rowText: rawText,
+                dayKey: dayKey || rawText,
+                deleteBtn,
+              });
+            });
+          }
+
           // 决定默认展开 / 收起：
           // - 如果本次是“出现了新的一天”：清空历史，只展开最新一天；
-          // - 否则若已有用户偏好（state），按偏好来；
-          // - 否则（首次使用且没有历史）：仅“最新一天”展开，其余收起。
+          // - 否则若已有用户偏好 (state)，按偏好来；
+          // - 否则 (首次使用且没有历史)：仅“最新一天”展开，其余收起。
           let collapsed;
           if (isNewDay) {
             collapsed = key === latestDay ? false : true;
@@ -1751,7 +1899,7 @@ window.$docsify = {
             if (arrowSpan) arrowSpan.textContent = '▾';
           }
 
-          // 初始化一次高度（不做动画，避免首次渲染闪动）
+          // 初始化一次高度 (不做动画，避免首次渲染闪动)
           setDayCollapsed(li, collapsed, { animate: false });
 
           // 绑定点击：使用 capture 阶段，确保即使旧版本已有 handler 也能覆盖
@@ -1760,7 +1908,7 @@ window.$docsify = {
             wrapper.addEventListener(
               'click',
               (e) => {
-                // 点击菜单控件时，不触发日期折叠（否则 capture 阶段会先被 wrapper 拦截，导致菜单无响应）
+                // 点击菜单控件时，不触发日期折叠 (否则 capture 阶段会先被 wrapper 拦截，导致菜单none响应)
                 try {
                   const target = e && e.target && e.target.closest
                     ? e.target.closest(
@@ -1781,7 +1929,7 @@ window.$docsify = {
                 state[rawText] = collapsed ? 'closed' : 'open';
                 state.__latestDay = latestDay;
                 ensureStateSaved();
-                // 先做一次即时同步（保证交互反馈），再在动画结束后做一次终态校准，
+                // 先做一次即时同步 (保证交互反馈)，再在动画结束后做一次终态校准，
                 // 否则列表在 max-height 过渡中继续位移，会让高亮条“越开越往上偏”。
                 requestAnimationFrame(() => {
                   syncSidebarActiveIndicator({ animate: false });
@@ -2107,7 +2255,7 @@ window.$docsify = {
         });
       };
 
-      // 4. 论文“已阅读”状态管理（存储在 localStorage）
+      // 4. 论文“已阅读”状态管理 (存储在 localStorage)
       const READ_STORAGE_KEY = 'dpr_read_papers_v1';
 
       const loadReadState = () => {
@@ -2118,7 +2266,7 @@ window.$docsify = {
           const obj = JSON.parse(raw);
           if (!obj || typeof obj !== 'object') return {};
 
-          // 兼容旧版本（值为 true 的情况）
+          // 兼容旧版本 (值为 true 的情况)
           const normalized = {};
           Object.keys(obj).forEach((k) => {
             const v = obj[k];
@@ -2197,7 +2345,7 @@ window.$docsify = {
         const rel = joinUrlPath(getDocsifyBasePath(), `${paperId}.md`);
         const url = buildDocsUrl(rel);
         const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`无法读取文章 Markdown（HTTP ${res.status}）`);
+        if (!res.ok) throw new Error(`Unable to read article Markdown (HTTP ${res.status})`);
         return await res.text();
       };
 
@@ -2286,14 +2434,19 @@ window.$docsify = {
         }
         parts.push('');
         if (safeMeta.authors) parts.push(`- **Authors**: ${String(safeMeta.authors).trim()}`);
+        if (safeMeta.author_affiliations) parts.push(`- **Author Affiliations**: ${String(safeMeta.author_affiliations).trim()}`);
         if (safeMeta.source) parts.push(`- **Source**: ${String(safeMeta.source).trim()}`);
         if (safeMeta.date) parts.push(`- **Date**: ${String(safeMeta.date).trim()}`);
         if (safeMeta.pdf) parts.push(`- **PDF**: ${String(safeMeta.pdf).trim()}`);
         if (tags.length) parts.push(`- **Tags**: ${tags.join(', ')}`);
+        if (safeMeta.score) parts.push(`- **Score**: ${String(safeMeta.score).trim()}`);
+        if (safeMeta.relevance_score) parts.push(`- **Relevance Score**: ${String(safeMeta.relevance_score).trim()}`);
+        if (safeMeta.author_score) parts.push(`- **Author Score**: ${String(safeMeta.author_score).trim()}`);
+        if (safeMeta.author_rating_explanation) parts.push(`- **Author Rating**: ${String(safeMeta.author_rating_explanation).trim()}`);
         if (safeMeta.evidence) parts.push(`- **Evidence**: ${String(safeMeta.evidence).trim()}`);
         if (safeMeta.tldr) parts.push(`- **TLDR**: ${String(safeMeta.tldr).trim()}`);
-        parts.push(`- **原始页面**: ${pageUrl}`);
-        parts.push(`- **生成时间**: ${new Date().toISOString()}`);
+        parts.push(`- **Source Page**: ${pageUrl}`);
+        parts.push(`- **Generated At**: ${new Date().toISOString()}`);
         parts.push('');
         parts.push('---');
         parts.push('');
@@ -2301,10 +2454,10 @@ window.$docsify = {
         parts.push('');
         parts.push('---');
         parts.push('');
-        parts.push('## 💬 Chat History（本机记录）');
+        parts.push('## 💬 Chat History (Local Record)');
         parts.push('');
         if (!chatMessages || !chatMessages.length) {
-          parts.push('暂无对话。');
+          parts.push('No chat history.');
           return parts.join('\n');
         }
         chatMessages.forEach((m) => {
@@ -2313,7 +2466,7 @@ window.$docsify = {
           const content = m && m.content ? String(m.content) : '';
           if (role === 'thinking') {
             parts.push('<details>');
-            parts.push(`<summary>🧠 思考过程 ${time ? `(${time})` : ''}</summary>`);
+            parts.push(`<summary>🧠 Reasoning ${time ? `(${time})` : ''}</summary>`);
             parts.push('');
             parts.push('```');
             parts.push(content);
@@ -2322,7 +2475,7 @@ window.$docsify = {
             parts.push('');
             return;
           }
-          const label = role === 'ai' ? '🤖 AI' : role === 'user' ? '👤 你' : role;
+          const label = role === 'ai' ? '🤖 AI' : role === 'user' ? '👤 User' : role;
           parts.push(`### ${label}${time ? ` (${time})` : ''}`);
           parts.push(content);
           parts.push('');
@@ -2337,16 +2490,16 @@ window.$docsify = {
         overlay.id = 'dpr-gist-share-overlay';
         overlay.innerHTML = `
           <div class="dpr-gist-share-modal" role="dialog" aria-modal="true">
-            <div class="dpr-gist-share-title">分享链接</div>
+            <div class="dpr-gist-share-title">Share Link</div>
             <div class="dpr-gist-share-row">
               <input class="dpr-gist-share-input" type="text" readonly />
-              <button class="dpr-gist-share-copy" type="button">复制</button>
+              <button class="dpr-gist-share-copy" type="button">Copy</button>
             </div>
             <div class="dpr-gist-share-hint"></div>
           </div>
         `;
         overlay.addEventListener('pointerdown', (e) => {
-          // 点空白处关闭
+          // 点空白处Close
           if (e && e.target === overlay) {
             overlay.classList.remove('show');
           }
@@ -2371,10 +2524,10 @@ window.$docsify = {
                 document.execCommand('copy');
               }
               const hint = overlay.querySelector('.dpr-gist-share-hint');
-              if (hint) hint.textContent = '已复制';
+              if (hint) hint.textContent = 'Copied';
             } catch {
               const hint = overlay.querySelector('.dpr-gist-share-hint');
-              if (hint) hint.textContent = '复制失败，请手动复制';
+              if (hint) hint.textContent = 'Copy failed. Copy manually.';
             }
           });
         }
@@ -2399,7 +2552,7 @@ window.$docsify = {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            description: '论文分享（Daily Paper Reader）',
+            description: 'Paper share (Daily Paper Reader)',
             public: false,
             files: {
               [filename]: { content },
@@ -2409,18 +2562,18 @@ window.$docsify = {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           const msg = data && data.message ? String(data.message) : '';
-          // GitHub 对不支持/无权限的 token（尤其是 fine-grained PAT 不支持 Gist）经常返回 404 Not Found
+          // GitHub 对不支持/none权限的 token (尤其是 fine-grained PAT 不支持 Gist)经常返回 404 Not Found
           if (res.status === 404) {
             throw new Error(
-              'Not Found（常见原因：你用的是 Fine-grained PAT，GitHub Gist API 不支持；请改用 Classic PAT 并勾选 gist 权限）',
+              'Not Found. Common cause: Fine-grained PAT is unsupported by the GitHub Gist API. Use a Classic PAT with gist permission.',
             );
           }
           if (res.status === 401) {
-            throw new Error('未授权（Token 无效或已过期）');
+            throw new Error('Unauthorized: token is invalid or expired');
           }
           if (res.status === 403) {
             throw new Error(
-              `权限不足（需要 Classic PAT 勾选 gist 权限）。${msg ? `详情：${msg}` : ''}`.trim(),
+              `Insufficient permission: use a Classic PAT with gist permission.${msg ? `Details: ${msg}` : ''}`.trim(),
             );
           }
           throw new Error(msg || `HTTP ${res.status}`);
@@ -2431,7 +2584,7 @@ window.$docsify = {
       const sharePaperToGist = async (paperId) => {
         const token = loadGithubTokenForGist();
         if (!token) {
-          showShareModal('', '未检测到 GitHub Token，请先在首页配置 GitHub Token。');
+          showShareModal('', 'No GitHub Token detected. Configure it on the homepage first.');
           return;
         }
         const pageMd = await fetchPaperMarkdownById(paperId);
@@ -2444,7 +2597,7 @@ window.$docsify = {
         const data = await createGist(token, filename, content);
         const url = data && data.html_url ? String(data.html_url) : '';
         const preview = data && data.id ? `https://gist.io/${data.id}` : '';
-        showShareModal(url, preview ? `精美预览：${preview}` : '');
+        showShareModal(url, preview ? `Preview: ${preview}` : '');
       };
 
 	      const markSidebarReadState = (currentPaperId) => {
@@ -2489,10 +2642,10 @@ window.$docsify = {
 	          const paperIdFromHref = m[1].replace(/\/$/, '');
 	          const li = a.closest('li');
 	          if (!li) return;
-	          // 标记这是一个具体论文条目，方便样式细化（避免整天标题一起高亮）
+	          // 标记这是一个具体论文条目，方便样式细化 (避免整天标题一起高亮)
 	          li.classList.add('sidebar-paper-item');
 
-          // 为侧边栏条目追加"书签标记"按钮（绿/蓝/橙/红）
+          // 为侧边栏条目追加"书签标记"按钮 (绿/蓝/橙/红)
 	          let actionWrapper = li.querySelector('.sidebar-paper-rating-icons');
 	          let goodIcon = actionWrapper
 	            ? actionWrapper.querySelector('.sidebar-paper-rating-icon.good')
@@ -2507,7 +2660,7 @@ window.$docsify = {
 	            ? actionWrapper.querySelector('.sidebar-paper-rating-icon.bad')
 	            : null;
 
-          // 左侧按钮容器（分享 + 收藏）
+          // 左侧按钮容器 (分享 + Favorite)
           let leftActions = li.querySelector('.sidebar-paper-left-actions');
 	          if (!actionWrapper) {
 	            actionWrapper = document.createElement('span');
@@ -2515,26 +2668,26 @@ window.$docsify = {
 
 	            goodIcon = document.createElement('button');
 	            goodIcon.className = 'sidebar-paper-rating-icon good';
-	            goodIcon.title = '标记为「绿色书签」';
-	            goodIcon.setAttribute('aria-label', '绿色书签');
+	            goodIcon.title = 'Mark as green bookmark';
+	            goodIcon.setAttribute('aria-label', 'Green bookmark');
 	            goodIcon.innerHTML = '';
 
               blueIcon = document.createElement('button');
               blueIcon.className = 'sidebar-paper-rating-icon blue';
-              blueIcon.title = '标记为「蓝色书签」';
-              blueIcon.setAttribute('aria-label', '蓝色书签');
+              blueIcon.title = 'Mark as blue bookmark';
+              blueIcon.setAttribute('aria-label', 'Blue bookmark');
               blueIcon.innerHTML = '';
 
               orangeIcon = document.createElement('button');
               orangeIcon.className = 'sidebar-paper-rating-icon orange';
-              orangeIcon.title = '标记为「橙色书签」';
-              orangeIcon.setAttribute('aria-label', '橙色书签');
+              orangeIcon.title = 'Mark as orange bookmark';
+              orangeIcon.setAttribute('aria-label', 'Orange bookmark');
               orangeIcon.innerHTML = '';
 
 	            badIcon = document.createElement('button');
 	            badIcon.className = 'sidebar-paper-rating-icon bad';
-	            badIcon.title = '标记为「红色书签」';
-	            badIcon.setAttribute('aria-label', '红色书签');
+	            badIcon.title = 'Mark as red bookmark';
+	            badIcon.setAttribute('aria-label', 'Red bookmark');
 	            badIcon.innerHTML = '';
 
               // 创建左侧按钮容器
@@ -2543,21 +2696,21 @@ window.$docsify = {
 
               const favoriteIcon = document.createElement('button');
               favoriteIcon.className = 'sidebar-paper-favorite-icon';
-              favoriteIcon.title = '收藏';
-              favoriteIcon.setAttribute('aria-label', '收藏');
+              favoriteIcon.title = 'Favorite';
+              favoriteIcon.setAttribute('aria-label', 'Favorite');
               favoriteIcon.textContent = '☆';
               favoriteIcon.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // 切换收藏状态（功能待实现）
+                // 切换Favorite状态 (功能待实现)
                 const isActive = favoriteIcon.classList.toggle('active');
                 favoriteIcon.textContent = isActive ? '★' : '☆';
               });
 
               const shareIcon = document.createElement('button');
               shareIcon.className = 'sidebar-paper-share-icon';
-              shareIcon.title = '分享（生成 GitHub Gist 链接）';
-              shareIcon.setAttribute('aria-label', '分享');
+              shareIcon.title = 'Share (generate GitHub Gist link)';
+              shareIcon.setAttribute('aria-label', 'Share');
               shareIcon.textContent = '⤴';
 
               const setStateAndRefresh = (value) => {
@@ -2604,7 +2757,7 @@ window.$docsify = {
                   await sharePaperToGist(paperIdFromHref);
                 } catch (err) {
                   const msg = String(err && err.message ? err.message : err);
-                  showShareModal('', `上传失败：${msg}`);
+                  showShareModal('', `Upload failed: ${msg}`);
                 } finally {
                   shareIcon.disabled = false;
                   shareIcon.textContent = old || '⤴';
@@ -2617,7 +2770,7 @@ window.$docsify = {
 	              setStateAndRefresh('bad');
 	            });
 
-              // 左侧容器添加收藏和分享按钮
+              // 左侧容器添加Favorite和分享按钮
               leftActions.appendChild(favoriteIcon);
               leftActions.appendChild(shareIcon);
               a.parentNode.insertBefore(leftActions, a);
@@ -2630,7 +2783,7 @@ window.$docsify = {
 	            a.parentNode.insertBefore(actionWrapper, a.nextSibling);
 	          }
 
-	          // 无论按钮是否刚创建，都要基于“最新 state”刷新激活态（支持空格键切换）
+	          // none论按钮是否刚创建，都要基于“最新 state”刷新激活态 (支持空格键切换)
 	          try {
 	            const s = state[paperIdFromHref];
 	            if (goodIcon) goodIcon.classList.toggle('active', s === 'good');
@@ -2657,8 +2810,8 @@ window.$docsify = {
         const scoreNum = Number(scoreValue);
         const scoreText = Number.isFinite(scoreNum) ? scoreNum.toFixed(1) : '';
         const title = scoreText
-          ? `评分：${scoreText}/10（${rating.toFixed(1)}/5）`
-          : '评分：无';
+          ? `Score: ${scoreText}/10 (${rating.toFixed(1)}/5)`
+          : 'Score: none';
         const pct = Math.max(0, Math.min(100, (rating / 5) * 100));
         return (
           `<span class="dpr-stars" title="${escapeHtml(title)}" aria-label="${rating.toFixed(1)} out of 5">` +
@@ -2694,7 +2847,7 @@ window.$docsify = {
             }
           }
 
-          // 兼容历史 sidebar：从旧 DOM（title/tags/score）回填结构化数据
+          // 兼容历史 sidebar：从旧 DOM (title/tags/score)回填结构化数据
           if (!payload || typeof payload !== 'object') {
             const legacyTitle = String(
               (a.querySelector('.dpr-sidebar-title') && a.querySelector('.dpr-sidebar-title').textContent) ||
@@ -2705,7 +2858,7 @@ window.$docsify = {
             const legacyScoreTitle = String(
               (legacyScoreNode && legacyScoreNode.getAttribute('title')) || '',
             );
-            const scoreMatch = legacyScoreTitle.match(/评分：\s*([0-9]+(?:\.[0-9]+)?)\s*\/10/);
+            const scoreMatch = legacyScoreTitle.match(/Score: \s*([0-9]+(?:\.[0-9]+)?)\s*\/10/);
             const legacyScore = scoreMatch ? scoreMatch[1] : '-';
             const legacyTags = [];
             const tagNodes = a.querySelectorAll('.dpr-sidebar-tag');
@@ -2819,14 +2972,14 @@ window.$docsify = {
         let size = maxPx;
         el.style.fontSize = `${size}px`;
         // 逐步缩小直到不溢出或达到最小值
-        // 注意：scrollHeight > clientHeight 表示溢出（包含被 line-clamp 截断的情况）
+        // 注意：scrollHeight > clientHeight 表示溢出 (包含被 line-clamp 截断的情况)
         while (size > minPx && el.scrollHeight > el.clientHeight + 1) {
           size -= 1;
           el.style.fontSize = `${size}px`;
         }
       };
 
-      // 为切页动效准备一个“正文包装层”，避免把聊天浮层/白色遮罩一起做淡入淡出（否则会闪烁）
+      // 为切页动效准备一个“正文包装层”，避免把聊天浮层/白色遮罩一起做淡入淡出 (否则会闪烁)
       const DPR_PAGE_CONTENT_CLASS = 'dpr-page-content';
 
       const ensurePageContentRoot = () => {
@@ -2839,7 +2992,7 @@ window.$docsify = {
 
         const root = document.createElement('div');
         root.className = DPR_PAGE_CONTENT_CLASS;
-        // 将当前渲染出来的正文内容整体移入 root（此时 chat 模块尚未插入，避免把输入框一起移入）
+        // 将当前渲染出来的正文内容整体移入 root (此时 chat 模块尚未插入，避免把输入框一起移入)
         while (section.firstChild) {
           root.appendChild(section.firstChild);
         }
@@ -2885,7 +3038,7 @@ window.$docsify = {
         const h1s = Array.from(root.querySelectorAll('h1'));
         if (!h1s.length) return;
 
-        // 优先从带有 paper-title-zh / paper-title-en 类名的 h1 中获取标题（frontmatter 渲染）
+        // 优先从带有 paper-title-zh / paper-title-en 类名的 h1 中获取标题 (frontmatter 渲染)
         const paperTitleZh = root.querySelector('h1.paper-title-zh');
         const paperTitleEn = root.querySelector('h1.paper-title-en');
 
@@ -2898,7 +3051,7 @@ window.$docsify = {
           enTitle = paperTitleEn ? (paperTitleEn.textContent || '').trim() : '';
         } else {
           // 旧格式兼容：如果有两个 h1，则第一个为英文、第二个为中文；
-          // 如果只有一个 h1，则认为是"单标题"，放在左侧（cn 区）
+          // 如果只有一个 h1，则认为是"单标题"，放在左侧 (cn 区)
           enTitle = (h1s[0].textContent || '').trim();
           cnTitle = (h1s[1] ? (h1s[1].textContent || '').trim() : '').trim();
           if (h1s.length === 1) {
@@ -2907,14 +3060,14 @@ window.$docsify = {
           }
         }
 
-        // 兜底：若只有英文标题（缺少 title_zh），将英文挪到左侧显示，
-        // 避免 dpr-title-single 样式把右侧英文区域隐藏后出现“无标题”。
+        // 兜底：若只有英文标题 (缺少 title_zh)，将英文挪到左侧显示，
+        // 避免 dpr-title-single 样式把右侧英文区域隐藏后出现“none标题”。
         if (!cnTitle && enTitle) {
           cnTitle = enTitle;
           enTitle = '';
         }
 
-        // 隐藏原始 h1，但保留在 DOM 里供复制/SEO/元信息提取兜底
+        // 隐藏原始 h1，但保留在 DOM 里供Copy/SEO/元信息提取兜底
         h1s.forEach((h) => h.classList.add('dpr-title-hidden'));
 
         const bar = document.createElement('div');
@@ -2991,7 +3144,7 @@ window.$docsify = {
           return { el: DPR_SIDEBAR_ACTIVE_INDICATOR.el, newlyCreated: false };
         }
 
-        // 清理旧的（例如热更新/重复初始化场景）
+        // 清理旧的 (例如热更新/重复初始化场景)
         try {
           if (DPR_SIDEBAR_ACTIVE_INDICATOR.el && DPR_SIDEBAR_ACTIVE_INDICATOR.el.remove) {
             DPR_SIDEBAR_ACTIVE_INDICATOR.el.remove();
@@ -3056,7 +3209,7 @@ window.$docsify = {
           // ignore
         }
 
-        // 只对论文条目启用（避免日期分组标题等）
+        // 只对论文条目启用 (避免日期分组标题等)
         if (!li.classList || !li.classList.contains('sidebar-paper-item')) return;
         // 若该条目在折叠分组之下：隐藏高亮层，避免折叠后仍残留选中背景
         try {
@@ -3078,7 +3231,7 @@ window.$docsify = {
 
         showSidebarActiveIndicator();
 
-        // 选中高亮层配色：根据 good/bad 状态切换（用于“已打勾/打叉”的选中底色）
+        // 选中高亮层配色：根据 good/bad 状态切换 (用于“已打勾/打叉”的选中底色)
         try {
           const isGood =
             li.classList && li.classList.contains('sidebar-paper-good');
@@ -3088,7 +3241,7 @@ window.$docsify = {
           const isOrange =
             li.classList && li.classList.contains('sidebar-paper-orange');
 
-          // 单选：如果同时存在（理论上不应发生），按优先级取第一个
+          // 单选：如果同时存在 (理论上不应发生)，按优先级取第一个
           const any = isGood || isBad || isBlue || isOrange;
           indicator.classList.toggle('is-good', !!isGood && any && !isBad && !isBlue && !isOrange);
           indicator.classList.toggle('is-bad', !!isBad && any && !isGood && !isBlue && !isOrange);
@@ -3157,7 +3310,7 @@ window.$docsify = {
           }
         }
 
-        // 2) 兜底：如果存在多个 active，取最后一个（通常是更深层、当前真正选中项）
+        // 2) 兜底：如果存在多个 active，取最后一个 (通常是更深层、当前真正选中项)
         const activeLis = Array.from(
           nav.querySelectorAll('li.active.sidebar-paper-item'),
         );
@@ -3193,7 +3346,7 @@ window.$docsify = {
         }
         decoded = String(decoded || '').trim();
         if (!decoded) return '';
-        // 统一为无 .md 的路由形式
+        // 统一为none .md 的路由形式
         decoded = decoded.replace(/\.md$/i, '');
         if (!decoded.startsWith('/')) decoded = '/' + decoded;
         return '#'+ decoded;
@@ -3332,7 +3485,7 @@ window.$docsify = {
       };
 
       const centerSidebarOnCurrent = () => {
-        // 优先跟随 Docsify 的“active”状态（这才是你看到的选中项）
+        // 优先跟随 Docsify 的“active”状态 (这才是你看到的选中项)
         const nav = document.querySelector('.sidebar-nav');
         if (nav) {
           const activeLi = nav.querySelector('li.active');
@@ -3403,7 +3556,7 @@ window.$docsify = {
         const list = reportMode ? reportList : paperList;
         if (!list.length) return;
 
-        // 首页：右键/左滑（delta=+1）跳到最新一天第一篇
+        // 首页：右键/左滑 (delta=+1)跳到最新一天第一篇
         if (isHome) {
           if (delta > 0) {
             triggerPageNav(list[0], 'forward');
@@ -3548,7 +3701,7 @@ window.$docsify = {
         try {
           const res = await fetch(url, { cache: 'force-cache' });
           if (!res.ok) return;
-          // 读一下 body，确保写入浏览器缓存（同时做内存缓存兜底）
+          // 读一下 body，确保写入浏览器缓存 (同时做内存缓存兜底)
           const text = await res.text();
           PREFETCH_STATE.cache.set(key, { ts: now, len: text.length });
         } catch {
@@ -3617,7 +3770,7 @@ window.$docsify = {
           }
 	          saveReadState(state);
 	          markSidebarReadState(null);
-	          // 同步选中高亮层颜色（good <-> read 切换时避免残留绿色底）
+	          // 同步选中高亮层颜色 (good <-> read 切换时避免残留绿色底)
 	          requestAnimationFrame(() => {
 	            syncSidebarActiveIndicator({ animate: false });
 	          });
@@ -3633,7 +3786,7 @@ window.$docsify = {
 
           const state = loadReadState();
           const cur = state[paperId];
-          // 切换：如果当前已是该状态则取消（变为 read），否则设置为该状态
+          // 切换：如果当前已是该状态则取消 (变为 read)，否则设置为该状态
           if (cur === bookmarkType) {
             state[paperId] = 'read';
           } else {
@@ -3668,7 +3821,7 @@ window.$docsify = {
           }
           if (key === '3') {
             e.preventDefault();
-            toggleBookmarkForCurrent('orange'); // 紫色（橙色）
+            toggleBookmarkForCurrent('orange'); // 紫色 (橙色)
             return;
           }
           if (key === '4') {
@@ -3678,7 +3831,7 @@ window.$docsify = {
           }
 
           if (key === ' ') {
-            // 空格键：切换"不错（绿色勾）"
+            // 空格键：切换"不错 (绿色勾)"
             e.preventDefault();
             toggleGoodForCurrent();
             return;
@@ -3690,11 +3843,11 @@ window.$docsify = {
           navigateByDelta(key === 'ArrowRight' ? +1 : -1);
         });
 
-        // 点击论文链接也走同一套“整页切换”动效（避免只有滑动/方向键有动画）
+        // 点击论文链接也走同一套“整页切换”动效 (避免只有滑动/方向键有动画)
         document.addEventListener('click', (e) => {
           try {
             if (!e || e.defaultPrevented) return;
-            // 仅拦截普通左键点击，避免影响新标签页/复制链接等行为
+            // 仅拦截普通左键点击，避免影响新标签页/Copy链接等行为
             if (typeof e.button === 'number' && e.button !== 0) return;
             if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
 
@@ -3704,7 +3857,7 @@ window.$docsify = {
             if (link.classList && link.classList.contains('dpr-sidebar-export-link')) return;
             const rawHref = String(link.getAttribute('href') || '').trim();
             if (rawHref.startsWith('blob:')) return;
-            // 跳过外部链接（如 PDF 地址），让浏览器直接打开
+            // 跳过外部链接 (如 PDF 地址)，让浏览器直接打开
             if (/^https?:\/\//i.test(rawHref)) return;
             const href = link.getAttribute('href') || '';
             const target = normalizeHref(href);
@@ -3729,7 +3882,7 @@ window.$docsify = {
               }
             }
 
-            // 只在论文页启用动效拦截，避免首页点击出现“无动画但有延迟”的体验
+            // 只在论文页启用动效拦截，避免首页点击出现“none动画但有延迟”的体验
             if (document.body && document.body.classList.contains('dpr-paper-page') && !prefersReducedMotion()) {
               e.preventDefault();
               triggerPageNav(target, direction);
@@ -3800,8 +3953,8 @@ window.$docsify = {
           if (dt > 900) return;
           if (Math.abs(dx) < threshold) return;
           if (Math.abs(dx) < Math.abs(dy) * 1.2) return;
-          // dx < 0：向左滑 => 下一篇（相当于 ArrowRight）
-          // dx > 0：向右滑 => 上一篇（相当于 ArrowLeft）
+          // dx < 0：向左滑 => 下一篇 (相当于 ArrowRight)
+          // dx > 0：向右滑 => 上一篇 (相当于 ArrowLeft)
           DPR_NAV_STATE.lastNavSource = 'swipe';
           navigateByDelta(dx < 0 ? +1 : -1);
         };
@@ -3823,7 +3976,7 @@ window.$docsify = {
         const yamlStr = content.slice(4, endIdx).trim();
         const body = content.slice(endIdx + 4).trim();
 
-        // 简单解析 YAML（不依赖外部库）
+        // 简单解析 YAML (不依赖外部库)
         const meta = {};
         const lines = yamlStr.split('\n');
         for (const line of lines) {
@@ -4018,7 +4171,7 @@ window.$docsify = {
           '<div class="paper-media-summary">',
           '<div>',
           '<div class="paper-media-summary-kicker">Paper Media</div>',
-          '<div class="paper-media-summary-title">图表附件</div>',
+          '<div class="paper-media-summary-title">Figure and Table Attachments</div>',
           '</div>',
           '<div class="paper-media-summary-cards">',
           figureButton,
@@ -4027,15 +4180,15 @@ window.$docsify = {
           '</div>',
           '<div class="paper-media-modal" data-paper-media-modal aria-hidden="true">',
           '<div class="paper-media-backdrop" data-paper-media-close></div>',
-          '<div class="paper-media-dialog" role="dialog" aria-modal="true" aria-label="论文图表附件" tabindex="-1">',
+          '<div class="paper-media-dialog" role="dialog" aria-modal="true" aria-label="论文Figure and Table Attachments" tabindex="-1">',
           '<div class="paper-media-dialog-head">',
           '<div>',
           '<div class="paper-media-dialog-kicker">Paper Media</div>',
-          '<div class="paper-media-dialog-title">论文图表附件</div>',
+          '<div class="paper-media-dialog-title">论文Figure and Table Attachments</div>',
           '</div>',
           '<div class="paper-media-dialog-actions">',
-          '<button class="paper-media-fullscreen" type="button" data-paper-media-fullscreen aria-pressed="false" aria-label="全屏查看">全屏</button>',
-          '<button class="paper-media-close" type="button" data-paper-media-close aria-label="关闭">×</button>',
+          '<button class="paper-media-fullscreen" type="button" data-paper-media-fullscreen aria-pressed="false" aria-label="View Fullscreen">Fullscreen</button>',
+          '<button class="paper-media-close" type="button" data-paper-media-close aria-label="Close">×</button>',
           '</div>',
           '</div>',
           `<div class="paper-media-tabs">${tabButtons}</div>`,
@@ -4072,8 +4225,8 @@ window.$docsify = {
             modal.classList.toggle('is-fullscreen', !!enabled);
             if (fullscreenButton) {
               fullscreenButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-              fullscreenButton.textContent = enabled ? '退出全屏' : '全屏';
-              fullscreenButton.setAttribute('aria-label', enabled ? '退出全屏查看' : '全屏查看');
+              fullscreenButton.textContent = enabled ? '退出Fullscreen' : 'Fullscreen';
+              fullscreenButton.setAttribute('aria-label', enabled ? '退出View Fullscreen' : 'View Fullscreen');
             }
           };
           const activate = (name) => {
@@ -4247,7 +4400,7 @@ window.$docsify = {
         document.body.classList.remove('dpr-pdf-preview-open');
         document.querySelectorAll('[data-pdf-preview-toggle]').forEach((btn) => {
           btn.setAttribute('aria-expanded', 'false');
-          btn.textContent = '预览 PDF';
+          btn.textContent = 'Preview PDF';
         });
       };
 
@@ -4271,16 +4424,16 @@ window.$docsify = {
         panel = document.createElement('aside');
         panel.id = 'dpr-pdf-preview-panel';
         panel.className = 'dpr-pdf-preview-panel';
-        panel.setAttribute('aria-label', 'PDF 预览');
+        panel.setAttribute('aria-label', 'PDF Preview');
         panel.innerHTML = [
           '<div class="dpr-pdf-preview-header">',
-          '<div class="dpr-pdf-preview-title">PDF 预览</div>',
+          '<div class="dpr-pdf-preview-title">PDF Preview</div>',
           '<div class="dpr-pdf-preview-actions">',
-          '<a class="dpr-pdf-preview-open-link" href="#" target="_blank" rel="noopener">新窗口打开</a>',
-          '<button class="dpr-pdf-preview-close" type="button" aria-label="关闭 PDF 预览">×</button>',
+          '<a class="dpr-pdf-preview-open-link" href="#" target="_blank" rel="noopener">Open in New Window</a>',
+          '<button class="dpr-pdf-preview-close" type="button" aria-label="Close PDF Preview">×</button>',
           '</div>',
           '</div>',
-          '<iframe class="dpr-pdf-preview-frame" title="PDF 预览"></iframe>',
+          '<iframe class="dpr-pdf-preview-frame" title="PDF Preview"></iframe>',
         ].join('');
         document.body.appendChild(panel);
         panel.querySelector('.dpr-pdf-preview-close')?.addEventListener('click', closePdfPreview);
@@ -4307,7 +4460,7 @@ window.$docsify = {
             const nextOpen = !document.body.classList.contains('dpr-pdf-preview-open');
             document.body.classList.toggle('dpr-pdf-preview-open', nextOpen);
             btn.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
-            btn.textContent = nextOpen ? '关闭预览' : '预览 PDF';
+            btn.textContent = nextOpen ? 'Close预览' : 'Preview PDF';
           });
         });
       };
@@ -4349,6 +4502,52 @@ window.$docsify = {
           }
           return `<span class="tag-label tag-source">${escapeHtml(text)}</span>`;
         };
+        const splitAuthorAffiliationItems = (value) => {
+          const text = String(value || '').trim();
+          if (!text) return [];
+          return text
+            .split(/;\s+(?=[^;:：]{1,120}(?:\s*\([^)]*\))?\s*[:：])/)
+            .map((item) => item.trim())
+            .filter(Boolean);
+        };
+        const parseAuthorAffiliationItems = (value) => splitAuthorAffiliationItems(value)
+          .map((item) => {
+            const match = item.match(/^(.+?)(?:\s*\(([^)]*)\))?\s*[:：]\s*(.+)$/);
+            if (!match) {
+              return { name: '', role: '', affiliation: item };
+            }
+            return {
+              name: String(match[1] || '').trim(),
+              role: String(match[2] || '').trim(),
+              affiliation: String(match[3] || '').trim(),
+            };
+          })
+          .filter((item) => item.name || item.affiliation);
+        const renderAuthorsAndAffiliations = (authors, authorAffiliations) => {
+          const authorText = String(authors || 'Unknown').trim() || 'Unknown';
+          const affiliationItems = parseAuthorAffiliationItems(authorAffiliations);
+          const lines = [
+            '<div class="paper-author-block">',
+            '<div class="paper-meta-label">Authors &amp; Affiliations</div>',
+            `<div class="paper-author-list">${escapeHtml(authorText)}</div>`,
+          ];
+          if (affiliationItems.length) {
+            lines.push('<div class="paper-affiliation-list">');
+            affiliationItems.forEach((item) => {
+              const heading = item.name || 'Affiliation';
+              const role = item.role ? `<span class="paper-author-role">${escapeHtml(item.role)}</span>` : '';
+              lines.push(
+                '<div class="paper-affiliation-item">'
+                + `<div class="paper-affiliation-author">${escapeHtml(heading)}${role}</div>`
+                + `<div class="paper-affiliation-text">${escapeHtml(item.affiliation || '-')}</div>`
+                + '</div>'
+              );
+            });
+            lines.push('</div>');
+          }
+          lines.push('</div>');
+          return lines.join('');
+        };
 
         const lines = [];
 
@@ -4378,7 +4577,7 @@ window.$docsify = {
 
         // 右侧：基本信息
         lines.push('<div class="paper-meta-right">');
-        lines.push(`<p><strong>Authors</strong>: ${escapeHtml(meta.authors || 'Unknown')}</p>`);
+        lines.push(renderAuthorsAndAffiliations(meta.authors, meta.author_affiliations));
         if (meta.source) {
           lines.push(`<p><strong>Source</strong>: ${renderSourceChips(meta.source)}</p>`);
         }
@@ -4393,6 +4592,15 @@ window.$docsify = {
         }
         if (meta.score !== undefined && meta.score !== null) {
           lines.push(`<p><strong>Score</strong>: ${escapeHtml(String(meta.score))}</p>`);
+        }
+        if (meta.relevance_score !== undefined && meta.relevance_score !== null) {
+          lines.push(`<p><strong>Relevance Score</strong>: ${escapeHtml(String(meta.relevance_score))}</p>`);
+        }
+        if (meta.author_score !== undefined && meta.author_score !== null) {
+          lines.push(`<p><strong>Author Score</strong>: ${escapeHtml(String(meta.author_score))}</p>`);
+        }
+        if (meta.author_rating_explanation) {
+          lines.push(`<p><strong>Author Rating</strong>: ${escapeHtml(String(meta.author_rating_explanation))}</p>`);
         }
         lines.push('</div>');
 
@@ -4435,7 +4643,7 @@ window.$docsify = {
           lines.push(renderPaperMediaCarousels(figures, tables));
         }
 
-        // 注意：在 Markdown 中插入 HTML block（如 <hr>）后，需要一个“空行”才能让后续的 `##` 等 Markdown 正常解析。
+        // 注意：在 Markdown 中插入 HTML block (如 <hr>)后，需要一个“空行”才能让后续的 `##` 等 Markdown 正常解析。
         // 这里通过追加两个空行，确保最终输出以 `<hr>\n\n` 结尾。
         lines.push('<hr>');
         lines.push('');
@@ -4516,12 +4724,12 @@ window.$docsify = {
           // ignore
         }
 
-        // 当前路由对应的“论文 ID”（简单用文件名去掉 .md）
+        // 当前路由对应的“论文 ID” (简单用文件名去掉 .md)
         const paperId = getPaperId();
         const routePath = vm.route && vm.route.path ? vm.route.path : '';
         const lowerId = (paperId || '').toLowerCase();
 
-        // 首页（如 README.md 或根路径）不展示研讨区，只做数学渲染和 Zotero 元数据更新
+        // 首页 (如 README.md 或根路径)不展示研讨区，只做数学渲染和 Zotero 元数据更新
         const isHomePage =
           !paperId ||
           lowerId === 'readme' ||
@@ -4538,7 +4746,7 @@ window.$docsify = {
           modal.setAttribute('aria-hidden', 'true');
         });
 
-        // A. 对正文区域进行一次全局公式渲染（支持 $...$ / $$...$$）
+        // A. 对正文区域进行一次全局公式渲染 (支持 $...$ / $$...$$)
         const mainContent = document.querySelector('.markdown-section');
         if (mainContent) {
           // 先创建正文包装层，避免后续切页动画影响聊天浮层
@@ -4546,20 +4754,20 @@ window.$docsify = {
           renderMathInEl(root || mainContent);
         }
 
-        // 论文页标题条排版（只对 docs/YYYYMM/DD/*.md 生效）
+        // 论文页标题条排版 (只对 docs/YYYYMM/DD/*.md 生效)
         applyPaperTitleBar();
         bindPdfPreviewToggle();
 
-        // 论文页左右切换：更新导航列表并绑定事件（只绑定一次）
+        // 论文页左右切换：更新导航列表并绑定事件 (只绑定一次)
         updateNavState();
         ensureNavHandlers();
-        // 预取相邻论文的 Markdown（利用浏览器 cache，让切换更丝滑）
+        // 预取相邻论文的 Markdown (利用浏览器 cache，让切换更丝滑)
         prefetchAdjacent();
 
         // 页面入场动画：根据上一跳的方向做滑入
         const animEl = getPageAnimEl();
         if (animEl) {
-          // 清理上一次退场残留（防止极端情况下没清掉）
+          // 清理上一次退场残留 (防止极端情况下没清掉)
           animEl.classList.remove(
             'dpr-page-exit',
             'dpr-page-exit-left',
@@ -4615,7 +4823,7 @@ window.$docsify = {
           markSidebarReadState(null);
         }
 
-        // 让滑动高亮层跟随当前 active 项（点击、路由变化后会更新 active 类）
+        // 让滑动高亮层跟随当前 active 项 (点击、路由变化后会更新 active 类)
         try {
           const movedByNavAnim = !!DPR_SIDEBAR_ACTIVE_INDICATOR.justMoved;
           if (!movedByNavAnim) {
@@ -4663,7 +4871,7 @@ window.$docsify = {
         }, 1); // 延迟执行，等待 DOM 渲染完毕
       });
       // ----------------------------------------------------
-      // I. 响应式侧边栏：窄屏首次加载时确保收起（仅移除 close 类）
+      // I. 响应式侧边栏：窄屏首次加载时确保收起 (仅移除 close 类)
       // ----------------------------------------------------
       const SIDEBAR_AUTO_COLLAPSE_WIDTH = 1024;
 

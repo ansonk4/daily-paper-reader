@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 import threading
@@ -120,6 +121,104 @@ def update_env_file(path: Path, values: dict[str, str]) -> None:
         if key not in updated_keys:
             next_lines.append(f"{key}={quote_env_value(clean_values[key])}")
     path.write_text("\n".join(next_lines).rstrip() + "\n", encoding="utf-8")
+
+
+def normalize_result_token(value: Any) -> str:
+    token = norm_text(value)
+    if not token:
+        raise ValueError("missing result token")
+    if not (
+        len(token) == 8
+        and token.isdigit()
+        or len(token) == 17
+        and token[:8].isdigit()
+        and token[8] == "-"
+        and token[9:].isdigit()
+    ):
+        raise ValueError("invalid result token")
+    return token
+
+
+def result_token_to_docs_rel(token: str) -> Path:
+    token = normalize_result_token(token)
+    if "-" in token:
+        return Path(token)
+    return Path(token[:6]) / token[6:]
+
+
+def format_result_label(token: str) -> str:
+    token = normalize_result_token(token)
+
+    def fmt(part: str) -> str:
+        return f"{part[:4]}-{part[4:6]}-{part[6:]}"
+
+    if "-" in token:
+        left, right = token.split("-", 1)
+        return f"{fmt(left)} ~ {fmt(right)}"
+    return fmt(token)
+
+
+def remove_sidebar_result_block(sidebar_path: Path, token: str) -> bool:
+    if not sidebar_path.exists():
+        return False
+    token = normalize_result_token(token)
+    marker = f"<!--dpr-date:{token}-->"
+    label = format_result_label(token)
+    lines = sidebar_path.read_text(encoding="utf-8").splitlines(keepends=True)
+    start = -1
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        if marker in line or stripped == f"* {label}" or stripped.startswith(f"* {label} "):
+            if line.startswith("  * "):
+                start = idx
+                break
+    if start < 0:
+        return False
+
+    end = start + 1
+    while end < len(lines):
+        if lines[end].startswith("  * ") and not lines[end].startswith("    * "):
+            break
+        if lines[end].startswith("* "):
+            break
+        end += 1
+    del lines[start:end]
+    sidebar_path.write_text("".join(lines), encoding="utf-8")
+    return True
+
+
+def delete_run_result(token: str) -> dict[str, Any]:
+    token = normalize_result_token(token)
+    docs_rel = result_token_to_docs_rel(token)
+    docs_path = ROOT_DIR / "docs" / docs_rel
+    archive_path = ROOT_DIR / "archive" / token
+    sidebar_path = ROOT_DIR / "docs" / "_sidebar.md"
+
+    removed: list[str] = []
+    if docs_path.exists():
+        if docs_path.is_dir():
+            shutil.rmtree(docs_path)
+        else:
+            docs_path.unlink()
+        removed.append(str(docs_path.relative_to(ROOT_DIR)))
+    if archive_path.exists():
+        if archive_path.is_dir():
+            shutil.rmtree(archive_path)
+        else:
+            archive_path.unlink()
+        removed.append(str(archive_path.relative_to(ROOT_DIR)))
+    sidebar_changed = remove_sidebar_result_block(sidebar_path, token)
+    if sidebar_changed:
+        removed.append(str(sidebar_path.relative_to(ROOT_DIR)))
+
+    return {
+        "token": token,
+        "label": format_result_label(token),
+        "docsPath": str(docs_path.relative_to(ROOT_DIR)),
+        "archivePath": str(archive_path.relative_to(ROOT_DIR)),
+        "sidebarChanged": sidebar_changed,
+        "removed": removed,
+    }
 
 
 class RunStore:
@@ -365,7 +464,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def end_headers(self) -> None:
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
@@ -376,6 +475,20 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path in {"", "/", "/index.html"}:
+            html = (ROOT_DIR / "index.html").read_text(encoding="utf-8")
+            html = html.replace(
+                "<head>",
+                "<head>\n  <script>window.DPR_DISABLE_CDN = '1';</script>",
+                1,
+            )
+            data = html.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         if parsed.path == "/api/local/health":
             return self._json({"ok": True, "mode": "local-debug", "time": utc_now()})
         if parsed.path == "/api/local/config":
@@ -410,6 +523,14 @@ class Handler(SimpleHTTPRequestHandler):
             return self._save_local_config()
         if parsed.path == "/api/local/secret":
             return self._save_local_secret()
+        if parsed.path.startswith("/api/local/results/") and parsed.path.endswith("/delete"):
+            try:
+                parts = parsed.path.strip("/").split("/")
+                token = parts[3] if len(parts) >= 4 else ""
+                result = delete_run_result(token)
+                return self._json({"ok": True, **result})
+            except Exception as exc:
+                return self._json({"ok": False, "error": str(exc)}, status=400)
         if parsed.path != "/api/local/workflows/dispatch":
             return self._json({"ok": False, "error": "not found"}, status=404)
         try:
@@ -426,6 +547,18 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json({"ok": True, "run": run})
         except Exception as exc:
             return self._json({"ok": False, "error": str(exc)}, status=400)
+
+    def do_DELETE(self) -> None:
+        parsed = urlparse(self.path)
+        if parsed.path.startswith("/api/local/results/"):
+            try:
+                parts = parsed.path.strip("/").split("/")
+                token = parts[3] if len(parts) >= 4 else ""
+                result = delete_run_result(token)
+                return self._json({"ok": True, **result})
+            except Exception as exc:
+                return self._json({"ok": False, "error": str(exc)}, status=400)
+        return self._json({"ok": False, "error": "not found"}, status=404)
 
     def _save_local_secret(self) -> None:
         try:

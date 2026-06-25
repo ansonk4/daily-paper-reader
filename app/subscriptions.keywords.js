@@ -1,5 +1,5 @@
 // 订阅关键词管理模块
-// 负责：渲染关键词列表、增加/删除关键词
+// 负责：渲染关键词列表、增加/Delete关键词
 
 window.SubscriptionsKeywords = (function () {
   let keywordsListEl = null;
@@ -24,7 +24,7 @@ window.SubscriptionsKeywords = (function () {
   const validateKeywordSyntax = (keyword) => {
     const raw = (keyword || '').trim();
     if (!raw) {
-      return { valid: false, message: '关键词不能为空' };
+      return { valid: false, message: 'Keyword cannot be empty' };
     }
     return { valid: true, message: '' };
   };
@@ -33,7 +33,7 @@ window.SubscriptionsKeywords = (function () {
     if (!keywordsListEl) return;
     if (!items || !items.length) {
       keywordsListEl.innerHTML =
-        '<div style="color:#999;">暂无关键词订阅，可在下方新增。</div>';
+        '<div style="color:#999;">No keyword subscriptions yet. Add one below.</div>';
       return;
     }
     keywordsListEl.innerHTML = '';
@@ -54,7 +54,7 @@ window.SubscriptionsKeywords = (function () {
         }${escapeHtml(item.keyword || '')}</span>
         <button data-id="${
           item.id
-        }" class="arxiv-keyword-del" style="border:none;background:none;color:#c00;font-size:11px;cursor:pointer;">删除</button>
+        }" class="arxiv-keyword-del" style="border:none;background:none;color:#c00;font-size:11px;cursor:pointer;">Delete</button>
       `;
       keywordsListEl.appendChild(row);
     });
@@ -72,7 +72,7 @@ window.SubscriptionsKeywords = (function () {
             !window.SubscriptionsManager ||
             !window.SubscriptionsManager.updateDraftConfig
           ) {
-            throw new Error('缺少本地草稿更新能力');
+            throw new Error('Local draft update capability is missing');
           }
           window.SubscriptionsManager.updateDraftConfig((cfg) => {
             const next = cfg || {};
@@ -92,7 +92,7 @@ window.SubscriptionsKeywords = (function () {
         } catch (err) {
           console.error(err);
           if (msgEl) {
-            msgEl.textContent = '删除关键词失败，请稍后重试';
+            msgEl.textContent = 'Failed to delete keyword. Try again later.';
             msgEl.style.color = '#c00';
           }
         }
@@ -106,7 +106,7 @@ window.SubscriptionsKeywords = (function () {
     const tag = (keywordAliasInput.value || '').trim();
     if (!keyword) {
       if (msgEl) {
-        msgEl.textContent = '关键词不能为空';
+        msgEl.textContent = 'Keyword cannot be empty';
         msgEl.style.color = '#c00';
       }
       return;
@@ -116,7 +116,7 @@ window.SubscriptionsKeywords = (function () {
     const { valid, message } = validateKeywordSyntax(keyword);
     if (!valid) {
       if (msgEl) {
-        msgEl.textContent = message || '关键词格式不合法';
+        msgEl.textContent = message || 'Invalid keyword format';
         msgEl.style.color = '#c00';
       }
       return;
@@ -124,7 +124,7 @@ window.SubscriptionsKeywords = (function () {
 
     if (!tag) {
       if (msgEl) {
-        msgEl.textContent = '标签为必填项';
+        msgEl.textContent = 'Tag is required';
         msgEl.style.color = '#c00';
       }
       return;
@@ -135,7 +135,7 @@ window.SubscriptionsKeywords = (function () {
         !window.SubscriptionsManager ||
         !window.SubscriptionsManager.updateDraftConfig
       ) {
-        throw new Error('缺少本地草稿更新能力');
+        throw new Error('Local draft update capability is missing');
       }
       window.SubscriptionsManager.updateDraftConfig((cfg) => {
         const next = cfg || {};
@@ -149,7 +149,7 @@ window.SubscriptionsKeywords = (function () {
       });
 
       if (msgEl) {
-        msgEl.textContent = '关键词已添加到本地草稿，点击「保存」后才会同步到云端。';
+        msgEl.textContent = 'Keyword added to the local draft. Click Save to sync it.';
         msgEl.style.color = '#666';
       }
       keywordInput.value = '';
@@ -158,7 +158,7 @@ window.SubscriptionsKeywords = (function () {
     } catch (e) {
       console.error(e);
       if (msgEl) {
-        msgEl.textContent = '新增关键词失败，请稍后重试';
+        msgEl.textContent = 'Failed to add keyword. Try again later.';
         msgEl.style.color = '#c00';
       }
     }
@@ -180,7 +180,7 @@ window.SubscriptionsKeywords = (function () {
 
     if (keywordInput && !keywordInput._advancedPlaceholderSet) {
       keywordInput._advancedPlaceholderSet = true;
-      keywordInput.placeholder = '输入关键词';
+      keywordInput.placeholder = 'Enter keyword';
     }
 
     if (addBtn && !addBtn._bound) {

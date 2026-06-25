@@ -1,0 +1,31 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Alberto Giaretta",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=943; Semantic Scholar paper_count=54",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "A Formal Resilience Framework for Cyber-Physical Embodied Systems under Device-Level Cyberattacks",
+        "paper_year": "2026",
+        "name": "A. Giaretta",
+        "affiliations": [],
+        "paper_count": 54,
+        "citation_count": 943,
+        "author_id": "40222097",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:30:59.574531+00:00"
+}

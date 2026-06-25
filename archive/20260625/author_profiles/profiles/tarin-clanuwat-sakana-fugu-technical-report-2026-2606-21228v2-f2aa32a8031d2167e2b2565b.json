@@ -1,0 +1,23 @@
+{
+  "name": "Tarin Clanuwat",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=4407; Semantic Scholar paper_count=123",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Thoroughly Remold the Localization and Signaling Pathway of TLR22",
+    "paper_year": 2020,
+    "name": "Jianguo Su",
+    "affiliations": [],
+    "paper_count": 123,
+    "citation_count": 4407,
+    "author_id": "3004193"
+  }
+}

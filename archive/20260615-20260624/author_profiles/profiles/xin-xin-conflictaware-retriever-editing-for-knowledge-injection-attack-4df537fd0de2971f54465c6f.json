@@ -1,0 +1,24 @@
+{
+  "name": "Xin Xin",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=295; Semantic Scholar paper_count=45",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Conflict-Aware Retriever Editing for Knowledge Injection Attacks on LLM-Based RAG Systems",
+    "paper_year": "2026",
+    "name": "X. Xin",
+    "affiliations": [],
+    "paper_count": 45,
+    "citation_count": 295,
+    "author_id": "47911352",
+    "lookup": "author_search"
+  }
+}

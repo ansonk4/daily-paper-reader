@@ -179,13 +179,13 @@ function testQuickRunUnsavedMessageClearsAfterSave() {
   __setQuickRunMsgEl(msgEl);
   __setUnsavedChanges(true);
   refreshQuickRunButtons();
-  assert.equal(msgEl.textContent, '有未保存修改，请先保存。');
+  assert.equal(msgEl.textContent, 'Unsaved changes. Save first.');
   assert.equal(msgEl.style.color, '#c00');
 
   __setUnsavedChanges(false);
   refreshQuickRunButtons();
   clearQuickRunUnsavedMessage();
-  assert.equal(msgEl.textContent, '配置已保存，可以发起快速抓取。');
+  assert.equal(msgEl.textContent, 'Configuration saved. Quick run is ready.');
   assert.equal(msgEl.style.color, '#080');
 }
 
@@ -194,9 +194,9 @@ function buildMockButton() {
   return {
     disabled: false,
     title: '',
-    textContent: '开始检索',
+    textContent: 'Start',
     getAttribute(name) {
-      if (name === 'data-default-title') return '一次性触发会议论文拉取任务';
+      if (name === 'data-default-title') return 'Trigger a one-time conference paper fetch';
       return '';
     },
     classList: {
@@ -225,14 +225,14 @@ function testConferenceRunDisabledWhenUnsaved() {
 
   assert.equal(btn.disabled, true);
   assert.equal(btn.classList.contains('chat-quick-run-item--disabled'), true);
-  assert.equal(btn.title, '请先保存后再检索会议论文。');
+  assert.equal(btn.title, 'Save before searching conference papers.');
 
   __setUnsavedChanges(false);
   refreshQuickRunButtons();
 
   assert.equal(btn.disabled, false);
   assert.equal(btn.classList.contains('chat-quick-run-item--disabled'), false);
-  assert.equal(btn.title, '一次性触发会议论文拉取任务');
+  assert.equal(btn.title, 'Trigger a one-time conference paper fetch');
   __setQuickRunConferenceBtn(null);
   __setRunSelectionState({});
   delete global.window.SubscriptionsSmartQuery;

@@ -123,6 +123,17 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             "link": "https://arxiv.org/pdf/1234.5678",
             "abstract": "abstract body",
             "source": "arxiv",
+            "llm_score": 8.4,
+            "relevance_score": 8.0,
+            "author_score": 9.0,
+            "author_rating_explanation": "Verified Stanford and OpenAI author backgrounds.",
+            "author_profiles": [
+                {
+                    "name": "Ada Lovelace",
+                    "role": "first_author",
+                    "affiliation": "Stanford University",
+                }
+            ],
             "_figure_assets": [
                 {
                     "url": "assets/figures/arxiv/1234.5678/fig-001.webp",
@@ -148,12 +159,46 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         meta = self.mod._parse_front_matter(md)
         self.assertIn("figures_json", meta)
         self.assertIn("tables_json", meta)
+        self.assertEqual(meta["score"], "8.4")
+        self.assertEqual(meta["relevance_score"], "8.0")
+        self.assertEqual(meta["author_score"], "9.0")
+        self.assertIn("Ada Lovelace", meta["author_affiliations"])
+        self.assertIn("Stanford University", meta["author_affiliations"])
+        self.assertIn("Verified Stanford", meta["author_rating_explanation"])
         figures = json.loads(meta["figures_json"])
         tables = json.loads(meta["tables_json"])
         self.assertEqual(len(figures), 1)
         self.assertEqual(figures[0]["url"], "assets/figures/arxiv/1234.5678/fig-001.webp")
         self.assertEqual(len(tables), 1)
         self.assertEqual(tables[0]["url"], "assets/tables/arxiv/1234.5678/table-001.webp")
+
+    def test_parse_author_score_fields_from_front_matter(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "paper.md"
+            path.write_text(
+                "\n".join(
+                    [
+                        "---",
+                        "title: Test title",
+                        "authors: Ada Lovelace",
+                        "score: 8.4",
+                        "relevance_score: 8.0",
+                        "author_score: 9.0",
+                        "author_affiliations: \"Ada Lovelace (first_author): OpenAI\"",
+                        "author_rating_explanation: \"Verified OpenAI affiliation.\"",
+                        "---",
+                        "## Abstract",
+                        "abstract body",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            item = self.mod._parse_generated_md_to_meta(str(path), "pid", "quick")
+            self.assertEqual(item["score"], "8.4")
+            self.assertEqual(item["relevance_score"], "8.0")
+            self.assertEqual(item["author_score"], "9.0")
+            self.assertIn("OpenAI", item["author_affiliations"])
+            self.assertIn("Verified OpenAI", item["author_rating_explanation"])
 
     def test_maybe_generate_paper_media_accepts_biorxiv(self):
         calls = []

@@ -1,0 +1,39 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Aaditya Pai",
+      "role": "first_author",
+      "affiliation": "Data Science Institute; Columbia University",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=2; Semantic Scholar paper_count=2",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Aaditya Pai",
+        "affiliations": [
+          "Data Science Institute",
+          "Columbia University"
+        ],
+        "author_row": "Aaditya Pai"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Evaluating Prompting-Based Defenses Against Domain-Camouflaged Injection Attacks",
+        "paper_year": "2026",
+        "name": "A. Pai",
+        "affiliations": [],
+        "paper_count": 2,
+        "citation_count": 2,
+        "author_id": "2438591099",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:54:51.835986+00:00"
+}

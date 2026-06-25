@@ -1,0 +1,36 @@
+{
+  "name": "Kaiyue Yang",
+  "role": "first_author",
+  "affiliation": "Institute of Information Engineering, Chinese Academy of Sciences; Beijing Academy of Artificial Intelligence; Southwest University; Harbin Medical University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=1620; OpenAlex works_count=64",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Kaiyue Yang",
+    "affiliations": [
+      "Institute of Information Engineering, Chinese Academy of Sciences",
+      "Beijing Academy of Artificial Intelligence"
+    ],
+    "author_row": "textbf Kaiyue Yang"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "When Lower Privileges Suffice: Investigating Over-Privileged Tool Selection in LLM Agents",
+    "paper_year": "2026",
+    "name": "Kaiyue Yang",
+    "affiliations": [
+      "Southwest University",
+      "Harbin Medical University",
+      "Chongqing Academy of Agricultural Sciences"
+    ],
+    "works_count": 64,
+    "cited_by_count": 1620,
+    "author_id": "https://openalex.org/A5075487281",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

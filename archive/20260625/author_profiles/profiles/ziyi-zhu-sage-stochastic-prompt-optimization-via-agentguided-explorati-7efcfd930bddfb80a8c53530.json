@@ -1,0 +1,31 @@
+{
+  "name": "Ziyi Zhu",
+  "role": "first_author",
+  "affiliation": "1 Slingshot AI 2 Department of Engineering, University of Cambridge",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=346; Semantic Scholar paper_count=12",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Ziyi Zhu",
+    "affiliations": [
+      "1 Slingshot AI 2 Department of Engineering, University of Cambridge"
+    ],
+    "author_row": "Ziyi Zhu 1 , Luka Smyth 1 , Saki Shinoda 1 , Jinghong Chen 2"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "SAGE: Stochastic Prompt Optimization via Agent-Guided Exploration",
+    "paper_year": "2026",
+    "name": "Ziyi Zhu",
+    "affiliations": [],
+    "paper_count": 12,
+    "citation_count": 346,
+    "author_id": "46637520",
+    "lookup": "author_search"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "author_score": 5.0,
+  "author_rating_explanation": "Author rating synthesized from available public metadata.",
+  "author_profiles": [
+    {
+      "name": "Sipeng Xie",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {}
+    },
+    {
+      "name": "Qin Wang",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {}
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-25T07:20:39.693356+00:00"
+}

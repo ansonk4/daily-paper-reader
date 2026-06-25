@@ -1,0 +1,24 @@
+{
+  "name": "Krishnamurthy Dj Dvijotham",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=6095; Semantic Scholar paper_count=138",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Efficient and Sound Probabilistic Verification for AI Agents",
+    "paper_year": "2026",
+    "name": "K. Dvijotham",
+    "affiliations": [],
+    "paper_count": 138,
+    "citation_count": 6095,
+    "author_id": "1729912",
+    "lookup": "author_search"
+  }
+}

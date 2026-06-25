@@ -1,0 +1,56 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Alaia Solko-Breslin",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=166; Semantic Scholar paper_count=9",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Efficient and Sound Probabilistic Verification for AI Agents",
+        "paper_year": "2026",
+        "name": "Alaia Solko-Breslin",
+        "affiliations": [],
+        "paper_count": 9,
+        "citation_count": 166,
+        "author_id": "2008669536",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Krishnamurthy Dj Dvijotham",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=6095; Semantic Scholar paper_count=138",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Efficient and Sound Probabilistic Verification for AI Agents",
+        "paper_year": "2026",
+        "name": "K. Dvijotham",
+        "affiliations": [],
+        "paper_count": 138,
+        "citation_count": 6095,
+        "author_id": "1729912",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "author_rating_status": "fallback",
+  "rated_at": "2026-06-25T04:53:03.045846+00:00"
+}

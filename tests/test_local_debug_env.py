@@ -112,6 +112,41 @@ class LocalDebugEnvTest(unittest.TestCase):
         self.assertLess(script.index("TOPIC_MARKER="), script.index("src/conference_pipeline.py"))
         self.assertLess(script.index("grep -Fq \"$TOPIC_MARKER\""), script.index("src/conference_pipeline.py"))
 
+    def test_delete_run_result_removes_docs_archive_and_sidebar_block(self):
+        old_root = self.mod.ROOT_DIR
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp_path = pathlib.Path(tmp)
+                self.mod.ROOT_DIR = tmp_path
+                docs_dir = tmp_path / "docs" / "20260616-20260625"
+                archive_dir = tmp_path / "archive" / "20260616-20260625"
+                docs_dir.mkdir(parents=True)
+                archive_dir.mkdir(parents=True)
+                docs_dir.joinpath("paper.md").write_text("# Paper\n", encoding="utf-8")
+                archive_dir.joinpath("result.json").write_text("{}", encoding="utf-8")
+                sidebar = tmp_path / "docs" / "_sidebar.md"
+                sidebar.write_text(
+                    "* Daily Papers\n"
+                    "  * 2026-06-16 ~ 2026-06-25 <!--dpr-date:20260616-20260625-->\n"
+                    "    * Deep Read\n"
+                    "      * [Paper](#/20260616-20260625/paper)\n"
+                    "  * 2017-06-12\n"
+                    "    * [Keep](#/201706/12/keep)\n",
+                    encoding="utf-8",
+                )
+
+                result = self.mod.delete_run_result("20260616-20260625")
+                text = sidebar.read_text(encoding="utf-8")
+
+                self.assertFalse(docs_dir.exists())
+                self.assertFalse(archive_dir.exists())
+                self.assertTrue(result["sidebarChanged"])
+                self.assertIn("docs/_sidebar.md", result["removed"])
+                self.assertNotIn("20260616-20260625", text)
+                self.assertIn("2017-06-12", text)
+        finally:
+            self.mod.ROOT_DIR = old_root
+
 
 if __name__ == "__main__":
     unittest.main()

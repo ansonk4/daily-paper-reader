@@ -1,0 +1,31 @@
+{
+  "name": "Raj Patel",
+  "role": "first_author",
+  "affiliation": "The University of Alabama, Alabama, USA",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=882; Semantic Scholar paper_count=14",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Raj Patel",
+    "affiliations": [
+      "The University of Alabama, Alabama, USA"
+    ],
+    "author_row": "Raj Patel"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Agentra: A Supervisable Multi-Agent Framework for Enterprise Intrusion Response",
+    "paper_year": "2026",
+    "name": "R. Patel",
+    "affiliations": [],
+    "paper_count": 14,
+    "citation_count": 882,
+    "author_id": "1846285588",
+    "lookup": "author_search"
+  }
+}

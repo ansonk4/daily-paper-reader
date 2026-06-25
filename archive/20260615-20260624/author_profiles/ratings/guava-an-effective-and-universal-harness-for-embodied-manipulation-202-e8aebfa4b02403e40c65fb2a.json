@@ -1,0 +1,46 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "Author rating synthesized from available public metadata.",
+  "author_profiles": [
+    {
+      "name": "Haowen Liu",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=3341; Semantic Scholar paper_count=106",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Guava: An Effective and Universal Harness for Embodied Manipulation",
+        "paper_year": "2026",
+        "name": "Haowen Liu",
+        "affiliations": [],
+        "paper_count": 106,
+        "citation_count": 3341,
+        "author_id": "2145501559",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Jiayuan Mao",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {}
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-25T07:21:37.951274+00:00"
+}

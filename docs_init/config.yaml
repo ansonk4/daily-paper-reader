@@ -27,52 +27,51 @@ subscriptions:
   keyword_recall_mode: or
   intent_profiles:
     - tag: SR
-      description: 符号回归
+      description: Symbolic regression
       enabled: true
       keywords:
         - keyword: symbolic regression
-          keyword_cn: 符号回归
+          keyword_cn: symbolic regression
           query: fundamental principles and methods of symbolic regression
         - keyword: genetic programming
-          keyword_cn: 遗传编程
+          keyword_cn: genetic programming
           query: evolutionary algorithms and genetic programming for symbolic regression
         - keyword: mathematical expression discovery
-          keyword_cn: 数学表达式发现
+          keyword_cn: mathematical expression discovery
           query: automated discovery of mathematical expressions from data
         - keyword: equation discovery
-          keyword_cn: 方程发现
+          keyword_cn: equation discovery
           query: algorithms for scientific equation discovery and modeling
         - keyword: interpretable machine learning
-          keyword_cn: 可解释机器学习
+          keyword_cn: interpretable machine learning
           query: interpretability and transparency of symbolic regression models
         - keyword: PySR
-          keyword_cn: PySR库
+          keyword_cn: PySR library
           query: high-performance symbolic regression libraries and tools
         - keyword: symbolic transformer
-          keyword_cn: 符号Transformer
+          keyword_cn: symbolic transformer
           query: neural symbolic regression using transformer architectures
         - keyword: physics-informed regression
-          keyword_cn: 物理启发回归
+          keyword_cn: physics-informed regression
           query: incorporating physical constraints into symbolic regression
       intent_queries:
         - query: state of the art symbolic regression algorithms
-          query_cn: 最先进的符号回归算法
+          query_cn: state of the art symbolic regression algorithms
           enabled: true
           source: manual
           note: ''
         - query: comparison between symbolic regression and neural networks
-          query_cn: 符号回归与神经网络的对比
+          query_cn: comparison between symbolic regression and neural networks
           enabled: true
           source: manual
           note: ''
         - query: applications of symbolic regression in physics and engineering
-          query_cn: 符号回归在物理与工程中的应用
+          query_cn: applications of symbolic regression in physics and engineering
           enabled: true
           source: manual
           note: ''
         - query: how to handle noisy data in symbolic regression
-          query_cn: 符号回归如何处理噪声数据
+          query_cn: how to handle noisy data in symbolic regression
           enabled: true
           source: manual
           note: ''
-      updated_at: '2026-03-02T03:40:27.571Z'

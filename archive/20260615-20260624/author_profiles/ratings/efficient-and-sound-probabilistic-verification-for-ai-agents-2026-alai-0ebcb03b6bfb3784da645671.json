@@ -1,0 +1,45 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Alaia Solko-Breslin",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {}
+    },
+    {
+      "name": "Krishnamurthy Dj Dvijotham",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=6095; Semantic Scholar paper_count=138",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Efficient and Sound Probabilistic Verification for AI Agents",
+        "paper_year": "2026",
+        "name": "K. Dvijotham",
+        "affiliations": [],
+        "paper_count": 138,
+        "citation_count": 6095,
+        "author_id": "1729912",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:29:00.849321+00:00"
+}

@@ -1,0 +1,68 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Aditya T. Vadlamani",
+      "role": "first_author",
+      "affiliation": "Ohio State University",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=13; Semantic Scholar paper_count=7",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Aditya T. Vadlamani",
+        "affiliations": [
+          "Ohio State University"
+        ],
+        "author_row": "Aditya T. Vadlamani"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Towards Auditing AI Systems in the Wild",
+        "paper_year": "2026",
+        "name": "Aditya T. Vadlamani",
+        "affiliations": [],
+        "paper_count": 7,
+        "citation_count": 13,
+        "author_id": "2295142688",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Srinivasan Parthasarathy",
+      "role": "last_author",
+      "affiliation": "Ohio State University",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=50295; Semantic Scholar paper_count=76",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Srinivasan Parthasarathy",
+        "affiliations": [
+          "Ohio State University"
+        ],
+        "author_row": "Srinivasan Parthasarathy"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Burden of 375 diseases and injuries, risk-attributable burden of 88 risk factors, and healthy life expectancy in 204 countries and territories, including 660 subnational locations, 1990–2023: a systematic analysis for the Global Burden of Disease Study 2023",
+        "paper_year": 2025,
+        "name": "D. Santomauro",
+        "affiliations": [],
+        "paper_count": 76,
+        "citation_count": 50295,
+        "author_id": "6731644"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:38:01.249821+00:00"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Wei-Bin Lee",
+  "role": "last_author",
+  "affiliation": "National Yang Ming Chiao Tung University * Hon Hai Research Institute",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Wei-Bin Lee",
+    "affiliations": [
+      "National Yang Ming Chiao Tung University * Hon Hai Research Institute"
+    ],
+    "author_row": "Po-Han Cheng Chia-Mu Yu Ying-Dar Lin Yu-Sung Wu Wei-Bin Lee *"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

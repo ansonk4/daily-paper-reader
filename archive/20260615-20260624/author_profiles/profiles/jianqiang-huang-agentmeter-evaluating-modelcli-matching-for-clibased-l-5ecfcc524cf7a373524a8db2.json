@@ -1,0 +1,33 @@
+{
+  "name": "Jianqiang Huang",
+  "role": "last_author",
+  "affiliation": "Computer Network Information Center, Chinese Academy of Sciences\\\\ Hangzhou Institute for Advanced Study, Chinese Academy of Sciences; Peking University, Meituan",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=869; Semantic Scholar paper_count=11",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Jianqiang Huang",
+    "affiliations": [
+      "Computer Network Information Center, Chinese Academy of Sciences\\\\ Hangzhou Institute for Advanced Study, Chinese Academy of Sciences"
+    ],
+    "author_row": "Han Chi, Jiaxin Qi, Yan Cui, Baisheng Lai, Jianqiang Huang"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "AgentMeter: Evaluating Model-CLI Matching for CLI-Based Local Task-Solving Agents",
+    "paper_year": "2026",
+    "name": "Jianqiang Huang",
+    "affiliations": [
+      "Peking University, Meituan"
+    ],
+    "paper_count": 11,
+    "citation_count": 869,
+    "author_id": "50535300",
+    "lookup": "author_search"
+  }
+}

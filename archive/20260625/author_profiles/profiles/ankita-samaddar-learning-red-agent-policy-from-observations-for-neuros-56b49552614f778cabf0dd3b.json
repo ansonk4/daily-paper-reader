@@ -1,0 +1,22 @@
+{
+  "name": "Ankita Samaddar",
+  "role": "first_author",
+  "affiliation": "Vanderbilt University; Nashville, TN",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Ankita Samaddar",
+    "affiliations": [
+      "Vanderbilt University",
+      "Nashville, TN"
+    ],
+    "author_row": "Ankita Samaddar, Sandeep Neema, Daniel Balasubramanian, Xenofon Koutsoukos Departmaent of Computer Science"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

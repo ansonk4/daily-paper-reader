@@ -41,7 +41,7 @@ window.SubscriptionsGithubToken = (function () {
     };
     try {
       if (!window.localStorage) {
-        throw new Error('当前浏览器不支持 localStorage。');
+        throw new Error('This browser does not support localStorage.');
       }
       window.localStorage.setItem(LOCAL_CONFIG_STORAGE_KEY, JSON.stringify(payload));
       return payload;
@@ -56,15 +56,15 @@ window.SubscriptionsGithubToken = (function () {
     const res = await fetch(getLocalApiUrl('/api/local/config'), { cache: 'no-store' });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      throw new Error(`读取本地 config.yaml 失败：HTTP ${res.status}${text ? ` - ${text}` : ''}`);
+      throw new Error(`Failed to read local config.yaml: HTTP ${res.status}${text ? ` - ${text}` : ''}`);
     }
     const data = await res.json().catch(() => ({}));
     if (!data || data.ok === false) {
-      throw new Error((data && data.error) || '读取本地 config.yaml 失败。');
+      throw new Error((data && data.error) || 'Failed to read local config.yaml.');
     }
     const yaml = window.jsyaml || window.jsYaml || window.jsYAML;
     if (!yaml || typeof yaml.load !== 'function') {
-      throw new Error('前端缺少 YAML 解析库（js-yaml），无法解析 config.yaml。');
+      throw new Error('The frontend is missing the YAML parser (js-yaml), so config.yaml cannot be parsed.');
     }
     const cfg = yaml.load(data.content || '') || {};
     return {
@@ -89,7 +89,7 @@ window.SubscriptionsGithubToken = (function () {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.ok) {
-      throw new Error((data && data.error) || `写入本地 config.yaml 失败：HTTP ${res.status}`);
+      throw new Error((data && data.error) || `Failed to write local config.yaml: HTTP ${res.status}`);
     }
     saveLocalConfigOverride(safeConfig, commitMessage);
     return {
@@ -172,7 +172,7 @@ window.SubscriptionsGithubToken = (function () {
       });
 
       if (!userRes.ok) {
-        throw new Error('Token 无效或已过期');
+        throw new Error('Token is invalid or expired');
       }
 
       const userData = await userRes.json();
@@ -190,9 +190,9 @@ window.SubscriptionsGithubToken = (function () {
         // 权限不足时直接返回失败结果，并带上现有权限列表，供 UI 做更友好的展示
         return {
           valid: false,
-          error: `Token 权限不足：缺少 ${missingScopes.join(
+          error: `Token permissions are insufficient. Missing: ${missingScopes.join(
             ', ',
-          )}。请使用 Classic Personal Access Token，并补充所示权限。`,
+          )}. Use a Classic Personal Access Token and add the listed permissions.`,
           scopes: scopeList,
           login: userData.login,
         };
@@ -200,7 +200,7 @@ window.SubscriptionsGithubToken = (function () {
 
       // 3. 获取当前页面的仓库信息
       // 规则：
-      // - 若运行在 localhost（含 127.0.0.1），默认仓库名为 daily-paper-reader，owner 为当前登录用户
+      // - 若运行在 localhost（含 127.0.0.1)，默认仓库名为 daily-paper-reader，owner 为当前登录用户
       // - 若运行在 username.github.io/repo-name，则从 URL 解析 owner/repo
       // - 其它域名：尝试从当前站点 config.yaml 中读取 github 信息
       const currentUrl = window.location.href;
@@ -210,7 +210,7 @@ window.SubscriptionsGithubToken = (function () {
       let repoOwner = '';
       let repoName = '';
 
-      // 情况 A：本地开发（localhost 或 127.0.0.1）
+      // 情况 A：本地开发（localhost 或 127.0.0.1)
       if (host === 'localhost' || host === '127.0.0.1') {
         repoOwner = userData.login || '';
         repoName = 'daily-paper-reader';
@@ -250,7 +250,7 @@ window.SubscriptionsGithubToken = (function () {
 
         if (!repoRes.ok) {
           throw new Error(
-            `无法访问仓库 ${repoOwner}/${repoName}，请确认 Token 权限`,
+            `Cannot access repository ${repoOwner}/${repoName}. Check token permissions`,
           );
         }
 
@@ -258,7 +258,7 @@ window.SubscriptionsGithubToken = (function () {
 
         if (!repoData.permissions || !repoData.permissions.push) {
           throw new Error(
-            `没有仓库 ${repoOwner}/${repoName} 的写入权限`,
+            `No write permission for repository ${repoOwner}/${repoName}`,
           );
         }
       }
@@ -270,7 +270,7 @@ window.SubscriptionsGithubToken = (function () {
         repo:
           repoOwner && repoName
             ? `${repoOwner}/${repoName}`
-            : '未检测到仓库',
+            : 'No repository detected',
         scopes: scopeList,
       };
     } catch (error) {
@@ -281,7 +281,7 @@ window.SubscriptionsGithubToken = (function () {
     }
   };
 
-  // 优先从密钥配置（secret.private 解密后的 decoded_secret_private）中获取 GitHub Token；
+  // 优先从密钥配置（secret.private 解密后的 decoded_secret_private)中获取 GitHub Token；
   // 若不存在，则回退到旧的本地存储 Token。
   const getTokenForConfig = () => {
     const secret = window.decoded_secret_private || {};
@@ -295,16 +295,16 @@ window.SubscriptionsGithubToken = (function () {
     return null;
   };
 
-  // 基于 Token 推断仓库 owner/name（复用 verifyGithubToken 的逻辑）
+  // 基于 Token 推断仓库 owner/name（复用 verifyGithubToken 的逻辑)
   const resolveRepoInfoFromToken = async (token, requireWorkflow = true) => {
     const result = await verifyGithubToken(token, { requireWorkflow });
     if (!result.valid) {
       throw new Error(
-        `GitHub Token 验证失败：${result.error || '原因未知'}`,
+        `GitHub Token verification failed: ${result.error || 'unknown reason'}`,
       );
     }
     if (!result.repo || !result.repo.includes('/')) {
-      throw new Error('无法从 GitHub Token 推断有效的仓库信息');
+      throw new Error('Cannot infer valid repository information from GitHub Token');
     }
     const parts = result.repo.split('/');
     const owner = parts[0];
@@ -312,11 +312,11 @@ window.SubscriptionsGithubToken = (function () {
     return { owner, repo, token };
   };
 
-  // 通过 GitHub API 读取 config.yaml（用于保存时获取最新 sha）
+  // 通过 GitHub API 读取 config.yaml（用于保存时获取最新 sha)
   const loadConfigFromGithub = async () => {
     const token = getTokenForConfig();
     if (!token) {
-      throw new Error('未配置有效的 GitHub Token，请先完成首页的新配置指引。');
+      throw new Error('No valid GitHub Token configured. Complete New Setup on the homepage first.');
     }
     const info = await resolveRepoInfoFromToken(token, false);
     const res = await fetch(
@@ -329,7 +329,7 @@ window.SubscriptionsGithubToken = (function () {
       },
     );
     if (!res.ok) {
-      throw new Error('无法读取 config.yaml，请确认文件已存在且 Token 有权限。');
+      throw new Error('Cannot read config.yaml. Confirm the file exists and the token has permission.');
     }
     const data = await res.json();
     const rawBase64 = (data.content || '').replace(/\n/g, '');
@@ -354,21 +354,21 @@ window.SubscriptionsGithubToken = (function () {
     }
     const yaml = window.jsyaml || window.jsYaml || window.jsYAML;
     if (!yaml || typeof yaml.load !== 'function') {
-      throw new Error('前端缺少 YAML 解析库（js-yaml），无法解析 config.yaml。');
+      throw new Error('The frontend is missing the YAML parser (js-yaml), so config.yaml cannot be parsed.');
     }
     const cfg = yaml.load(content) || {};
     return { config: cfg, sha: data.sha };
   };
 
-  // 从当前站点相对路径读取 config.yaml（无需 GitHub Token，仅用于前端展示）
-  // 注意：GitHub Pages 通常是 https://<user>.github.io/<repo>/，因此不能用绝对路径 /config.yaml（会指向域名根）。
+  // 从当前站点相对路径读取 config.yaml（无需 GitHub Token，仅用于前端展示)
+  // 注意：GitHub Pages 通常是 https://<user>.github.io/<repo>/，因此不能用绝对路径 /config.yaml（会指向域名根)。
   const loadConfig = async () => {
     try {
       if (isLocalDebugHost()) {
         try {
           return await loadLocalConfigFromDisk();
         } catch (diskError) {
-          console.warn('读取本地磁盘 config.yaml 失败，回退 localStorage：', diskError);
+          console.warn('Failed to read config.yaml from local disk; falling back to localStorage: ', diskError);
           const localOverride = loadLocalConfigOverride();
           if (localOverride) {
             return {
@@ -393,13 +393,13 @@ window.SubscriptionsGithubToken = (function () {
         try {
           const res = await fetch(url, { cache: 'no-store' });
           if (!res.ok) {
-            lastError = new Error(`无法读取 ${url}（HTTP ${res.status}）`);
+            lastError = new Error(`Cannot read ${url} (HTTP ${res.status})`);
             continue;
           }
           const text = await res.text();
           const yaml = window.jsyaml || window.jsYaml || window.jsYAML;
           if (!yaml || typeof yaml.load !== 'function') {
-            throw new Error('前端缺少 YAML 解析库（js-yaml），无法解析 config.yaml。');
+            throw new Error('The frontend is missing the YAML parser (js-yaml), so config.yaml cannot be parsed.');
           }
           const cfg = yaml.load(text || '') || {};
           return { config: cfg, sha: null, source: url };
@@ -407,9 +407,9 @@ window.SubscriptionsGithubToken = (function () {
           lastError = e;
         }
       }
-      throw lastError || new Error('无法读取本地 config.yaml（未知原因）');
+      throw lastError || new Error('无法读取本地 config.yaml（未知原因)');
     } catch (e) {
-      console.error('从站点读取 config.yaml 失败：', e);
+      console.error('Failed to read config.yaml from site: ', e);
       throw e;
     }
   };
@@ -424,14 +424,14 @@ window.SubscriptionsGithubToken = (function () {
 
     const token = getTokenForConfig();
     if (!token) {
-      throw new Error('未配置有效的 GitHub Token，请先完成首页的新配置指引。');
+      throw new Error('No valid GitHub Token configured. Complete New Setup on the homepage first.');
     }
     const info = await resolveRepoInfoFromToken(token, false);
     const { config: current, sha } = await loadConfigFromGithub();
     const next = typeof updater === 'function' ? updater({ ...(current || {}) }) || current : current;
     const yaml = window.jsyaml || window.jsYaml || window.jsYAML;
     if (!yaml || typeof yaml.dump !== 'function') {
-      throw new Error('前端缺少 YAML 序列化库（js-yaml），无法写入 config.yaml。');
+      throw new Error('前端缺少 YAML 序列化库（js-yaml)，无法写入 config.yaml。');
     }
     const newContent = yaml.dump(next, { lineWidth: 120 });
     const body = {
@@ -454,13 +454,13 @@ window.SubscriptionsGithubToken = (function () {
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new Error(
-        `写入 config.yaml 失败：${res.status} ${res.statusText} - ${text}`,
+        `Failed to write config.yaml: ${res.status} ${res.statusText} - ${text}`,
       );
     }
     return res.json();
   };
 
-  // 使用给定的 config 对象保存到远端 config.yaml（用于“保存”按钮）
+  // 使用给定的 config 对象保存到远端 config.yaml（用于“保存”按钮)
   const saveConfig = async (configObject, commitMessage = 'chore: save dashboard config from panel') => {
     if (isLocalDebugHost()) {
       return saveLocalConfigToDisk(configObject || {}, commitMessage);
@@ -468,14 +468,14 @@ window.SubscriptionsGithubToken = (function () {
 
     const token = getTokenForConfig();
     if (!token) {
-      throw new Error('未配置有效的 GitHub Token，请先完成首页的新配置指引。');
+      throw new Error('No valid GitHub Token configured. Complete New Setup on the homepage first.');
     }
     const info = await resolveRepoInfoFromToken(token, false);
     // 仅用于获取当前文件的 sha
     const { sha } = await loadConfigFromGithub();
     const yaml = window.jsyaml || window.jsYaml || window.jsYAML;
     if (!yaml || typeof yaml.dump !== 'function') {
-      throw new Error('前端缺少 YAML 序列化库（js-yaml），无法写入 config.yaml。');
+      throw new Error('前端缺少 YAML 序列化库（js-yaml)，无法写入 config.yaml。');
     }
     const safeConfig = configObject || {};
     const newContent = yaml.dump(safeConfig, { lineWidth: 120 });
@@ -499,7 +499,7 @@ window.SubscriptionsGithubToken = (function () {
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new Error(
-        `写入 config.yaml 失败：${res.status} ${res.statusText} - ${text}`,
+        `Failed to write config.yaml: ${res.status} ${res.statusText} - ${text}`,
       );
     }
     return res.json();
@@ -525,25 +525,25 @@ window.SubscriptionsGithubToken = (function () {
       const scopes = Array.isArray(data.scopes) ? data.scopes : [];
       githubTokenMessage.innerHTML = `
         <div style="color:#28a745; font-size:12px; line-height:1.6;">
-          <strong>✅ 验证成功！</strong><br>
-          用户: ${data.login || ''}<br>
-          仓库: ${data.repo || ''}<br>
-          权限: ${scopes.join(', ')}<br>
-          Gist 分享: 已开启
+          <strong>✅ Verification Succeeded!</strong><br>
+          User: ${data.login || ''}<br>
+          Repository: ${data.repo || ''}<br>
+          Scopes: ${scopes.join(', ')}<br>
+          Gist sharing: enabled
         </div>
       `;
     };
 
-    // 更新登录按钮状态（兼容旧逻辑；若没有按钮则直接忽略）
+    // 更新登录按钮状态（兼容旧逻辑；若没有按钮则直接忽略)
     const updateAuthButtonStatus = () => {
       if (!githubAuthBtn) return;
       const tokenData = loadGithubToken();
       if (tokenData && tokenData.token && tokenData.verified) {
-        githubAuthBtn.textContent = '登录成功';
+        githubAuthBtn.textContent = 'Logged in';
         githubAuthBtn.style.background = '#28a745';
         githubAuthBtn.style.color = 'white';
       } else {
-        githubAuthBtn.textContent = '未登录';
+        githubAuthBtn.textContent = 'Not logged in';
         githubAuthBtn.style.background = '#6c757d';
         githubAuthBtn.style.color = 'white';
       }
@@ -565,7 +565,7 @@ window.SubscriptionsGithubToken = (function () {
       }
     };
 
-    // 登录按钮点击事件 - 旧逻辑（当前已无按钮，这里仅保留兼容）
+    // 登录按钮点击事件 - 旧逻辑（当前已无按钮，这里仅保留兼容)
     if (githubAuthBtn && !githubAuthBtn._bound) {
       githubAuthBtn._bound = true;
       githubAuthBtn.addEventListener('click', () => {
@@ -600,7 +600,7 @@ window.SubscriptionsGithubToken = (function () {
       });
     }
 
-    // Token 验证并保存
+    // Token Verify and Save
     if (githubTokenVerifyBtn && !githubTokenVerifyBtn._bound) {
       githubTokenVerifyBtn._bound = true;
       githubTokenVerifyBtn.addEventListener('click', async () => {
@@ -608,14 +608,14 @@ window.SubscriptionsGithubToken = (function () {
 
         if (!token) {
           githubTokenMessage.innerHTML =
-            '<span style="color:#dc3545;">❌ 请输入 GitHub Token</span>';
+            '<span style="color:#dc3545;">❌ Enter GitHub Token</span>';
           return;
         }
 
         githubTokenVerifyBtn.disabled = true;
-        githubTokenVerifyBtn.textContent = '验证中...';
+        githubTokenVerifyBtn.textContent = 'Verifying...';
         githubTokenMessage.innerHTML =
-          '<span style="color:#666;">正在验证 Token...</span>';
+          '<span style="color:#666;">Verifying token...</span>';
         hideTokenInfo();
 
         const result = await verifyGithubToken(token);
@@ -641,13 +641,13 @@ window.SubscriptionsGithubToken = (function () {
         } else {
           const userText =
             result.login && typeof result.login === 'string'
-              ? `用户: ${result.login}<br>`
+              ? `User: ${result.login}<br>`
               : '';
           const scopesText =
             result.scopes && result.scopes.length
-              ? `现有权限: ${result.scopes.join(', ')}<br>`
-              : '现有权限: （无）<br>';
-          const gistHint = '当前配置要求使用 Classic PAT，并同时具备 repo、workflow、gist 权限。<br>';
+              ? `现有Scopes: ${result.scopes.join(', ')}<br>`
+              : '现有Scopes: （无)<br>';
+          const gistHint = 'Current configuration requires a Classic PAT with repo, workflow, and gist permissions.<br>';
           githubTokenMessage.innerHTML = `
             <div style="font-size:12px; line-height:1.6;">
               ${userText}${scopesText}${gistHint}
@@ -656,19 +656,19 @@ window.SubscriptionsGithubToken = (function () {
           `;
           hideTokenInfo();
 
-          // 验证失败时，如果有顶部按钮，则将其状态改为「验证失败」红色按钮
+          // Verification failed时，如果有顶部按钮，则将其状态改为「Verification failed」红色按钮
           if (githubAuthBtn) {
-            githubAuthBtn.textContent = '验证失败';
+            githubAuthBtn.textContent = 'Verification failed';
             githubAuthBtn.style.background = '#dc3545';
             githubAuthBtn.style.color = 'white';
           }
 
-          // 同时清除本地已保存的 Token，避免刷新后仍显示“登录成功”
+          // 同时清除本地已保存的 Token，避免刷新后仍显示“Logged in”
           clearGithubToken();
         }
 
         githubTokenVerifyBtn.disabled = false;
-        githubTokenVerifyBtn.textContent = '验证并保存';
+        githubTokenVerifyBtn.textContent = 'Verify and Save';
       });
     }
 
@@ -676,11 +676,11 @@ window.SubscriptionsGithubToken = (function () {
     if (githubTokenClearBtn && !githubTokenClearBtn._bound) {
       githubTokenClearBtn._bound = true;
       githubTokenClearBtn.addEventListener('click', () => {
-        if (confirm('确定要清除保存的 GitHub Token 吗？')) {
+        if (confirm('Clear the saved GitHub Token?')) {
           clearGithubToken();
           githubTokenInput.value = '';
           githubTokenMessage.innerHTML =
-            '<span style="color:#666;">Token 已清除</span>';
+            '<span style="color:#666;">Token cleared</span>';
           hideTokenInfo();
           updateAuthButtonStatus();
         }

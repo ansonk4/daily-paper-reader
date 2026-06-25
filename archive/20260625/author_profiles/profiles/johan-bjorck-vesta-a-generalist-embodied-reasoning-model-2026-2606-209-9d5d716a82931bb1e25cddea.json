@@ -1,0 +1,24 @@
+{
+  "name": "Johan Bjorck",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=6347; Semantic Scholar paper_count=31",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Vesta: A Generalist Embodied Reasoning Model",
+    "paper_year": "2026",
+    "name": "Johan Bjorck",
+    "affiliations": [],
+    "paper_count": 31,
+    "citation_count": 6347,
+    "author_id": "46278353",
+    "lookup": "author_search"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "Aaron Lee",
+  "role": "last_author",
+  "affiliation": "Data Scientist, SAP SE & ML Engineer, SAP SE & ML Engineer, SAP SE",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=1; Semantic Scholar paper_count=1",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Aaron Lee",
+    "affiliations": [
+      "Data Scientist, SAP SE & ML Engineer, SAP SE & ML Engineer, SAP SE"
+    ],
+    "author_row": "tabular ccc Harsh Rao Dhanyamraju & Leonidas Raghav & Aaron Lee"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Multi-agent orchestration architectures for real-time enterprise decision intelligence systems",
+    "paper_year": 2026,
+    "name": "S. Borukar",
+    "affiliations": [],
+    "paper_count": 1,
+    "citation_count": 1,
+    "author_id": "2087245378"
+  }
+}

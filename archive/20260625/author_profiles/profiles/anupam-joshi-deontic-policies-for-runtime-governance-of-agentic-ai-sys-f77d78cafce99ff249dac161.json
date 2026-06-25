@@ -1,0 +1,46 @@
+{
+  "name": "Anupam Joshi",
+  "role": "first_author",
+  "affiliation": "UMBC; Baltimore, MD, USA; Tim Finin Center for AI; University of Maryland Center for Environmental Science",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=20577; OpenAlex works_count=587; Semantic Scholar citation_count=22890; Semantic Scholar paper_count=488",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Anupam Joshi",
+    "affiliations": [
+      "UMBC",
+      "Baltimore, MD, USA",
+      "Tim Finin Center for AI",
+      "UMBC"
+    ],
+    "author_row": "Anupam Joshi CSEE Department"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Deontic Policies for Runtime Governance of Agentic AI Systems",
+    "paper_year": "2026",
+    "name": "Anupam Joshi",
+    "affiliations": [
+      "University of Maryland Center for Environmental Science"
+    ],
+    "works_count": 587,
+    "cited_by_count": 20577,
+    "author_id": "https://openalex.org/A5020975010",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Deontic Policies for Runtime Governance of Agentic AI Systems",
+    "paper_year": "2026",
+    "name": "A. Joshi",
+    "affiliations": [],
+    "paper_count": 488,
+    "citation_count": 22890,
+    "author_id": "2286265039",
+    "lookup": "author_search"
+  }
+}

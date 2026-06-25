@@ -1,0 +1,24 @@
+{
+  "name": "Mehmet Iscan",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=48; Semantic Scholar paper_count=28",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Selection Without Signal, Recovery Through Expression: A Measurement Study of Post-Hoc Falsification Operators for Frozen Small Code Models",
+    "paper_year": "2026",
+    "name": "Mehmet Iscan",
+    "affiliations": [],
+    "paper_count": 28,
+    "citation_count": 48,
+    "author_id": "19239821",
+    "lookup": "author_search"
+  }
+}

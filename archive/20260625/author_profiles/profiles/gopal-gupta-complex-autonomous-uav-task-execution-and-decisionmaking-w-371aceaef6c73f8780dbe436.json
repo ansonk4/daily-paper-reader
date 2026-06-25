@@ -1,0 +1,24 @@
+{
+  "name": "Gopal Gupta",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=3442; Semantic Scholar paper_count=239",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Complex Autonomous UAV Task Execution and Decision-Making With s(CASP)",
+    "paper_year": "2026",
+    "name": "G. Gupta",
+    "affiliations": [],
+    "paper_count": 239,
+    "citation_count": 3442,
+    "author_id": "144961671",
+    "lookup": "author_search"
+  }
+}

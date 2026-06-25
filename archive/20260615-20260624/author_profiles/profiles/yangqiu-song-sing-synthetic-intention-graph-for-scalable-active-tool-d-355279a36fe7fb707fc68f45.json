@@ -1,0 +1,24 @@
+{
+  "name": "Yangqiu Song",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=12546; Semantic Scholar paper_count=253",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "SING: Synthetic Intention Graph for Scalable Active Tool Discovery in LLM Agents",
+    "paper_year": "2026",
+    "name": "Yangqiu Song",
+    "affiliations": [],
+    "paper_count": 253,
+    "citation_count": 12546,
+    "author_id": "1809614",
+    "lookup": "author_search"
+  }
+}

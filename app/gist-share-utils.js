@@ -107,13 +107,18 @@
     }
     lines.push('');
     if (safeMeta.authors) lines.push(`- **Authors**: ${String(safeMeta.authors).trim()}`);
+    if (safeMeta.author_affiliations) lines.push(`- **Author Affiliations**: ${String(safeMeta.author_affiliations).trim()}`);
     if (safeMeta.date) lines.push(`- **Date**: ${String(safeMeta.date).trim()}`);
     if (safeMeta.pdf) lines.push(`- **PDF**: ${String(safeMeta.pdf).trim()}`);
     if (tags.length) lines.push(`- **Tags**: ${tags.join(', ')}`);
+    if (safeMeta.score) lines.push(`- **Score**: ${String(safeMeta.score).trim()}`);
+    if (safeMeta.relevance_score) lines.push(`- **Relevance Score**: ${String(safeMeta.relevance_score).trim()}`);
+    if (safeMeta.author_score) lines.push(`- **Author Score**: ${String(safeMeta.author_score).trim()}`);
+    if (safeMeta.author_rating_explanation) lines.push(`- **Author Rating**: ${String(safeMeta.author_rating_explanation).trim()}`);
     if (safeMeta.evidence) lines.push(`- **Evidence**: ${String(safeMeta.evidence).trim()}`);
     if (safeMeta.tldr) lines.push(`- **TLDR**: ${String(safeMeta.tldr).trim()}`);
-    if (pageUrl) lines.push(`- **原始页面**: ${pageUrl}`);
-    if (generatedAt) lines.push(`- **生成时间**: ${generatedAt}`);
+    if (pageUrl) lines.push(`- **Source Page**: ${pageUrl}`);
+    if (generatedAt) lines.push(`- **Generated At**: ${generatedAt}`);
     return lines.join('\n').trim();
   };
 
@@ -121,10 +126,10 @@
     const parts = [];
     parts.push('---');
     parts.push('');
-    parts.push('## 💬 Chat History（本机记录）');
+    parts.push('## 💬 Chat History (Local Record)');
     parts.push('');
     if (!chatMessages || !chatMessages.length) {
-      parts.push('暂无对话。');
+      parts.push('No chat history.');
       return parts.join('\n');
     }
     chatMessages.forEach((message) => {
@@ -133,7 +138,7 @@
       const content = message && message.content ? String(message.content) : '';
       if (role === 'thinking') {
         parts.push('<details>');
-        parts.push(`<summary>🧠 思考过程 ${time ? `(${time})` : ''}</summary>`);
+        parts.push(`<summary>🧠 Reasoning ${time ? `(${time})` : ''}</summary>`);
         parts.push('');
         parts.push('```');
         parts.push(content);
@@ -142,7 +147,7 @@
         parts.push('');
         return;
       }
-      const label = role === 'ai' ? '🤖 AI' : role === 'user' ? '👤 你' : role;
+      const label = role === 'ai' ? '🤖 AI' : role === 'user' ? '👤 User' : role;
       parts.push(`### ${label}${time ? ` (${time})` : ''}`);
       parts.push(content);
       parts.push('');

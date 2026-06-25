@@ -1,0 +1,24 @@
+{
+  "name": "Gulshan Saleem",
+  "role": "first_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=330; Semantic Scholar paper_count=19",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "A Layered Security Framework Against Prompt Injection in RAG-Based Chatbots",
+    "paper_year": "2026",
+    "name": "Gulshan Saleem",
+    "affiliations": [],
+    "paper_count": 19,
+    "citation_count": 330,
+    "author_id": "145675086",
+    "lookup": "author_search"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Tristan Tomilin",
+  "role": "first_author",
+  "affiliation": "Eindhoven University of Technology, Eindhoven, The Netherlands",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Tristan Tomilin",
+    "affiliations": [
+      "Eindhoven University of Technology, Eindhoven, The Netherlands"
+    ],
+    "author_row": "Tristan Tomilin"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

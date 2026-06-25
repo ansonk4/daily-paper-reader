@@ -1,0 +1,46 @@
+{
+  "name": "Aymen Bouferroum",
+  "role": "first_author",
+  "affiliation": "a Inria Lille-Nord Europe, Lille, France; b University of Luxembourg, Luxembourg; c LIA/CERI, University of Avignon, Avignon, France; FUN",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=1; OpenAlex works_count=6; Semantic Scholar citation_count=2; Semantic Scholar paper_count=4",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Aymen Bouferroum",
+    "affiliations": [
+      "a Inria Lille-Nord Europe, Lille, France",
+      "b University of Luxembourg, Luxembourg",
+      "c LIA/CERI, University of Avignon, Avignon, France"
+    ],
+    "author_row": "Aymen Bouferroum a , Ildi Alla b , Valeria Loscri a , Abderrahim Benslimane c , Vincent Lenders b"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "CITADEL: CSI-Based Jamming Detection and Open-Set Classification for IIoT Networks",
+    "paper_year": "2026",
+    "name": "Aymen Bouferroum",
+    "affiliations": [
+      "FUN",
+      "Centre Inria de l'Université de Lille"
+    ],
+    "works_count": 6,
+    "cited_by_count": 1,
+    "author_id": "https://openalex.org/A5119153825",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "CITADEL: CSI-Based Jamming Detection and Open-Set Classification for IIoT Networks",
+    "paper_year": "2026",
+    "name": "Aymen Bouferroum",
+    "affiliations": [],
+    "paper_count": 4,
+    "citation_count": 2,
+    "author_id": "2374258030",
+    "lookup": "author_search"
+  }
+}

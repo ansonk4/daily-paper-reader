@@ -1,0 +1,54 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Shengli Zhang",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=0; Semantic Scholar paper_count=4",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "МЕТОДИ ІНТЕГРАЦІЇ ОНТОЛОГІЧНО ОРІЄНТОВАНИХ МУЛЬТИАГЕНТНИХ СИСТЕМ У ГІБРИДНЕ ОСВІТНЄ СЕРЕДОВИЩЕ",
+        "paper_year": 2025,
+        "name": "Олексій Шапиро",
+        "affiliations": [],
+        "paper_count": 4,
+        "citation_count": 0,
+        "author_id": "2279074201"
+      }
+    },
+    {
+      "name": "Taotao Wang",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=2068; Semantic Scholar paper_count=91",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Distributed General-Purpose Agent Networks: Architecture, Key Mechanisms, and Prototypes",
+        "paper_year": "2026",
+        "name": "Taotao Wang",
+        "affiliations": [],
+        "paper_count": 91,
+        "citation_count": 2068,
+        "author_id": "46958862",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T12:54:50.070468+00:00"
+}

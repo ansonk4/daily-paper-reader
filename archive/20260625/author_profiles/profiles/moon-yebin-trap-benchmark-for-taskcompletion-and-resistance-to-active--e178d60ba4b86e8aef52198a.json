@@ -1,0 +1,43 @@
+{
+  "name": "Moon Ye-Bin",
+  "role": "first_author",
+  "affiliation": "Dept. of Electrical Engineering, POSTECH; Pohang University of Science and Technology",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=44; OpenAlex works_count=6; Semantic Scholar citation_count=325; Semantic Scholar paper_count=15",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Moon Ye-Bin",
+    "affiliations": [
+      "Dept. of Electrical Engineering, POSTECH"
+    ],
+    "author_row": "Moon Ye-Bin"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "TRAP: Benchmark for Task-completion and Resistance to Active Privacy-extraction",
+    "paper_year": "2026",
+    "name": "Moon Ye-Bin",
+    "affiliations": [
+      "Pohang University of Science and Technology"
+    ],
+    "works_count": 6,
+    "cited_by_count": 44,
+    "author_id": "https://openalex.org/A5028085360",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "TRAP: Benchmark for Task-completion and Resistance to Active Privacy-extraction",
+    "paper_year": "2026",
+    "name": "Moon Ye-Bin",
+    "affiliations": [],
+    "paper_count": 15,
+    "citation_count": 325,
+    "author_id": "2123211349",
+    "lookup": "author_search"
+  }
+}

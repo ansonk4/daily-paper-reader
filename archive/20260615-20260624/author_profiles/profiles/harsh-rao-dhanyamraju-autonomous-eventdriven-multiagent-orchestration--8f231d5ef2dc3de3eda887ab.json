@@ -1,0 +1,21 @@
+{
+  "name": "Harsh Rao Dhanyamraju",
+  "role": "first_author",
+  "affiliation": "Data Scientist, SAP SE & ML Engineer, SAP SE & ML Engineer, SAP SE",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Harsh Rao Dhanyamraju",
+    "affiliations": [
+      "Data Scientist, SAP SE & ML Engineer, SAP SE & ML Engineer, SAP SE"
+    ],
+    "author_row": "tabular ccc Harsh Rao Dhanyamraju & Leonidas Raghav & Aaron Lee"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

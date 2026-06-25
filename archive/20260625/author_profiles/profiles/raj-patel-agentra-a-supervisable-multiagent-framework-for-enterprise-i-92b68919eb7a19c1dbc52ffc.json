@@ -1,0 +1,45 @@
+{
+  "name": "Raj Patel",
+  "role": "first_author",
+  "affiliation": "The University of Alabama, Alabama, USA; University of Essex; Lyndon Baines Johnson Hospital; The University of Texas at Austin",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=3985; OpenAlex works_count=56; Semantic Scholar citation_count=882; Semantic Scholar paper_count=14",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Raj Patel",
+    "affiliations": [
+      "The University of Alabama, Alabama, USA"
+    ],
+    "author_row": "Raj Patel"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Agentra: A Supervisable Multi-Agent Framework for Enterprise Intrusion Response",
+    "paper_year": "2026",
+    "name": "Raj Patel",
+    "affiliations": [
+      "University of Essex",
+      "Lyndon Baines Johnson Hospital",
+      "The University of Texas at Austin"
+    ],
+    "works_count": 56,
+    "cited_by_count": 3985,
+    "author_id": "https://openalex.org/A5101844133",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Agentra: A Supervisable Multi-Agent Framework for Enterprise Intrusion Response",
+    "paper_year": "2026",
+    "name": "R. Patel",
+    "affiliations": [],
+    "paper_count": 14,
+    "citation_count": 882,
+    "author_id": "1846285588",
+    "lookup": "author_search"
+  }
+}

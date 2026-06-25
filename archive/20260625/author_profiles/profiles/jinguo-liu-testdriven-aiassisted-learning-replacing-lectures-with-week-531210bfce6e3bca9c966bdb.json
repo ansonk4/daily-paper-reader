@@ -1,0 +1,31 @@
+{
+  "name": "Jin-Guo Liu",
+  "role": "first_author",
+  "affiliation": "The Hong Kong University of Science and Technology (Guangzhou)",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=413; Semantic Scholar paper_count=22",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Jin-Guo Liu",
+    "affiliations": [
+      "The Hong Kong University of Science and Technology (Guangzhou)"
+    ],
+    "author_row": "Jin-Guo Liu"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Test-Driven, AI-Assisted Learning: Replacing Lectures with Weekly Closed-Book Tests",
+    "paper_year": "2026",
+    "name": "Jinguo Liu",
+    "affiliations": [],
+    "paper_count": 22,
+    "citation_count": 413,
+    "author_id": "2108366927",
+    "lookup": "author_search"
+  }
+}

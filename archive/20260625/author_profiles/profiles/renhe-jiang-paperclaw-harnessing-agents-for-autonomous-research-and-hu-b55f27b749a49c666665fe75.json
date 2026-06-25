@@ -1,0 +1,24 @@
+{
+  "name": "Renhe Jiang",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=3082; Semantic Scholar paper_count=84",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "PaperClaw: Harnessing Agents for Autonomous Research and Human-in-the-Loop Refinement",
+    "paper_year": "2026",
+    "name": "Renhe Jiang",
+    "affiliations": [],
+    "paper_count": 84,
+    "citation_count": 3082,
+    "author_id": "31279896",
+    "lookup": "author_search"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "R. Spencer Hallyburton",
+  "role": "first_author",
+  "affiliation": "Department of Electrical and Computer Engineering; Duke University",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "R. Spencer Hallyburton",
+    "affiliations": [
+      "Department of Electrical and Computer Engineering",
+      "Duke University"
+    ],
+    "author_row": "R. Spencer Hallyburton"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

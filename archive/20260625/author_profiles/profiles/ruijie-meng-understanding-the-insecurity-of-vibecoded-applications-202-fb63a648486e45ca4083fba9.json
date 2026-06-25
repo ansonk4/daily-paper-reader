@@ -1,0 +1,24 @@
+{
+  "name": "Ruijie Meng",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=474; Semantic Scholar paper_count=18",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Understanding the (In)Security of Vibe-Coded Applications",
+    "paper_year": "2026",
+    "name": "Ruijie Meng",
+    "affiliations": [],
+    "paper_count": 18,
+    "citation_count": 474,
+    "author_id": "13582702",
+    "lookup": "author_search"
+  }
+}

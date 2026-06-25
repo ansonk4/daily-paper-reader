@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Step 6：根据推荐结果生成 Docs（精读区 / 速读区），并更新侧边栏。
+# Step 6：根据推荐结果生成 Docs（Deep Read / Quick Read），并更新侧边栏。
 
 import argparse
 import html
@@ -377,7 +377,9 @@ def strip_auto_sections(md_text: str) -> str:
     if not md_text:
         return ""
     markers = [
+        "\n\n---\n\n## Detailed Summary (AI-generated)",
         "\n\n---\n\n## 论文详细总结（自动生成）",
+        "\n\n---\n\n## Glance (AI-generated)",
         "\n\n---\n\n## 速览摘要（自动生成）",
     ]
     cut_points = [md_text.find(m) for m in markers if md_text.find(m) != -1]
@@ -414,7 +416,7 @@ def normalize_meta_tldr_line(md_text: str) -> Tuple[str, bool]:
 
 def normalize_glance_block_format(md_text: str) -> Tuple[str, bool]:
     """
-    规范 `## 速览` 区块的换行符号：
+    规范 `## Glance` / legacy `## 速览` 区块的换行符号：
     - TLDR/Motivation/Method/Result 行末尾应带 ` \\`（强制换行）
     - Conclusion 行末尾不应带 `\\`
     """
@@ -440,7 +442,7 @@ def normalize_glance_block_format(md_text: str) -> Tuple[str, bool]:
 
     for line in lines:
         stripped = line.strip()
-        if stripped == "## 速览":
+        if stripped in {"## Glance", "## 速览"}:
             in_glance = True
             out.append(line)
             continue
@@ -513,26 +515,27 @@ def upsert_auto_block(md_path: str, heading: str, content: str) -> None:
 
 def upsert_glance_block_in_text(md_text: str, glance: str) -> str:
     """
-    在 Markdown 文本中插入/替换 `## 速览` 区块：
-    - 若已存在 `## 速览`，则替换其内容直到下一个分隔线 `---` 或下一个二级标题 `## `
+    在 Markdown 文本中插入/替换 `## Glance` 区块：
+    - 若已存在 `## Glance` 或 legacy `## 速览`，则替换其内容直到下一个分隔线 `---` 或下一个二级标题 `## `
     - 否则在 `## Abstract` 之前插入；若找不到则追加到末尾
     """
     if not glance:
         return md_text
 
     txt = md_text or ""
-    key = "## 速览"
-    if key in txt:
+    key = "## Glance"
+    legacy_key = "## 速览"
+    if key in txt or legacy_key in txt:
         # 替换现有速览块
-        pattern = re.compile(r"(^## 速览\\s*\\n)(.*?)(?=\\n---\\n|\\n##\\s|\\Z)", re.S | re.M)
+        pattern = re.compile(r"(^## (?:Glance|速览)\s*\n)(.*?)(?=\n---\n|\n##\s|\Z)", re.S | re.M)
         return pattern.sub(rf"\\1{glance}\n", txt, count=1)
 
     abstract_idx = txt.find("## Abstract")
     if abstract_idx != -1:
         before = txt[:abstract_idx].rstrip()
         after = txt[abstract_idx:]
-        return f"{before}\n\n## 速览\n{glance}\n\n---\n\n{after}"
-    return (txt.rstrip() + f"\n\n## 速览\n{glance}\n").rstrip() + "\n"
+        return f"{before}\n\n## Glance\n{glance}\n\n---\n\n{after}"
+    return (txt.rstrip() + f"\n\n## Glance\n{glance}\n").rstrip() + "\n"
 
 
 def generate_deep_summary(
@@ -791,13 +794,13 @@ def build_tags_html(section: str, llm_tags: List[str]) -> str:
 
 def normalize_meta_tags_line(content: str) -> Tuple[str, bool]:
     """
-    兼容历史格式：文章页 `**Tags**` 不再展示“精读区/速读区”标签。
-    只删除标签内容严格为“精读区/速读区”的 span，避免误伤关键词标签。
+    兼容历史格式：文章页 `**Tags**` 不再展示“Deep Read/Quick Read”标签。
+    只删除标签内容严格为“Deep Read/Quick Read”的 span，避免误伤关键词标签。
     """
     if not content:
         return content, False
     pattern = re.compile(
-        r'<span\s+class="tag-label\s+tag-(?:blue|green)">\s*(?:精读区|速读区)\s*</span>\s*',
+        r'<span\s+class="tag-label\s+tag-(?:blue|green)">\s*(?:Deep Read|Quick Read)\s*</span>\s*',
         re.IGNORECASE,
     )
     fixed = pattern.sub("", content)
@@ -872,14 +875,14 @@ def ensure_home_module_files(docs_dir: str) -> Tuple[str, str]:
     if not os.path.exists(notice_path):
         with open(notice_path, "w", encoding="utf-8") as f:
             f.write("────────────────────────────────────────\n")
-            f.write("（公告占位）欢迎使用 Daily Paper Reader。\n")
-            f.write("（公告占位）可在此放置本周更新、维护通知等。\n")
+            f.write("(Notice placeholder) Welcome to Daily Paper Reader.\n")
+            f.write("(Notice placeholder) Weekly updates and maintenance notes can go here.\n")
             f.write("────────────────────────────────────────\n")
     if not os.path.exists(promo_path):
         with open(promo_path, "w", encoding="utf-8") as f:
             f.write("════════════════════════════════════════\n")
-            f.write("（宣传占位）欢迎 Star / Fork 本项目。\n")
-            f.write("（宣传占位）欢迎提交 Issue 与 PR。\n")
+            f.write("(Promo placeholder) Star or fork this project.\n")
+            f.write("(Promo placeholder) Issues and PRs are welcome.\n")
             f.write("════════════════════════════════════════\n")
     return notice_path, promo_path
 
@@ -902,9 +905,9 @@ def _format_entry_tags(tags: List[Tuple[str, str]]) -> str:
         if k == "score":
             try:
                 score_num = float(v)
-                labels.append(f"评分：{score_num:.1f}/10")
+                labels.append(f"Score: {score_num:.1f}/10")
             except Exception:
-                labels.append(f"评分：{v}")
+                labels.append(f"Score: {v}")
             continue
         if not v:
             continue
@@ -912,7 +915,7 @@ def _format_entry_tags(tags: List[Tuple[str, str]]) -> str:
             labels.append(f"{k}:{v}")
         else:
             labels.append(v)
-    return "、".join(labels) if labels else "无标签"
+    return ", ".join(labels) if labels else "No tags"
 
 
 def _entry_score_text(tags: List[Tuple[str, str]]) -> str:
@@ -1146,9 +1149,9 @@ def build_sidebar_stars_html(score: Any) -> str:
         score_str = ""
 
     if score_str:
-        title = f"评分：{score_str}/10（{rating:.1f}/5）"
+        title = f"Score: {score_str}/10（{rating:.1f}/5）"
     else:
-        title = "评分：无"
+        title = "Score: N/A"
 
     pct = max(0.0, min(100.0, (rating / 5.0) * 100.0))
     pct_str = f"{pct:.0f}%"
@@ -1165,7 +1168,7 @@ def build_sidebar_stars_html(score: Any) -> str:
 
 def extract_sidebar_tags(paper: Dict[str, Any], max_tags: int = 6) -> List[Tuple[str, str]]:
     """
-    侧边栏展示的标签：
+    侧边栏展示的Tags: 
     - 只使用 llm_tags（与文章页 `**Tags**` 保持一致），避免出现“侧边栏与正文不对应”
     - 去重 + 限制数量，避免侧边栏过长
     """
@@ -1236,6 +1239,44 @@ def yaml_escape_value(s: str) -> str:
     if any(c in s for c in [':', '#', '"', "'", '\n', '[', ']', '{', '}', ',', '&', '*', '!', '|', '>', '%', '@', '`']):
         return '"' + s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n') + '"'
     return s
+
+
+def format_author_affiliations(paper: Dict[str, Any]) -> str:
+    explicit = str(paper.get("author_affiliations") or "").strip()
+    if explicit:
+        return explicit
+    profiles = paper.get("author_profiles")
+    if not isinstance(profiles, list):
+        return ""
+    items: List[str] = []
+    seen: set[str] = set()
+    for profile in profiles:
+        if not isinstance(profile, dict):
+            continue
+        name = str(profile.get("name") or "").strip()
+        role = str(profile.get("role") or "").strip()
+        affiliation = str(
+            profile.get("affiliation")
+            or profile.get("school")
+            or profile.get("company")
+            or profile.get("group")
+            or ""
+        ).strip()
+        if not name and not affiliation:
+            continue
+        label = name
+        if role:
+            label = f"{label} ({role})" if label else role
+        if affiliation:
+            text = f"{label}: {affiliation}" if label else affiliation
+        else:
+            text = label
+        key = text.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        items.append(text)
+    return "; ".join(items)
 
 
 def maybe_generate_paper_figures(
@@ -1323,6 +1364,10 @@ def build_markdown_content(
         published = published[:10]
     pdf_url = str(paper.get("link") or paper.get("pdf_url") or "").strip()
     score = paper.get("llm_score")
+    relevance_score = paper.get("relevance_score")
+    author_score = paper.get("author_score")
+    author_affiliations = format_author_affiliations(paper)
+    author_rating_explanation = str(paper.get("author_rating_explanation") or "").strip()
     evidence = str(paper.get("canonical_evidence") or "").strip()
     tldr = (
         paper.get("llm_tldr_en")
@@ -1378,6 +1423,14 @@ def build_markdown_content(
         lines.append(f"tags: [{', '.join(yaml_escape_value(t) for t in tags_list)}]")
     if score is not None:
         lines.append(f"score: {score}")
+    if relevance_score is not None:
+        lines.append(f"relevance_score: {relevance_score}")
+    if author_score is not None:
+        lines.append(f"author_score: {author_score}")
+    if author_affiliations:
+        lines.append(f"author_affiliations: {yaml_escape_value(author_affiliations)}")
+    if author_rating_explanation:
+        lines.append(f"author_rating_explanation: {yaml_escape_value(author_rating_explanation)}")
     if evidence:
         lines.append(f"evidence: {yaml_escape_value(evidence)}")
     if display_tldr:
@@ -1404,9 +1457,9 @@ def build_markdown_content(
     lines.append("---")
     lines.append("")
 
-    # 正文部分：摘要
+    # Body: abstracts
     if zh_abstract:
-        lines.append("## 摘要")
+        lines.append("## Chinese Abstract")
         lines.append(zh_abstract)
         lines.append("")
 
@@ -1523,7 +1576,7 @@ def process_paper(
                         break
 
                 has_zh_title = h1_count >= 2
-                has_zh_abstract = "## 摘要" in existing
+                has_zh_abstract = ("## Chinese Abstract" in existing) or ("## 摘要" in existing)
                 need_zh = (not has_zh_title) or (not has_zh_abstract)
 
                 if need_zh:
@@ -1549,13 +1602,13 @@ def process_paper(
                         if "## Abstract" in updated:
                             updated = updated.replace(
                                 "## Abstract",
-                                "## 摘要\n" + zh_abstract.strip() + "\n\n## Abstract",
+                                "## Chinese Abstract\n" + zh_abstract.strip() + "\n\n## Abstract",
                                 1,
                             )
                         else:
                             updated = (
                                 updated.rstrip()
-                                + "\n\n## 摘要\n"
+                                + "\n\n## Chinese Abstract\n"
                                 + zh_abstract.strip()
                                 + "\n"
                             )
@@ -1569,7 +1622,7 @@ def process_paper(
                 pass
 
         # 已存在速览则默认不重复生成（避免重复 LLM 调用），除非 force_glance=true
-        has_glance = "## 速览" in existing
+        has_glance = ("## Glance" in existing) or ("## 速览" in existing)
         if force_glance or not has_glance:
             glance = generate_glance_overview(title, abstract_en, client=paper_llm_client) or build_glance_fallback(paper)
             if glance:
@@ -1584,7 +1637,7 @@ def process_paper(
             if os.getenv("DPR_DEBUG_STEP6") == "1":
                 log(f"[DEBUG][STEP6] fixed TLDR trailing slash: {os.path.basename(md_path)}")
 
-        # 修复历史格式：文章页 Tags 不再显示“精读区/速读区”
+        # 修复历史格式：文章页 Tags 不再显示“Deep Read/Quick Read”
         fixed, changed = normalize_meta_tags_line(existing)
         if changed:
             with open(md_path, "w", encoding="utf-8") as f:
@@ -1610,7 +1663,7 @@ def process_paper(
             existing = updated
 
         # 插入/替换速览内容
-        if glance and (force_glance or "## 速览" not in existing):
+        if glance and (force_glance or not has_glance):
             updated = upsert_glance_block_in_text(existing, glance)
             if updated != existing:
                 with open(md_path, "w", encoding="utf-8") as f:
@@ -1622,8 +1675,11 @@ def process_paper(
             return paper_id, title
 
         if section == "deep":
-            # 精读区：检查是否已有详细总结
-            tail = extract_section_tail(existing, "论文详细总结（自动生成）")
+            # Deep Read：检查是否已有详细总结
+            tail = (
+                extract_section_tail(existing, "Detailed Summary (AI-generated)")
+                or extract_section_tail(existing, "论文详细总结（自动生成）")
+            )
             if tail:
                 return paper_id, title
 
@@ -1632,10 +1688,10 @@ def process_paper(
             ensure_text_content(pdf_url, txt_path)
             summary = generate_deep_summary(md_path, txt_path, client=paper_llm_client)
             if summary:
-                upsert_auto_block(md_path, "论文详细总结（自动生成）", summary)
+                upsert_auto_block(md_path, "Detailed Summary (AI-generated)", summary)
             return paper_id, title
         else:
-            # 速读区：不生成详细总结，只保留速览和摘要
+            # Quick Read：不生成详细总结，只保留速览和摘要
             return paper_id, title
 
     # 新文件：如果只需要速览，则不拉取 PDF/Jina 文本，直接用元数据生成页面
@@ -1691,12 +1747,12 @@ def process_paper(
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(content)
 
-    # 精读区：生成详细总结
+    # Deep Read：生成详细总结
     if section == "deep":
         summary = generate_deep_summary(md_path, txt_path, client=paper_llm_client)
         if summary:
-            upsert_auto_block(md_path, "论文详细总结（自动生成）", summary)
-    # 速读区：不生成额外的总结，只保留速览和摘要
+            upsert_auto_block(md_path, "Detailed Summary (AI-generated)", summary)
+    # Quick Read：不生成额外的总结，只保留速览和摘要
 
     return paper_id, title
 
@@ -1761,8 +1817,8 @@ def update_sidebar(
             daily_idx = i
             break
     if daily_idx == -1:
-        if not any("[首页]" in line for line in lines):
-            lines.append("* [首页](/)\n")
+        if not any("[Home]" in line for line in lines):
+            lines.append("* [Home](/)\n")
         lines.append("* Daily Papers\n")
         daily_idx = len(lines) - 1
 
@@ -1790,7 +1846,7 @@ def update_sidebar(
 
     block: List[str] = [day_heading]
     if deep_entries:
-        block.append("    * 精读区\n")
+        block.append("    * Deep Read\n")
         for paper_id, title, tags in deep_entries:
             safe_title = html.escape((title or "").strip() or paper_id)
             href = f"#/{paper_id}"
@@ -1801,7 +1857,7 @@ def update_sidebar(
                 f'<a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="{href}" data-sidebar-item="{payload_json}">{safe_title}</a>\n'
             )
     if quick_entries:
-        block.append("    * 速读区\n")
+        block.append("    * Quick Read\n")
         for paper_id, title, tags in quick_entries:
             safe_title = html.escape((title or "").strip() or paper_id)
             href = f"#/{paper_id}"
@@ -1976,12 +2032,12 @@ def build_home_readme_content(
     )
 
     lines: List[str] = []
-    lines.append(notice_md or "（公告模块为空）")
+    lines.append(notice_md or "(Notice module is empty)")
     lines.append("")
-    lines.append("## 每次日报")
+    lines.append("## Daily Report")
     lines.append(latest_report_md)
     lines.append("")
-    lines.append(promo_md or "（宣传模块为空）")
+    lines.append(promo_md or "(Promo module is empty)")
     lines.append("")
     return "\n".join(lines)
 
@@ -1997,7 +2053,7 @@ def sync_home_readme_from_day_report(
     paper_evidence_by_id: Dict[str, str],
 ) -> str:
     home_readme = os.path.join(docs_dir, "README.md")
-    # 首页由三段模块拼接：公告栏（独立 md）+ 本次日报 + 宣传栏（独立 md）
+    # Home由三段模块拼接：公告栏（独立 md）+ 本次日报 + 宣传栏（独立 md）
     content = build_home_readme_content(
         docs_dir=docs_dir,
         date_str=date_str,
@@ -2050,7 +2106,7 @@ def write_run_daily_log(
 
 def backfill_history_day_reports(docs_dir: str) -> int:
     """
-    为历史日期目录补齐 README.md（若不存在），便于首页左右切换日报。
+    为历史日期目录补齐 README.md（若不存在），便于Home左右切换日报。
     该补齐不依赖 LLM，只基于已存在的论文 markdown 文件生成简版日报。
     """
     if not os.path.isdir(docs_dir):
@@ -2089,11 +2145,11 @@ def backfill_history_day_reports(docs_dir: str) -> int:
 
             date8 = f"{ym}{day}"
             date_label = format_date_str(date8)
-            lines = [f"# 日报 · {date_label}", ""]
-            lines.append("- 该日报为历史补齐版本（由已有文档自动生成）。")
-            lines.append(f"- 论文数量：{len(paper_files)}")
+            lines = [f"# Report · {date_label}", ""]
+            lines.append("- This historical report was generated from existing documents.")
+            lines.append(f"- Paper count：{len(paper_files)}")
             lines.append("")
-            lines.append("## 论文列表")
+            lines.append("## Paper List")
             if paper_files:
                 for idx, fn in enumerate(paper_files, start=1):
                     base = fn[:-3]
@@ -2102,7 +2158,7 @@ def backfill_history_day_reports(docs_dir: str) -> int:
                     title_guess = title_guess or base
                     lines.append(f"{idx}. [{title_guess}]({build_docsify_id_href(f'{ym}/{day}/{base}')})")
             else:
-                lines.append("- 当天目录暂无论文文档。")
+                lines.append("- No paper documents for this day.")
             lines.append("")
 
             with open(readme_path, "w", encoding="utf-8") as f:
@@ -2335,6 +2391,14 @@ def _parse_generated_md_to_meta(
     date_value = _fallback_meta("date", "Date")
     pdf_value = _fallback_meta("pdf", "PDF")
     score_value = _fallback_meta("score", "Score")
+    relevance_score_value = _fallback_meta("relevance_score", "Relevance Score")
+    author_score_value = _fallback_meta("author_score", "Author Score")
+    author_affiliations_value = _fallback_meta("author_affiliations", "Author Affiliations")
+    author_rating_explanation_value = _fallback_meta(
+        "author_rating_explanation",
+        "Author Rating",
+        "Author Rating Explanation",
+    )
     evidence_value = _fallback_meta("evidence", "Evidence")
     tldr_value = _fallback_meta("tldr", "TLDR")
     paper_source_value = str(fm_meta.get("source") or fm_meta.get("Source") or "").strip()
@@ -2359,6 +2423,10 @@ def _parse_generated_md_to_meta(
         "date": str(date_value or "").strip(),
         "pdf": str(pdf_value or "").strip(),
         "score": str(score_value or "").strip(),
+        "relevance_score": str(relevance_score_value or "").strip(),
+        "author_score": str(author_score_value or "").strip(),
+        "author_affiliations": str(author_affiliations_value or "").strip(),
+        "author_rating_explanation": str(author_rating_explanation_value or "").strip(),
         "evidence": str(evidence_value or "").strip(),
         "tldr": str(tldr_value or "").strip(),
         "tags": ", ".join(tags_compact),
@@ -2443,12 +2511,12 @@ def main() -> None:
     parser.add_argument(
         "--glance-only",
         action="store_true",
-        help="只生成/补齐 `## 速览`（基于 title+abstract），不下载 PDF/Jina 文本，不生成精读总结。",
+        help="Only generate/fill the `## Glance` block (based on title+abstract); do not download PDF/Jina text or generate detailed summaries.",
     )
     parser.add_argument(
         "--force-glance",
         action="store_true",
-        help="强制重生成 `## 速览` 并覆盖写入（即使文件里已存在该块）。",
+        help="Force-regenerate `## Glance` and overwrite it even if the block already exists.",
     )
     parser.add_argument(
         "--sidebar-only",
@@ -2458,7 +2526,7 @@ def main() -> None:
     parser.add_argument(
         "--fix-tags-only",
         action="store_true",
-        help="仅修复已生成文章里的 `**Tags**`（移除“精读区/速读区”标签），不触发 LLM。",
+        help="仅修复已生成文章里的 `**Tags**`（移除“Deep Read/Quick Read”标签），不触发 LLM。",
     )
     parser.add_argument(
         "--paper-id",
@@ -2546,7 +2614,7 @@ def main() -> None:
     recommend_path = os.path.join(archive_dir, f"arxiv_papers_{date_str}.{mode}.json")
     recommend_exists = os.path.exists(recommend_path)
     if not recommend_exists:
-        log(f"[WARN] recommend 文件不存在（今天可能没有新论文）：{recommend_path}。将生成空日报并更新首页。")
+        log(f"[WARN] recommend 文件不存在（今天可能没有新论文）：{recommend_path}。将生成空日报并更新Home。")
 
     log_substep("6.1", "读取 recommend 结果", "START")
     payload = {}
@@ -2660,15 +2728,15 @@ def main() -> None:
             quick_entries.append((pid, title, extract_sidebar_tags(paper)))
         log_substep("6.3", "跳过生成文章（仅更新侧边栏）", "SKIP")
     else:
-        log_substep("6.2", "生成精读区文章", "START")
+        log_substep("6.2", "生成Deep Read文章", "START")
         deep_entries = _process_section("deep", deep_list, sidebar_evidence_by_id)
-        log_substep("6.2", "生成精读区文章", "END")
+        log_substep("6.2", "生成Deep Read文章", "END")
 
-        log_substep("6.3", "生成速读区文章", "START")
+        log_substep("6.3", "生成Quick Read文章", "START")
         quick_entries = _process_section("quick", quick_list, sidebar_evidence_by_id)
-        log_substep("6.3", "生成速读区文章", "END")
+        log_substep("6.3", "生成Quick Read文章", "END")
 
-    log_substep("6.4", "生成当日日报并同步首页 README", "START")
+    log_substep("6.4", "生成当日日报并同步Home README", "START")
     run_generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     day_readme = write_day_report_readme(
         docs_dir=docs_dir,
@@ -2690,7 +2758,7 @@ def main() -> None:
     )
     log(f"[OK] day report saved: {day_readme}")
     log(f"[OK] home README synced: {home_readme}")
-    log_substep("6.4", "生成当日日报并同步首页 README", "END")
+    log_substep("6.4", "生成当日日报并同步Home README", "END")
 
     sidebar_path = os.path.join(docs_dir, "_sidebar.md")
     if deep_entries or quick_entries:

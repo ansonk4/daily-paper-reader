@@ -1,0 +1,24 @@
+{
+  "name": "Kamran Iqbal",
+  "role": "last_author",
+  "affiliation": "",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=1798; Semantic Scholar paper_count=130",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Formal Verification of Learned Multi-Agent Communication Policies via Decision Tree Distillation",
+    "paper_year": "2026",
+    "name": "K. Iqbal",
+    "affiliations": [],
+    "paper_count": 130,
+    "citation_count": 1798,
+    "author_id": "34552792",
+    "lookup": "author_search"
+  }
+}

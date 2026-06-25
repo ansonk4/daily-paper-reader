@@ -6,7 +6,7 @@ const sample = `---
 title: Attention Is All You Need
 ---
 
-## 摘要
+## Chinese Abstract
 这是中文摘要。
 
 ## 📝 TLDR
@@ -15,7 +15,7 @@ title: Attention Is All You Need
 ## Abstract
 This is the original abstract in English.
 
-## 论文详细总结（自动生成）
+## Detailed Summary (AI-generated)
 This is ai summary.
 `;
 

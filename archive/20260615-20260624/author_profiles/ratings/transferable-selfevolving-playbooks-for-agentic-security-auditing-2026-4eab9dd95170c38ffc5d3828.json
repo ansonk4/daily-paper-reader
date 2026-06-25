@@ -1,0 +1,69 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Ziyue Wang",
+      "role": "first_author",
+      "affiliation": "The University of Sydney Independent University of Warwick UC Berkeley RDI",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=124; Semantic Scholar paper_count=19",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Ziyue Wang",
+        "affiliations": [
+          "The University of Sydney Independent University of Warwick UC Berkeley RDI"
+        ],
+        "author_row": "Ziyue Wang"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Transferable Self-Evolving Playbooks for Agentic Security Auditing",
+        "paper_year": "2026",
+        "name": "Ziyue Wang",
+        "affiliations": [],
+        "paper_count": 19,
+        "citation_count": 124,
+        "author_id": "1999612868",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Liyi Zhou",
+      "role": "last_author",
+      "affiliation": "The University of Sydney Independent University of Warwick UC Berkeley RDI",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=2260; Semantic Scholar paper_count=56",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Liyi Zhou",
+        "affiliations": [
+          "The University of Sydney Independent University of Warwick UC Berkeley RDI"
+        ],
+        "author_row": "Liyi Zhou"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "Transferable Self-Evolving Playbooks for Agentic Security Auditing",
+        "paper_year": "2026",
+        "name": "Liyi Zhou",
+        "affiliations": [],
+        "paper_count": 56,
+        "citation_count": 2260,
+        "author_id": "11662004",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T12:48:53.733376+00:00"
+}

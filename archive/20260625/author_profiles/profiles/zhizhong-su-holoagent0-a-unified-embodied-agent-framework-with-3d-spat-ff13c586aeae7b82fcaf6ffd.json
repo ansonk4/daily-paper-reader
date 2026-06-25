@@ -1,0 +1,26 @@
+{
+  "name": "Zhizhong Su",
+  "role": "last_author",
+  "affiliation": "Horizon Robotics",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "Semantic Scholar citation_count=3334; Semantic Scholar paper_count=18",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "HoloAgent-0: A Unified Embodied Agent Framework with 3D Spatial Memory",
+    "paper_year": "2026",
+    "name": "Zhizhong Su",
+    "affiliations": [
+      "Horizon Robotics"
+    ],
+    "paper_count": 18,
+    "citation_count": 3334,
+    "author_id": "3118650",
+    "lookup": "author_search"
+  }
+}

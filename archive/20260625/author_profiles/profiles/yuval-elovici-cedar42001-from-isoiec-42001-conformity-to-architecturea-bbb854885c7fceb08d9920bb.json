@@ -1,0 +1,26 @@
+{
+  "name": "Yuval Elovici",
+  "role": "last_author",
+  "affiliation": "Ben-Gurion University of the Negev",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "OpenAlex cited_by_count=15760; OpenAlex works_count=663",
+  "confidence": "medium",
+  "evidence_source": "openalex",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "CEDAR-42001: From ISO/IEC 42001 Conformity to Architecture-Aware, Audit-Visible Assurance Posture for AI Cyber-Physical Systems",
+    "paper_year": "2026",
+    "name": "Yuval Elovici",
+    "affiliations": [
+      "Ben-Gurion University of the Negev"
+    ],
+    "works_count": 663,
+    "cited_by_count": 15760,
+    "author_id": "https://openalex.org/A5072913672",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

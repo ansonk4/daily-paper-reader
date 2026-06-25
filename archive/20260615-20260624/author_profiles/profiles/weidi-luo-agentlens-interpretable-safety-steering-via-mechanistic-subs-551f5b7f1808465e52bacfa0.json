@@ -1,0 +1,23 @@
+{
+  "name": "Weidi Luo",
+  "role": "first_author",
+  "affiliation": "Jie Cai 4 Chaowei Xiao 5 Jingcheng Niu 6 Zhen Xiang 1; [0.5em] 1 University of Georgia 2 University of South Florida 3 Rutgers University; 4 University of Southern California 5 Johns Hopkins University 6 Independent minipage",
+  "group": "",
+  "school": "",
+  "company": "",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Weidi Luo",
+    "affiliations": [
+      "Jie Cai 4 Chaowei Xiao 5 Jingcheng Niu 6 Zhen Xiang 1",
+      "[0.5em] 1 University of Georgia 2 University of South Florida 3 Rutgers University",
+      "4 University of Southern California 5 Johns Hopkins University 6 Independent minipage"
+    ],
+    "author_row": "minipage 0.95 Weidi Luo 1 Qiming Zhang 2 Yihao Quan 3 Mingyu Jin 3"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

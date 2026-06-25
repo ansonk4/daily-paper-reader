@@ -1,0 +1,59 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Inderjeet Singh",
+      "role": "first_author",
+      "affiliation": "Fujitsu Research of Europe",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Inderjeet Singh",
+        "affiliations": [
+          "Fujitsu Research of Europe"
+        ],
+        "author_row": "Inderjeet Singh"
+      },
+      "openalex": {},
+      "semantic_scholar": {}
+    },
+    {
+      "name": "Andrés Murillo",
+      "role": "last_author",
+      "affiliation": "Fujitsu Research of Europe",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=47; Semantic Scholar paper_count=4",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar",
+      "arxiv_source": {
+        "source": "arxiv_source",
+        "name": "Andrés Murillo",
+        "affiliations": [
+          "Fujitsu Research of Europe"
+        ],
+        "author_row": "Andr\\'es Murillo"
+      },
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "AI Sandboxes: A Threat Model, Taxonomy, and Measurement Framework",
+        "paper_year": "2026",
+        "name": "Andres Murillo",
+        "affiliations": [],
+        "paper_count": 4,
+        "citation_count": 47,
+        "author_id": "2310700567",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T13:43:04.307920+00:00"
+}

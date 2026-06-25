@@ -1,0 +1,24 @@
+{
+  "author_score": 10.0,
+  "author_rating_explanation": "Both focus authors are affiliated with Google AI Language, a major AI research lab under Google. This places them in the top tier of AI research institutions. Kristina Toutanova additionally has very high citation impact, reinforcing the strength of the author background.",
+  "author_profiles": [
+    {
+      "name": "Jacob Devlin",
+      "role": "first_author",
+      "affiliation": "Google AI Language",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "paper_author_row, arxiv_source"
+    },
+    {
+      "name": "Kristina Toutanova",
+      "role": "last_author",
+      "affiliation": "Google AI Language",
+      "citation_hints": "Semantic Scholar citation_count=137922; Semantic Scholar paper_count=120",
+      "confidence": "medium",
+      "evidence_source": "paper_author_row, arxiv_source, semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-25T09:09:30.795783+00:00"
+}

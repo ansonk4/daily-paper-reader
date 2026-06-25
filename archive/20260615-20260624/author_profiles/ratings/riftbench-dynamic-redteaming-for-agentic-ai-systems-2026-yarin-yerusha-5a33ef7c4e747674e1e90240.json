@@ -1,0 +1,55 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+  "author_profiles": [
+    {
+      "name": "Yarin Yerushalmi Levi",
+      "role": "first_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=6; Semantic Scholar paper_count=5",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "RIFT-Bench: Dynamic Red-teaming For Agentic AI Systems",
+        "paper_year": "2026",
+        "name": "Y. Levi",
+        "affiliations": [],
+        "paper_count": 5,
+        "citation_count": 6,
+        "author_id": "2355205708",
+        "lookup": "author_search"
+      }
+    },
+    {
+      "name": "Roman Vainshtein",
+      "role": "last_author",
+      "affiliation": "",
+      "group": "",
+      "school": "",
+      "company": "",
+      "citation_hints": "Semantic Scholar citation_count=138; Semantic Scholar paper_count=11",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar",
+      "arxiv_source": {},
+      "openalex": {},
+      "semantic_scholar": {
+        "source": "semantic_scholar",
+        "paper_title": "RIFT-Bench: Dynamic Red-teaming For Agentic AI Systems",
+        "paper_year": "2026",
+        "name": "Roman Vainshtein",
+        "affiliations": [],
+        "paper_count": 11,
+        "citation_count": 138,
+        "author_id": "144493139",
+        "lookup": "author_search"
+      }
+    }
+  ],
+  "rated_at": "2026-06-24T14:09:41.292725+00:00"
+}
