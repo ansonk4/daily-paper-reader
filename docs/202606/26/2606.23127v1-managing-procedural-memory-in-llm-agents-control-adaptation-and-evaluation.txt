@@ -1,0 +1,509 @@
+Title: Managing Procedural Memory in LLM Agents: Control, Adaptation, and Evaluation
+
+URL Source: https://arxiv.org/pdf/2606.23127v1
+
+Published Time: Tue, 23 Jun 2026 02:58:49 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+## Managing Procedural Memory in LLM Agents: Control, Adaptation, and Evaluation 
+
+Julia Belikova Rauf Parchiev Evgeny Egorov Grigorii Davydenko Gleb Gusev Andrey Savchenko Maksim Makarenko Abstract 
+
+Procedural memory is increasingly used to improve LLM agents on recurring workplace tasks, yet its ability to produce reusable skills remains poorly understood. We introduce AF-TER, a benchmark of 382 realistic enterprise tasks spanning six professional roles and 22 procedural skills, designed to evaluate how skills transfer across tasks, roles, and model backbones. The benchmark includes con-trolled evaluation settings for local improve-ment, cross-task transfer, cross-role transfer, and cross-model generalization. Experiments show that procedural memory delivers consis-tent gains in industrial workflows: a single refinement round improves aggregate perfor-mance by 3.7-6.7 points, while skills evolved from diverse multi-model execution traces achieve 73.1% cross-model test accuracy, out-performing all single-model trace sources. We further find that some skills generalize broadly across tasks and models, whereas others be-come specialized to role-specific workflows and lose effectiveness under transfer. These results provide practical guidance for building, evaluating, and deploying procedural memory systems in production agent platforms. 
+
+1 Introduction 
+
+The main AI trend of the decade is the development of LLMs (Vaswani et al., 2017; Brown et al., 2020). Scaling training data and computation has driven broad improvements, but further scaling may face limits from bounded human-generated data (Hoff-mann et al., 2022; Villalobos et al., 2024). Mean-while, LLM-based agents are increasingly used in practical settings (Yao et al., 2023; Wang et al., 2024), where they spend substantial inference-time compute on planning, tool use, reflection, and retries (Shinn et al., 2023; Qu et al., 2025). In industrial workflows, many tasks are recurring procedures rather than isolated queries: process-ing documents, editing spreadsheets and presenta-0 20 40 60 80 100 
+
+> Specificity Gain (Train %)
+> 20
+> 10
+> 0
+> 10
+> 20
+> Generality Gain (Test %)  Generalization
+> (Train+ Test+)
+> Overfitting
+> (Train+ Test-)
+> Basic
+> Narrow experience
+> Diverse experience
+
+Figure 1: Skill evolution landscape. Procedural memo-ries for six skills (docx, pipelines, pptx, sql, statistics, xlsx) are evolved with a Hermes memory update op-erator and evaluated on AFTER. Skills evolved from narrow experience often exhibit source-context overfit-ting: they improve specificity while degrading general-ity. Skills evolved from diverse experience move toward the desired high-specificity, high-generality regime. 
+
+tions, querying databases, configuring infrastruc-ture, and writing tests. This creates two compet-ing demands: cheaper and faster frameworks (Gao et al., 2026) for frequent queries in personal and corporate settings, and agents that better interact with humans and environments (Zhao et al., 2024a; Qian et al., 2024), personalize to context (Yang et al., 2026), and generalize to growing task com-plexity (Jimenez et al., 2024; Mialon et al., 2024). This shift motivates persistent mechanisms that improve reuse, reliability, and efficiency at infer-ence time (Zhang et al., 2024; Ramnath et al., 2025). Procedural memory is a promising direc-tion (Fang et al., 2025; Mi et al., 2026; Wu and Zhang, 2026): a reusable layer of instructions, pro-cedures, and strategies distilled from prior trajecto-ries. For workplace agents, such memory is valu-able only if it captures what transfers across tasks, users, roles, and model backbones while discarding incidental source-context details. This is difficult 1
+
+> arXiv:2606.23127v1 [cs.AI] 22 Jun 2026
+
+because trajectories depend on the model, tools, task family, and workflow that produced them; skills extracted from narrow experience may work in their source setting yet fail when the context changes (Chung et al., 2024; Kung et al., 2023; Chatterjee et al., 2025). In this work, we study procedural memory through two properties: specialization and gener-alization . Skills may be optimized for a particular workflow or learned from diverse experience span-ning tasks, roles, and models. In industrial settings, the key question is whether procedural knowledge transfers beyond its source context. Diverse experi-ence is expected to promote reusable skills, while narrow experience risks over-specialization. Fig-ure 1 illustrates this trade-off. Existing systems and benchmarks conflate lo-cal improvement with true transfer. Memory-augmented agent frameworks usually curate and evolve memory within a single environment, leav-ing generalization beyond the source setup un-clear (Shinn et al., 2023; Zhao et al., 2024a). Skill benchmarks evaluate fixed, expert-curated skills on fixed task sets (Li et al., 2026; Liu et al., 2026), treating skills as static artifacts rather than struc-tures evolved from experience. General agent benchmarks contain realistic tasks, but usually lack the role–skill structure needed to test whether pro-cedural knowledge learned in one workplace con-text transfers to another. The field therefore lacks a controlled setting for a practical question: when does experience produce reusable procedural struc-ture, and when does it merely overfit to where it was observed? 
+
+To address this, we propose: • AFTER, a benchmark for procedural skill transfer in LLM agents. AFTER 1 contains 382 realistic workplace tasks across six professional roles and 22 procedural skills, mixing single- and multi-skill workflows, and controlled splits that measure specificity (in-context gain) and gener-ality (held-out task, cross-role, and cross-model transfer). This structure reflects industrial agent deployments, where procedural knowledge must be reusable across recurring tasks, organizational roles, and changing model backbones. • Empirical evidence for procedural memory transfer. Using a transfer-oriented evaluation protocol implemented in E VOLUTION , we mea-
+
+> 1https://huggingface.co/datasets/DavydenkoGr/ AFTER
+
+sure skill value both in the source context and under task, role, and model shifts. On the static benchmark, procedural skills improve full-pass accuracy by +2.8 points on average, while a sin-gle refinement round adds a further +5.2 points across model scales. For cross-model transfer, skills evolved from diverse multi-model traces achieve 73.1% test accuracy, exceeding the best single-model trace source by +13.7 points. Cross-role experiments reveal a complementary limita-tion: skills can over-specialize to role-specific workflows and lose effectiveness when trans-ferred across roles. Together, these contributions recast procedural memory from a static prompt artifact into an evolv-ing layer of agent capability that can be learned, controlled, and evaluated under realistic workplace conditions. 
+
+2 AFTER: A Benchmark for Skill Transfer                                     
+
+> Benchmark Tasks Roles Skills Multi-step tasks Transfer splits
+> GAIA 466 –✗✓✗
+> SWE-bench 2294 1✗∼∼
+> SkillsBench 85 –✓∼✗
+> WebArena 812 –✗∼✗
+> MLE-bench 75 1✗✓✗
+> AFTER 382 6✓✓✓
+> Table 1: Comparison with existing agent and skill bench-marks. ✓supported, ∼partial, ✗not supported. AF-TER uniquely combines role structure, skill annotations, and transfer splits.
+
+AFTER is a benchmark for evaluating procedu-ral skill transfer in LLM agents. It contains 382 realistic workplace tasks spanning six professional roles and 22 procedural skills. Unlike prior agent benchmarks that focus on task completion, AF-TER evaluates procedural knowledge transferabil-ity across contexts. It combines a role-driven task– skill structure with controlled splits for cross-task, cross-role, and cross-model transfer (Figure 2). Ta-ble 1 summarizes the key differences from prior benchmarks; a detailed discussion is provided in Appendix A. 
+
+2.1 Benchmark Design Roles. The six roles cover common functions in technology organizations: Data Engineers (DE; 2a bc d eFigure 2: AFTER overview. (a) Role–skill matrix spanning six professional roles and five capability areas; red borders indicate skills shared across four roles. (b) Task sources: 56 adapted and 326 newly authored tasks. (c)    
+
+> Distribution of single- and multi-skill tasks by role. (d) Transfer evaluation across tasks, roles, and models. (e)
+> Cross-role transfer and role-specific skill specialization.
+
+data pipelines), Data Scientists (DS; statistical and ML analysis), Generative AI Engineers (GenAI; LLM applications), Infrastructure Engineers (In-fra; cloud and deployment), Project Managers (PM; business documents), and Software Engineers (SWE; application code). Roles define how skills are instantiated: for example, a PDF skill may sup-port invoice extraction for DE, document ingestion for GenAI, or executive summarization for PM. Thus, each role induces a characteristic task–skill distribution (Figure 2a). 
+
+Tasks. Tasks split between single-skill (318) and multi-skill (64) workflows; multi-skill tasks com-bine two or three skills in an input–process–output structure (Figure 2c). Skill annotations are fixed at task definition rather than retrieved at solve time, separating skill quality from retrieval quality and giving evolution a clean optimization signal; re-trieval can be studied as a separate problem on the same tasks. Data splits and the per-task file format are in Appendix D. 
+
+Skills. The catalogue covers five capability ar-eas: document processing (pdf, xlsx, docx, pptx), data operations (sql, validation, pipelines, statis-tics), ML and AI (transactions, factchecking, model training, rag, prompting, evaluation), infrastructure (configs, containers, Terraform, debugging, migra-tions), and software engineering (api, testing, refac-toring). Each skill is a self-contained SKILL.md 
+
+artifact in the Agent Skills format (Wu and Zhang, 2026), a versionable, retrievable unit of procedural memory at uniform granularity. 
+
+2.2 Benchmark Construction 
+
+Tasks come from two high-level sources. Adapted tasks are drawn from SkillsBench (Li et al., 2026), SWE-bench Verified (Jimenez et al., 2024) and Pro (Deng et al., 2025), MLE-bench (Chan et al., 2025), FeatureBench (Zhou et al., 2026b), RE-Bench (Wijk et al., 2025), Terminal-Bench (Mer-rill et al., 2026), CodeScaleBench(Sourcegraph, 2024), DevOps-Gym (Tang et al., 2026), SRE-skills-bench(Rootly AI Labs, 2025), and issues from popular open-source repositories. We pre-serve the core problem and success criterion, but rewrite each instruction as a self-contained work-place request and re-implement verification as a pytest suite. Newly designed tasks cover scenarios not available in prior benchmarks; they are either practitioner-designed or first drafted with a frontier LLM and then expert-refined into realistic work-3place workflows, including longer tasks requiring multiple reasoning and tool-use steps. All tasks pass automated validation and independent expert review for verifier robustness, clarity, skill fit, real-ism, and oracle leakage. Appendix E details task origins, adaptation, and quality control. In parallel, we curate 22 reusable skills from common workplace procedures in document pro-cessing, data operations, ML and AI, infrastructure, and software engineering. Each task is assigned the minimal skill set required for completion, keep-ing task–skill annotations fixed and separating skill quality from retrieval quality. Each skill has two prompt bodies: a handcrafted baseline (H) adapted from public skill sources and an LLM-generated body (G) drafted as a broader procedural reference (Appendix L). This enables a controlled compari-son between expert-derived and automatically au-thored procedural knowledge. 
+
+2.3 Evaluation Protocol 
+
+We evaluate skills through specificity (source-context improvement) and generality (transfer un-der distribution shift) and report two accuracy met-rics. Let passed ∗ k, t denote the number of tests passed on attempt k of task t, and total ∗ t the total number of tests. M1 = 1
+
+Ntasks 
+
+X
+
+> t
+
+1
+
+Natt 
+
+X
+
+> k
+
+passed k,t 
+
+total t
+
+(1) M2 = 1
+
+Ntasks 
+
+X
+
+> t
+
+1
+
+Natt 
+
+X
+
+> k
+
+⊮[passed k,t = total t]
+
+(2) M1 measures partial progress, while M2 mea-sures complete task success. 
+
+3 Methods 
+
+3.1 Procedural-Memory Optimization 
+
+Let Σ ⊂ S be a procedural-memory configuration (a single skill or a skill library) and D = {τi}Ni=1 
+
+a pool of N traces collected under Σ or its ear-lier versions. An update operator U maps experi-ence to a new configuration, Σ′ = U (Σ , D), and may be instantiated as reflection, distillation, or a learned memory-writing policy (ang Gao et al., 2026). Given an initial Σ0, source and target dis-tributions psrc , p tgt , and a trace budget N , we seek the update rule maximizing expected value on tar-get contexts: 
+
+U ∗ = arg max   
+
+> U∈U
+
+EDsrc ∼psrc 
+
+> c∼ptgt
+
+ V  U (Σ 0, Dsrc ); c  
+
+s.t. |D src | ≤ N. 
+
+Here U is the admissible family of update mecha-nisms and V (Σ; c) is the value of configuration Σ
+
+in context c. The protocol sets ptgt = psrc for speci-ficity and shifts the task, role, or model distribution for generality .
+
+3.2 EVOLUTION : Benchmark Evaluation Interface 
+
+To compare procedural-memory systems on AF-TER, we use E VOLUTION , a lightweight harness that standardizes trace collection, skill versioning, update execution, and transfer measurement. Skills are stored as versioned SKILL.md artifacts with YAML metadata and markdown bodies; each exe-cution emits a trace linked to the active skill ver-sion, making updates and evaluations reproducible. EVOLUTION supports full-skill updates through a COLLECT –D IAGNOSE –R EVISE –P ROMOTE cycle. We denote by ρ the reflector : the model or proce-dure that inspects traces, summarizes failure modes, and proposes a revised skill body. For current skill version s(v) and source trace pool Dsrc , the update is s(v+1) = Uρ(s(v), Dsrc ). Thus, E VOLUTION 
+
+fixes trace collection, validation, promotion, roll-back, and lineage tracking, while the reflector ρ
+
+may vary across experiments or external systems. We evaluate four external procedural-memory sys-tems through this interface; their update mecha-nisms are summarized in Appendix C. Full harness details are in Appendix B. 
+
+4 Experiments and Results 
+
+We evaluate procedural memory on AFTER in four stages. First, we measure the value of static skill content without adaptation. Second, we test whether a single refinement pass can improve ex-isting skills. Third, we compare trace-based skill evolution under narrow and diverse experience. Fi-nally, we analyze transfer across models and roles, together with inference efficiency. Full experimen-tal details are provided in Appendix F. 
+
+4.1 Static Skill Valuation 
+
+In the static setting, each LLM is invoked once per task with the task instruction and, optionally, a skill 4DS GenAI PM Infra Aggregate Model Size ∅ H G ∆ ∅ H G ∆ ∅ H G ∆ ∅ H G ∆ ∅ Best ∆                                                                                                                                                                                                                                                                    
+
+> GPT 5.4 L42.0 47.0 55.0 +13.0 40.0 43.1 40.0 +3.1 38.5 44.6 33.8 +6.1 50.0 48.7 56.3 +6.3 47.6 50.1 +2.5 GPT 5.4 Mini 4 M43.0 33.0 48.0 +5.0 35.8 31.6 45.3 +9.5 27.7 24.6 30.8 +3.1 60.0 43.7 48.7 -11.3 44.0 44.9 +0.9 DeepSeek V4 Flash L28.7 29.6 33.9 +5.2 31.6 30.5 35.8 +4.2 11.4 17.1 18.1 +6.7 48.8 46.3 41.2 -7.6 34.6 37.1 +2.5 Nemotron 3 120B M29.6 31.3 28.7 +1.7 42.1 36.8 35.8 -6.3 14.3 21.9 24.8 +10.5 37.5 31.2 41.3 +3.8 31.9 33.0 +1.1 Gemma 4 31B M45.5 45.0 49.5 +4.0 35.3 35.3 33.7 -1.6 10.0 13.9 23.9 +13.9 43.1 45.6 44.4 +2.5 38.5 41.3 +2.8 Gemma 4 26B A4B M37.5 42.0 48.0 +10.5 37.4 40.0 40.0 +2.6 16.9 24.6 20.0 +7.7 34.4 28.1 40.0 +5.6 36.2 39.7 +3.5 Gemma 4 E4B S20.5 18.5 24.5 +4.0 15.3 23.7 29.5 +14.2 8.5 11.5 13.1 +4.6 13.8 14.4 21.2 +7.4 19.4 24.0 +4.6 Qwen 3.5-397B-FP8 L36.0 35.2 40.2 +4.2 35.3 35.5 38.7 +3.4 12.3 13.5 16.9 +4.6 48.1 46.9 45.0 -3.1 37.8 41.3 +3.5 Qwen 3.5-122B-A10B L36.0 33.5 41.0 +5.0 30.0 34.2 35.3 +5.3 12.3 19.2 20.8 +8.5 44.4 45.0 42.5 +0.6 36.5 39.7 +3.2 Qwen 3.5-35B-A3B M21.5 25.5 30.5 +9.0 27.9 31.6 36.9 +9.0 13.1 13.1 14.6 +1.5 28.1 23.7 35.0 +6.9 26.9 32.2 +5.3 Qwen 3.5-9B S12.5 11.5 17.0 +4.5 17.9 15.3 18.9 +1.0 6.2 10.8 14.6 +8.4 11.3 13.8 20.6 +9.3 15.7 18.7 +3.0 GPT-oss-120B L44.5 47.0 49.0 +4.5 38.3 42.6 41.6 +4.3 32.3 30.8 33.1 +0.8 57.5 51.3 58.7 +1.2 43.2 45.6 +2.4 GPT-oss-20B M30.0 32.0 29.0 +2.0 32.6 32.6 32.6 +0.0 16.1 22.3 16.9 +6.2 30.6 25.6 30.0 -0.6 30.9 31.3 +0.4
+
+Table 2: Static M2 (%) on AFTER under no-skill ( ∅), handcrafted (H), and generated (G) skills. ∆ denotes the best gain over no-skill. Colors indicate: ≥+10 , +4..+10 , +2..+4 , 0..+2 , <0 . 
+
+in the prompt; there is no agent orchestration, retry-ing, tool use, or evolution. Skill content takes one of three forms: none ( ∅), handcrafted (H), or LLM-generated (G). We report M2 as the primary metric, M1 results are provided in Appendix Table I.1. Table 2 reports results for the four roles most af-fected by skill availability (DS, GenAI, PM, Infra), along with aggregate statistics. Full per-role results are provided in Appendix Table I.2. Skills bene-fit weaker models more consistently than frontier models: for example, Gemma 4 E4B gains +14.2 points on GenAI, while GPT 5.4 gains +3.1. LLM-generated skills (G) often outperform handcrafted skills (H), suggesting that automated skill author-ing can match expert-derived procedural knowl-edge. Gains vary by role: DS and GenAI benefit most, whereas DE and SWE show smaller improve-ments, likely because coding-heavy roles already perform well without explicit procedural guidance. 
+
+4.2 LLM-Guided Skill Improvement 0   
+
+> 20
+> 40
+> 60
+> M2 Accuracy (%)
+> +7.00
+> Infra
+> +6.10
+> SWE
+> -1.50
+> DS
+> +4.00
+> GenAI
+> +7.40
+> Infra
+> +9.80
+> SWE
+> +11.20
+> DS
+> +5.20
+> GenAI
+> +7.10
+> Infra
+> +2.10
+> SWE
+> +6.50
+> DS
+> +4.40
+> GenAI
+> Qwen 3.5-9B (S) Qwen 3.5-35B (M) Qwen 3.5-122B (L)
+> Hpre Hpost
+
+Figure 3: Single-round refinement impact: M2 accuracy before ( Hpre ) and after ( Hpost ) for top-4 roles by gain. 
+
+The static setup isolates the value of skill content 
+
+but says nothing about how procedural memory should be produced or adapted . Before exploring multi-round evolution, we test whether a single re-finement pass can improve existing skills. We apply one round of LLM-guided refinement (using Evo-lution with Codex as reflector) to the handcrafted skill catalogue, producing H post from H pre .Figure 3 shows that even a single refinement round yields consistent improvements: +3.7 to +6.7 aggregate points across model scales. Larger mod-els benefit more consistently, with Infra and SWE showing the strongest gains. Full results are in Appendix Table K.1. 
+
+4.3 Framework-Guided Skill Improvement 
+
+Framework Seed Narrow Diverse 
+
+∆tr ∆te ∆tr ∆te 
+
+Codex GPT-5.5 57.1 -1.7 +0.4 -2.5 +8.3 Hermes 58.4 +3.6 -1.4 +3.7 +18.0 Memento 52.4 -12.7 +0.1 +3.8 +2.0 MemP 56.6 +13.9 +2.5 +7.3 +0.0 EvoSkill 52.5 +14.9 -2.7 -5.7 -3.9 
+
+Table 3: Train and test M1 gains over handcrafted skills on pdf, xlsx, and pptx tasks using a shared Qwen3.5-35B-A3B solver, averaged over pdf, xlsx, and pptx. Seed = handcraft test M1; ∆tr / ∆te = evolved −seed on train / test (same task set per condition). Trace and skill management are framework-specific. Narrow: n = 1 ;Diverse: n = 5 . Colors denote test gains. 
+
+We evaluate procedural memory frameworks on skill evolution from execution traces. Table 3 com-pares five approaches under narrow ( n = 1 ) and diverse ( n = 5 ) evolution. We run frameworks through the same Evolution harness under identical conditions with shared Qwen3.5-35B-A3B solver, task pool, and train/test splits. Results reveal a clear gap between specialization and transfer: all 5frameworks struggle with the proper generalization, large training gains do not necessarily translate into improvements on held-out tasks. 
+
+4.4 Skill Transfer Analysis 
+
+We analyze skill transfer along three practically important dimensions: cross-model generalization, cross-role transfer, and inference efficiency. All Traces Sonnet 4 Qwen 27B Qwen 9B Llama 8B 
+
+> Source Model Experience
+> 0
+> 20
+> 40
+> 60
+> 80
+> Test Accuracy (%)
+> 73.1
+> 36.0
+> 48.8
+> 59.4
+> 55.5
+> Diverse
+
+Figure 4: Cross-model transfer: test accuracy when skills are evolved from traces of different source models versus diverse traces from all models. 
+
+Cross-model transfer. A key question is whether skills must be evolved from traces of the same model that will use them. Figure 4 shows that skills evolved combining experience from multi-ple source models substantially outperform single-model sources: 73.1% versus 36.0–59.4%. Surpris-ingly, weaker source models provide better trans-ferable signal than stronger models, suggesting that procedural knowledge benefits from imperfect exe-cutions. 10 5 0 5 10 15     
+
+> Accuracy Gain (%)
+> PM PM
+> PM DS
+> DS PM
+> DS DS
+> +11.7
+> -4.8
+> -7.5
+> +6.2
+
+Figure 5: Cross-role transfer for the pdf skill. In-role evolution (PM to PM, DS to DS) yields gains, while applying a skill evolved for one role to another (PM to DS, DS to PM) hurts performance. 
+
+Cross-role generalization. Skills evolved within one professional role may not transfer effectively to other roles. Figure 5 illustrates this for the pdf skill: while in-role evolution yields gains of +11.7 (PM) and +6.2 (DS), applying a skill evolved for one role to another produces losses of -4.8 to -7.5 points. This asymmetry arises because different roles use the same skill for different purposes (e.g., pdf extraction for executive summaries in PM ver-sus data ingestion in DS). Role-specific specializa-tion emerges naturally during evolution. No Skill Handcrafted Evolved 
+
+> Skill Condition
+> 0
+> 100
+> 200
+> 300
+> 400
+> 500
+> 600
+> Total Tokens (k)  421k
+> 521k
+> 406k
+> 302k
+> -326k
+> -48k
+> Claude + Evolution
+> Hermes + Evolution
+
+Figure 6: Token usage for Kafka Lag Anomaly Detec-tion. Evolved skills reduce total tokens by 326k (Claude) and 48k (Hermes) compared to handcrafted skills. 
+
+Token efficiency. Evolved skills reduce inference cost by front-loading procedural knowledge into the prompt rather than discovering it at runtime. Figure 6 illustrates this on the Kafka Lag Anomaly Detection task: evolved skills reduce total token usage by 326k (62%) for Claude and 48k (16%) for Hermes compared to handcrafted skills. The same pattern holds across other tasks, with evolved skills consistently reducing both token usage and inference cost (Table G.1). 
+
+5 Conclusion 
+
+We introduced AFTER, a benchmark for evalu-ating procedural memory through transfer across tasks, roles, and model backbones. Across 382 workplace tasks, we find that procedural skills im-prove full-pass accuracy by +2.8 points on average, while a single round of skill evolution yields an additional +5.2-point gain. Skills evolved from diverse multi-model traces achieve 73.1% cross-model test accuracy, outperforming the best single-model trace source by at least +13.7 points. At the same time, cross-role studies reveal an important limitation: skills naturally specialize to local work-flows and may lose effectiveness when transferred across contexts. Taken together, these results sug-gest that the central challenge of procedural mem-ory is not storing more experience, but extracting procedural structure that remains useful beyond the environment in which it was learned. 6Limitations 
+
+Benchmark coverage . AFTER targets technology-sector roles and workplace tasks drawn partly from authors’ practice, which may underrepresent domains such as healthcare, legal, or scientific research. The 22 skills span five capability areas but intentionally exclude open-ended creative or conversational tasks, limiting conclusions to procedural, tool-use-oriented workflows. 
+
+Evaluation scope . Our experiments fix the trace budget per evolution run to enable controlled comparison; real deployments may accumulate far larger trace pools, and the relationship between trace volume and transfer quality remains an open question. Evaluation uses automated pytest verifi-cation, which measures functional correctness but does not capture qualities such as code readability, robustness to edge cases beyond the test suite, or user preference. 
+
+Model and framework selection . We evaluate a representative but non-exhaustive set of LLMs and procedural-memory frameworks. Several re-cently released frontier models and memory sys-tems could not be included due to API access con-straints or release timing relative to benchmark finalization. 
+
+Ethics Statement 
+
+All datasets used are public and were collected and preprocessed by their original authors. 
+
+References 
+
+Salaheddin Alzubi, Noah Provenzano, Jaydon Bingham, Weiyuan Chen, and Tu Vu. 2026. Evoskill: Auto-mated skill discovery for multi-agent systems. CoRR ,abs/2603.02766. Huan ang Gao, Jiayi Geng, Wenyue Hua, Mengkang Hu, Xinzhe Juan, and 1 others. 2026. A survey of self-evolving agents: What, when, how, and where to evolve on the path to artificial super intelligence. 
+
+arXiv preprint arXiv:2507.21046 . TMLR 2026. Fadhel Ayed, Ali Maatouk, Nicola Piovesan, Anto-nio De Domenico, Mérouane Debbah, and Zhi-Quan Luo. 2024. Hermes: A large language model frame-work on the journey to autonomous networks. CoRR ,abs/2411.06490. Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D. Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal, Ariel Herbert-Voss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel Ziegler, Jeffrey Wu, Clemens Winter, and 12 others. 2020. Language models are few-shot learners. In Advances in Neural Information Processing Systems , volume 33, pages 1877–1901. Jun Shern Chan, Neil Chowdhury, Oliver Jaffe, James Aung, Dane Sherburn, Evan Mays, Giulio Starace, Kevin Liu, Leon Maksin, Tejal Patwardhan, Alek-sander Madry, and Lilian Weng. 2025. Mle-bench: Evaluating machine learning agents on machine learning engineering. In The Thirteenth International Conference on Learning Representations, ICLR 2025, Singapore, April 24-28, 2025 . OpenReview.net. Anwoy Chatterjee, H. S. V. N. S. Kowndinya Renduch-intala, Sumit Bhatia, and Tanmoy Chakraborty. 2025. On the effect of instruction tuning loss on general-ization. Trans. Assoc. Comput. Linguistics , 13:1360– 1380. Hyung Won Chung, Le Hou, Shayne Longpre, Barret Zoph, Yi Tay, William Fedus, Yunxuan Li, Xuezhi Wang, Mostafa Dehghani, Siddhartha Brahma, Al-bert Webson, Shixiang Shane Gu, Zhuyun Dai, Mirac Suzgun, Xinyun Chen, Aakanksha Chowdhery, Alex Castro-Ros, Marie Pellat, Kevin Robinson, and 16 others. 2024. Scaling instruction-finetuned language models. Journal of Machine Learning Research ,25(70):1–53. Xiang Deng, Jeff Da, Edwin Pan, Yannis Yiming He, Charles Ide, Kanak Garg, Niklas Lauffer, Andrew Park, Nitin Pasari, Chetan Rane, Karmini Sampath, Maya Krishnan, Srivatsa Kundurthy, Sean Hendryx, Zifan Wang, Vijay Bharadwaj, Jeff Holm, Raja Aluri, Chen Bo Calvin Zhang, and 3 others. 2025. SWE-Bench Pro: Can AI agents solve long-horizon soft-ware engineering tasks? CoRR , abs/2509.16941. Runnan Fang, Yuan Liang, Xiaobin Wang, Jialong Wu, Shuofei Qiao, Pengjun Xie, Fei Huang, Huajun Chen, and Ningyu Zhang. 2025. Memp: Exploring agent procedural memory. CoRR , abs/2508.06433. Yudong Gao, Zongjie Li, Yuanyuan Yuan, Zimo Ji, Pingchuan Ma, and Shuai Wang. 2026. Skillreducer: Optimizing LLM agent skills for token efficiency. 
+
+CoRR , abs/2603.29919. Jordan Hoffmann, Sebastian Borgeaud, Arthur Mensch, Elena Buchatskaya, Trevor Cai, Eliza Rutherford, DDL Casas, Lisa Anne Hendricks, Johannes Welbl, Aidan Clark, and 1 others. 2022. Training compute-optimal large language models. In Advances in Neu-ral Information Processing Systems .Shaokang Jiang and Daye Nam. 2026. Beyond the prompt: An empirical study of cursor rules. arXiv preprint arXiv:2512.18925 . To appear at MSR 2026. Carlos E. Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik R. Narasimhan. 2024. Swe-bench: Can language mod-els resolve real-world github issues? In The Twelfth 
+
+7International Conference on Learning Representa-tions, ICLR 2024, Vienna, Austria, May 7-11, 2024 .OpenReview.net. Po-Nien Kung, Fan Yin, Di Wu, Kai-Wei Chang, and Nanyun Peng. 2023. Active instruction tuning: Improving cross-task generalization by training on prompt sensitive tasks. In Proceedings of the 2023 Conference on Empirical Methods in Natural Lan-guage Processing, EMNLP 2023, Singapore, Decem-ber 6-10, 2023 , pages 1813–1829. Association for Computational Linguistics. Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E. Gon-zalez, Hao Zhang, and Ion Stoica. 2023. Efficient memory management for large language model serv-ing with PagedAttention. In Proceedings of the 29th Symposium on Operating Systems Principles (SOSP 2023) , pages 611–626. ACM. Xiangyi Li, Wenbo Chen, Yimin Liu, Shenghan Zheng, Xiaokun Chen, Yifeng He, Yubo Li, Bingran You, Haotian Shen, Jiankai Sun, Shuyi Wang, Qunhong Zeng, Di Wang, Xuandong Zhao, Yuanli Wang, Roey Ben Chaim, Zonglin Di, Yipeng Gao, Junwei He, and 21 others. 2026. Skillsbench: Benchmark-ing how well agent skills work across diverse tasks. 
+
+CoRR , abs/2602.12670. Yujian Liu, Jiabao Ji, Li An, Tommi Jaakkola, Yang Zhang, and Shiyu Chang. 2026. How well do agen-tic skills work in the wild: Benchmarking LLM skill usage in realistic settings. arXiv preprint arXiv:2604.04323 .Ziyu Ma, Shidong Yang, Yuxiang Ji, Xucong Wang, Yong Wang, Yiming Hu, Tongwen Huang, and Xi-angxiang Chu. 2026. SkillClaw: Let skills evolve collectively with agentic evolver. arXiv preprint arXiv:2604.08377 .Mike A. Merrill, Alexander G. Shaw, Nicholas Carlini, Boxuan Li, Harsh Raj, Ivan Bercovich, Lin Shi, and 1 others. 2026. Terminal-bench: Benchmarking agents on hard, realistic tasks in command line interfaces. In 
+
+The Fourteenth International Conference on Learn-ing Representations, ICLR 2026 . OpenReview.net. Qirui Mi, Zhijian Ma, Mengyue Yang, Haoxuan Li, Yisen Wang, Haifeng Zhang, and Jun Wang. 2026. ProcMEM: Learning reusable procedural memory from experience via non-parametric PPO for LLM agents. arXiv preprint arXiv:2602.01869 .Grégoire Mialon, Clémentine Fourrier, Thomas Wolf, Yann LeCun, and Thomas Scialom. 2024. GAIA: a benchmark for general AI assistants. In The Twelfth International Conference on Learning Representa-tions, ICLR 2024, Vienna, Austria, May 7-11, 2024 .OpenReview.net. Chen Qian, Wei Liu, Hongzhang Liu, Nuo Chen, Yufan Dang, Jiahao Li, Cheng Yang, Weize Chen, Yusheng Su, Xin Cong, Juyuan Xu, Dahai Li, Zhiyuan Liu, and Maosong Sun. 2024. ChatDev: Communicative agents for software development. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) ,pages 15174–15186. Association for Computational Linguistics. Changle Qu, Sunhao Dai, Xiaochi Wei, Hengyi Cai, Shuaiqiang Wang, Dawei Yin, Jun Xu, and Ji-Rong Wen. 2025. From exploration to mastery: Enabling llms to master tools via self-driven interactions. In 
+
+The Thirteenth International Conference on Learning Representations, ICLR 2025, Singapore, April 24-28, 2025 . OpenReview.net. Kiran Ramnath, Kang Zhou, Sheng Guan, Soumya Sm-ruti Mishra, and 1 others. 2025. A systematic survey of automatic prompt optimization techniques. In 
+
+Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing .Rootly AI Labs. 2025. Sre-skills-bench. 
+
+https://github.com/Rootly-AI-Labs/ SRE-skills-bench . GitHub repository. Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao. 2023. Re-flexion: language agents with verbal reinforcement learning. In Advances in Neural Information Pro-cessing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023 .Sourcegraph. 2024. Codescalebench. https: //github.com/sourcegraph/CodeScaleBench .GitHub repository. Yuheng Tang, Kaijie Zhu, Bonan Ruan, Chuqi Zhang, Michael Yang, Hongwei Li, Suyue Guo, Tianneng Shi, Zekun Li, Christopher Kruegel, Giovanni Vigna, Dawn Song, William Yang Wang, Lun Wang, Yan-gruibo Ding, Zhenkai Liang, and Wenbo Guo. 2026. DevOps-Gym: Benchmarking AI agents in software DevOps cycle. In The Fourteenth International Con-ference on Learning Representations, ICLR 2026 .OpenReview.net. Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. In Advances in Neural Information Pro-cessing Systems , volume 30. Pablo Villalobos, Anson Ho, Jaime Sevilla, Tamay Be-siroglu, Lennart Heim, and Marius Hobbhahn. 2024. Position: Will we run out of data? limits of llm scal-ing based on human–generated data. In Forty-first International Conference on Machine Learning .Chenxi Wang, Zhuoyun Yu, Xin Xie, Wuguannan Yao, Runnan Fang, Shuofei Qiao, Kexin Cao, Guozhou Zheng, Xiang Qi, Peng Zhang, and Shumin Deng. 2026. SkillX: Automatically constructing skill knowledge bases for agents. arXiv preprint arXiv:2604.04804 .
+
+8Lei Wang, Chen Ma, Xueyang Feng, Zeyu Zhang, Hao Yang, Jingsen Zhang, Zhiyuan Chen, Jiakai Tang, Xu Chen, Yankai Lin, and 1 others. 2024. A survey on large language model based autonomous agents. 
+
+Frontiers of Computer Science , 18(6):186345. Hjalmar Wijk, Tao Lin, Joel Becker, Sami Jawhar, Neev Parikh, Thomas Broadley, Lawrence Chan, Michael Chen, Josh Clymer, Jai Dhyani, Elena Ericheva, Katharyn Garcia, Brian Goodrich, Nikola Jurkovic, Holden Karnofsky, Megan Kinniment, Aron Lajko, Seraphina Nix, Lucas Sato, and 4 others. 2025. RE-Bench: Evaluating frontier AI R&D capabilities of language model agents against human experts. In 
+
+Proceedings of the 42nd International Conference on Machine Learning, ICML 2025 .Yaxiong Wu and Yongyue Zhang. 2026. Agent skills from the perspective of procedural memory: A survey. 
+
+Authorea Preprints .Chengrun Yang, Xuezhi Wang, Yifeng Lu, Hanxiao Liu, Quoc V. Le, Denny Zhou, and Xinyun Chen. 2024. Large language models as optimizers. In 
+
+The Twelfth International Conference on Learning Representations, ICLR 2024, Vienna, Austria, May 7-11, 2024 . OpenReview.net. Yutao Yang, Junsong Li, Qianjun Pan, Bihao Zhan, Yux-uan Cai, Lin Du, Jie Zhou, Kai Chen, Qin Chen, Xin Li, Bo Zhang, and Liang He. 2026. Autoskill: Experience-driven lifelong learning via skill self-evolution. CoRR , abs/2603.01145. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2023. ReAct: Synergizing reasoning and acting in language models. In The Eleventh International Conference on Learning Representations . OpenReview.net. Hanrong Zhang, Shicheng Fan, Henry Peng Zou, Yankai Chen, Zhenting Wang, Jiayu Zhou, and 1 others. 2026. CoEvoSkills: Self-evolving agent skills via co-evolutionary verification. arXiv preprint arXiv:2604.01687 .Jenny Zhang, Shengran Hu, Cong Lu, Robert T. Lange, and Jeff Clune. 2025. Darwin godel machine: Open-ended evolution of self-improving agents. CoRR ,abs/2505.22954. Lechen Zhang, Tolga Ergen, Lajanugen Logeswaran, Moontae Lee, and David Jurgens. 2024. Sprig: Improving large language model performance by system prompt optimization. arXiv preprint arXiv:2410.14826 .Andrew Zhao, Daniel Huang, Quentin Xu, Matthieu Lin, Yong-Jin Liu, and Gao Huang. 2024a. Expel: LLM agents are experiential learners. In Thirty-Eighth AAAI Conference on Artificial Intelligence, AAAI 2024, Thirty-Sixth Conference on Innovative Applica-tions of Artificial Intelligence, IAAI 2024, Fourteenth Symposium on Educational Advances in Artificial Intelligence, EAAI 2024, February 20-27, 2024, Van-couver, Canada , pages 19632–19642. AAAI Press. Haiteng Zhao, Chang Ma, Guoyin Wang, Jing Su, Lingpeng Kong, Jingjing Xu, Zhi-Hong Deng, and Hongxia Yang. 2024b. Empowering large lan-guage model agents through action learning. CoRR ,abs/2402.15809. Huichi Zhou, Siyuan Guo, Anjie Liu, Zhongwei Yu, Ziqin Gong, Bowen Zhao, Zhixun Chen, Menglong Zhang, Yihang Chen, Jinsong Li, Runyu Yang, Qiang-bin Liu, Xinlei Yu, Jianmin Zhou, Na Wang, Chun-yang Sun, and Jun Wang. 2026a. Memento-skills: Let agents design agents. CoRR , abs/2603.18743. Qixing Zhou, Jiacheng Zhang, Haiyang Wang, Rui Hao, Jiahe Wang, Minghao Han, Yuxue Yang, Shuzhe Wu, Feiyang Pan, Lue Fan, Dandan Tu, and Zhaoxiang Zhang. 2026b. FeatureBench: Benchmarking agen-tic coding for complex feature development. In The Fourteenth International Conference on Learning Representations, ICLR 2026 . OpenReview.net. Shuyan Zhou, Frank F. Xu, Hao Zhu, Xuhui Zhou, Robert Lo, Abishek Sridhar, Xianyi Cheng, Tianyue Ou, Yonatan Bisk, Daniel Fried, Uri Alon, and Gra-ham Neubig. 2024. Webarena: A realistic web en-vironment for building autonomous agents. In The Twelfth International Conference on Learning Rep-resentations, ICLR 2024, Vienna, Austria, May 7-11, 2024 . OpenReview.net. 
+
+9Appendix A Related Work 
+
+Skills as reusable procedural artifacts. LLM agents can improve from experience without weight updates by converting interaction traces into reusable guidance. Early work explored ver-bal self-reflections (Shinn et al., 2023), cross-task insights and replayed successes (Zhao et al., 2024a), tool documentation rewritten from trial-and-error (Qu et al., 2025), and directly optimised prompts (Yang et al., 2024). A second wave externalised that guidance into discrete, model-agnostic skill artifacts (Yang et al., 2026; Zhao et al., 2024b), augmented with explicit storage and update policies (Fang et al., 2025), MDP-style formalisation (Mi et al., 2026), or hierarchical re-finement (Wang et al., 2026). Persistent skill files now appear in deployed coding assistants (Jiang and Nam, 2026) and as structured blueprints in autonomous-network agents (Ayed et al., 2024), marking procedural memory as a first-class artifact outside the base prompt (Wu and Zhang, 2026). 
+
+Self-evolving procedural memory. Once skills are first-class artifacts, the natural next question is how they should change as the agent accumulates experience. Memento-Skills couples continual skill writing with behaviour-aligned routing (Zhou et al., 2026a); EvoSkill and CoEvoSkills refine skills from failure and verification feedback (Alzubi et al., 2026; Zhang et al., 2026); SkillClaw aggregates cross-user trajectories into a shared repository (Ma et al., 2026); and broader self-evolving-agent work targets agent code or training loops (Zhang et al., 2025; ang Gao et al., 2026). These methods es-tablish that evolution is feasible, but each fixes a single source-pool design and reports transfer along at most one axis, leaving it unclear whether the re-sulting behaviour generalises beyond the source setup. 
+
+Agent and skill benchmarks. Measuring such transfer, in turn, requires benchmarks that isolate procedural memory from the rest of the agent stack. End-to-end agent benchmarks — GAIA (Mi-alon et al., 2024), SWE-bench (Jimenez et al., 2024), WebArena (Zhou et al., 2024), and MLE-bench (Chan et al., 2025) — score full pipelines without separating the skill artifact from plan-ning, retrieval, or tool use. Skill-focused bench-marks come closer: SkillsBench compares no-skill, curated-skill, and self-generated-skill conditions under controlled verifiers (Li et al., 2026), and follow-up work shows that retrieval from large noisy corpora collapses much of the gain (Liu et al., 2026). Yet none of these varies the skill source while holding the rest fixed, and none combines explicit skill annotations, professional-role struc-ture, and controlled transfer splits in a single setting (Table 1). 
+
+B Evolution Details 
+
+EVOLUTION is a lightweight framework for con-trolling, recording, and evaluating procedural-memory evolution. It is used as an experimental layer around agentic systems with textual proce-dural memory. Its purpose is to make each skill version, trace, update, evaluation, promotion, and rollback explicit and reproducible, so that different update mechanisms and trace sources can be stud-ied under the same benchmark protocol (Figure 7). 
+
+Skill representation. Each skill is stored as a versioned textual artifact. In our implementation, a SKILL.md file contains YAML metadata and a markdown body. The metadata records the skill name, role and skill annotations, version, parent version, source trace pool, and evaluation status. The body contains the procedural content used by the agent; Appendix L shows an example. 
+
+Traces and lineage. Each execution under ver-sion s(v) emits a trace τ linked to that version. Traces provide evidence for failure diagnosis, re-vision, and fitness estimation. When an operator modifies a skill, E VOLUTION creates a new ver-sion s(v+1) and links it to its parent. Rejected candidates remain as inactive branches. Named snapshots store sets of active skill versions, making benchmark runs reproducible. 
+
+Full-skill evolution. One iteration follows four stages: C OLLECT , D IAGNOSE , R EVISE , and P RO -
+
+> MOTE
+
+/R OLLBACK . The agent first executes source tasks with the current skill. The framework then aggregates failure traces into recurrent error modes, such as missing checks, brittle assumptions, incor-rect tool use, or incomplete output requirements. A revision operator proposes a candidate body condi-tioned on the current skill and the diagnosis. The candidate is promoted if it improves validation per-formance by at least margin δ; otherwise it is re-tained as an inactive branch. For current version 
+
+s(v) and source trace pool Dsrc , the body-level up-date is s(v+1) = U (s(v), Dsrc ). The framework 10 Execution Roles & Tasks PM GenAI DS DE Infra SWE TASKS [ ] Task 1 [ ] Task n Skills 1SKILL.md 2SKILL.md kSKILL.md Task Execution Agents k LLM models Model 1 78% success Model 2 60% success Model k 70% success Skill Rewriting Version v+1 Evolution aSkill Adapters lightweight per-context notes bSkills Task Traces execution outcomes per (model, task) M1 M2 M3 success failure partial Analyzer diagnose & revise Adapter Writing append per-context (model, role, task) notes Pattern & Role lineage PM GenAI DS DE Infra SWE same pattern = same role drove the rewrite Generalization Specificity Version v Version v+1 LLM model collect traces revise skill body SKILL.md SKILL.md SKILL.md Skill Updating append adapters | revise skills Optimization 12a 2b SKILL.md k2112k3T2 T3 T7 T4 T5 T6 T1 Figure 7: The E VOLUTION pipeline. Agent executions emit traces associated with an active skill version. Traces support diagnosis, revision, and validation of candidate versions. Accepted and rejected candidates remain linked in a lineage graph. Context-specific adapters can specialize a frozen skill body for a task, role, or model without modifying the main body. 
+
+fixes trace collection, validation, promotion, roll-back, and lineage tracking, while the revision oper-ator itself can vary. 
+
+Context-specific adapters. An alternative up-date strategy keeps the skill body frozen and in-stead prepends a short context-specific prefix dis-tilled from execution traces. Such adapters could be keyed by task, role, or model, separating local specialization from body-level evolution without modifying shared procedural content. We leave their empirical evaluation to future work. 
+
+C External Agentic Frameworks with Procedural Memory 
+
+We evaluate four procedural-memory systems through the E VOLUTION interface. They differ in how procedural knowledge is represented, selected, and updated. 
+
+EvoSkill. EvoSkill (Alzubi et al., 2026) refines skills from failure and verification feedback. It uses a generate–verify–refine loop in which suc-cessful patterns are reinforced and failing patterns are corrected across iterations. 
+
+Memp. Memp (Fang et al., 2025) distills trajec-tories into fine-grained stepwise instructions and higher-level script-like procedures. Its memory loop separates build, retrieval, and update phases, with update operations that add, modify, or delete memory entries in response to execution feedback. 
+
+Hermes. Hermes (Ayed et al., 2024) repre-sents procedural knowledge as structured YAML blueprints generated and refined in a multi-agent Designer/Coder pipeline. Candidate plans are cri-tiqued, merged, and edited using evaluator judg-ments and execution feedback before code genera-tion. 
+
+Memento-Skills. Memento-Skills (Zhou et al., 2026a) stores procedural memory as structured markdown skills embedded in stateful prompts. It combines a behaviour-trainable router for skill se-lection with online skill writing and library expan-sion, allowing skill selection and skill editing to co-evolve without parameter updates. 
+
+D Benchmark Details 
+
+D.1 Data Splits 
+
+Each (role, skill) cell in the benchmark has tasks split into three folds: train (50%), validation (25%), and test (25%). The train split provides traces for skill evolution. The validation split enables hyper-parameter tuning and prevents overfitting during evolution. The test split provides a final evaluation, ensuring reported numbers reflect genuine general-ization. For cross-role experiments, an additional split structure holds out entire roles. When measuring cross-role transfer for the PDF skill, we might train on DE-PDF, DS-PDF, and PM-PDF tasks, then evaluate on GenAI-PDF tasks that were never seen 11 during evolution. 
+
+D.2 Task Format 
+
+Each task in AFTER follows a consistent structure: • Metadata (task.toml ): task name, role, re-quired skills, difficulty, and data source attribu-tion. • Instructions (instruction.md ): realistic re-quest mimicking how a colleague might describe the work. • Input files (inputs/ ): authentic data in work-place formats (Excel, PDF, CSV, JSON). • Verification (tests/test_outputs.py ): pytest assertions for automated correctness checking. Task instructions deliberately omit implemen-tation details that should come from procedural memory. For example, an instruction might say, “extract the transaction table* from the bank state-ment” without specifying which library to use, how to handle multi-page documents, or the output for-mat. These procedural details should be supplied by the skill. 
+
+E Benchmark Construction 
+
+E.1 Task Origins 
+
+AFTER draws tasks from three complementary sources (Table E.1): tasks adapted from public benchmarks, tasks written by the authors, and tasks produced through multi-stage LLM-based genera-tion. 
+
+Adapted tasks. 56 tasks were adapted from 13 public benchmarks and source repositories (Ta-ble E.2). For each, we kept the underlying prob-lem and success criterion, rewrote the instruction to conform to the AFTER task contract (a self-contained workplace request, no embedded oracle, no references to the upstream evaluator), and re-implemented verification as a pytest suite in the uni-fied AFTER test harness. Tasks that could not be adapted faithfully were dropped rather than rewrit-ten. 
+
+Newly designed tasks. 38 tasks were written by the authors on topics relevant to their own prac-tice. 18 of these are longer multi-turn scenarios (3 per role) that probe procedural memory across several reasoning steps. The remaining 288 tasks were drafted by Claude Sonnet 4.6. Each draft was scored and iteratively rewritten until it met all criteria below. 
+
+E.2 Quality Assurance 
+
+Every task in the pool was reviewed under a uni-form protocol combining automated checks with two-reviewer inspection against the following cri-teria: A.1 Clarity — instruction.md is unambigu-ously interpretable on its own. A.2 Skill fit — success requires the declared skills. A.3 Realism — the scenario is plausible for the assigned role. B.4 Dependency hygiene — lightweight, easily installable dependencies only. B.5 Verifier soundness — the verifier rejects ad-versarial baselines (empty, constant, random). B.6 No oracle leakage — the instruction contains no ground-truth values, hard-coded answers, or hidden hints. C.7 Determinism — repeated runs against re-generated inputs yield consistent verifier out-comes. C.8 Self-containment — all materials are in the task directory or generated from a fixed seed. Automated checks operationalize B.4–B.5 and C.7–C.8: a static metadata and path-contract au-dit, a reference-solution calibration run, and an adversarial gate that substitutes empty, constant, and random outputs and requires the verifier to fail on all three. Two authors then independently re-viewed every task against the full rubric. A task was accepted only when both reviewers returned 
+
+accept on every criterion. Disagreements led to rewriting and re-review. Total human-review effort was approximately 32 hours per reviewer. 
+
+F Experimental Setup 
+
+We evaluate on AFTER across all six professional roles and the full 22-skill catalogue, following the train/validation/test splits defined in Appendix D. Our experiments comprise static skill-value base-lines (no skill, handcrafted, and generated), a single refinement pass, and skill evolution; for evolved skills we measure transfer along the role and model axes and report token efficiency. Cross-role trans-fer uses the three high-overlap skills shared by four roles each— pdf , xlsx , and validation .12 Origin # Tasks Role of this category in the benchmark 
+
+Adapted from existing public benchmarks 56 External anchor; comparability with prior work Written by the authors 38 Coverage of topics relevant to the authors’ practice LLM-based generation 288 Scaled benchmark coverage 
+
+Total active pool 382 
+
+Table E.1: Origins of the AFTER task pool. 
+
+Upstream source Citation # Tasks Roles covered 
+
+benchflow-ai/skillsbench (Li et al., 2026) 19 DE, DS, Infra, PM ScaleAI/SWE-bench_Pro (Deng et al., 2025) 6 DE, SWE deepset-ai/haystack (issues) – 6 GenAI, SWE openai/mle-bench (Chan et al., 2025) 4 DS, GenAI princeton-nlp/SWE-bench Verified (Jimenez et al., 2024) 4 SWE LiberCoders/FeatureBench (Zhou et al., 2026b) 4 SWE harbor-framework/terminal-bench-2 (Merrill et al., 2026) 3 DE, GenAI, Infra sourcegraph/CodeScaleBench – 2 DE, GenAI METR/RE-Bench (Wijk et al., 2025) 2 DS, GenAI vllm-project/vllm (issues) (Kwon et al., 2023) 2 GenAI ucsb-mlsec/DevOps-Gym (Tang et al., 2026) 2 SWE Rootly-AI-Labs/SRE-skills-bench – 1 Infra PostHog/posthog (issues) – 1 SWE 
+
+Total adapted 56 
+
+Table E.2: Upstream sources of adapted tasks. Entries marked “–” are open-source projects (GitHub issues or benchmarks) without an associated peer-reviewed or arXiv publication. 
+
+Models. The baseline evaluation runs a panel of open- and closed-weight models, grouped by family and size tier (S/M/L): the GPT 5.4 family (GPT 5.4, GPT 5.4 Mini), GPT-oss (120B, 20B), the Qwen 3.5 family (397B-FP8, 122B-A10B, 35B-A3B, 9B), the Gemma 4 family (31B, 26B-A4B, E4B), DeepSeek V4 Flash, and Nemotron 3 (120B). We also use a harness around the following mod-els to rewrite skills during evolution: Claude Son-net 4.6 (Claude Code), GPT 5.5 (Codex), and DeepSeek V4 Flash (Hermes). All of our experi-ments use the models listed above; for the cross-model transfer experiment (Figure 4) we addition-ally add Qwen 3.5-27B and Llama 8B. 
+
+Splits. Tasks are assigned to three splits: train 
+
+(used for evolution), test (unseen tasks for every role+skill combination), and valdation .
+
+G Token Usage for auto-agents 
+
+We measure the inference cost of procedural mem-ory in an agentic loop: Claude (Sonnet 4.6) and the small open backbone Hermes (Qwen 3.5-35B-A3B) run three representative auto-agent tasks, and we record generated tokens, total tokens, and dollar cost under four skill scenarios — no skill, handcrafted, evolved, and self-evolved (Table G.1, means over four runs). Evolved skills generally cut total token usage relative to the handcrafted baseline (e.g. 521k →195k for Claude on Kafka Lag Anomaly Detection), lowering cost without sacrificing task success.                                                                                  
+
+> GH Actions Opt. Kafka Lag PPTX Fmt. Metric Scenario Claude Hermes Claude Hermes Claude Hermes
+> Gen (k)
+> No Skill 25.4 11.7 8.5 14.7 18.3 27.2 Handcrafted 26.2 27.8 8.3 6.2 18.4 11.2 Evolved 21.6 27.1 2.1 3.2 10.3 18.7 Self-Evolved 9.6 19.4 12.7 3.1 10.6 22.9
+> Total (k)
+> No Skill 505.3 278.2 421.2 406.5 472.9 1526.8 Handcrafted 625.0 460.8 521.1 302.5 664.9 335.5 Evolved 285.8 308.8 194.7 254.4 504.8 476.5 Self-Evolved 227.4 358.7 738.8 228.6 352.2 1419.3
+> Cost ($)
+> No Skill 0.675 0.049 0.333 0.070 0.535 0.237 Handcrafted 0.728 0.088 0.388 0.048 0.617 0.057 Evolved 0.538 0.067 0.150 0.038 0.422 0.083 Self-Evolved 0.306 0.067 0.519 0.035 0.371 0.218
+
+Table G.1: Token usage and cost: Claude (Sonnet 4.6) vs. Hermes (Qwen 3.5-35B-A3B) on three auto-agent tasks across four skill scenarios. Gen (k) = generated to-kens / 1000; Total (k) = total tokens / 1000; Cost in USD. Means over 4 runs. 
+
+H Reflector Ablation 
+
+To show that skill evolution improves task perfor-mance independently of the reasoner that performs it, we evolve the pptx and xlsx skills with four rea-soners — the Claude, Hermes, and Codex agents, plus our own script with no agent involved — while holding the solver fixed at GPT-oss-120B. Each rea-soner tunes a handcrafted baseline on a train subset of n = 1 up to n = 5 tasks and is tested on 3 held-out tasks. As Table H.1 shows, diverse train-ing beats narrow for every reasoner, confirming the 13 gain comes from evolution itself rather than from any particular agent. 
+
+Reasoner Narrow Diverse 
+
+pptx 
+
+Script (GPT-oss-120B) 60.1 79.3 
+
+Claude Code (Opus 4.8) 56.8 87.5 
+
+Codex (GPT-5.5) 65.0 82.7 
+
+Hermes (DeepSeek V4 Flash) 59.1 82.7 
+
+xlsx 
+
+Script (GPT-oss-120B) 62.6 68.1 
+
+Claude Code (Opus 4.8) 51.7 68.2 
+
+Codex (GPT-5.5) 45.8 56.1 
+
+Hermes (DeepSeek V4 Flash) 53.5 67.4 
+
+Table H.1: Reasoner ablation — M1 (test, %); best result per setting. Bold marks the larger value in each row. 
+
+14 I Train Split Results 
+
+DE DS GenAI Infra PM SWE Aggregate Model Size ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∆best −no 
+
+Gemma 4 31B M — — — — — — — — — — — — — — — — — — — — — —Gemma 4 26B A4B M 27.4 28.1 29.5 25.5 25.4 25.3 29.6 31.6 32.5 41.4 45.8 49.3 25.7 28.4 29.1 24.9 2.4 26.5 28.9 30.0 31.7 +2.8 
+
+Gemma 4 E4B S 14.7 14.5 15.6 21.6 22.2 20.2 21.1 23.7 23.8 37.7 38.1 36.2 19.3 19.4 17.9 19.9 19.0 21.4 22.1 22.6 22.4 +0.5 Qwen 3.5-397B-FP8 L — — — — — — — — — — — — — — — — — — — — — —Qwen 3.5-122B-A10B L 22.9 23.4 24.8 25.1 25.9 24.0 28.4 29.8 29.6 42.4 44.6 46.2 24.9 29.2 27.2 20.3 21.7 21.3 27.0 28.7 28.4 +1.7 Qwen 3.5-35B-A3B M 21.0 20.9 20.6 23.2 22.6 0.0 26.3 25.6 25.5 36.8 38.7 42.0 22.9 27.1 25.5 18.0 19.1 20.7 24.4 25.6 26.3 +1.9 Qwen 3.5-9B S 13.3 14.6 14.1 16.6 17.0 16.7 14.1 15.5 17.7 37.8 32.5 35.6 14.3 15.5 15.1 17.0 17.2 16.2 18.6 18.5 19.0 +0.4 GPT-oss-120B L 24.1 24.9 24.2 27.6 26.5 27.3 32.2 33.8 34.1 43.3 43.9 43.6 28.9 32.3 32.5 22.7 22.9 24.1 29.4 30.3 30.5 +1.1 GPT-oss-20B M 24.1 23.4 24.6 24.5 23.0 23.6 28.3 29.1 31.0 42.1 42.3 42.8 25.1 27.3 28.7 20.6 20.6 21.8 27.1 27.2 28.3 +1.2 
+
+Table I.1: Static benchmark performance on AFTER: average task M1 metric per role under three skill conditions (∅ = no skill, H = handcrafted, G = LLM-generated). Evaluated on the 185-task train split. Per-task metric is the mean over attempts of tests _passed /task _total ; per-role and aggregate values are unweighted means across tasks. Colors mark the gain from skills: best , > 3 , 1.5–3 , 0–1.5 , < 0 .
+
+DE DS GenAI Infra PM SWE Aggregate Model Size ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∆best −no 
+
+Gemma 4 31B M — — — — — — — — — — — — — — — — — — — — — —Gemma 4 26B A4B M 15.0 16.2 16.7 16.7 12.6 13.6 19.4 20.9 21.1 30.0 38.8 42.7 16.0 15.6 17.0 11.6 0.0 15.2 17.9 19.4 20.7 +2.8 Gemma 4 E4B S 6.7 6.1 6.6 9.5 10.0 8.6 8.6 8.0 6.2 16.8 18.8 23.2 7.0 6.4 8.2 6.9 6.2 11.8 9.2 9.1 10.6 +1.4 Qwen 3.5-397B-FP8 L — — — — — — — — — — — — — — — — — — — — — —Qwen 3.5-122B-A10B L 12.7 14.1 13.1 12.1 12.7 11.2 15.5 17.2 15.5 36.1 38.2 40.4 11.4 17.6 16.8 7.5 8.4 11.8 15.5 17.5 17.6 +2.1 Qwen 3.5-35B-A3B M 9.5 6.4 9.4 9.8 9.7 0.0 14.1 13.9 14.2 28.4 32.0 36.6 9.2 13.4 12.0 7.4 8.1 10.0 12.8 14.0 15.9 +3.1 
+
+Qwen 3.5-9B S 5.9 5.9 5.8 7.7 7.0 6.4 2.8 4.5 5.6 27.7 24.8 28.9 2.8 5.4 5.6 5.7 5.9 8.1 8.6 8.7 9.8 +1.2 GPT-oss-120B L 12.5 12.0 11.7 14.4 14.1 13.5 19.4 21.7 20.6 31.4 34.3 36.4 15.8 20.6 21.0 9.9 9.4 13.7 16.9 18.2 19.0 +2.1 GPT-oss-20B M 13.0 10.3 12.0 11.2 10.9 11.1 16.9 16.1 19.1 28.0 28.4 32.9 14.2 14.6 16.8 7.1 7.9 11.2 14.7 14.3 16.7 +2.0 
+
+Table I.2: Static benchmark performance on AFTER: M2 metric per role under three skill conditions ( ∅ = no skill, H = handcrafted, G = LLM-generated). Evaluated on the 185-task train split. Per-task metric is the fraction of attempts where tests _passed = task _total ; per-role and aggregate values are unweighted means across tasks. Colors mark the gain from skills: best , > 3 , 1.5–3 , 0–1.5 , < 0 .
+
+15 J Full Results 
+
+DE DS GenAI Infra PM SWE Aggregate Model Size ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∆best −no 
+
+GPT 5.4 L 73.3 70.8 72.5 42.0 47.0 55.0 40.0 43.1 40.0 50.0 48.7 56.3 38.5 44.6 33.8 32.6 32.6 32.6 47.6 49.0 50.1 +2.5 GPT 5.4 Mini 4 M 63.3 66.7 64.2 43.0 33.0 48.0 35.8 31.6 45.3 60.0 43.7 48.7 27.7 24.6 30.8 26.3 26.3 23.2 44.0 39.5 44.9 +0.9 DeepSeek V4 Flash L 56.8 56.8 59.2 28.7 29.6 33.9 31.6 30.5 35.8 48.8 46.3 41.2 11.4 17.1 18.1 29.5 32.6 30.5 34.6 35.8 37.1 +2.5 Nemotron 3 120B M 44.8 29.6 40.8 29.6 31.3 28.7 42.1 36.8 35.8 37.5 31.2 41.3 14.3 21.9 24.8 22.1 17.9 27.4 31.9 28.1 33.0 +1.1 Gemma 4 31B M 51.3 52.5 57.9 45.5 45.0 49.5 35.3 35.3 33.7 43.1 45.6 44.4 10.0 13.9 23.9 33.7 27.4 28.4 38.5 38.4 41.3 +2.8 Gemma 4 26B A4B M 54.6 60.4 53.3 37.5 42.0 48.0 37.4 40.0 40.0 34.4 28.1 40.0 16.9 24.6 20.0 25.3 25.8 26.8 36.2 38.8 39.7 +3.5 Gemma 4 E4B S 28.3 31.2 35.0 20.5 18.5 24.5 15.3 23.7 29.5 13.8 14.4 21.2 8.5 11.5 13.1 23.2 17.9 13.7 19.4 20.6 24.0 +4.6 Qwen 3.5-397B-FP8 L 55.4 59.2 62.1 36.0 35.2 40.2 35.3 35.5 38.7 48.1 46.9 45.0 12.3 13.5 16.9 28.7 31.3 32.4 37.8 38.9 41.3 +3.5 Qwen 3.5-122B-A10B L 55.4 52.9 57.5 36.0 33.5 41.0 30.0 34.2 35.3 44.4 45.0 42.5 12.3 19.2 20.8 29.5 29.5 31.1 36.5 37.1 39.7 +3.2 Qwen 3.5-35B-A3B M 37.9 43.3 43.8 21.5 25.5 30.5 27.9 31.6 36.9 28.1 23.7 35.0 13.1 13.1 14.6 26.3 20.0 24.2 26.9 27.7 32.2 +5.3 
+
+Qwen 3.5-9B S 23.7 22.1 26.7 12.5 11.5 17.0 17.9 15.3 18.9 11.3 13.8 20.6 6.2 10.8 14.6 16.8 13.2 11.6 15.7 15.0 18.7 +3.0 GPT-oss-120B L 54.2 55.0 55.4 44.5 47.0 49.0 38.3 42.6 41.6 57.5 51.3 58.7 32.3 30.8 33.1 30.0 29.5 31.0 43.2 43.7 45.6 +2.4 GPT-oss-20B M 42.9 41.2 42.9 30.0 32.0 29.0 32.6 32.6 32.6 30.6 25.6 30.0 16.1 22.3 16.9 25.3 27.4 24.7 30.9 31.3 30.6 +0.4 
+
+Table J.1: Static benchmark performance on AFTER: (M1,%) per role under three skill conditions ( ∅ = no skill, H = handcrafted, G = LLM-generated). Aggregate columns show average full-pass rate across all tasks and best delta between no-skill prompt and best result using a skill. Colors mark the gain from skills: best , >3 , 1.5..3 , 0..1.5 <0 . 
+
+DE DS GenAI Infra PM SWE Aggregate Model Size ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∅ H G ∆best −no 
+
+GPT 5.4 L 90.3 90.2 89.7 79.7 79.8 82.3 70.3 71.6 68.1 79.2 81.1 80.2 73.2 73.2 66.0 91.5 76.0 72.1 81.6 79.4 77.5 -2.1 GPT 5.4 Mini 4 M 82.1 84.4 82.0 73.1 67.7 72.5 63.8 66.2 67.8 72.6 64.9 67.7 60.6 58.7 67.1 52.6 55.7 50.0 68.4 67.6 68.6 +0.2 DeepSeek V4 Flash L 75.1 75.8 78.5 52.8 50.6 53.2 60.4 51.2 56.9 66.7 67.5 63.3 41.2 44.6 43.5 56.7 62.6 59.6 58.9 58.8 59.6 +0.6 Nemotron 3 120B M 69.2 48.7 57.8 47.1 48.6 48.9 62.6 55.6 51.4 64.7 61.8 63.3 37.5 40.1 44.0 49.2 42.2 54.6 55.0 49.0 53.0 -2.0 Gemma 4 31B M 69.1 71.3 77.9 71.4 65.3 72.6 62.7 63.0 65.0 59.9 64.3 66.6 50.6 50.5 56.2 59.1 51.1 51.7 63.2 61.9 66.1 +2.8 Gemma 4 26B A4B M 81.0 77.5 75.6 58.8 69.9 72.7 63.9 64.8 61.0 53.4 64.4 66.7 46.8 56.1 52.9 56.3 55.1 51.6 61.7 65.8 64.4 +4.1 
+
+Gemma 4 E4B S 43.3 37.5 40.8 42.5 40.6 41.8 41.4 50.0 50.1 42.1 46.3 45.5 34.2 34.2 36.7 47.7 41.2 38.1 42.3 41.7 42.3 -0.0 Qwen 3.5-397B-FP8 L 72.8 73.0 79.9 58.2 61.2 62.6 65.7 61.9 62.4 69.4 67.9 66.9 44.1 48.6 52.5 57.5 58.3 58.9 62.5 62.9 65.1 +2.6 Qwen 3.5-122B-A10B L 73.9 72.2 73.7 59.9 57.5 64.4 59.4 59.6 56.4 63.9 67.0 69.8 42.4 52.6 53.8 56.9 57.3 60.1 60.9 61.8 63.8 +3.0 Qwen 3.5-35B-A3B M 57.9 62.4 63.0 45.4 49.7 48.1 50.2 55.5 54.8 51.1 56.5 58.9 38.0 40.6 44.9 57.8 48.0 49.4 51.0 53.1 53.9 +2.9 Qwen 3.5-9B S 37.1 35.1 39.5 30.2 32.3 34.5 38.0 35.0 32.3 35.0 45.7 41.1 26.8 33.4 35.9 42.3 38.8 35.4 35.4 36.5 36.5 +1.2 GPT-oss-120B L 77.1 77.4 77.2 71.0 71.1 71.9 59.2 64.1 64.4 75.2 71.8 73.8 52.1 59.4 57.4 58.9 58.7 59.6 66.6 67.9 68.2 +1.6 GPT-oss-20B M 62.7 59.1 63.6 59.2 56.5 54.9 56.5 56.4 53.3 56.9 53.6 57.8 43.1 49.0 44.0 52.0 55.6 53.4 56.1 55.6 55.4 -0.4 
+
+Table J.2: Static benchmark performance on AFTER: average (M2,%) per role under three skill conditions (∅ = no skill, H = handcrafted, G = LLM-generated). Per-task pass rate is the mean over attempts of 
+
+tests _passed /task _total ; per-role and aggregate values are unweighted means across tasks. Aggregate columns show the overall pass rate and the best delta between no-skill and any skill condition. Colors mark the gain from skills: best , >3 , 1.5..3 , 0..1.5 , <0 . 
+
+16 K Single Refinement Results                                                                      
+
+> DE DS GenAI Infra PM SWE Aggregate Model Size Hpre Hpost Hpre Hpost Hpre Hpost Hpre Hpost Hpre Hpost Hpre Hpost Avg pre Avg post ∆
+> Qwen 3.5-9B S22.1 23.6 11.5 10.0 15.3 19.3 13.8 20.8 10.8 15.4 13.2 19.3 14.4 18.1 +3.7 Qwen 3.5-35B-A3B M43.3 52.8 25.5 36.7 31.6 36.8 23.8 31.2 13.1 10.3 20.0 29.8 26.2 32.9 +6.7 Qwen 3.5-122B-A10B L 52.9 54.2 33.5 40.0 34.2 38.6 45.0 52.1 19.2 20.5 29.5 31.6 35.7 39.5 +3.8
+
+Table K.1: Refined handcrafted (H) catalogue on AFTER. H pre = canonical handcrafted skills; H post = single pass Codex-refined skills. Average (M2,%) per role metric on the 111 task IDs present in both pre and post runs. Cell colours on Hpost = ∆: ≥ +6 , +2 .. + 6 , 0.. + 2 , < 0 .
+
+L Example Skills 
+
+---name: sqlite-map-parser description: Parse SQLite databases into structured JSON data. Use when exploring unknown database schemas, understanding table relationships, and extracting map data as JSON. ---# SQLite to Structured JSON Parse SQLite databases by exploring schemas first, then extracting data into structured JSON. ## Step 1: Explore the Schema -- List all tables SELECT name FROM sqlite_master WHERE type= 'table ';-- Inspect table schema PRAGMA table_info(TableName); -- (cid, name, type, notnull, dflt, pk) SELECT sql FROM sqlite_master WHERE name= 'TableName ';-- Find primary / unique keys PRAGMA index_list(TableName); ## Step 2: Understand Relationships PRAGMA foreign_key_list(TableName); -- Common pattern: tables share an ID column (LEFT JOIN by ID) -- Spatial keys: x = id % width; y = id // width [... Step 3: sqlite3 + json extraction loop (row_factory=Row, dict(row), nested joins). Step 4: map vs array output shaping based on natural keys. Debugging tips for missing tables / null columns. (Sections omitted for space.) ...] 
+
+Listing 1: Handcrafted body for the sql skill. One narrow task: parse an unknown SQLite database into structured JSON. Excerpt of the first two steps; the full body has four steps and a debugging-tips section. 
+
+Every paper-target skill in AFTER ships with two static bodies: a handcrafted body (H), authored against a concrete user-facing scenario, and an LLM-generated body (G), drafted by a frontier model as a broad procedural reference. We illustrate the contrast on the sql skill in Listings 1 and 2. The handcrafted body (Listing 1) solves one narrow task — parsing an unknown SQLite database into structured JSON; the LLM-generated body (Listing 2) is a seven-section cheatsheet that covers join shapes, window functions, optimization, and three Python access layers. 17 ---name: sql description: "Reference for writing and tuning SQL on tabular sources: SELECT/INSERT/UPDATE/DELETE, INNER/LEFT/RIGHT/FULL/SEMI/ANTI joins, window functions (ROW_NUMBER, RANK, LAG/LEAD, running aggregates), recursive and non-recursive CTEs, EXPLAIN/EXPLAIN ANALYZE, index design, and three Python access layers (DuckDB, SQLAlchemy, psycopg2). Includes worked feature-extraction and slow-query-diagnosis examples." metadata: dependencies: - duckdb - sqlalchemy - psycopg2-binary ---# SQL Reference Three steps: identify the question shape, pick the SQL technique (Section 1), pick the access library (Section 3). Optimization is mechanical once you have a plan (Section 2). ## 1. Question to SQL technique | Question | Technique | Skeleton | |-------------------------|----------------------------|---------------------------------------------------| 
+
+,→
+
+| Filter / top-N overall | WHERE + ORDER BY LIMIT | WHERE col=? ORDER BY s DESC LIMIT 10 | | Top-N per group | ROW_NUMBER() window | ROW_NUMBER() OVER (PARTITION BY g ORDER BY s) | | Rank with ties | RANK() / DENSE_RANK() | RANK() OVER (ORDER BY s DESC) | | Running / moving sum | SUM() OVER with frame | SUM(x) OVER (PARTITION BY g ORDER BY t) | | Previous / next row | LAG / LEAD | LAG(x,1) OVER (PARTITION BY g ORDER BY t) | | Pivot rows to columns | conditional aggregation | SUM(CASE WHEN k= 'A' THEN v ELSE 0 END) | | Composable subquery | non-recursive WITH | WITH a AS (...), b AS (...) SELECT ... | | Rows in A not in B | LEFT JOIN ... WHERE NULL | LEFT JOIN b WHERE b.k IS NULL (or EXCEPT) | ## 2. Optimization checklist [EXPLAIN ANALYZE, indexes on filter/join cols, drop SELECT *, ...] ## 3. Library dispatch [DuckDB / sqlite3 / SQLAlchemy / psycopg2] ## 4. Connection patterns [parameterized snippets per library] ## 5. Worked example: feature extraction over Parquet (DuckDB + CTE + window aggregate) ## 6. Worked example: diagnose a slow query via EXPLAIN ANALYZE ## 7. Efficient access patterns [B-tree composite, columnar store, partition by ts] [... Pitfalls section omitted ...] 
+
+Listing 2: LLM-generated body for the sql skill. Broad reference spanning seven sections (language constructs, optimization, access libraries, worked examples, access patterns). Excerpt of the front matter and the first dispatch table. 
+
+18

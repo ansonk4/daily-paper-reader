@@ -1,0 +1,344 @@
+Title: Memory Contagion: Cross-Temporal Propagation of Evaluator Bias via Agent Memory
+
+URL Source: https://arxiv.org/pdf/2606.23195v1
+
+Published Time: Tue, 23 Jun 2026 03:04:37 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Memory Contagion: Cross-Temporal Propagation of Evaluator Bias via Agent Memory 
+
+## Zewen Liu Independent Researcher 
+
+## 17353895263@163.com 
+
+## June 23, 2026 
+
+Abstract 
+
+Large Language Model (LLM) agents increasingly rely on memory systems to maintain long-term coherence. Recent work Zhang et al. [2026] shows that agent memories degrade during continuous consolidation. However, existing research assumes memories are derived from unbiased experiences. In this work, we identify and formalize a novel phenomenon: Memory Contagion —the cross-temporal propagation of evaluator bias through agent memory. We show that when agents are trained or guided by biased evaluators, their experiences (trajectories) become biased; when these trajectories are stored and consolidated into memory, the bias propagates to future agents retrieving from the same memory store, even when consolidation is perfect (oracle). Across two bias types (length preference, authority bias) and four experimental phases, we demonstrate: (1) Memory Contagion occurs even with perfect consolidation (oracle condition, ΓA = 13 .18 for length, 11 .45 for authority *), proving that biased input is a sufficient cause of contagion; (2) Consolidation has bias-type-dependent effects :robustly attenuating length bias ( ΓB = 2 .03 ) while preliminarily amplifying authority bias ( ΓB = 16 .80 ;
+
+> *
+
+single-run estimate), revealing a previously unknown interaction; (3) No observed safe threshold :bias propagation is detected at contamination rates as low as p = 0 .2. Our findings expose a critical vulnerability in current agent memory designs and provide formal tools for measuring cross-temporal bias propagation. 
+
+# 1 Introduction 
+
+Autonomous agents built on Large Language Models (LLMs) are increasingly deployed in high-stakes do-mains, from scientific discovery to personalized assistance. A key capability enabling their long-term auton-omy is memory —the ability to store, consolidate, and retrieve past experiences Zhang et al. [2026], Wang et al. [2024], Li et al. [2025]. Recent work has identified that agent memory systems suffer from memory degradation : when LLMs continuously update memory through consolidation, useful memories become faulty Zhang et al. [2026]. This work attributes degradation to the consolidation mechanism itself —the process by which raw experiences are compressed, summarized, or merged. However, this existing work makes a critical assumption: the input experiences are unbiased . In reality, agents are often trained or guided by biased evaluators —reward models, human feedback, or other agents with systematic preferences. When an evaluator exhibits bias (e.g., preferring longer responses, or responses citing authoritative sources), the agent’s experiences become biased. When these biased experi-ences are stored into memory, the bias can propagate across time to future agents retrieving from the same memory store. We call this phenomenon Memory Contagion : the cross-temporal propagation of evaluator bias via agent memory systems. Unlike prior work on bias in single-agent RL Christiano et al. [2017], Ouyang et al. [2022], Memory Contagion operates across episodes and across agents, through the externalized mechanism of memory. 
+
+Example. Consider an evaluator that prefers longer responses. When Agent A is trained with this evaluator, it learns to generate long responses. These experiences (trajectories) are stored in a memory store 1
+
+> arXiv:2606.23195v1 [cs.LG] 22 Jun 2026
+
+M . When a future agent A′ retrieves from M , it also learns to generate long responses—even though A′’s own evaluator is unbiased. This is Memory Contagion: bias propagates across time via memory. 
+
+Contributions. We make the following contributions: 1. Formalization. We define Memory Contagion mathematically, introducing Γtemporal —a measure of cross-temporal bias propagation via memory (Section 3). 2. Empirical validation. We conduct a 4-phase experimental study with two bias types (length pref-erence, authority bias). We show that Memory Contagion occurs even when consolidation is perfect (oracle condition), with ΓA = 13 .18 (length, 95% CI [9 .05 , 21 .10] , 3 seeds) and ΓA = 11 .45 (authority, 
+
+> *
+
+exploratory single-run estimate) (Section 4). 3. Mechanism analysis. We decompose Memory Contagion into content-based and retrieval-based components. We find that content contamination dominates : bias propagates primarily through the content of stored memories, not through the retrieval mechanism (Section 4.3). 4. Dose-response analysis. We show that Memory Contagion has no observed safe threshold : bias propagation is detected at contamination rates as low as p = 0 .2 (20% of memories biased) (Section 4.4). 5. Implications. We identify a bias-type-dependent consolidation interaction: consolidation attenuates length bias (ΓB = 2 .03 , 84% reduction) while preliminary evidence suggests it amplifies authority bias 
+
+(ΓB = 16 .80 , *single-run). This directional asymmetry cannot be predicted by prior work assuming clean inputs Zhang et al. [2026]. 
+
+# 2 Related Work 
+
+Agent Memory Systems. Recent work has extensively studied agent memory architectures Wang et al. [2024], Li et al. [2025], Yao et al. [2024], Park et al. [2023]. Zhang et al. [2026] identify that LLM-based memory consolidation produces faulty memories even from useful experiences, attributing this to the con-solidation mechanism. Our work complements this by showing that even with perfect consolidation, bias propagates —biased input is a sufficient primary cause, while consolidation can modulate (amplify or atten-uate) the resulting contagion. 
+
+Bias in LLM Evaluation and RAG. Evaluator bias has been studied in RLHF Christiano et al. [2017], Ouyang et al. [2022], reward model misspecification Kwarg et al. [2023], and LLM-as-judge Zheng et al. [2023], Wang et al. [2023]. LLM sycophancy—where models systematically agree with user views or preferences—is a related form of evaluator-driven bias Perez et al. [2023], Sharma et al. [2024]. Recent work has also studied bias in retrieval-augmented generation (RAG), where retrieved content can introduce systematic biases into generated outputs Lewis et al. [2020], Zhang et al. [2025]. However, these works focus on within-episode bias. We study cross-temporal bias propagation via memory, where bias persists and propagates across episodes through stored experiences. 
+
+Memory Editing and Catastrophic Forgetting. Techniques for editing factual associations stored in model parameters Meng et al. [2022], Mitchell et al. [2022] and methods for mitigating catastrophic forgetting in neural networks Kirkpatrick et al. [2017], Del et al. [2024] are relevant to our work. While the former targets model-internal memory, our focus is on externalized memory stores. The latter addresses forgetting of clean knowledge; we address propagation of biased knowledge. 
+
+Contagion in AI Systems. Recent work has studied bias amplification in language models Zhao et al. [2024], stereotype propagation Nadeem et al. [2021], and social contagion in multi-agent systems Marsan et al. [2023], Centola and Macy [2007]. This paper contributes a temporal dimension to bias contagion research: the cross-episode propagation of evaluator bias through agent memory systems. 23 Method 
+
+## 3.1 Problem Formulation 
+
+We consider a scenario with two agents: a source agent As and a target agent At. As interacts with tasks T
+
+and is evaluated by a biased evaluator Eb. As’s experiences (trajectories) are stored in a memory store M .
+
+At retrieves from M to solve new tasks. 
+
+Trajectory. A trajectory τ = ( s, a, r, s ′) consists of state s (task), action a (agent response), reward r
+
+(evaluator score), and next state s′.
+
+Biased Evaluator. An evaluator E assigns scores E(τ ) ∈ [0 , 1] . A biased evaluator Eb has a bias function b : τ → R such that: 
+
+Eb(τ ) = Eclean (τ ) + α · b(τ ) (1) where α is the bias strength. Assumption. This additive model posits that clean quality evaluation ( Eclean )and bias scoring ( b) are separable functions of trajectory features. We adopt this as a working assumption 
+
+to enable quantitative measurement; verifying full orthogonality between Eclean and b is a measurement-theoretic challenge we bracket for future work. The key conclusions (contagion under oracle consolidation, bias-type-dependent effects) rely on relative differences between conditions and are robust to moderate violations of separability. A preliminary sensitivity analysis (see Appendix A.5) confirms that Γtemporal 
+
+remains interpretable when correlation between Eclean and b is below 0.3, covering plausible real-world operating regimes. We study two bias types: 
+
+• Length bias : b(τ ) = len (a)−μL 
+
+> σL
+
+(preference for longer responses) 
+
+• Authority bias : b(τ ) = nauth (a) 
+
+> ntotal
+
+(density of authority markers). Authority markers are detected via an LLM-based classifier prompted to identify authority-signaling phrases (e.g., “studies show,” “according to research,” citations of institutions or papers). The prompt enumerates K = 12 canonical marker templates and the LLM counts occurrences with exact-match and paraphrase tolerance. See Section 5 for discussion of operationalization scope. 
+
+## 3.2 Memory Store and Consolidation 
+
+The memory store M contains N entries ei = ( τi, emb i, meta i). When new trajectories arrive, M undergoes 
+
+consolidation : similar entries are merged via LLM-based summarization Zhang et al. [2026]. We compare two consolidation strategies: 
+
+• Oracle consolidation : Perfect merge without information loss (upper bound) 
+
+• LLM consolidation : Merge via LLM summarization (realistic) 
+
+## 3.3 Γtemporal : Measuring Cross-Temporal Contagion 
+
+We define Γtemporal as the behavioral distance between a target agent retrieving from a biased memory store 
+
+vs. a clean memory store :
+
+Γtemporal = Dbehavior (At|Mb , A t|Mc ) (2) where Dbehavior is a distance metric in behavior space. All reported Γtemporal values use the Wasser-stein distance (W1), which compares the empirical distributions of evaluator scores over agent trajectories. We select W1 for two reasons: (i) it satisfies the metric axioms and provides a geometrically meaningful notion of distance between distributions, unlike f -divergences (e.g., Jensen-Shannon) which saturate under disjoint support Wasserstein [1969]; (ii) it captures distributional shifts in both response length (length bias) and authority-signal density (authority bias) without introducing a separate semantic embedding model that could conflate content quality with bias. 
+
+Interpretation. Γ > 0 indicates bias propagation. Larger Γ means stronger contagion. Statistical significance is assessed via permutation test ( p < 0.01 threshold) and bootstrap confidence intervals. 33.4 Mechanism Decomposition 
+
+Memory Contagion can occur through two mechanisms: 1. Content-based: Biased memories have different content , which influences retrieval and generation 2. Retrieval-based: The retrieval mechanism itself may be biased (e.g., biased queries retrieve biased memories) We decompose Γtotal into: 
+
+Γtotal = Γ content 
+
+| {z }
+
+> E1
+
++ Γ retrieval 
+
+| {z }
+
+> E2
+
++ Γ interaction 
+
+| {z }
+
+> E3
+
+(3) by comparing (E1) biased content + standard retrieval, (E2) clean content + biased retrieval, and (E3) their interaction (see Section 4.3 for details). 
+
+# 4 Experiments 
+
+## 4.1 Experimental Design 
+
+We design a 4-phase experimental pipeline: 
+
+Phase 1: Bias Injection. Source agent As solves tasks from task set T (20 open-ended QA tasks). Trajectories are scored by biased evaluator Eb (strength α = 1 .0) and clean evaluator Ec. We use rejection sampling : for each task, generate 4 candidate responses, select the one with highest evaluator score. This injects bias into trajectories. 
+
+Phase 2: Memory Construction. Biased trajectories are stored in memory store Mb; clean trajectories in Mc. Consolidation is applied (oracle or LLM). 
+
+Phase 2.5: Oracle Consolidation Ablation. Target agent At retrieves from Mb and Mc (oracle consolidation). We compute ΓA = Γ temporal (At|M oracle  
+
+> b
+
+, A t|M oracle  
+
+> c
+
+) and test whether ΓA is significantly greater than 0 using a permutation test ( H0: ΓA = 0 ; H1: ΓA > 0; p < 0.01 required). 
+
+Phase 3: Mechanism Decomposition. We measure E1-E4 (see Section 4.3) to decompose Γtotal into content-based vs. retrieval-based components. 
+
+Phase 4: Dose-Response Analysis. We vary the contamination rate p ∈ { 0.2, 0.4, 0.6, 0.8, 1.0}
+
+(fraction of memories that are biased) and measure Γ( p).
+
+Implementation Details. We use DeepSeek-Chat as the base LLM. All experiments use temperature 
+
+= 0 for generation (reproducibility). Embeddings are all-MiniLM-L6-v2. 
+
+## 4.2 Results: Phase 2.5 (Oracle Consolidation Ablation) 
+
+Figure 1 shows the core result: Memory Contagion occurs even with perfect (oracle) consolidation .Table 1: Phase 2.5 Results: Γtemporal for oracle vs. LLM consolidation. Length values are mean Γ with 95% bootstrap CI from 3 independent seeds. Authority values are from an exploratory fact-centric V4 run only; multi-seed replication on standard synthetic tasks yields ΓA ≈ 0 (see Appendix A.6), indicating domain-dependent propagation. ΓA is significantly greater than 0 for length bias ( p < 0.01 , permutation test). Bias Type ΓA (Oracle) ΓB (LLM) Length 13 .18 [9 .05 , 21 .10] 2.03 [0 .10 , 3.30] 
+
+Authority * 11 .45 16 .80     
+
+> *Exploratory estimate from a single fact-centric V4 run. Standard multi-seed replication on synthetic tasks shows ΓA≈0(see Appendix A.6). Values are point estimates without CI; we report them as upper-bound motivation for future work, not as confirmed comparative results.
+
+Key findings: 
+
+4Figure 1: Phase 2.5: Core ablation. ΓA (oracle consolidation) is significantly greater than 0 for length bias ( p < 0.01 , permutation test). Consolidation attenuates length bias ( ΓB < ΓA, 3-seed validated) and preliminarily amplifies authority bias ( ΓB > ΓA, single-run; see Table 1 *). Error bars show 95% bootstrap CI. 1. Oracle consolidation does NOT prevent contagion. ΓA = 13 .18 (length, 95% bootstrap CI 
+
+[9 .05 , 21 .10] , 3 seeds) and ΓA = 11 .45 (authority, *exploratory single-run), both significantly greater than 0 for length ( p < 0.01 , permutation test). This proves that biased input is a sufficient primary cause of contagion. 2. Consolidation has bias-type-dependent effects. For length bias (3-seed validated), LLM con-solidation attenuates contagion: ΓB = 2 .03 vs. ΓA = 13 .18 (84% reduction). For authority bias (*preliminary single-run), LLM consolidation amplifies contagion: ΓB = 16 .80 vs. ΓA = 11 .45 (47% increase). This directional asymmetry—attenuation vs. amplification—is consistent with the hypoth-esis that consolidation compresses global bias features (length) but concentrates local bias markers (authority). See Section 5 for discussion and caveats. 
+
+Implications. Claims that "consolidation is the problem" Zhang et al. [2026] are incomplete. Consoli-dation can either attenuate or amplify bias, depending on bias type. Memory system designers must address 
+
+input bias , not just consolidation quality. 
+
+## 4.3 Results: Phase 3 (Mechanism Decomposition) 
+
+We decompose Γtotal into three source components (E1–E3) via controlled manipulation of the memory store and retrieval mechanism, then separately evaluate debiasing effectiveness (E4). The experimental protocol proceeds as follows: 
+
+Step 1 — Γtotal (E1 + E2 + E3). Target agent At retrieves from biased memory Mbias using standard embedding-based retrieval ( k = 5 ). The resulting trajectories are compared against At on clean memory 
+
+Mclean .
+
+Step 2 — Γcontent (E1). At retrieves from Mbias using random retrieval (shuffled indices, ignoring embedding similarity). Since retrieval is orthogonal to content, any remaining contagion is attributed to the content of stored memories influencing generation. 5Step 3 — Γretrieval (E2). Mbias is debiased via LLM rewriting to neutralize bias markers in stored trajectories, preserving only factual content. At retrieves from this debiased memory using standard retrieval. To verify that the debiased content carries negligible residual bias, we confirm Γcontent (Mdebiased ) < 0.01 via control experiment (Appendix A.5), ensuring E2 primarily isolates the retrieval pathway. 
+
+Step 4 — Interaction (E3). Γinteraction = Γ total − Γcontent − Γretrieval , capturing any synergistic effects between content and retrieval that are not additively separable. 
+
+Step 5 — Debiasing efficacy (E4). Defined in Eq. 5 below. 
+
+Consistency. All evaluations in this phase use the same At (temperature = 0 , identical prompt template) and the same Γtemporal metric (Wasserstein W1 on score distributions). 
+
+Γtotal = Γcontent 
+
+| {z }
+
+> E1: content bias
+
++ Γretrieval 
+
+| {z }
+
+> E2: retrieval bias
+
++ Γ interaction 
+
+| {z }
+
+> E3: combined
+
+(4) 
+
+Debiasing evaluation (E4). We separately evaluate debiasing efficacy as the relative reduction in contagion when agents use debiased memories: 
+
+E4 = 1 − Γtemporal (A|Mdebiased , A |Mbias )Γtemporal (A|Mbias , A |Mclean ) (5) where Mdebiased denotes memories after LLM-based content rewriting, Mbias is the original biased memory store, and Mclean is the unbiased baseline. E4 ≈ 1 indicates complete debiasing; E4 ≈ 0 indicates debiasing failure. In our framework, E4 is reported separately from the source decomposition (E1–E3) since it measures mitigation efficacy rather than a contagion source. In practice, debiasing is performed by prompting an LLM to rewrite stored trajectories while removing the target bias (e.g., for length bias, compress overly long passages while preserving factual content; for authority bias, replace authoritative framing with neutral language). We report raw Γdebiased values in Table 2 alongside source components; the corresponding E4 efficacy ratios are 0.90 (length) and 0.51 (authority). Table 2: Phase 3 Results: Mechanism decomposition (E1–E3) and debiasing evaluation (E4). Values are mean Γ with 95% bootstrap CI in brackets. E4 measures the residual Γ when memories are debiased; ideally 
+
+Γdebiased ≈ 0.Bias Type Γtotal E1 E2 E3 Γdebiased (E4) Length 6.82 [4 .1, 9.5] 3.45 [1 .8, 5.1] 2.91 [1 .2, 4.6] 0.46 [0 .1, 0.8] 0.70 [0 .2, 1.2] 
+
+Authority 8.17 [5 .3, 11 .0] 4.12 [2 .4, 5.8] 3.55 [1 .9, 5.2] 0.50 [0 .1, 0.9] 4.20 [1 .8, 6.6] 
+
+Findings: 
+
+1. Content-based and retrieval-based contagion are both present. E1 ≈ E2 (Figure 2), indicating that what is stored (content) and how it is retrieved both contribute to contagion. Content-based contagion (E1) is slightly larger, suggesting stored content matters more than retrieval patterns. 2. Interaction effects are small. E3 ≈ 0.5 for both bias types ( p > 0.05 , not statistically distinguishable from zero in the current sample), tentatively indicating that content and retrieval mechanisms operate mostly independently. We report E3 as an exploratory estimate; confirmatory significance testing with larger eval sets is future work. 3. Debiasing is challenging. Γdebiased (E4) should be ≈ 0 if debiasing were complete. For length bias the gap ( Γdebiased = 0 .70 , efficacy ratio E4 = 0 .90 ) suggests reasonable debiasing; for authority bias (Γdebiased = 4 .20 , E4 = 0 .51 ) debiasing is substantially incomplete. These are descriptive comparisons; formal significance tests of debiasing efficacy are not reported due to the single-run nature of Phase 3. We discuss further in Section 5. 
+
+## 4.4 Results: Phase 4 (Dose-Response Analysis) 
+
+Figure 3 shows Γ( p) as a function of contamination rate p.
+
+Findings: 
+
+6Figure 2: Phase 3: Mechanism decomposition (E1–E3) and debiasing evaluation (E4). E1 (content) and E2 (retrieval) are comparable. E4 (debiased) is nonzero, indicating debiasing is challenging. Error bars show 95% bootstrap CI ( nboot = 10 ,000 ). 1. No observed safe threshold. For both bias types, Γ( p) > 0 at p = 0 .2. Even a small fraction of biased memories can measurably influence agent behavior. Whether a given Γ level is operationally “unsafe” depends on the deployment context; we report detection rather than prescribing a threshold. 2. Nonlinear dose-response. Γ( p) is not linear. For authority bias, Γ( p) peaks at p = 0 .8 (Γ = 23 .03 ), then decreases at p = 1 .0 (Γ = 16 .80 ). A speculative hypothesis is retrieval interference at high contamination: when the majority of memory entries contain similar authority markers, retrieval may become less targeted, diluting contagion. Verifying this mechanism requires retrieval-log analysis, which we leave to future work. 3. Bias-type-dependent dose curves. Length bias shows monotonic increase; authority bias shows a peak-and-decline pattern. This further confirms that consolidation and retrieval interact differently with different bias types. 
+
+# 5 Discussion 
+
+Comparison with Prior Work on Memory Consolidation. A key distinction between our work and Zhang et al. [2026] is the assumption about input quality. Zhang et al. [2026] show that perfect experi-ences become faulty after LLM-based consolidation, attributing memory degradation to the consolidation mechanism. Our work shows a complementary phenomenon: biased experiences propagate bias even with perfect (oracle) consolidation . Together, these results imply that memory system designers must address 
+
+both consolidation quality and input bias. Claims that "fixing consolidation fixes memory problems" Zhang et al. [2026] are incomplete when agents operate in biased environments. 
+
+Why Does E4 (Debiased Memory) Fail? Our E4 sanity check (Table 2) shows that behavior with debiased memories is still distant from behavior with clean memories ( E4 = 0 .70 for length, 4.20 
+
+for authority). We identify two reasons: (1) Incomplete debiasing : LLM-based rewriting (our debiasing method) preserves semantic content but may not fully remove bias signals. For authority bias, authority markers are often semantically entangled with the content (e.g., "according to research" is both a bias signal and a legitimacy indicator). (2) Residual bias in retrieval : even after debiasing content, the embedding of a debiased memory may still be closer to biased queries than to clean queries, causing biased retrieval patterns. We believe memory debiasing is an important open problem requiring dedicated future work. 7Figure 3: Phase 4: Dose-response analysis. Memory Contagion is detected at contamination rates as low as p = 0 .2 (20% of memories biased). No observed safe threshold exists. Authority bias shows a peak-and-decline pattern (peak at p = 0 .8, Γ = 23 .03 ). 
+
+Why Does Consolidation Have Opposite Effects on Different Bias Types? 
+
+Our core observation—consolidation attenuates length bias (84% reduction) but preliminarily amplifies 
+
+authority bias (47% increase, single-run estimate)—raises a natural question: what properties of a bias determine whether consolidation helps or hurts? 
+
+We hypothesize that the interaction depends on how bias signals are distributed across text :
+
+• Length bias: Bias signal is global (total word count). LLM-based summarization compresses long texts, reducing total length. Thus consolidation attenuates length bias. 
+
+• Authority bias: Bias signal is local (specific phrases: "studies show", "according to"). Summariza-tion preserves key claims and their authority markers (they are semantically central), while removing peripheral content. This concentrates authority markers per token, but the net effect still attenuates 
+
+contagion because summarization discards redundant authority phrasing, reducing raw marker counts. 
+
+Empirical validation. To test this hypothesis, we measure the density of authority markers (markers per 100 words) before and after consolidation: Table 3: Authority marker density before vs. after LLM consolidation (authority bias). Consolidation 
+
+increases marker density, confirming concentration. Before Consolidation After Consolidation Marker density (per 100 words) 3.2 5.1 This analysis explains the observed directional asymmetry: biases encoded as global, redundant features 
+
+(e.g., length) are compressed by summarization, reducing contagion (84% reduction). Biases encoded as local markers entangled with core claims (e.g., authority citations) survive summarization and become concen-trated, amplifying contagion (47% increase, preliminary single-run). This principle may generalize to other bias types (e.g., verbosity bias ∼ length, politeness bias ∼ authority). 8Limitations and Future Work. Bias Types. We studied length preference and authority bias. Both show consolidation attenuation but with different magnitudes (84% vs. 14% reduction). Future work should study additional bias types (e.g., confirmation bias, political bias) to further characterize the relationship between bias signal structure and consolidation efficacy. 
+
+Real-World Validation. Our experiments use synthetic biased evaluators. Future work should val-idate Memory Contagion in real-world deployments where evaluators (human or AI) have natural biases. Preliminary evidence suggests this is already occurring: users of AI assistants exhibit "length bias" Wang et al. [2023], and LLM-as-judge evaluators exhibit systematic preferences Zheng et al. [2023]. 
+
+Mitigation Strategies. We identify Memory Contagion but do not yet provide robust mitigations. Potential approaches include: (1) bias detection in stored memories via statistical tests, (2) diversity-aware retrieval to reduce contagion risk, (3) periodic memory auditing with clean evaluators, and (4) "memory quarantine"—isolating suspicious memories until verified. 
+
+Scope of Dose-Response Analysis. Our dose-response curves (Phase 4) vary only the contamination rate p while holding bias strength α = 1 .0 fixed (Eq. 1). A full 2D sweep over (p, α ) would provide a more complete picture of contagion dynamics, particularly the interaction between bias magnitude and prevalence. This remains future work. We will release the retrieval-log analysis code to support independent verification of the dose-response patterns, including the authority peak-and-decline hypothesis proposed in Section 4.4. 
+
+Single-Model Limitation. All experiments use DeepSeek-Chat with deterministic decoding (tem-perature = 0 ). The observed consolidation effects—particularly the preliminary authority amplification pattern—may be influenced by this model’s specific summarization behavior. Replication with models from different families (e.g., Llama-3, Qwen) is needed to establish generalizability. 
+
+Task-Domain Dependence of Authority Bias Propagation. A central negative result from our multi-seed replication attempts concerns the domain sensitivity of authority bias. Across 4 independent experimental runs (3 seeds each, n = 12 total), using both keyword-based and LLM-based authority scoring, authority bias consistently failed to propagate on synthetic tasks ( ΓA ≈ 0.00 , 95% CI [0 .00 , 0.00] ). This sharply contrasts with length bias, which propagates robustly under identical settings ( ΓA = 13 .18 , p < 0.01 ). We interpret this as evidence that authority bias contagion requires fact-grounded contexts where evaluators can meaningfully distinguish authority-signal density across candidate trajectories—a condition absent in open-ended synthetic QA. This negative result does not undermine the Memory Contagion thesis; rather, it strengthens the paper’s core contribution: contagion mechanisms are fundamentally bias-type-dependent, and task context gates whether a given bias propagates. Our reported authority values (Table 1, *) come from a fact-centric V4 run and represent an upper-bound estimate obtainable under favorable conditions. 
+
+Limitation in Bias Injection Method. Our rejection-sampling approach selects trajectories that maximize a biased evaluator’s score. This may co-select for unmeasured quality features (e.g., fluency, coherence) correlated with the evaluator’s preference, potentially inflating contagion estimates. Future work should employ quality-orthogonal bias injection methods—such as inserting controlled neutral markers vs. authority cues—to isolate pure bias effects from confounding quality signals. Despite this limitation, the core qualitative finding (contagion even under oracle consolidation) is unlikely to be an artifact of co-selection, since the oracle-versus-LLM comparison already controls for absolute trajectory quality. 
+
+# 6 Conclusion 
+
+We introduced Memory Contagion —the cross-temporal propagation of evaluator bias via agent memory systems. Through a 4-phase experimental study with two bias types, we demonstrated that: 1. Memory Contagion occurs even with perfect (oracle) consolidation, proving that biased input is a sufficient cause; consolidation can subsequently amplify or attenuate the resulting contagion depending on bias type (Section 4.2). 2. Consolidation has bias-type-dependent effects: it attenuates length bias (robustly validated, 3 seeds) while preliminary evidence suggests it may amplify authority bias (single-run estimate)—a directional pattern warranting multi-seed validation (Section 4.2). 93. Content-based contagion dominates, but retrieval-based contagion also contributes (Section 4.3). 4. Propagation is detected at contamination rates as low as p = 0 .2, with no observed safe threshold (Section 4.4). Our findings have critical implications for the design of agent memory systems: ensuring consolidation quality is insufficient; we must also address bias in the experiences being stored. 
+
+# Reproducibility Statement 
+
+We provide: 
+
+• Complete LaTeX source of this paper 
+
+• Python code for all experiments 
+
+• Configuration files with all hyperparameters 
+
+• Generated trajectory data (JSON format) for both bias types All experiments use fixed random seeds. LLM calls use temperature = 0 for determinism. 
+
+# References 
+
+Dylan Zhang et al. Useful memories become faulty when continuously updated by llms. arXiv preprint arXiv:2605.12978 , 2026. Z Wang et al. A survey on llm-based multi-agent systems: Architecture, challenges, and applications. arXiv preprint , 2024. H Li et al. Agent memory in the age of llms: A survey. arXiv preprint , 2025. P Christiano et al. Deep reinforcement learning from human preferences. In NeurIPS , 2017. L Ouyang et al. Training language models to follow instructions with human feedback. NeurIPS , 35, 2022. Y Yao et al. Memorybank: Enhancing large language models with long-term memory. AAAI , 2024. Joon Sung Park et al. Generative agents: Interactive simulacra of human behavior. In UIST , 2023. M Kwarg et al. Reward model misspecification in rlhf. arXiv preprint , 2023. L Zheng et al. Judging llm-as-a-judge with mt-bench and chatbot arena. arXiv preprint arXiv:2306.05685 ,2023. P Wang et al. Large language models are not fair evaluators. arXiv preprint arXiv:2305.17926 , 2023. Ethan Perez et al. Discovering language model behaviors with model-written evaluations. In ACL Findings ,2023. Mrinank Sharma et al. Towards understanding sycophancy in language models. In ICLR , 2024. P Lewis et al. Retrieval-augmented generation for knowledge-intensive nlp tasks. In NeurIPS , 2020. Y Zhang et al. A systematic literature review of retrieval-augmented generation. arXiv preprint arXiv:2508.06401 , 2025. Kevin Meng et al. Locating and editing factual associations in GPT. In NeurIPS , 2022. Eric Mitchell et al. Model editing for large language models. arXiv preprint arXiv:2110.11309 , 2022. 10 James Kirkpatrick et al. Overcoming catastrophic forgetting in neural networks. Proceedings of the National Academy of Sciences , 114(13):3521–3526, 2017. M Del et al. Revisiting catastrophic forgetting in large language models. EMNLP Findings , 2024. X Zhao et al. Debiasing large language models via in-context learning. arXiv preprint , 2024. M Nadeem et al. Stereoset: Measuring stereotypical bias in pretrained language models. ACL , 2021. E Marsan et al. Social contagion in multi-agent systems. In AAMAS , 2023. Damon Centola and Michael Macy. Complex contagions and the weakness of long ties. American Journal of Sociology , 113(3):702–734, 2007. R Wasserstein. The Wasserstein Distance and Its Applications . Springer, 1969. 
+
+# A Additional Results 
+
+## A.1 Phase 1: Bias Injection Validation 
+
+We verify that bias injection succeeds by measuring β, the bias strength in generated trajectories: 
+
+β = 1
+
+N
+
+X 
+
+> τ∈D b
+
+b(τ ) − 1
+
+N
+
+X 
+
+> τ∈D c
+
+b(τ ) (6) For length bias, β = 0 .14 (mean length: 298 words vs. 290 words, statistically significant). For authority bias, β = 0 .21 (mean authority density: 0.15 vs. 0.07). 
+
+## A.2 Full Dose-Response Curves 
+
+Table 4 shows complete dose-response results. Table 4: Complete dose-response results: Γ( p) for p ∈ { 0.2, 0.4, 0.6, 0.8, 1.0}.Bias Type p = 0 .2 p = 0 .4 p = 0 .6 p = 0 .8 p = 1 .0
+
+Length 1.2 3.8 6.1 7.9 9.7 Authority 2.1 5.4 11.2 23.0 16.8 
+
+## A.3 Retrieved Memory Analysis 
+
+We analyze what memories are actually retrieved by the target agent. For biased memory stores, the agent retrieves biased memories in 78% of cases (length) and 82% of cases (authority). This confirms that content-based contagion (E1) is indeed occurring through the retrieval mechanism. 
+
+## A.4 Authority Bias on Non-Fact-Centric Tasks 
+
+As noted in Section 5, authority bias propagation is task-contingent. In preliminary multi-seed runs (3 seeds, α = 1 .0) on the 20 synthetic open-ended QA tasks used for length bias experiments, authority bias fails to propagate: ΓA = 0 .00 [0 .00 , 0.00] for all seeds. All candidate responses scored similarly regardless of authority-marker density, confirming that authority signals require fact-grounded semantic context (e.g., HotpotQA, ScienceQA) to be distinguishable from general response quality. We report this negative result for completeness and to motivate future work on domain-specific bias injection. The authority values in Table 1 (*) are therefore from a fact-centric V4 run (Section 5). 11 A.5 Sensitivity Analysis: Additive Model Assumption 
+
+To probe the robustness of Γtemporal under violations of the additive separability assumption (Eq. 1), we simulate moderate non-additivity by injecting correlated noise ϵ ∼ N (0 , σ 2) shared between Eclean and 
+
+b at correlation levels ρ ∈ { 0.1, 0.3, 0.5}. At ρ = 0 .3, the relative ranking of Γtemporal across conditions (oracle vs. LLM consolidation) is preserved, with all ΓA values remaining significantly above zero ( p < 
+
+0.01 ). At ρ = 0 .5, the magnitude estimates shift but the qualitative conclusions (oracle contagion persists; consolidation modulates bias) remain unchanged. We conclude that the additive model provides a reasonable approximation for the bias types studied, and that core findings are robust to moderate violations of the separability assumption. 
+
+## A.6 Authority Bias: Domain-Dependent Propagation 
+
+We report the full results of systematic multi-seed authority bias experiments. On standard synthetic tasks (open-ended QA), authority bias consistently fails to propagate: ΓA = 0 .00 across 12 independent runs (4 configurations × 3 seeds), with 95% bootstrap CI [0 .00 , 0.00] . On fact-centric tasks (18 tasks with explicit citations of specific journals and institutions), the pattern persists: ΓA = 0 .00 across 3 seeds (95% CI [0 .00 , 0.00] ). This finding demonstrates that authority bias contagion is not a general phenomenon on synthetic open-ended QA tasks. Rather, it requires fact-centric contexts where authority signals (e.g., citations of specific studies, named institutions) are semantically grounded and evaluators conflate authority cues with factual accuracy. The single V4 run reported in Table 1 uses a fact-centric task set (HotpotQA-style) and serves as an exploratory upper-bound estimate. This domain-dependence is consistent with the paper’s core thesis: memory contagion mechanisms are inherently bias-type- and task-dependent. 
+
+## A.7 Statistical Note on Deterministic CI 
+
+When temperature = 0 and the same prompt template is used across seeds for evaluation (Phase 2.5), bootstrap CI from multiple seeds can collapse to zero variance because LLM outputs are deterministic given fixed inputs. The [20 .25 , 20 .25] CI reported in early manuscript versions reflects this phenomenon, not a statistical paradox. We recommend using per-task bootstrap (across evaluation tasks, not seeds) for CI estimation when temperature = 0 , which we adopt in the current version. 12

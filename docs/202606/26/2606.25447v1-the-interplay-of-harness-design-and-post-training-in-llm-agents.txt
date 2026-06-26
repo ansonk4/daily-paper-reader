@@ -1,0 +1,1160 @@
+Title: The Interplay of Harness Design and Post-Training in LLM Agents
+
+URL Source: https://arxiv.org/pdf/2606.25447v1
+
+Published Time: Thu, 25 Jun 2026 00:34:41 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+## The Interplay of Harness Design and Post-Training in LLM Agents 
+
+Kyungmin Kim 1,∗, Youngbin Choi 1,∗, Seoyeon Lee 1, Suhyeon Jun 2,Dongwoo Kim 1,2,†, Sangdon Park 1,2,†
+
+> 1
+
+Graduate School of Artificial Intelligence, POSTECH, 
+
+> 2
+
+Department of Computer Science and Engineering, POSTECH, 
+
+> {kkm959595, choi.youngbin, seoyeon26, suhyeonjun, dongwoo.kim, sangdon}@postech.ac.kr
+
+Abstract 
+
+Tool-integrated LLM agents are often wrapped within a harness : the scaffolding that deter-mines which tools are exposed, how they are described, and what auxiliary information ac-companies each per-step observation. While agents are routinely post-trained, this scaffold-ing is typically treated as a fixed engineering detail, with design effort limited to the training-free regime. Moreover, existing post-training algorithms assume a static environment, even though tool environments and tasks often shift upon deployment. To address this gap, we extend ALFWorld (i) to treat the harness as a controllable design dimension and (ii) to sup-port evaluation under task and tool environ-ment shifts. Building on this, we systemati-cally analyze how the harness design influences post-training in both in-distribution and out-of-distribution (OOD) settings. We empirically show that harness-aware post-training not only improves in-distribution performance but also enables agents to robustly adapt to OOD set-tings. Under a harness with minimal design ef-fort, post-training suffers a drastic performance drop under stronger tool environment shifts, further highlighting the importance of harness-aware post-training under such shifts. 
+
+1 Introduction 
+
+LLM agents are designed to solve complex prob-lems that often require multi-step reasoning (Yao et al., 2023; Shinn et al., 2023; Wang et al., 2024; Yang et al., 2024; Wu et al., 2025). Among them, 
+
+tool-integrated agentic systems extend LLM ca-pabilities by proactively interacting with environ-ments through predefined tools (Schick et al., 2023; Qin et al., 2024; Patil et al., 2024; Liu et al., 2024). Accordingly, performance depends not only on pro-ducing correct final outputs but also on appropri-ately invoking tools, which has motivated increas-
+
+> ∗Equal contribution.
+> †Co-advising.
+
+ing efforts to post-train pretrained LLMs for effec-tive tool use (Feng et al., 2025). A factor that is often overlooked in this line of work is the harness : the code that wraps the LLM, determining what is stored, retrieved, and presented to it, and what is done with its outputs (Wang et al., 2025; Anthropic, 2026; OpenAI, 2026). While the harness is, in principle, an engineering detail, in practice it is a major determinant of overall perfor-mance: even with the same task and model, two harnesses that differ only in how they present aux-iliary information can produce drastically different success rates (Yang et al., 2024; Badertdinov et al., 2025). For this reason, harness design has attracted increasing attention, ranging from manually cu-rated prompts (Hong et al., 2024; Antoniades et al., 2025; Lin et al., 2026) to recent attempts at au-tomating the design itself (Lee et al., 2026; Shang et al., 2025). All of these efforts, however, are limited to a training-free regime, treating the har-ness as a way to elicit better performance, typically from a closed-source model. How harness design interacts with post-training, in contrast, remains largely unexamined. In parallel, most existing post-training ap-proaches for tool-integrated agents implicitly as-sume a static deployment scenario, in which both the task distribution and the tool environment, de-fined as the set of tools and their invocation pro-tocols, remain fixed (Jin et al., 2025; Mai et al., 2025; Xue et al., 2026; Qian et al., 2025; Feng et al., 2026; Jiang et al., 2025; Cheng et al., 2025). In practice, this assumption is often violated: real-world deployments expose agents to shifts in both the task distribution and the tool environment. A first source of shift arises from changes in the task distribution, a standard out-of-distribution (OOD) problem at the input level (Koh et al., 2021; Yuan et al., 2023; Yang et al., 2023). For example, an agent originally designed for workload schedul-ing may later be repurposed for itinerary planning, 1
+
+> arXiv:2606.25447v1 [cs.LG] 24 Jun 2026
+
+Harness Construction 
+
+State  𝒔 𝒕  in  ALFWorld 
+
+① User  query  𝒒  & History  𝓣 𝒕 −𝟏        
+
+> [User query]
+> Put two toilet paper in toilet
+> [History]
+> go to toilet paper hanger 1
+> ↳You arrive at toilet paper hanger 1.
+> {…skip…}
+> move toilet paper 4 to toilet 1
+> ↳Nothing happens
+
+Valid Actions:         
+
+> go to bathtub basin1 , …, go to toilet1 ,
+> move toilet paper4 to toilet paper
+> hanger1 , examine toilet paper
+> hanger1 , inventory, look
+
+h-low  𝒑 𝒔𝒉𝒐𝒓𝒕 
+
+h-mid 
+
+Text  action  description  𝒑 
+
+Carrying: 
+
+> toilet paper 4
+
+⑤ Valid  Tools: 
+
+> Go, Move, Examine, Inventory, Look
+
+④ Carrying :
+
+> toilet paper 4
+
+② 𝒑 𝒔𝒉𝒐𝒓𝒕 : short tool  description   
+
+> Go: Move to a receptacle.
+> Parameters –receptacle (string)
+
+③ 𝒑 𝒓𝒊𝒄𝒉 : rich  tool description   
+
+> Go: …you must be at a receptacle
+> before you can Take, Open, Move .
+
+Harness Building Block 
+
+𝒑 𝒔𝒉𝒐𝒓𝒕 
+
+h-high  𝒑 𝒓𝒊𝒄𝒉 
+
+Zero -shot       
+
+> Agent with each harness
+> Go(“toilet 1”)
+> You arrive at
+> toilet 1. …
+> 𝒒 𝒕𝒆𝒔𝒕 :Put two toilet paper in toilet
+> Go(“toilet 1”)
+> You arrive at
+> toilet 1. …
+
+Post -training : in -distribution 
+
+> Go(“toilet 4”)
+> Nothing happens.
+> Post -training
+
+Post -training:  OOD     
+
+> 𝒒 𝒕𝒓𝒂𝒊𝒏 :Put toilet paper in toilet 𝒒 𝒕𝒆𝒔𝒕 :Clean the knife
+
+Task  shift  (Pick Clean )
+
+Tool environment  shift  (Go  Navigate )   
+
+> O Navigate (“toilet 1 ”)
+> X Go (“ toilet 1 ”)
+> O You arrive at …
+> X Invalid format.
+> Go(“toilet 4”)
+> Nothing happens.
+> h-low h-mid h-high
+
+①
+
+①
+
+① ④
+
+⑤
+
+⑤③
+
+②
+
+② O Clean (“knife  1”) 
+
+> X Go (“toilet 1”)
+> O Task success!
+> X Nothing happens.
+> Go(“toilet 4”)
+> Nothing happens.
+
+Figure 1: Overview of experimental design, built on our extension of ALFWorld (Shridhar et al., 2021) tailored to tool-integrated agentic tasks. (Left) State of the original text-based ALFWorld environment. (Middle) Harness building blocks for tool-integrated agentic tasks; different combinations of these blocks yield harnesses with varying levels of informativeness. (Right) Agents under each harness are evaluated in zero-shot and post-training regimes, where the latter spans in-distribution and OOD settings. 
+
+shifting objectives, constraints, and tool usage pat-terns, which we refer to as task shift . A second, more subtle source stems from changes in the tool environment itself: tools may be updated, modify-ing invocation protocols while preserving function-ality, which we refer to as tool environment shift .This introduces a distinct OOD setting in which the task distribution remains fixed but the action inter-face itself changes, and it remains comparatively underexplored (Chen et al., 2025; Li et al., 2026). In this paper, we ask the following question: 
+
+how does harness design influence post-training LLM agents in both in-distribution and OOD set-tings? To this end, we extend ALFWorld (Shrid-har et al., 2021), a text-based planning environ-ment, into a benchmark tailored to tool-integrated agentic tasks. Specifically, we (i) treat the har-ness as a controllable design dimension and (ii) modularize the benchmark to support evaluation both in-distribution and under tool environment shift and task shift settings (Fig. 1). While existing post-training algorithms attain high success rates on ALFWorld (Feng et al., 2026), we observe that this performance largely stems from harness-aware post-training , where a specific harness is fixed a priori (Fig. 3). In particular, the original bench-mark provides the agent with the complete set of feasible tool calls at every step, which constitutes a highly informative harness. Such a harness, how-ever, comes at a cost: it can be constructed only when the transition dynamics of the ALFWorld en-vironment are fully specified. Yet this cost is rarely made explicit in prior work. To address this gap, we provide three harnesses with varying levels of informativeness and empirically examine whether the additional cost of harness design is indispens-able for post-training .We empirically show that harness-aware post-training not only improves in-distribution perfor-mance but also enables agents to robustly adapt to OOD settings. Notably, models post-trained on harnesses with low design effort suffer from a drastic performance drop under more severe tool environment shift. Furthermore, harness informa-tiveness tends to improve model performance un-der the task shift scenario, highlighting the impor-tance of harness-aware post-training for the OOD robustness of agents. In addition, we observe that applying a harness only after post-training under low-effort harness yields performance inferior to harness-aware post-training, providing actionable insight into when to apply the harness during post-2training. 
+
+2 Preliminaries 
+
+We outline the formulation of multi-step tool-integrated agentic tasks and representative post-training methods, along with the notation used throughout the paper. 
+
+2.1 Multi-step Tool-integrated Agentic Tasks 
+
+Let V be a token vocabulary. Given a system prompt p ∈ V ∗ and a user query q ∈ V ∗, an LLM agent π : S → A generates a sequence of action to-kens at := π(st) at each time step t ∈ { 1, . . . , T }.Here, st ∈ S is the state at step t provided to the agent, and T is the total number of tool calling steps. Specifically, st := ( p, q, Tt−1), where Tt−1
+
+is a history of tool calling steps up to the (t − 1) -th step, and T0 is an empty sequence. The tool environment TE : V∗ → V ∗ then plays two roles: in the tool calling phase , it returns the tool calling result et := TE (( st, a t)) ; in the state reconstruction phase , it aggregates et with at and 
+
+Tt−1 into a history Tt := TE (( st, a t, e t)) , provided to the agent as the next state st+1 = ( p, q, Tt). As such, the t-th tool calling step can be represented as:               
+
+> st= ( p, q, Tt−1)−−−−−−→
+> +at=π(st)
+> (p, q, Tt−1, a t)−−−−−−−−→
+> +et=TE (( st,a t))
+> |{z }
+> Tool Calling Phase
+> →(p, q, Tt−1, a t, e t)−(Tt−1,a t,e t)
+> −−−−−−−−−−→
+> +Tt=TE (( st,a t,e t))
+> st+1 = ( p, q, Tt).
+> |{z }
+> State Reconstruction Phase
+
+Remark. While “harness” generally refers to any wrapper around the agent (Lin et al., 2026), we re-strict it to wrappers acting through p and TE . These are the core components of the agentic workflow that shape what the agent observes in our envi-ronment. As detailed in §3, harness, tool schema, and task type jointly affect these transition dynam-ics. In particular, tool environment shift and task shift pose challenges for training an agent that re-mains robust to deployment-time workflows differ-ing from those encountered during training. 
+
+2.2 Training Tool-integrated Agentic Systems 
+
+We model a multi-step tool calling process as a Markov decision process (MDP) at a se-quence level. The goal is to find a policy 
+
+πθ : S → A, parameterized by θ ∈ Θ,that maximizes J (θ) = E[R(τ )] , where τ := 
+
+{(s1, a 1, s 2), . . . , (sT , a T , s T +1 )} is an episode-level trajectory and R : ( S × A × S )T → R
+
+is an episode-level reward function. A common choice is R(τ ) := PTt=1 γt−1rt, where γ ∈ [0 , 1] 
+
+is a discount factor and rt := r(st, a t, s t+1 ) is a 
+
+step-level reward. Group-relative policy optimization (GRPO) (Shao et al., 2024) is a widely adopted algorithm for post-training LLMs due to its computational efficiency in estimating ∇θJ (θ). However, as GRPO uniformly assigns the episode-level advan-tage across all steps, it suffers from a credit assign-ment problem in long-horizon tasks (Dong et al., 2026; Fang et al., 2026). Unlike GRPO, group-in-group policy optimization (GiGPO) (Feng et al., 2026) differentiates the advantage assigned to each step within the same episode by introducing a step-level advantage on top of the episode-level advan-tage. A formal description of both algorithms is provided in Appendix C. Yet both algorithms assume a static agentic work-flow. Furthermore, existing works that adopt such algorithms in ALFWorld fix a highly informative harness in advance, rather than treating it as a design variable. As such, they lack a controlled analysis of how harness-aware post-training affects performance and OOD robustness of LLM agents. 
+
+3 Experiment Setup 
+
+3.1 ALFWorld for Tool-based Agentic Tasks 
+
+ALFWorld (Shridhar et al., 2021) is a text-based planning environment with 3, 827 task instances across six categories of common household activi-ties: Pick & Place (Pick), Examine in Light (Look), Clean & Place (Clean), Heat & Place (Heat), Cool & Place (Cool), and Pick Two & Place (Pick 2). Ev-ery task requires multi-step decision making, since it consists of a sequence of sub-goals. This struc-ture makes ALFWorld a natural testbed for evaluat-ing the planning capability of LLM agents. We extend ALFWorld by reformulating its orig-inal tasks as tool-integrated reasoning problems. Specifically, text actions in ALFWorld can naturally be interpreted as tool calls: verbs correspond to tools and entities serve as arguments. For instance, a text action “Go to drawer 1” in the original 
+
+ALFWorld environment is mapped to a tool call 
+
+“Go(receptacle=‘drawer 1’)” .In subsequent sections, we describe how our extended benchmark enables a controlled study of harness design in post-training LLM agents by modularizing three components: harness (§3.2), tool schema (§3.3), and task type (§3.4). 3Harness Ver. Tool Description in p           
+
+> Valid tools:
+> (in Tt)
+> Carrying:
+> (in Tt)
+> h-low Short ––
+> h-mid Short ✓–
+> h-high Rich ✓✓
+
+Table 1: Each harness version, characterized by how it shapes the system prompt p and the per-step history 
+
+Tt produced by TE . Valid tools: and Carrying: are auxiliary lines appended to Tt, listing the tools admis-sible at the current state and the object the agent is currently carrying, respectively. 
+
+3.2 Harness 
+
+In tool-integrated agentic tasks, the harness deter-mines how much guidance the agent receives about using the available tools. To this end, we instantiate three harnesses with varying degrees of informa-tiveness, each building on the previous one: h-low ,
+
+h-mid , and h-high .The base version, h-low , is designed with low design effort: every tool carries only a one-line de-scription in p (e.g., “Go to a receptacle” for Go ), and each per-step history Tt contains nothing be-yond the raw observation. h-mid additionally aug-ments every per-step history with the set of tools admissible at the current state, leaving the one-line descriptions in p unchanged. Finally, h-high fur-ther expands each tool description in p into a richer form, covering its preconditions, interactions with other tools, and role in completing tasks. It also appends the object the agent is currently carrying to each per-step history, which it would otherwise have to retrieve through a separate Inventory call. Table 1 summarizes the three versions, and the cor-responding tool descriptions and per-step histories are deferred to Appendix B.1. Informative harnesses like h-mid and h-high ,however, do not come for free. They must either be hand-designed by experts with sufficient prior knowledge of the environment, or be discovered through costly exploratory interaction with it. This cost is rarely made explicit. Most prior studies on 
+
+ALFWorld in fact operate under a specific harness that goes beyond even h-high , providing the agent with the full set of feasible tool calls at every step, yet this is rarely flagged as an assumption. We in-stead treat the harness as a controllable variable, with h-low , h-mid , and h-high corresponding to three distinct levels of informativeness. We ac-knowledge that h-mid and h-high expose informa-tion that would otherwise require costly exploration     
+
+> Tool Schema Example
+> v1.0 Go(receptacle=“drawer 1”) v1.1 NavigateTo(destination=“drawer 1”) v2.0 ReceptacleControl(action=“navigate_to”, target=“drawer 1”)
+
+Table 2: Tool schema versions and the valid form of tool calls for the same operation “move to drawer 1” under each schema. v1.1 applies paraphrasing to v1.0 ,while v2.0 additionally groups tools by structural and functional similarity. 
+
+to obtain. We view h-mid and h-high as represent-ing harnesses obtained through different amounts of such exploration, treating informativeness itself as a design choice that shapes agent performance 
+
+(RQ1 in §4). 
+
+3.3 Tool Schema 
+
+The tool schema determines the surface form of ad-missible tool calls. Taking v1.0 as the base schema, we provide two environment shift scenarios of vary-ing degrees, where the stronger shift ( v2.0 ) ex-tends the milder one ( v1.1 ) through additional updates to the tool invocation protocols. Specif-ically, v1.0 is the base schema itself, consisting of 
+
+13 tools defined in ALFWorld with intuitive verb-style names such as Go , Take , Heat , Slice , and 
+
+Look . The second, v1.1 , applies paraphrasing: a semantics-preserving renaming of every tool name and parameter key from v1.0 into more descriptive forms (e.g., Go → NavigateTo , with its parameter 
+
+receptacle → destination ), leaving the cardi-nality of the tool set unchanged. The third, v2.0 ,additionally applies grouping by structural and functional similarity: building on v1.1 , tools that share structural or functional roles are consolidated into a smaller, higher-level set, reducing the cardi-nality from 13 to 5. Each consolidated tool exposes its sub-operations through a discrete action param-eter. For example, NavigateTo , OpenContainer ,and CloseContainer are merged into a single 
+
+ReceptacleControl tool, whose action param-eter takes one of three values: navigate_to ,
+
+open_container , or close_container . Table 2 provides an illustrative example of the three ver-sions, with full details in Appendix B.2. Across the three versions, both p and TE are updated accordingly, with details deferred to Ap-pendix B.2. Tool names, parameter keys, and descriptions in p are revised to match the active schema, while the overall structure of p is pre-4Group Task # Sub-goals Example               
+
+> t-easy Pick 4“Put a plate on the coffee table”
+> Look 3“Examine a book under the lamp” t-med
+> Clean 5“Clean the knife and put in the drawer”
+> Heat 5“Heat a mug and put on the coffee table”
+> Cool 5“Put a cool bottle on the countertop” t-hard Pick 2 8“Put two pencils in the drawer”
+
+Table 3: Six task categories of ALFWorld grouped into three difficulty levels ( t-easy , t-med , t-hard ) by the minimum number of sub-goals required for completion. 
+
+served. TE ’s validation logic is adjusted accord-ingly. As an illustration, the same operation “move to drawer 1” issued at step t takes a distinct valid form under each schema (Table 2). A tool call has a valid format only under the schema in which it is de-fined. Otherwise, even though the call expresses the same operation, TE returns et = “Invalid tool format” . We aim to analyze whether harness-aware post-training enables agents to robustly adapt to such shifts in tool invocation protocols 
+
+(RQ3 in §4). 
+
+3.4 Task Type 
+
+The task type determines the distribution from which the user query q is drawn. We group the six task categories of ALFWorld by the minimum num-ber of sub-goals required for completion into three difficulty levels: t-easy , t-med , and t-hard (Ta-ble 3). For example, task instances in the Pick cate-gory (e.g., “Put a plate on the coffee table” )are categorized as t-easy , requiring a sequence of four sub-goals: find an object ( “plate” ), pick it up, find the correct location ( “coffee table” )to place it, and put it down there. This grouping serves as the basis for the task shift regime: train-ing on one difficulty level and evaluating on the others constitutes a controlled shift in the input distribution, with the tool schema held fixed. While task instances are categorized into three task groups, some sub-goals are shared across in-stances from different groups. For example, every task instance shares the same initial sub-goal: to find an object of the desired type. Because the cor-responding tool calls are reused across instances (possibly with different arguments), an ideal post-training method should learn to generate such tool calls in a way that generalizes to task instances un-seen during training, rather than overfitting to the training distribution. While these household activi-ties are simple from a human perspective, results in §4 show that they present non-trivial challenges to LLM agents in both in-distribution and OOD scenarios. We further ask whether the prior knowl-edge encoded in an informative harness helps an agent generalize across task groups (RQ3 in §4). 
+
+4 Analysis 
+
+In this section, we present a controlled analysis of how harness design influences the post-training of LLM agents, both in-distribution and under OOD settings. Specifically, we investigate the following research questions: • RQ1: Does the influence of harness informa-tiveness, observed at zero-shot (Obs. 1), ex-tend to harness-aware post-training (Obs. 2)? • RQ2: Can a harness be applied only after post-training, or should it be in place during training (Obs. 3)? • RQ3: Does harness-aware post-training en-able robustness to tool environment shift (Obs. 4) and task shift (Obs. 5)? 
+
+4.1 Evaluation Protocol 
+
+Among 3, 827 task instances in ALFWorld , 3, 553 
+
+form the training set Dtr all and the remaining 274 
+
+form the test set Dte all . The test set corresponds to the standard seen/unseen split of ALFWorld (140 
+
+seen and 134 unseen instances). Both sets are par-titioned by task difficulty: Dtr all := Dtr easy ∪ D tr med ∪Dtr hard and Dte all := Dte easy ∪D te med ∪D te hard . Here, Dtr easy ,
+
+Dtr med , Dtr hard refer to the training instances within each difficulty-based task group ( t-easy , t-med ,
+
+t-hard ) defined in §3.4. The test splits are defined analogously. We report the success rate , defined as the fraction of test task instances in which the agent completes all required sub-goals within the maximum number of tool calling steps. For zero-shot analysis , we evaluate pretrained LLM agents directly under each of the three har-nesses {h-low , h-mid , h-high } with tool schema fixed to v1.0 (Obs. 1). Specifically, we evalu-ate GPT-5 Mini as a closed-source model, and instruction-tuned versions of Qwen2.5-3B and 
+
+Qwen2.5-7B as open-source models. For GPT-5 Mini , we set its reasoning effort to “high” to use the most capable inference setting. For post-training analysis , we post-train the same open-source models with GRPO and GiGPO as RL algorithms. For in-distribution and tool en-vironment shift scenarios, agents are post-trained on the full training split Dtr all under each of the 5Qwen2.5−3B−Instruct Qwen2.5−7B−Instruct GPT−5 Mini     
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Success Rate (%)
+> 1.3 7.4
+> 28.1
+> 3.3
+> 16.1
+> 31.0
+> 13.9
+> 29.0
+> 68.3
+> Open-source Closed-source
+> h−low h−mid h−high
+
+Figure 2: Zero-shot success rates without post-training: Pretrained agents are evaluated on Dte all under each har-ness with tool schema fixed to v1.0 . Zero-shot perfor-mance improves with harness informativeness, more pronounced for high-capacity models. 
+
+three harnesses, with tool schema fixed to v1.0 .Post-trained agents are then evaluated on Dte all un-der the same harness, either with schema v1.0 
+
+(in-distribution, Obs. 2) or with v1.1 and v2.0 
+
+corresponding to tool environment shifts of vary-ing degrees (Obs. 4). For the task shift scenario, agents are instead post-trained on a single difficulty-specific split ( Dtr easy , Dtr med , or Dtr hard ) under each of the three harnesses, with tool schema fixed to v1.0 ,and evaluated on the test splits of the remaining groups under the same harness and schema (Obs. 5). All open-source results are averaged over three ran-dom seeds, with standard deviations reported in the corresponding figures and tables. Additional training and evaluation details are provided in Ap-pendix C and Appendix D. 
+
+Remark. Prior post-training studies on 
+
+ALFWorld typically operate under a single 
+
+(harness , task type ) configuration, training only on the full training split Dtr all . We instead treat harness and task type as controllable variables, running each RL algorithm across all combinations of three harness levels and four task type settings (the full training split and three difficulty-specific splits), for both open-source models. This amounts to a total compute budget of approximately 1, 800 
+
+H200 GPU-hours. 
+
+4.2 Zero-shot and In-distribution Performance (RQ1) Observation 1 (Zero-shot) . Harness informative-ness monotonically improves zero-shot perfor-mance of LLM agents, and the magnitude of the gain scales with model capacity. 
+
+Across all three models, performance im-proves monotonically with harness informative-ness (Fig. 2). In particular, GPT-5 Mini shows the largest gain, confirming that the magnitude of GRPO GiGPO     
+
+> Qwen2.5−3B−Instruct
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Success Rate (%)
+> 56.0
+> 65.6
+> 61.7
+> 83.2
+> 69.7
+> 82.1
+> GRPO GiGPO
+> Qwen2.5−7B−Instruct
+> 55.6
+> 81.0
+> 76.2 83.0
+> 77.9
+> 86.9
+> h−low h−mid h−high
+
+Figure 3: In-distribution success rates after post-training: Agents are post-trained on Dtr all under each har-ness with tool schema fixed to v1.0 , and evaluated on 
+
+Dte all under the same harness and schema. Post-training performance tends to improve with harness informative-ness. 
+
+the gain scales with model capacity. Furthermore, while open-source models fail at Pick 2 ( t-hard ), reporting 0.0 across most harness configurations, 
+
+GPT-5 Mini achieves 61 .0 under h-high (Ta-ble 10). Even under h-low , GPT-5 Mini achieves 
+
+17 .1 at Pick 2 , further illustrating that model ca-pacity is essential to drive harness-induced gains. 
+
+Observation 2 (In-distribution) . The monotonic harness gain observed at zero-shot (Fig. 2) largely carries over after post-training under both algo-rithms. 
+
+The monotonic harness gain observed at zero-shot extends to post-training under both algorithms (Fig. 3). For example, Qwen2.5-3B-Instruct 
+
+post-trained with GRPO under h-high outper-forms Qwen2.5-7B-Instruct post-trained with GRPO under h-low by 14 .1 points, indicating that the choice of harness can outweigh the effect of model capacity even after post-training. We also ob-serve that GiGPO consistently outperforms GRPO across all configurations, consistent with its finer credit assignment in long-horizon tasks. 
+
+4.3 Post-hoc Harness Application (RQ2) Observation 3 (Post-hoc Gap) . Applying a harness only after training recovers little of the benefit of training with it in place. 
+
+Once the harness is treated as a controllable variable, a natural question arises: should a har-ness be applied at training time, or in a post-hoc manner after post-training under a low-effort har-ness? We find that harness-aware post-training is preferable across all model and harness configu-rations (Fig. 4). The gap is particularly large for 
+
+Qwen2.5-7B-Instruct post-trained with GRPO, where training-time harness application outper-6GRPO GiGPO       
+
+> Qwen2.5−3B−Instruct
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Success Rate (%)
+> 61.7
+> 83.2
+> 57.5
+> 69.3 69.7
+> 82.1
+> 59.6
+> 67.6
+> GRPO GiGPO
+> Qwen2.5−7B−Instruct
+> 76.2 83.0
+> 55.5
+> 79.6 77.9
+> 86.9
+> 55.4
+> 82.2
+> h−mid (training-time)
+> h−mid (post-hoc)
+> h−high (training-time)
+> h−high (post-hoc)
+
+Figure 4: Training-time vs. post-hoc harness applica-tion: in-distribution success rates on Dte all . For each harness {h-mid , h-high }, we compare an agent post-trained with that harness in place ( training-time ) against an agent post-trained under h-low with that harness applied only at evaluation ( post-hoc ). Training-time ap-plication consistently outperforms post-hoc application. 
+
+forms post-hoc application by 20 .7 points under 
+
+h-mid and 22 .5 points under h-high . This sug-gests that the harness is better specified before post-training, allowing the agent to adapt to the harness it will ultimately use. 
+
+4.4 OOD Robustness (RQ3) Observation 4 (Tool Environment Shift) . Harness-aware post-training is robust to tool environment shift, while post-training under h-low with low design effort suffers a drastic performance drop under stronger shift. 
+
+Harness-aware post-training not only improves in-distribution performance (Obs. 2), but also re-mains robust under tool environment shift (Fig. 5). While the agent post-trained under a harness with low design effort ( h-low ) adapts to the mild shift (v1.1 ), it suffers a drastic performance drop under 
+
+v2.0 . In particular, Qwen2.5-7B-Instruct post-trained with GRPO under h-low achieves 2.7 under 
+
+v2.0 , which is 10 .8 points below the base model without post-training ( 13 .5, Table 13). While Qwen2.5-7B-Instruct post-trained with GiGPO under h-low performs well in-distribution (Fig. 3), it exhibits a substantial drop under v2.0 
+
+(Fig. 5), indicating that the agent fails to adapt to the test-time schema. As such, we conduct an in-depth analysis on the tool calling patterns of 
+
+Qwen2.5-7B-Instruct post-trained with GiGPO, where tool schema is fixed to v1.0 at training time and v2.0 at evaluation. The model post-trained under h-high generates 
+
+95 .7% valid tool calls under v2.0 , indicating that it well adapts to the tool environment shift at the surface level (Fig. 6). However, 34 .9% of these calls are not admissible at the current state, result-v1.0 v1.1 v2.0     
+
+> GRPO
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Success Rate (%)
+> Training
+> Schema
+> v1.0 v1.1 v2.0
+> GiGPO
+> Training
+> Schema
+> h−low h−mid h−high
+
+Figure 5: Post-training success rates of Qwen2.5-7B-Instruct under tool environment shift: Agents are post-trained on Dtr all under each harness with tool schema fixed to v1.0 , and evaluated on Dte all under the same har-ness but with schema v1.1 (mild shift) or v2.0 (stronger shift). Across both algorithms, more informative har-nesses yield greater robustness to such shifts. Performance Drop (%)      
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 47.8 45.2
+> 17.3
+> Admissible Inadmissible Invalid Format
+> Tool Call Rate (%)
+> 18.4
+> 0.5
+> 81.2
+> 20.2
+> 4.8
+> 75.1
+> 60.8
+> 34.9
+> 4.2
+> Valid Format
+> h−low h−mid h−high
+
+Figure 6: In-depth analysis of post training under the tool shift from v1.0 (training) to v2.0 (evaluation). (Left) Performance drop under v2.0 relative to that of in-distribution. (Right) Breakdown of generated tool calls into three categories: admissible (correct format and executable), inadmissible (correct format but re-jected by the environment, i.e., “Nothing happens” ), and invalid (malformed, e.g., non-existent tool name or argument errors). 
+
+ing in a performance drop of 17 .3 points (from 
+
+86 .9 to 69 .6) relative to its in-distribution result. By contrast, the models post-trained under h-mid 
+
+and h-low fail to adapt at the schema level, re-turning et = “Invalid tool format” in 75 .1% 
+
+and 81 .2% of attempts, respectively. Performance degrades by 45 .2 and 47 .8 points under v2.0 , sig-nificantly larger than that of h-high . This under-scores the importance of training with an informa-tive harness for OOD robustness, particularly under stronger tool environment shift. Representative fail-ure modes are provided in Table 4. 
+
+Observation 5 (Task Shift) . Prior knowledge en-coded in harness boosts inter-task transfer of agent performance. 
+
+Performance improves monotonically with har-7Harness Training-time Form ( v1.0 ) Test-time Form ( v2.0 ) Agent Output             
+
+> h-low Go(receptacle=“countertop 1”) ReceptacleControl(action=“navigate_to”, target=“countertop 1”) GoTo(“countertop 1”) Go(receptacle=“shelf 1”) ReceptacleControl(action=“navigate_to”, target=“shelf 1”) GoToLocation(“shelf 1”) Go(receptacle=“diningtable 1”) ReceptacleControl(action=“navigate_to”, target=“diningtable 1”) GoToDiningTable(“diningtable 1”) h-mid Go(receptacle=“countertop 1”) ReceptacleControl(action=“navigate_to”, target=“countertop 1”) navigate_to(“countertop 1”) Go(receptacle=“dresser 1”) ReceptacleControl(action=“navigate_to”, target=“dresser 1”) go_to(“dresser 1”) Go(receptacle=“dresser 1”) ReceptacleControl(action=“navigate_to”, target=“dresser 1”) goto_dresser()
+
+Table 4: Example failure modes of Qwen2.5-7B-Instruct post-trained with GiGPO under h-low and h-mid , with tool schema v1.0 at training time and v2.0 at evaluation. The corresponding valid forms under v1.0 and v2.0 are shown for reference. The agents fail to adapt to the test-time schema, generating plausible-looking but non-existent tool names. Pick                   
+
+> Look Pick 2
+> 20 40 60 80 100
+> Clean
+> (i.i.d.)
+> Heat
+> (i.i.d.)
+> Cool
+> (i.i.d.)
+> Pick
+> Look Pick 2
+> 20 40 60 80 100
+> Clean
+> (i.i.d.)
+> Heat
+> (i.i.d.)
+> Cool
+> (i.i.d.)
+> Pick
+> Look
+> Clean
+> Heat
+> Cool
+> 20 40 60 80 100
+> Pick 2
+> (i.i.d.)
+> GRPO
+> Pick
+> Look
+> Clean
+> Heat
+> Cool
+> 20 40 60 80 100
+> Pick 2
+> (i.i.d.)
+> GiGPO
+> Medium Hard
+> h−low h−mid h−high
+
+Figure 7: Post-training success rates of Qwen2.5-7B-Instruct under task shift: agents are post-trained on 
+
+Dtr med (top row) and Dtr hard (bottom row) under each har-ness with tool schema fixed to v1.0 , and evaluated on 
+
+Dte all under the same harness and schema. In-distribution task categories are highlighted in bold : Clean , Heat ,
+
+Cool for Dtr med , and Pick 2 for Dtr hard . Post-training un-der informative harnesses tends to improve performance on OOD task categories. 
+
+ness informativeness in the task shift scenario as well, where this trend holds across both algorithms (Fig. 7). GRPO improves from 33 .1 under h-low 
+
+to 50 .6 under h-high (+17 .5), and GiGPO from 
+
+28 .8 to 73 .4 (+44 .6, Table 16). This improvement arises not only from the in-distribution task cate-gory ( Pick 2 ), but also from the OOD categories, where agents post-trained under h-low fail to trans-fer (Fig. 7). Specifically, Qwen2.5-7B-Instruct post-trained with GRPO under h-low achieves 0.9 on 
+
+Heat , which rises to 29 .1 under h-high (Table 16). A similar pattern holds with GiGPO under h-low ,which achieves 0.0 on Cool and rises to 51 .4 under 
+
+h-high . This indicates that the prior knowledge encoded in an informative harness helps the agent generalize across task groups. As in the tool envi-ronment shift scenario, harness-aware post-training improves OOD robustness. 
+
+5 Conclusion 
+
+In this paper, we studied harness design in the con-text of post-training tool-integrated LLM agents, a factor that prior work has either treated as a fixed engineering detail or examined only in the training-free regime. Building on ALFWorld , we constructed a benchmark that treats the harness as a controllable design dimension and supports four evaluation regimes: zero-shot, and post-training under the in-distribution and two OOD scenarios (tool environment shift and task shift). Across these regimes, we instantiated three harnesses with vary-ing levels of informativeness and analyzed how harness design influences post-training of LLM agents in both in-distribution and OOD settings. Our experiments establish that harness design and post-training cannot be treated as separable design choices. Performance improves monoton-ically with harness informativeness at zero-shot, and this trend extends to post-training under the in-distribution scenario. This improvement, how-ever, requires the harness to be in place during post-training: applying it only afterward recovers little of the benefit of training with one in place. Under OOD settings, harness-aware post-training remains robust to tool environment shift and helps the agent generalize across task groups, whereas post-training under a harness with low design effort suffers a drastic performance drop under stronger tool environment shift and fails to transfer to OOD task categories. These results demonstrate that harness-aware post-training is a prerequisite for, rather than a supplement to, robust performance of tool-integrated LLM agents. 8Limitations 
+
+Our analysis is conducted on a single environ-ment, ALFWorld . Although our benchmark built on ALFWorld enables a controlled study of harness design under in-distribution and OOD settings, val-idating our findings on benchmarks with different task distributions and tool environments is an im-portant direction. We examine harness-aware post-training with two open-source models, Qwen2.5-3B-Instruct 
+
+and Qwen2.5-7B-Instruct , and two RL algo-rithms, GRPO and GiGPO, spanning 24 training configurations per model and amounting to approxi-mately 1,800 H200 GPU-hours in total. Extending this to a broader range of models and RL algo-rithms, beyond what our compute budget allowed, is left to future work. We instantiate three harnesses ( h-low , h-mid ,
+
+h-high ) as representative levels of informativeness. In practice, informative harnesses such as h-mid 
+
+and h-high must be obtained either through expert design or costly exploration of the environment (§3.2). While GiGPO under h-low performs com-parably to harness-aware counterparts under the in-distribution scenario, it still breaks down under stronger tool environment shift, indicating that finer credit assignment alone cannot replace an informa-tive harness. A natural direction is therefore to develop harness-aware post-training methods that jointly optimize the harness and the LLM agent. Our benchmark, which supports arbitrary harness designs, can serve as a testbed for such algorithms. 
+
+References 
+
+Anthropic. 2026. Effective harnesses for long-running agents. https: //www.anthropic.com/engineering/ effective-harnesses-for-long-running-agents .Anthropic Engineering Blog. Antonis Antoniades, Albert Örwall, Kexun Zhang, Yuxi Xie, Anirudh Goyal, and William Wang. 2025. Swe-search: Enhancing software agents with monte carlo tree search and iterative refinement. In International Conference on Learning Representations , volume 2025, pages 64485–64515. Ibragim Badertdinov, Alexander Golubev, Maksim Nekrashevich, Anton Shevtsov, Simon Karasik, An-drei Andriushchenko, Maria Trofimova, Daria Litv-intseva, and Boris Yangel. 2025. Swe-rebench: An automated pipeline for task collection and decontam-inated evaluation of software engineering agents. In 
+
+Advances in Neural Information Processing Systems ,volume 38. Guoxin Chen, Zhong Zhang, Xin Cong, Fangda Guo, Yesai Wu, Yankai Lin, Wenzheng Feng, and Yasheng Wang. 2025. Learning evolving tools for large lan-guage models. In International Conference on Learn-ing Representations (ICLR) .Mingyue Cheng, Jie Ouyang, Shuo Yu, Ruiran Yan, Yucong Luo, Zirui Liu, Daoyu Wang, Qi Liu, and Enhong Chen. 2025. Agent-R1: Training powerful LLM agents with end-to-end reinforcement learning. 
+
+arXiv preprint arXiv:2511.14460 .Tianzhe Chu, Yuexiang Zhai, Jihan Yang, Shengbang Tong, Saining Xie, Dale Schuurmans, Quoc V Le, Sergey Levine, and Yi Ma. 2025. SFT memorizes, RL generalizes: A comparative study of foundation model post-training. In Forty-second International Conference on Machine Learning .Guanting Dong, Hangyu Mao, Kai Ma, Licheng Bao, Yifei Chen, Zhongyuan Wang, Zhongxia Chen, Ji-azhen Du, Huiyang Wang, Fuzheng Zhang, Guorui Zhou, Yutao Zhu, Ji-Rong Wen, and Zhicheng Dou. 2026. Agentic Reinforced Policy Optimization. In 
+
+The Fourteenth International Conference on Learn-ing Representations .Yangyi Fang, Jiaye Lin, Xiaoliang Fu, Cong Qin, Haolin Shi, Chang Liu, and Peilin Zhao. 2026. Proximity-based multi-turn optimization: Practical credit as-signment for llm agent training. arXiv preprint arXiv:2602.19225 .Jiazhan Feng, Shijue Huang, Xingwei Qu, Ge Zhang, Yujia Qin, Baoquan Zhong, Chengquan Jiang, Jinxin Chi, and Wanjun Zhong. 2025. Retool: Reinforce-ment learning for strategic tool use in llms. arXiv preprint arXiv:2504.11536 .Lang Feng, Zhenghai Xue, Tingcong Liu, and Bo An. 2026. Group-in-group policy optimization for LLM agent training. In The Thirty-ninth Annual Confer-ence on Neural Information Processing Systems .Sirui Hong, Mingchen Zhuge, Jonathan Chen, Xiawu Zheng, Yuheng Cheng, Jinlin Wang, Ceyao Zhang, Zili Wang, Steven Ka Shing Yau, Zijuan Lin, Liyang Zhou, Chenyu Ran, Lingfeng Xiao, Chenglin Wu, and Jürgen Schmidhuber. 2024. MetaGPT: Meta pro-gramming for a multi-agent collaborative framework. In The Twelfth International Conference on Learning Representations .Pengcheng Jiang, Xueqiang Xu, Jiacheng Lin, Jinfeng Xiao, Zifeng Wang, Jimeng Sun, and Jiawei Han. 2025. s3: You don’t need that much data to train a search agent via RL. In Proceedings of the 2025 Con-ference on Empirical Methods in Natural Language Processing .Bowen Jin, Hansi Zeng, Zhenrui Yue, Jinsung Yoon, Sercan O Arik, Dong Wang, Hamed Zamani, and Jiawei Han. 2025. Search-R1: Training LLMs to reason and leverage search engines with reinforce-ment learning. In Second Conference on Language Modeling .
+
+9Pang Wei Koh, Shiori Sagawa, Henrik Mark-lund, Sang Michael Xie, Marvin Zhang, Akshay Balsubramani, Weihua Hu, Michihiro Yasunaga, Richard Lanas Phillips, Irena Gao, Tony Lee, Etienne David, Ian Stavness, Wei Guo, Berton Earnshaw, Im-ran Haque, Sara M Beery, Jure Leskovec, Anshul Kundaje, and 4 others. 2021. Wilds: A benchmark of in-the-wild distribution shifts. In Proceedings of the 38th International Conference on Machine Learning ,pages 5637–5664. PMLR. Yoonho Lee, Roshen Nair, Qizheng Zhang, Kangwook Lee, Omar Khattab, and Chelsea Finn. 2026. Meta-harness: End-to-end optimization of model harnesses. 
+
+arXiv preprint arXiv:2603.28052 .Guangrui Li, Yaochen Xie, Yi Liu, Ziwei Dong, Xingyuan Pan, Tianqi Zheng, Jason Choi, Michael J. Morais, Binit Jha, Shaunak Mishra, Bingrou Zhou, Chen Luo, Monica Xiao Cheng, and Dawn Song. 2026. The world won’t stay still: Programmable evolution for agent benchmarks. arXiv preprint arXiv:2603.05910 .Jiahang Lin, Shichun Liu, Chengjun Pan, Lizhi Lin, Shihan Dou, Zhiheng Xi, Xuanjing Huang, Hang Yan, Zhenhua Han, Tao Gui, and 1 others. 2026. Agentic harness engineering: Observability-driven automatic evolution of coding-agent harnesses. arXiv preprint arXiv:2604.25850 .Zuxin Liu, Thai Hoang, Jianguo Zhang, Ming Zhu, Tian Lan, Shirley Kokane, Juntao Tan, Weiran Yao, Zhiwei Liu, Yihao Feng, Rithesh Murthy, Liangwei Yang, Silvio Savarese, Juan Carlos Niebles, Huan Wang, Shelby Heinecke, and Caiming Xiong. 2024. APIGen: Automated PIpeline for generating verifi-able and diverse function-calling datasets. In Ad-vances in Neural Information Processing Systems .Xinji Mai, Haotian Xu, Xing W, Weinong Wang, Yingy-ing Zhang, and Wenqiang Zhang. 2025. Agentic RL scaling law: Spontaneous code execution for mathe-matical problem solving. In The Thirty-ninth Annual Conference on Neural Information Processing Sys-tems .Zhanfeng Mo, Xingxuan Li, Yuntao Chen, and Lidong Bing. 2025. Multi-agent tool-integrated policy opti-mization. arXiv preprint arXiv:2510.04678 .OpenAI. 2026. Harness engineering: Leveraging Codex in an agent-first world. https://openai.com/ index/harness-engineering/ . OpenAI Blog. Shishir G Patil, Tianjun Zhang, Xin Wang, and Joseph E. Gonzalez. 2024. Gorilla: Large language model con-nected with massive APIs. In The Thirty-eighth An-nual Conference on Neural Information Processing Systems .Cheng Qian, Emre Can Acikgoz, Qi He, Hongru WANG, Xiusi Chen, Dilek Hakkani-Tur, Gokhan Tur, and Heng Ji. 2025. ToolRL: Reward is all tool learning needs. In Advances in Neural Information Processing Systems , pages 105523–105553. Yujia Qin, Shihao Liang, Yining Ye, Kunlun Zhu, Lan Yan, Yaxi Lu, Yankai Lin, Xin Cong, Xiangru Tang, Bill Qian, Sihan Zhao, Lauren Hong, Runchu Tian, Ruobing Xie, Jie Zhou, Mark Gerstein, dahai li, Zhiyuan Liu, and Maosong Sun. 2024. ToolLLM: Facilitating large language models to master 16000+ real-world APIs. In The Twelfth International Con-ference on Learning Representations .Timo Schick, Jane Dwivedi-Yu, Roberto Dessi, Roberta Raileanu, Maria Lomeli, Eric Hambro, Luke Zettle-moyer, Nicola Cancedda, and Thomas Scialom. 2023. Toolformer: Language models can teach themselves to use tools. In Thirty-seventh Conference on Neural Information Processing Systems .Yu Shang, Yu Li, Keyu Zhao, Likai Ma, Jiahe Liu, Fengli Xu, and Yong Li. 2025. Agentsquare: Auto-matic llm agent search in modular design space. In 
+
+International Conference on Learning Representa-tions , volume 2025, pages 3841–3865. Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, Y. K. Li, Y. Wu, and Daya Guo. 2024. Deepseekmath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 .Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik R Narasimhan, and Shunyu Yao. 2023. Re-flexion: language agents with verbal reinforcement learning. In Thirty-seventh Conference on Neural Information Processing Systems .Mohit Shridhar, Xingdi Yuan, Marc-Alexandre Côté, Yonatan Bisk, Adam Trischler, and Matthew Hausknecht. 2021. ALFWorld: Aligning text and em-bodied environments for interactive learning. In Pro-ceedings of the International Conference on Learning Representations (ICLR) .Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Man-dlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. 2024. Voyager: An open-ended embodied agent with large language models. Trans-actions on Machine Learning Research .Xingyao Wang, Boxuan Li, Yufan Song, Frank F. Xu, Xiangru Tang, Mingchen Zhuge, Jiayi Pan, Yueqi Song, Bowen Li, Jaskirat Singh, Hoang H. Tran, Fuqiang Li, Ren Ma, Mingzhang Zheng, Bill Qian, Yanjun Shao, Niklas Muennighoff, Yizhe Zhang, Binyuan Hui, and 5 others. 2025. Openhands: An open platform for AI software developers as gener-alist agents. In The Thirteenth International Confer-ence on Learning Representations .Junde Wu, Jiayuan Zhu, Yuyuan Liu, Min Xu, and Yueming Jin. 2025. Agentic reasoning: A stream-lined framework for enhancing llm reasoning with agentic tools. In Proceedings of the 63rd Annual Meeting of the Association for Computational Lin-guistics (Volume 1: Long Papers) , pages 28489– 28503. 
+
+10 Zhenghai Xue, Longtao Zheng, Qian Liu, Yingru Li, Xiaosen Zheng, Zejun Ma, and Bo An. 2026. Sim-pleTIR: End-to-end reinforcement learning for multi-turn tool-integrated reasoning. In The Fourteenth International Conference on Learning Representa-tions .John Yang, Carlos Jimenez, Alexander Wettig, Kil-ian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. 2024. Swe-agent: Agent-computer in-terfaces enable automated software engineering. In 
+
+Advances in Neural Information Processing Systems ,volume 37, pages 50528–50652. Linyi Yang, Yaoxian Song, Xuan Ren, Chenyang Lyu, Yidong Wang, Jingming Zhuo, Lingqiao Liu, Jindong Wang, Jennifer Foster, and Yue Zhang. 2023. Out-of-distribution generalization in natural language pro-cessing: Past, present, and future. In Proceedings of the 2023 conference on empirical methods in natural language processing , pages 4533–4559. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R Narasimhan, and Yuan Cao. 2023. React: Synergizing reasoning and acting in language models. In The Eleventh International Conference on Learning Representations .Lifan Yuan, Yangyi Chen, Ganqu Cui, Hongcheng Gao, FangYuan Zou, Xingyi Cheng, Heng Ji, Zhiyuan Liu, and Maosong Sun. 2023. Revisiting out-of-distribution robustness in NLP: Benchmarks, analy-sis, and LLMs evaluations. In Thirty-seventh Con-ference on Neural Information Processing Systems Datasets and Benchmarks Track .Kai Zhang, Xiangchao Chen, Bo Liu, Tianci Xue, Zeyi Liao, Zhihan Liu, Xiyao Wang, Yuting Ning, Zhaorun Chen, Xiaohan Fu, Jian Xie, Yuxuan Sun, Boyu Gou, Qi Qi, Zihang Meng, Jianwei Yang, Ning Zhang, Xian Li, Ashish Shah, and 11 others. 2026. Agent learning via early experience. arXiv preprint arXiv:2510.08558 .
+
+11 A Related Work 
+
+A.1 Training Tool-integrated Agentic Systems 
+
+A substantial body of prior work aims to improve the performance of tool-integrated agentic systems under static tool environments. Most approaches train an LLM agent to generate valid tool calling sequences using supervised fine-tuning (SFT) with expert demonstrations or reinforcement learning (RL). Zhang et al. (2026) propose two SFT strategies that incorporate additional trajectories generated by the agent itself. The first performs “implicit world modeling” to learn transition dynamics from agent–environment interactions before fine-tuning on expert trajectories. The second constructs “self-reflection data” by contrasting agent-generated tra-jectories with expert demonstrations, encouraging the model to internalize why expert solutions are preferable. Similarly, Qian et al. (2025) design reward functions that align generated trajectories with expert demonstrations, supervising both inter-mediate tool calls and final outcomes. In parallel, a complementary line of work de-velops reinforcement learning methods tailored to tool-integrated agents (Jin et al., 2025; Mai et al., 2025; Xue et al., 2026; Jiang et al., 2025; Mo et al., 2025; Cheng et al., 2025). A key distinction from conventional RL is the masking of feedback to-kens from the tool environment, ensuring that pa-rameter updates depend solely on agent-generated tokens. Additional refinements include filtering trajectories containing invalid or incomplete tool calls (Xue et al., 2026) and introducing multi-turn optimization strategies, such as turn-level ratios in group relative policy optimization (GRPO). Be-yond individual algorithms, prior studies examine the interaction between SFT and RL for improving generalization (Chu et al., 2025): SFT followed by RL can enhance training stability, while RL-only approaches have been reported to achieve stronger generalization in certain tool-integrated reasoning tasks (Xue et al., 2026). Despite their methodological differences, these approaches share two assumptions: that the tool environment is static throughout training and eval-uation, and that the harness is fixed and treated as part of the environment rather than as a design vari-able. As a consequence, neither the harness’s role in shaping what the post-trained agent learns, nor the agent’s robustness to changes in the harness or the tool environment, is systematically examined. 
+
+A.2 Harness Design for Tool-integrated Agentic Systems 
+
+The harness, as introduced in Section 1, is widely recognized as a substantial determinant of agent performance, with recent work reporting accuracy gaps of up to roughly six-fold across harnesses (Lee et al., 2026). For tool-integrated agentic systems, the harness specifies, among other things, which tools are exposed to the agent and how they are described, what auxiliary information accompanies each per-step observation, and how the resulting context is assembled into a prompt. In practice, harnesses have been hand-designed for closed-source models. Benchmarks for in-teractive LLM agents, including those built on 
+
+ALFWorld , typically report results obtained under carefully crafted harnesses, often containing de-tailed descriptions of available actions, structured per-step observations, and various forms of auxil-iary information (Zhang et al., 2026). A recent line of work seeks to remove the human from this loop: Lee et al. (2026) introduce Meta-Harness, which casts harness design as a search problem and uses a high-capacity LLM agent to read candidate har-nesses and propose new ones automatically. Even with such automated search and strong base mod-els, however, the gains from harness design alone are not always satisfactory. Furthermore, the un-derlying LLM is held fixed throughout, with the implications for harness design in the post-training regime remaining unaddressed. In this work, we study how harness design and post-training jointly shape the resulting agent: we treat the harness as an explicit, controlled design dimension and post-train independently under har-nesses providing three different levels of auxiliary information, characterizing their interplay both in-distribution and under task and tool environment shift. 
+
+A.3 Tool-integrated Agentic Systems under Dynamic Environments 
+
+Chen et al. (2025) introduce ToolQA-D, a bench-mark in which API names, signatures, and behav-iors drift over time with the agent unaware of these changes, and propose ToolEVO, a framework that uses Monte Carlo Tree Search to enable an agent to detect and adapt to such variability at inference time. More recently, Li et al. (2026) propose ProE-volve, a graph-based framework in which the data, tools, and schema of an agent environment are rep-12 resented as a typed relational graph and evolved through programmable graph transformations, al-lowing controlled evaluation of agents’ robustness as environments change. While these efforts share our motivation, they neither treat the harness as a design dimension nor consider the post-training regime, leaving the interplay between the two un-der such shifts uncharacterized. 13 B Benchmark Details 
+
+B.1 Harness Configurations 
+
+Tool h-low / h-mid h-high 
+
+Go Move to a receptacle. Move to a receptacle in the room. This sets your current location to that receptacle; you must be at a receptacle before you can Take from it, Open/Close it, Examine it, or Move an object to it. Open Open a receptacle. Open a closed container at your current location (drawer, cabinet, fridge, microwave). You must be at the container (use Go) and it must currently be closed. After opening, its contents become visible and you can Take items from it. Close Close a receptacle. Close an open container at your current location. Normally not required for task completion; useful only when a goal explicitly requires closed state. Take Take an object from a receptacle. Pick up an object from a receptacle at your current location. Preconditions: you must be at the receptacle (use Go), the object must be visible, and if the receptacle is a closed container (drawer/cabinet/fridge/microwave) you must Open it first. You can only carry one object at a time. Move Place an object in or on a receptacle. Place the object you are carrying in/on a receptacle at your current location. Preconditions: you must be carrying the object and be at the target receptacle (for closed containers, Open it first). This action COMPLETES the task when the carried object and the target receptacle both match the goal. Clean Clean an object using a receptacle. Clean an object you are carrying using a sinkbasin at your current location. Preconditions: you must be carrying the object and be at the sinkbasin. Heat Heat an object using a receptacle. Heat an object you are carrying using a microwave at your current location. Preconditions: you must be carrying the object and be at the microwave. Cool Cool an object using a receptacle. Cool an object you are carrying using a fridge at your current location. Preconditions: you must be carrying the object and be at the fridge. Slice Slice an object using a sharp object. Slice an object at your current location using a knife (or butterknife) you are carrying. Preconditions: you must be carrying the sharp object and be at the target object’s location. Look Look around your current location. Look around your current surroundings. If not at any receptacle, reports all visible receptacles in the room. If at a receptacle, reports what is on/in it. Inventory Check your current inventory. Report what object you are currently carrying. You can carry at most one object at a time. Examine Examine a receptacle or an object. Examine a receptacle or object at your current location. For containers this reveals their contents; for objects this reports their state. Useful for re-checking an already-opened receptacle without Go-ing again. Use Use an object. Activate an object at your current location, most commonly turning on a lamp (desklamp / floorlamp). In ‘look at object in light’ tasks, turning on the lamp while holding the target object completes the task. 
+
+Table 5: One-line versus rich tool descriptions in p, for all 13 tools (under tool schema v1.0 ). The one-line form is shared by h-low and h-mid ; the rich form is used only by h-high . Rows are grouped according to the v2.0 
+
+consolidation (Table 9). 
+
+14 Harness Ver. Per-step history Tt
+
+h-low Your task is to: <GOAL>. Current location: <LOC> You are now at step <N> and your current observation is: <STEP_OBS> h-mid Your task is to: <GOAL>. Current location: <LOC> You are now at step <N> and your current observation is: <STEP_OBS> Valid tools: <TOOL_A>, <TOOL_B>, <TOOL_C> h-high Your task is to: <GOAL>. Current location: <LOC> Carrying: <ITEM_OR_"nothing"> You are now at step <N> and your current observation is: <STEP_OBS> Valid tools: <TOOL_A>, <TOOL_B>, <TOOL_C> 
+
+Table 6: Per-step history Tt under each harness version. The three harnesses share a common core, with each richer version appending one additional auxiliary line ( Valid tools: under h-mid , and additionally Carrying: under 
+
+h-high ). 
+
+15 B.2 Tool Schema Versions 
+
+Meaning v1.0 v1.1 
+
+Move to a receptacle Go NavigateTo 
+
+Open a container Open OpenContainer 
+
+Close a container Close CloseContainer 
+
+Pick up an object Take Pickup 
+
+Place an object in/on a receptacle Move Place 
+
+Wash an object (in sinkbasin) Clean Wash 
+
+Heat an object (in microwave) Heat Warm 
+
+Cool an object (in fridge) Cool Chill 
+
+Slice an object (with a knife) Slice Cut 
+
+Survey the surroundings Look SurveyRoom 
+
+Check items currently carried Inventory CheckCarried 
+
+Examine a receptacle or object Examine Inspect 
+
+Activate a device (e.g., lamp) Use Activate 
+
+Table 7: Tool name mapping from v1.0 to v1.1 , covering all 13 tools defined for ALFWorld . Rows are grouped according to the v2.0 consolidation (Table 9). 
+
+Meaning v1.0 v1.1 
+
+Destination of a navigation/placement action receptacle destination 
+
+Object being acted upon object item 
+
+Source receptacle (e.g., for Take ) receptacle source 
+
+Washing receptacle ( sinkbasin ) receptacle washer 
+
+Heating receptacle ( microwave ) receptacle heater 
+
+Cooling receptacle ( fridge ) receptacle cooler 
+
+Slicing instrument knife blade 
+
+Target of an examination target subject 
+
+Table 8: Parameter key mapping from v1.0 to v1.1 , covering all parameter roles shared across tools. 
+
+16 v2.0 Tool Merged v1.1 Tools action Values Unified Parameters 
+
+ReceptacleControl NavigateTo ,
+
+OpenContainer ,
+
+CloseContainer navigate_to ,
+
+open_container ,
+
+close_container action , target ObjectTransport Pickup , Place pickup , place action , item ,
+
+location ObjectTransform Wash , Warm , Chill , Cut wash , warm , chill , cut action , item ,
+
+instrument Observe SurveyRoom ,
+
+CheckCarried , Inspect survey_room ,
+
+check_carried ,
+
+inspect action , subject Activate Activate – (single operation) device 
+
+Table 9: Tool consolidation from v1.1 (13 tools) to v2.0 (5 tools). Each v2.0 group merges one or more v1.1 tools sharing structural or functional similarity, distinguished within the group by a discrete action parameter. Parameter keys are unified across merged operations. 
+
+17 C Experimental Details 
+
+Multi-step Tool Calling Process as Markov De-cision Process. We illustrate in detail how multi-step tool calling process is modeled as a Markov decision process (MDP) at a sequence level. Specif-ically, the MDP is defined by a tuple M := (S, A, P, r, P0) as the following. • S := V∗: State space • A := V∗: Action space • P : S × A × S → [0 , 1] : State transition probability such that P 
+
+> s′∈S
+
+P(s, a, s ′) = 1 for all s ∈ S and a ∈ A. In addition, we let 
+
+P(s′|s, a ) := P(s, a, s ′).• r : S × A × S → R: Step-level reward function evaluated at each step, where we let 
+
+rt := r(st, a t, s t+1 ).
+
+• P0 : S → [0 , 1] : Initial state probability distribu-tion Then, the multi-step tool calling process can be formalized as follows. Before the process starts, the initial state s1 := ( p, q ) is sampled from P0,where p ∈ V ∗ is a system prompt and q ∈ V ∗
+
+is a user query. In each tool calling step t, the LLM agent πθ : S → A first observes the state st.Specifically, st := ( p, q, Tt−1) ∈ S , where Tt−1 is a history of tool calling steps up to the (t − 1) -th step (possibly in a summarized version), and T0 is an empty sequence. The agent then generates an action sequence at ∈ A . The environment then samples the next state st+1 from the probability distribution P(·| st, a t), where 
+
+P(st+1 |st, a t) := 
+
+(
+
+1 st+1 = ( p, q, Tt),
+
+0 o.w. Here, et = TE (( st, a t)) and Tt = TE (( st, a t, e t)) .
+
+Note that the transition dynamics is determinis-tic and TE -dependent. In addition, the agent re-ceives the step level reward rt. The tool calling process proceeds for T ∈ N steps, where the process terminates either when it succeeds in a given task or when the agent reaches the maxi-mum number of tool calling steps. Finally, by letting τ := {(s1, a 1, s 2), . . . , (sT , a T , s T +1 )} ⊂ 
+
+(S × A × S )∗ be an episode-level trajectory and 
+
+R : ( S × A× S )∗ → R be an episode-level reward, the objective can be formulated as 
+
+J (θ) = EP0,P,π θ [R(τ )] ,
+
+where R(τ ) := PTt=1 γt−1rt is a typical choice (γ ∈ [0 , 1] ). 
+
+Group-relative policy optimization (GRPO) (Shao et al., 2024). It is a widely adopted al-gorithm for post-training LLMs due to its com-putational efficiency in calculating the gradient 
+
+∇θJ (θ). Given a system prompt and a ques-tion pair (p, q ), a behavior policy πθold sam-ples a group of G episodes {τ i}Gi=1 , where 
+
+τ i := {(si
+
+> 1
+
+, a i
+
+> 1
+
+, s i
+
+> 2
+
+), . . . , (siT i , a iT i , s iT i+1 )} is the 
+
+i-th episode. Here, we let ait := ( ait1, . . . , a itn it
+
+),
+
+where nit := |ait|. GRPO algorithm then optimizes the following token-level objective: 
+
+J (θ) = E (p,q )∼P0,
+
+> {ait}∼ πθold
+
+"
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+1
+
+PT i 
+
+> t=1
+
+nitT i
+
+X
+
+> t=1
+> nit
+
+X
+
+> k=1
+
+
+
+min 
+
+
+
+ρitk ˆAi, clip  ρitk , 1 − ε, 1 + ε ˆAi
+
+− βD KL 
+
+ πθ(· | si<tk ) ∥ πref (· | si<tk ) #
+
+.
+
+where si<tk := (p, q, T it−1, a it1, . . . , a it(k−1) ) de-notes the context preceding token aitk , and the token-level ratio ρitk and the episode-level advan-tage ˆAi are defined as follows: 
+
+ρitk = πθ(aitk | si<tk )
+
+πθold (aitk | si<tk ) , ˆAi = Ri − μσ .
+
+Here, {Ri}Gi=1 are episode-level rewards evalu-ated on {τ i}Gi=1 , and μ = mean ({Ri}Gi=1 ), σ =
+
+std ({Ri}Gi=1 ) are their sample mean and standard deviation, respectively. Here, πref is a fixed refer-ence policy, typically initialized from the initial pol-icy and kept frozen throughout training. In practice, the per-token KL term is computed using the low-variance estimator of DKL (πθ∥πref ), as adopted in GRPO (Shao et al., 2024). 
+
+Group-in-group policy optimization (GiGPO) (Feng et al., 2026). Unlike GRPO, GiGPO dif-ferentiates the advantage assigned to each step within the same episode by additionally consid-ering a step-level advantage ˆAit in addition to an episode-level advantage ˆAi. To define a step-level 18 advantage, GiGPO algorithm requires a state iden-tifier h : V∗ × V ∗ → { 0, 1} that verifies whether two different per-step initial states, sit1 and sjt2 ,
+
+i.e., the states from which steps t1 and t2 begin, are semantically equivalent (possibly from differ-ent episodes, where i̸ = j). Specifically, given a set of step-level transitions across all G episodes 
+
+G := (sit, a it, s it+1 ) i∈[G],t ∈[T i] , GiGPO partitions 
+
+G = ∪˜s∈AN G(˜ s) into disjoint groups, where steps within each group G(˜ s) shares the same per-step initial state ˜s ∈ V ∗ w.r.t. the state identifier h as follows: 
+
+G(˜ s) := (sit, a it, s it+1 ) ∈ G : h(sit, ˜s) = 1 .
+
+Here, AN is an anchor set that partitions G based on the semantic equivalence of the per-step initial state that jointly satisfies 
+
+G = ∪˜s∈AN G(˜ s),
+
+G(˜ s) ∩ G (ˆ s) = ∅ ∀ ˜s, ˆs ∈ AN s.t. h(˜ s, ˆs) = 0 .
+
+Then, every step level transition (sit, a it, s it+1 ) is assigned an index git that specifies which group that it belongs to, defined as git := (˜ s ∈AN s.t. h(sit, ˜s) = 1) . GiGPO algorithm then op-timizes the following token-level objective: 
+
+J (θ) = E (p,q )∼P0,
+
+> {ait}∼ πθold
+
+"
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+1
+
+PT i 
+
+> t=1
+
+nitT i
+
+X
+
+> t=1
+> nit
+
+X
+
+> k=1
+
+
+
+min 
+
+
+
+ρitk ( ˆAi + ω ˆAit),
+
+clip  ρitk , 1 − ε, 1 + ε ( ˆAi + ω ˆAit)
+
+
+
+− βD KL 
+
+ πθ(· | si<tk ) ∥ πref (· | si<tk ) #
+
+.
+
+where the token level ratio ρitk and the episode-level advantage ˆAi are defined in a same manner as GRPO, and the step-level advantage ˆAit is defined as : 
+
+ˆAit = Rit − μgit
+
+σgit
+
+.
+
+Here, Rit := PT i 
+
+> ˜t=t
+
+γ˜t−tri 
+
+> ˜t
+
+is a step-level return of the t-th step within the i-th episode. For each an-chor ˜s ∈ AN , μ˜s and σ˜s denote the sample mean and standard deviation of the step-level returns 
+
+{Rit} within G(˜ s). The advantage ˆAit then uses the statistics of the group git to which the t-th step of the i-th episode belongs. Note that the discount factor γ ∈ [0 , 1] may be different from that used to define the episode-level reward Ri. ω ∈ R+ is a hyperparameter that balances episode-level and step-level advantages. 
+
+Training. We fine-tune Qwen2.5-3B-Instruct and Qwen2.5-7B-Instruct with GRPO, using group-normalized advantages over G=8 trajectories per prompt. We train for 500 steps with a constant learning rate of 1×10 −6, a batch of 16 task prompts per step, a PPO minibatch size of 256, and a low-variance KL penalty (coefficient 0.01 ) applied to the loss. A randomly sampled 10% of the training data is held out for validation and used to select the final checkpoint. Rollouts use vLLM with a sampling temperature of 1.0 and a maximum of 50 turns per episode over the 13 ALFWorld tools, with a maximum prompt length of 3072 tokens and a maximum response length of 1024 tokens. The reward is sparse: a successful trajectory receives 
+
+10 , while each invalid action incurs a penalty of 
+
+−0.1. We use 4× H200 GPUs for training. 
+
+Evaluation. We evaluate on the ALFWorld test split of 274 games (140 seen, 134 unseen), with the evaluation harness matched to the training har-ness and a sampling temperature of 0.4. Each configuration is run with three seeds, and we re-port the mean success rate; the corresponding per-configuration standard deviations are reported alongside the means in all result tables. For GPT-5-mini, we use a reasoning effort of high ; since reasoning models require substantially more tokens, we set the maximum response length to 4096 to-kens. Due to budget constraints, GPT-5-mini is run with a single seed. For the tool environment shift scenario, we refer to the paraphrased schema v1.1 
+
+as the mild shift and the consolidated schema v2.0 
+
+as the strong shift, reflecting the increasing degree of surface-level deviation from the v1.0 training schema. 19 D Additional Experimental Results 
+
+Model Type Model Test-time Harness 
+
+Dte easy Dte med Dte hard 
+
+All Pick Look Clean Heat Cool Pick 2 Closed-source GPT-5 Mini (high) 
+
+h-low 71 .2 16 .1 19 .0 12 .8 15 .2 17 .1 28 .1
+
+h-mid 67 .8 12 .9 20 .7 20 .5 34 .8 12 .2 31 .0 (+2 .9) 
+
+h-high 93 .2 77 .4 36 .2 66 .7 78 .3 61 .0 68 .3 (+40 .2) 
+
+Open-source Qwen2.5-3B-Instruct 
+
+h-low 6.2±2.6 0.0±0.0 0.0±0.0 0.0±0.0 0.0±0.0 0.0±0.0 1.3±0.6
+
+h-mid 11 .9±4.5 2.2±1.9 0.0±0.0 3.4±3.0 0.0±0.0 0.0±0.0 3.3±1.1 (+2 .0) 
+
+h-high 35 .0±2.6 15 .1±1.9 11 .5±1.0 12 .8±0.0 2.2±2.2 0.0±0.0 13 .9±0.7 (+12 .6) 
+
+Qwen2.5-7B-Instruct 
+
+h-low 19 .8±3.5 18 .3±4.9 0.6±1.0 3.4±3.0 2.9±3.3 0.0±0.0 7.4±0.9
+
+h-mid 44 .6±2.0 20 .4±3.7 9.8±3.6 8.5±3.9 5.1±1.3 0.0±0.0 16 .1±1.7 (+8 .7) 
+
+h-high 54 .8±3.9 18 .3±6.7 26 .4±2.6 35 .9±0.0 24 .6±3.3 1.6±1.4 29 .0±1.8 (+21 .6) 
+
+Table 10: Zero-shot success rates without post-training:Pretrained agents are evaluated on Dte all under each harness with tool schema fixed to v1.0 . GPT-5 Mini is run only once due to the limited budget. 
+
+Model Algorithm Harness 
+
+Dte easy Dte med Dte hard 
+
+All Pick Look Clean Heat Cool Pick 2 Qwen2.5-3B-Instruct GRPO 
+
+h-low 80 .2±2.6 38 .7±3.2 66 .1±3.6 64 .1±0.0 66 .7±1.3 0.0±0.0 56 .0±1.1
+
+h-mid 80 .2±2.6 60 .2±4.9 67 .2±1.7 70 .9±1.5 68 .8±4.5 11 .4±3.7 61 .7±1.0
+
+h-high 81 .4±1.7 77 .4±5.6 75 .9±3.0 71 .8±2.6 83 .3±1.3 21 .1±3.7 69 .7±0.6
+
+GiGPO 
+
+h-low 91 .5±0.0 89 .2±6.7 72 .4±7.5 67 .5±3.0 64 .5±1.3 0.0±0.0 65 .6±1.3
+
+h-mid 94 .9±1.7 63 .4±4.9 93 .7±2.6 85 .5±3.0 82 .6±2.2 65 .0±6.1 83 .2±1.3
+
+h-high 85 .9±5.4 88 .2±1.9 89 .7±1.7 84 .6±5.1 79 .7±5.5 61 .8±1.4 82 .1±2.4
+
+Qwen2.5-7B-Instruct GRPO 
+
+h-low 80 .8±2.0 0.0±0.0 56 .9±1.7 75 .2±3.0 52 .9±1.3 43 .9±2.4 55 .6±0.8
+
+h-mid 79 .7±1.7 86 .0±1.9 78 .2±1.0 71 .8±2.6 66 .7±2.5 75 .6±2.4 76 .2±0.2
+
+h-high 82 .5±2.0 86 .0±1.9 81 .6±1.0 75 .2±1.5 79 .7±4.5 61 .0±4.2 77 .9±0.8
+
+GiGPO 
+
+h-low 86 .4±1.7 75 .3±3.7 75 .9±0.0 76 .9±0.0 89 .9±1.3 78 .9±2.8 81 .0±0.0
+
+h-mid 90 .4±2.0 80 .6±6.5 87 .4±1.0 84 .6±0.0 72 .5±1.3 78 .0±2.4 83 .0±0.8
+
+h-high 89 .3±2.0 88 .2±1.9 92 .5±1.0 76 .1±1.5 86 .2±2.5 85 .4±2.4 86 .9±0.4
+
+Table 11: In-distribution success rates after post-training: Agents are post-trained on Dtr all under each harness with tool schema fixed to v1.0 , and evaluated on Dte all under the same harness and schema. 
+
+Algorithm Post-hoc Harness 
+
+Dte easy Dte med Dte hard 
+
+All Pick Look Clean Heat Cool Pick 2 Qwen2.5-3B-Instruct GRPO h-mid 79 .7±3.4 49 .5±9.9 67 .2±3.0 63 .2±1.5 68 .8±1.3 0.0±0.0 57 .5±1.2 (−4.2)
+
+h-high 82 .5±1.0 50 .5±3.7 72 .4±1.7 68 .4±1.5 65 .9±1.3 0.0±0.0 59 .6±0.9 (−10 .1)
+
+GiGPO h-mid 89 .8±1.7 95 .7±1.9 77 .0±2.0 73 .5±1.5 73 .9±2.2 0.0±0.0 69 .3±0.0 (−13 .9)
+
+h-high 89 .3±2.0 93 .5±3.2 73 .6±5.5 70 .9±1.5 72 .5±1.3 0.0±0.0 67 .6±1.1 (−14 .5)
+
+> Qwen2.5-7B-Instruct
+
+GRPO h-mid 77 .4±2.6 0.0±0.0 56 .9±3.0 76 .9±4.4 56 .5±3.8 42 .3±1.4 55 .5±1.1 (−20 .7)
+
+h-high 80 .2±3.5 0.0±0.0 58 .0±3.6 72 .6±1.5 55 .8±2.5 40 .7±1.4 55 .4±1.2 (−22 .5)
+
+GiGPO h-mid 85 .9±1.0 55 .9±7.4 75 .3±1.0 82 .9±1.5 91 .3±0.0 78 .0±2.4 79 .6±1.0 (−3.4)
+
+h-high 86 .4±0.0 80 .6±5.6 75 .9±0.0 79 .5±2.6 91 .3±0.0 78 .9±1.4 82 .2±1.1 (−4.7)
+
+Table 12: Training-time vs. post-hoc harness application: in-distribution success rates on Dte all . For each harness 
+
+{h-mid , h-high }, we compare an agent post-trained with that harness in place ( training-time ) against an agent post-trained under h-low with that harness applied only at evaluation ( post-hoc ). The parenthesized value is the change in overall accuracy relative to post-training under the same harness applied throughout. Training-time application consistently outperforms post-hoc application. 
+
+20 Harness v1.0 v1.1 v2.0 
+
+Dte easy Dte med Dte hard 
+
+All 
+
+Dte easy Dte med Dte hard 
+
+All 
+
+Dte easy Dte med Dte hard 
+
+All Pick Look Clean Heat Cool Pick 2 Pick Look Clean Heat Cool Pick 2 Pick Look Clean Heat Cool Pick 2 Qwen2.5-3B-Instruct Zero-shot  h-low 6.2 0.0 0.0 0.0 0.0 0.0 1.3 26 .0 14 .0 0.0 0.0 0.0 0.0 7.2 18 .6 10 .8 0.0 0.0 0.7 0.0 5.4
+
+h-mid 11 .9 2.2 0.0 3.4 0.0 0.0 3.3 46 .3 25 .8 8.0 4.3 8.0 0.0 16 .5 14 .1 18 .3 0.0 0.0 0.7 0.0 5.2
+
+h-high 35 .0 15 .1 11 .5 12 .8 2.2 0.0 13 .9 40 .7 20 .4 10 .9 14 .5 8.0 0.0 16 .8 35 .6 28 .0 5.7 7.7 8.7 0.0 14 .6
+
+> GRPO
+
+h-low 80 .2 38 .7 66 .1 64 .1 66 .7 0.0 56 .0 52 .0 28 .0 10 .9 14 .5 5.8 0.0 19 .7 17 .5 7.5 0.6 0.9 2.2 0.0 5.2
+
+h-mid 80 .2 60 .2 67 .2 70 .9 68 .8 11 .4 61 .7 72 .3 47 .3 56 .3 53 .8 62 .3 14 .6 53 .2 48 .0 26 .9 12 .1 20 .5 26 .1 7.3 24 .3
+
+h-high 81 .4 77 .4 75 .9 71 .8 83 .3 21 .1 69 .7 71 .2 63 .4 70 .1 70 .9 84 .8 26 .0 65 .6 73 .4 58 .1 66 .1 51 .3 79 .0 26 .8 60 .9
+
+> GiGPO
+
+h-low 91 .5 89 .2 72 .4 67 .5 64 .5 0.0 65 .6 87 .0 93 .5 69 .5 68 .4 57 .2 0.0 63 .4 20 .9 90 .3 27 .0 27 .4 38 .4 0.0 30 .8
+
+h-mid 94 .9 63 .4 93 .7 85 .5 82 .6 65 .0 83 .2 92 .7 45 .2 87 .9 74 .4 83 .3 54 .5 76 .4 89 .8 37 .6 47 .7 35 .0 63 .8 47 .2 56 .4
+
+h-high 85 .9 88 .2 89 .7 84 .6 79 .7 61 .8 82 .1 81 .9 83 .9 82 .2 87 .2 81 .2 63 .4 80 .0 85 .9 71 .0 61 .5 64 .1 79 .7 60 .2 71 .0
+
+> Qwen2.5-7B-Instruct
+> Zero-shot
+
+h-low 19 .8 18 .3 0.6 3.4 2.9 0.0 7.4 15 .8 25 .8 5.7 0.9 1.4 0.0 7.9 35 .6 24 .7 5.7 3.4 6.5 1.6 13 .5
+
+h-mid 44 .6 20 .4 9.8 8.5 5.1 0.0 16 .1 58 .8 22 .6 35 .1 20 .5 22 .5 6.5 30 .3 58 .8 32 .3 16 .1 18 .8 17 .4 8.9 26 .6
+
+h-high 54 .8 18 .3 26 .4 35 .9 24 .6 1.6 29 .0 39 .5 16 .1 27 .0 35 .9 22 .5 8.9 26 .3 54 .8 46 .2 31 .6 35 .9 26 .8 16 .3 35 .8
+
+> GRPO
+
+h-low 80 .8 0.0 56 .9 75 .2 52 .9 43 .9 55 .6 77 .4 0.0 59 .2 63 .2 55 .1 45 .5 54 .3 2.3 0.0 8.0 0.9 0.7 1.6 2.7
+
+h-mid 79 .7 86 .0 78 .2 71 .8 66 .7 75 .6 76 .2 83 .6 79 .6 87 .4 76 .9 63 .8 74 .0 78 .2 78 .0 77 .4 73 .0 29 .1 52 .9 64 .2 63 .6
+
+h-high 82 .5 86 .0 81 .6 75 .2 79 .7 61 .0 77 .9 78 .0 83 .9 73 .6 76 .9 76 .1 61 .8 74 .8 66 .7 76 .3 28 .7 48 .7 51 .4 56 .1 53 .0
+
+> GiGPO
+
+h-low 86 .4 75 .3 75 .9 76 .9 89 .9 78 .9 81 .0 87 .6 21 .5 75 .9 73 .5 90 .6 79 .7 74 .9 36 .2 0.0 61 .5 30 .8 40 .6 8.1 33 .2
+
+h-mid 90 .4 80 .6 87 .4 84 .6 72 .5 78 .0 83 .0 92 .7 82 .8 87 .4 82 .9 69 .6 78 .0 83 .0 32 .2 24 .7 52 .3 52 .1 41 .3 17 .9 37 .8
+
+h-high 89 .3 88 .2 92 .5 76 .1 86 .2 85 .4 86 .9 85 .9 79 .6 92 .0 75 .2 75 .4 81 .3 82 .5 73 .4 84 .9 94 .8 22 .2 66 .7 65 .0 69 .6
+
+Table 13: Post-training success rates under tool environment shift: Agents are post-trained on Dtr all under each harness with tool schema fixed to v1.0 , and evaluated on Dte all under the same harness but with schema v1.1 (mild shift) or v2.0 (stronger shift). Zero-shot results are included for reference, where the Harness column refers to the test-time harness. 
+
+21 Model Algorithm Harness 
+
+Dte easy Dte med Dte hard 
+
+All Pick Look Clean Heat Cool Pick 2 Qwen2.5-3B-Instruct GRPO 
+
+h-low 74 .6±1.7 54 .8±3.2 0.6±1.0 0.0±0.0 2.9±1.3 1.6±2.8 23 .1±0.6
+
+h-mid 84 .7±1.7 76 .3±3.7 6.9±0.0 12 .8±6.8 9.4±5.0 13 .0±3.7 33 .7±1.4
+
+h-high 88 .7±2.6 71 .0±8.5 74 .7±5.0 62 .4±5.9 66 .7±3.3 0.8±1.4 63 .1±1.7
+
+GiGPO 
+
+h-low 89 .8±1.4 88 .2±3.0 2.9±0.8 0.0±0.0 9.4±4.1 38 .2±6.1 37 .2±1.0
+
+h-mid 92 .1±1.6 90 .3±5.3 19 .5±2.9 39 .3±6.7 36 .2±3.7 4.9±2.0 46 .6±2.4
+
+h-high 93 .8±2.1 51 .6±2.6 30 .5±2.9 43 .6±2.1 50 .7±1.0 41 .5±2.0 53 .4±1.0
+
+Qwen2.5-7B-Instruct GRPO 
+
+h-low 64 .4±1.7 38 .7±3.2 36 .2±3.4 37 .6±5.3 36 .2±1.3 12 .2±2.4 39 .2±1.7
+
+h-mid 77 .4±3.5 81 .7±6.7 0.6±1.0 44 .4±6.5 36 .2±4.5 28 .5±5.1 42 .7±1.0
+
+h-high 88 .7±1.0 90 .3±0.0 71 .3±2.6 63 .2±7.4 58 .0±3.3 56 .1±2.4 71 .5±1.6
+
+GiGPO 
+
+h-low 90 .4±1.0 86 .0±1.9 51 .7±0.0 34 .2±1.5 29 .0±5.5 30 .1±9.9 54 .4±2.4
+
+h-mid 89 .8±1.7 90 .3±3.2 33 .9±1.0 35 .0±1.5 26 .1±4.3 61 .0±2.4 55 .2±0.8
+
+h-high 88 .1±2.9 91 .4±1.9 63 .2±2.0 53 .0±5.3 65 .2±4.3 38 .2±3.7 66 .9±0.8
+
+Table 14: Post-training success rates of under task shift: Agents are post-trained on Dtr easy under each harness with tool schema fixed to v1.0 , and evaluated on Dte all under the same harness and schema. 
+
+Model Algorithm Harness 
+
+Dte easy Dte med Dte hard 
+
+All Pick Look Clean Heat Cool Pick 2 Qwen2.5-3B-Instruct GRPO 
+
+h-low 6.2±2.6 0.0±0.0 0.0±0.0 0.0±0.0 0.0±0.0 0.0±0.0 1.3±0.6
+
+h-mid 59 .9±1.0 2.2±1.9 64 .4±5.0 57 .3±1.5 36 .2±6.6 3.3±3.7 41 .5±2.4
+
+h-high 81 .9±1.0 32 .3±3.2 81 .0±1.7 89 .7±0.0 85 .5±1.3 27 .6±7.8 69 .7±1.1
+
+GiGPO 
+
+h-low 6.2±2.6 0.0±0.0 0.0±0.0 0.0±0.0 0.0±0.0 0.0±0.0 1.3±0.6
+
+h-mid 53 .1±1.0 18 .3±4.9 81 .0±1.7 76 .9±2.6 81 .2±1.3 17 .9±3.7 57 .9±1.1
+
+h-high 51 .4±3.9 12 .9±3.2 91 .4±1.7 86 .3±3.0 86 .2±2.5 10 .6±1.4 60 .2±0.6
+
+Qwen2.5-7B-Instruct GRPO 
+
+h-low 61 .0±1.7 11 .8±1.9 75 .3±3.6 73 .5±3.9 72 .5±2.5 35 .0±5.1 58 .3±2.0
+
+h-mid 59 .3±4.5 28 .0±6.7 64 .9±2.0 70 .1±1.5 58 .0±2.5 26 .0±2.8 53 .3±1.9
+
+h-high 86 .4±0.0 88 .2±3.7 89 .1±1.0 78 .6±3.9 79 .7±1.3 34 .1±4.2 77 .1±0.4
+
+GiGPO 
+
+h-low 54 .8±2.6 32 .3±3.2 73 .0±1.0 75 .2±3.0 79 .7±1.3 4.9±2.4 55 .7±0.2
+
+h-mid 68 .4±3.5 47 .3±8.1 71 .8±1.0 76 .1±3.9 67 .4±0.0 17 .1±2.4 60 .0±0.6
+
+h-high 81 .4±3.4 23 .7±1.9 96 .0±1.0 82 .1±4.4 92 .0±3.3 52 .0±6.1 75 .4±1.3
+
+Table 15: Post-training success rates of under task shift: Agents are post-trained on Dtr med under each harness with tool schema fixed to v1.0 , and evaluated on Dte all under the same harness and schema. For Qwen2.5-3B-Instruct 
+
+under h-low , post-training fails to take effect, so zero-shot results are reported instead. 
+
+Model Algorithm Harness 
+
+Dte easy Dte med Dte hard 
+
+All Pick Look Clean Heat Cool Pick 2 Qwen2.5-3B-Instruct GRPO 
+
+h-low 6.2±2.6 0.0±0.0 0.0±0.0 0.0±0.0 0.0±0.0 0.0±0.0 1.3±0.6
+
+h-mid 11 .9±4.5 2.2±1.9 0.0±0.0 3.4±3.0 0.0±0.0 0.0±0.0 3.3±1.1
+
+h-high 35 .0±2.6 15 .1±1.9 11 .5±1.0 12 .8±0.0 2.2±2.2 0.0±0.0 13 .9±0.7
+
+GiGPO 
+
+h-low 6.2±2.6 0.0±0.0 0.0±0.0 0.0±0.0 0.0±0.0 0.0±0.0 1.3±0.6
+
+h-mid 11 .9±4.5 2.2±1.9 0.0±0.0 3.4±3.0 0.0±0.0 0.0±0.0 3.3±1.1
+
+h-high 35 .0±2.6 15 .1±1.9 11 .5±1.0 12 .8±0.0 2.2±2.2 0.0±0.0 13 .9±0.7
+
+Qwen2.5-7B-Instruct GRPO 
+
+h-low 80 .8±1.0 15 .1±9.9 13 .8±4.6 0.9±1.5 4.3±2.2 68 .3±4.2 33 .1±0.2
+
+h-mid 71 .8±1.0 44 .1±1.9 13 .8±1.7 6.0±3.9 13 .0±4.3 65 .0±2.8 36 .1±0.0
+
+h-high 81 .4±1.7 53 .8±9.3 31 .0±3.0 29 .1±1.5 24 .6±7.0 81 .3±1.4 50 .6±1.2
+
+GiGPO 
+
+h-low 41 .2±1.0 17 .2±4.9 15 .5±0.0 3.4±1.5 0.0±0.0 95 .1±0.0 28 .8±0.4
+
+h-mid 81 .4±1.7 31 .2±1.9 7.5±1.0 18 .8±3.9 5.8±1.3 83 .7±3.7 38 .8±0.6
+
+h-high 95 .5±1.0 93 .5±3.2 54 .0±7.0 56 .4±4.4 51 .4±5.5 94 .3±3.7 73 .4±2.9
+
+Table 16: Post-training success rates of under task shift: Agents are post-trained on Dtr hard under each harness with tool schema fixed to v1.0 , and evaluated on Dte all under the same harness and schema. For Qwen2.5-3B-Instruct ,post-training fails to take effect, so zero-shot results are reported instead. 
+
+22

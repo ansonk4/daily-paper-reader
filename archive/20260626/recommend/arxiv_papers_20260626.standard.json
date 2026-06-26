@@ -1,0 +1,819 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-26T20:09:22.042003+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 11,
+    "deep_cap": 7,
+    "deep_selected": 7,
+    "quick_candidates": 31,
+    "quick_skim_target": 12,
+    "quick_selected": 12
+  },
+  "deep_dive": [
+    {
+      "id": "2606.20023v1",
+      "source": "arxiv",
+      "title": "When Lower Privileges Suffice: Investigating Over-Privileged Tool Selection in LLM Agents",
+      "abstract": "As LLM agents increasingly select tools autonomously, their choices among tools with different privileges become safety-relevant. However, prior tool-selection studies focus on safety-agnostic metadata preferences, leaving privilege-sensitive choices underexplored. To address this gap, we study over-privileged tool selection, in which an agent selects or escalates to a higher-privilege tool despite a sufficient lower-privilege alternative. We introduce ToolPrivBench to evaluate whether agents choose higher-privilege tools despite sufficient lower-privilege alternatives, measuring both initial selection and escalation after transient tool failures. Across eight domains and five recurring risk patterns, we find that over-privileged tool selection is common among mainstream LLM agents and is further amplified by transient failures. We further find that general safety alignment does not reliably transfer to least-privilege tool choice, while prompt-level controls provide only limited mitigation under transient failures. We therefore introduce a privilege-aware post-training defense that teaches agents to prefer sufficient lower-privilege tools and escalate only when necessary. Our mitigation experiments show that this defense substantially reduces unnecessary high-privilege tool use while preserving general capabilities.",
+      "authors": [
+        "Kaiyue Yang",
+        "Yuyan Bu",
+        "Jingwei Yi",
+        "Yuchi Wang",
+        "Biyu Zhou",
+        "Juntao Dai",
+        "Songlin Hu",
+        "Yaodong Yang"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-18T09:54:48+00:00",
+      "link": "https://arxiv.org/pdf/2606.20023v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Introduces ToolPrivBench to evaluate over-privileged tool selection in LLM agents",
+      "llm_evidence_cn": "引入ToolPrivBench评估LLM代理中的过度权限工具选择",
+      "llm_evidence": "引入ToolPrivBench评估LLM代理中的过度权限工具选择",
+      "canonical_evidence": "引入ToolPrivBench评估LLM代理中的过度权限工具选择",
+      "llm_tldr_en": "This paper introduces ToolPrivBench, a benchmark to evaluate whether LLM agents select higher-privilege tools despite sufficient lower-privilege alternatives, revealing widespread over-privileged tool selection across eight domains and five risk patterns.",
+      "llm_tldr_cn": "该研究针对LLM代理过度选择高权限工具的问题，提出ToolPrivBench基准，在八个领域和五种风险模式中系统评估代理的工具选择行为，发现普遍存在权限越权现象，为代理安全评估提供了重要工具。",
+      "llm_tldr": "该研究针对LLM代理过度选择高权限工具的问题，提出ToolPrivBench基准，在八个领域和五种风险模式中系统评估代理的工具选择行为，发现普遍存在权限越权现象，为代理安全评估提供了重要工具。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "agent memory safety benchmark evaluation",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.24402v1",
+      "source": "arxiv",
+      "title": "Poisoned Playbooks: Demystifying Knowledge Poisoning Effects on AI Security Agents",
+      "abstract": "AI security agents increasingly rely on Retrieval-Augmented Generation (RAG) to use external security knowledge for vulnerability analysis and exploit reasoning. This creates a new risk: poisoned write-ups can be operationalized into incorrect exploit behavior. Yet, prior work on RAG poisoning has mostly studied answer corruption in QA settings, much less is known about action-taking security agents. This paper aims to reveal such characteristics with crafted poisons about real-world challenges and AI agents. First, we demonstrate how a crafted single poisoned write-up injected into public-style security knowledge sources which we denote as Poisoned Playbooks, alters the behavior of RAG-based AI security agents. Across 11 CTF challenges, 3 frontier LLM families, 2 model generations, and 11 real-world CVEs, we find that poison adoption is systematic rather than random. To explain this pattern, we introduce the Verification Boundary (VB), a 3-level empirical classification based on what evidence the agent can use to refute a retrieved claim. Finally, we evaluate verification prompting and multi-source retrieval, showing that both help when stronger evidence exists, but weaken under sparse-evidence and zero-day conditions.",
+      "authors": [
+        "Juho Park",
+        "Hyunmin Choi",
+        "Kevin Nam"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-06-23T10:37:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.24402v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "knowledge poisoning injection on security agents",
+      "llm_evidence_cn": "面向安全智能体的知识投毒注入攻击",
+      "llm_evidence": "面向安全智能体的知识投毒注入攻击",
+      "canonical_evidence": "面向安全智能体的知识投毒注入攻击",
+      "llm_tldr_en": "The paper demonstrates Poisoned Playbooks, where a single poisoned write-up injected into public-style security knowledge sources alters the behavior of RAG-based AI security agents.",
+      "llm_tldr_cn": "本文针对AI安全智能体依赖RAG使用外部安全知识带来的新风险，提出毒化手册攻击，通过向公共风格的安全知识源注入单条毒化内容来改变RAG安全智能体的行为，在11个CTF挑战中系统评估了知识投毒对行动型安全智能体的影响，揭示了记忆注入攻击的危害。",
+      "llm_tldr": "本文针对AI安全智能体依赖RAG使用外部安全知识带来的新风险，提出毒化手册攻击，通过向公共风格的安全知识源注入单条毒化内容来改变RAG安全智能体的行为，在11个CTF挑战中系统评估了知识投毒对行动型安全智能体的影响，揭示了记忆注入攻击的危害。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "injection attacks on agent memory systems",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.24535v1",
+      "source": "arxiv",
+      "title": "Governed Shared Memory for Multi-Agent LLM Systems",
+      "abstract": "Multi-agent LLM environments require robust mechanisms for shared knowledge management. This paper formalizes the fleet-memory problem and identifies four foundational failure modes: unauthorized leakage, stale propagation, contradiction persistence, and provenance collapse. To address these, we define explicit systems-level primitives: scoped retrieval, temporal supersession, provenance tracking, and policy-governed memory propagation. These primitives are implemented in MemClaw, a production multi-tenant memory service, and evaluated via ArgusFleet, a reproducible harness testing four governance dimensions. Rather than a baseline comparison, this study measures a live production service, emphasizing real-world architectural insights and negative results. Key Evaluation Results Provenance: Successfully reconstructed 100% of depth-four derivation chains with correct writer identity at sub-second per-hop latency. Propagation: Demonstrated high intra-fleet visibility with zero cross-fleet leakage. Under strong write mode, write-to-visible latency was optimized to a single search round-trip. Production Architectural Issues Discovered Asymmetric Scope Enforcement: Tenant isolation held, but sub-tenant scope was initially bypassed on direct GET-by-id requests for agent-scoped credentials (disclosed and remediated during the study). Pipeline Ordering Conflict: While contradiction supersession works for admitted writes, a synchronous near-duplicate gate can prematurely reject contradictory writes before the asynchronous contradiction detector can evaluate them. Conclusion: Long-context retrieval alone is insufficient for production multi-agent memory. Governed shared memory demands explicit systems-level abstractions, and live evaluation is vital to expose enforcement and pipeline-ordering failures missed by design-only treatments.",
+      "authors": [
+        "Yanki Margalit",
+        "Nurit Cohen-Inger",
+        "Erni Avram",
+        "Ran Taig",
+        "Oded Margalit"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-23T13:04:14+00:00",
+      "link": "https://arxiv.org/pdf/2606.24535v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Proposes MemClaw with ArgusFleet harness for governed shared memory in multi-agent systems",
+      "llm_evidence_cn": "提出MemClaw共享内存系统和ArgusFleet护具测试框架",
+      "llm_evidence": "提出MemClaw共享内存系统和ArgusFleet护具测试框架",
+      "canonical_evidence": "提出MemClaw共享内存系统和ArgusFleet护具测试框架",
+      "llm_tldr_en": "This paper addresses the fleet-memory problem in multi-agent LLM systems by proposing MemClaw, a production memory service with four governance primitives, evaluated through ArgusFleet harness testing four failure modes.",
+      "llm_tldr_cn": "该研究针对多智能体LLM系统的共享内存管理问题，提出MemClaw生产级内存服务，定义作用域检索、时间覆盖、溯源追踪和策略传播四个治理原语，并通过ArgusFleet护具系统测试四种失效模式，为代理内存安全提供了系统解决方案。",
+      "llm_tldr": "该研究针对多智能体LLM系统的共享内存管理问题，提出MemClaw生产级内存服务，定义作用域检索、时间覆盖、溯源追踪和策略传播四个治理原语，并通过ArgusFleet护具系统测试四种失效模式，为代理内存安全提供了系统解决方案。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.24775v1",
+      "source": "arxiv",
+      "title": "Are We Ready For An Agent-Native Memory System?",
+      "abstract": "Memory for large language model (LLM) agents has rapidly evolved from simple retrieval-augmented mechanisms into a data management system that supports persistent information storage, retrieval, update, consolidation, and dynamic lifecycle governance throughout agent execution. Despite this evolution, existing evaluations still benchmark agent memory mainly through end-to-end task success metrics (e.g., F1, BLEU), while treating the underlying system as a monolithic black box. As a result, critical system-level concerns, including operational costs, architectural trade-offs across memory modules, and robustness under dynamic knowledge updates, remain insufficiently explored. In this paper, we present a systematic experimental study of agent memory from a data management perspective. We propose an analytical framework that decomposes agent memory into four core modules: memory representation and storage, extraction, retrieval and routing, and maintenance. Under this framework, we evaluate 12 representative memory systems and two reference baselines across five benchmark workloads spanning 11 datasets. Our extensive end-to-end evaluation shows that no single architecture dominates across all scenarios; instead, effectiveness depends heavily on how well the memory structure aligns with the workload bottleneck. Furthermore, through fine-grained ablation studies, we quantify their individual effects on representation fidelity, retrieval precision, update correctness, and long-horizon stability. Finally, we reveal cost-performance trade-offs under realistic workloads, showing localized maintenance is more cost-efficient than global reorganization. Based on these findings, we identify promising directions towards building truly agent-native memory systems. The code is publicly available at https://github.com/OpenDataBox/MemoryData.",
+      "authors": [
+        "Wei Zhou",
+        "Xuanhe Zhou",
+        "Shaokun Han",
+        "Hongming Xu",
+        "Guoliang Li",
+        "Zhiyu Li",
+        "Feiyu Xiong",
+        "Fan Wu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.DB",
+        "cs.IR"
+      ],
+      "published": "2026-06-23T16:34:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.24775v1",
+      "tags": [
+        "keyword:agent-safety",
+        "query:agent-safety"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "systematic experimental study of agent memory from data management perspective",
+      "llm_evidence_cn": "从数据管理角度对智能体记忆进行系统实验研究",
+      "llm_evidence": "从数据管理角度对智能体记忆进行系统实验研究",
+      "canonical_evidence": "从数据管理角度对智能体记忆进行系统实验研究",
+      "llm_tldr_en": "The paper presents a systematic experimental study of LLM agent memory systems from a data management perspective, examining operational costs, architectural trade-offs across memory modules, and robustness under dynamic knowledge updates, directly addressing the need to benchmark agent memory safety and performance.",
+      "llm_tldr_cn": "本文从数据管理视角对大模型智能体记忆系统进行系统实验研究，考察运行成本、不同记忆模块的架构权衡以及动态知识更新下的鲁棒性。该工作直接回应了建立智能体记忆安全基准和评估体系的需求。",
+      "llm_tldr": "本文从数据管理视角对大模型智能体记忆系统进行系统实验研究，考察运行成本、不同记忆模块的架构权衡以及动态知识更新下的鲁棒性。该工作直接回应了建立智能体记忆安全基准和评估体系的需求。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.23127v1",
+      "source": "arxiv",
+      "title": "Managing Procedural Memory in LLM Agents: Control, Adaptation, and Evaluation",
+      "abstract": "Procedural memory is increasingly used to improve LLM agents on recurring workplace tasks, yet its ability to produce reusable skills remains poorly understood. We introduce AFTER, a benchmark of 382 realistic enterprise tasks spanning six professional roles and 22 procedural skills, designed to evaluate how skills transfer across tasks, roles, and model backbones. The benchmark includes controlled evaluation settings for local improvement, cross-task transfer, cross-role transfer, and cross-model generalization. Experiments show that procedural memory delivers consistent gains in industrial workflows: a single refinement round improves aggregate performance by 3.7-6.7 points, while skills evolved from diverse multi-model execution traces achieve 73.1% cross-model test accuracy, outperforming all single-model trace sources. We further find that some skills generalize broadly across tasks and models, whereas others become specialized to role-specific workflows and lose effectiveness under transfer. These results provide practical guidance for building, evaluating, and deploying procedural memory systems in production agent platforms.",
+      "authors": [
+        "Julia Belikova",
+        "Rauf Parchiev",
+        "Evgeny Egorov",
+        "Grigorii Davydenko",
+        "Gleb Gusev",
+        "Andrey Savchenko",
+        "Maksim Makarenko"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.SE"
+      ],
+      "published": "2026-06-22T10:14:11+00:00",
+      "link": "https://arxiv.org/pdf/2606.23127v1",
+      "tags": [
+        "keyword:agent-safety",
+        "query:agent-safety"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Introduces AFTER benchmark for evaluating procedural memory in LLM agents",
+      "llm_evidence_cn": "引入AFTER基准评估LLM代理的过程记忆能力",
+      "llm_evidence": "引入AFTER基准评估LLM代理的过程记忆能力",
+      "canonical_evidence": "引入AFTER基准评估LLM代理的过程记忆能力",
+      "llm_tldr_en": "This paper introduces AFTER, a comprehensive benchmark of 382 enterprise tasks to evaluate how procedural memory skills transfer across tasks, roles, and model backbones in LLM agents.",
+      "llm_tldr_cn": "该研究针对LLM代理过程记忆技能迁移问题，构建包含382个企业任务的AFTER基准，系统评估技能在不同任务、角色和模型间的迁移能力，为代理记忆系统评估提供了重要工具。",
+      "llm_tldr": "该研究针对LLM代理过程记忆技能迁移问题，构建包含382个企业任务的AFTER基准，系统评估技能在不同任务、角色和模型间的迁移能力，为代理记忆系统评估提供了重要工具。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "memory safety benchmark for AI agents",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.22528v1",
+      "source": "arxiv",
+      "title": "Governance Decay: How Context Compaction Silently Erases Safety Constraints in Long-Horizon LLM Agents",
+      "abstract": "Modern LLM agents increasingly rely on context compaction, summarization, or eviction to keep long-running sessions within a token budget. We show that this context-management layer is a safety-critical failure surface: in-context governance constraints that agents reliably obey while visible can be silently removed by compaction, causing the same agent to perform prohibited tool actions later in the session. We call this failure mode Governance Decay. We introduce ConstraintRot, a benchmark of long-horizon agent scenarios with deterministic tool-call grading, and measure compaction-induced violations across seven model families. Across 1,323 episodes, violation rises from 0% with the policy in full context to 30% after compaction, reaching 59% for some models; when the constraint survives the summary, violation remains 0%, but when it is dropped, violation reaches 38%. We further study a Compaction-Eviction Attack, in which adversarial in-context content biases the summarizer to omit a legitimate policy, and show that optimized injections defeat every evaluated model. Finally, we propose Constraint Pinning, a simple training-free mitigation that quarantines governance constraints from lossy compaction and restores violation to 0% in our benchmark. These results identify context management as a first-class governance surface for deployed LLM agents.",
+      "authors": [
+        "Shiyang Chen"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-21T14:30:20+00:00",
+      "link": "https://arxiv.org/pdf/2606.22528v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "benchmark measuring compaction-induced safety violations in agents",
+      "llm_evidence_cn": "面向智能体压缩引发安全违规的基准测试",
+      "llm_evidence": "面向智能体压缩引发安全违规的基准测试",
+      "canonical_evidence": "面向智能体压缩引发安全违规的基准测试",
+      "llm_tldr_en": "Governance Decay introduces ConstraintRot, a benchmark that measures how context compaction silently removes in-context safety constraints in long-horizon LLM agents, causing prohibited tool actions later in the session.",
+      "llm_tldr_cn": "该论文针对LLM智能体在长会话中依赖压缩、摘要或淘汰来节省token，但上下文安全约束可能被悄悄删除的问题，提出ConstraintRot基准，通过确定性工具调用评分衡量违规率。实验显示违规率可从上下文完整时的0%升至压缩后的30%，揭示了上下文管理层是一个被忽视的安全关键失败面。",
+      "llm_tldr": "该论文针对LLM智能体在长会话中依赖压缩、摘要或淘汰来节省token，但上下文安全约束可能被悄悄删除的问题，提出ConstraintRot基准，通过确定性工具调用评分衡量违规率。实验显示违规率可从上下文完整时的0%升至压缩后的30%，揭示了上下文管理层是一个被忽视的安全关键失败面。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.23195v1",
+      "source": "arxiv",
+      "title": "Memory Contagion: Cross-Temporal Propagation of Evaluator Bias via Agent Memory",
+      "abstract": "Large Language Model (LLM) agents increasingly rely on memory systems to maintain long-term coherence. Recent work shows that agent memories degrade during continuous consolidation. However, existing research assumes memories are derived from unbiased experiences. In this work, we identify and formalize a novel phenomenon: Memory Contagion -- the cross-temporal propagation of evaluator bias through agent memory. We show that when agents are trained or guided by biased evaluators, their experiences become biased; when these trajectories are stored and consolidated into memory, the bias propagates to future agents retrieving from the same memory store, even when consolidation is perfect (oracle). Across two bias types (length preference, authority bias) and four experimental phases, we demonstrate: (1) Memory Contagion occurs even with perfect consolidation (oracle condition), proving that biased input is a sufficient cause of contagion; (2) Consolidation has opposite effects depending on bias type -- robustly attenuating length bias while preliminarily amplifying authority bias (single-run estimate), suggesting a bias-type-dependent interaction; (3) No observed safe threshold: bias propagation is detected at contamination rates as low as p=0.2. Our findings expose a critical vulnerability in current agent memory designs and provide formal tools for measuring cross-temporal bias propagation.",
+      "authors": [
+        "Zewen Liu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-22T11:43:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.23195v1",
+      "tags": [
+        "keyword:agent-safety",
+        "query:agent-safety"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "adversarial bias propagation through agent memory",
+      "llm_evidence_cn": "通过智能体记忆对抗性偏差传播",
+      "llm_evidence": "通过智能体记忆对抗性偏差传播",
+      "canonical_evidence": "通过智能体记忆对抗性偏差传播",
+      "llm_tldr_en": "The paper identifies Memory Contagion, where evaluator bias propagates cross-temporally through agent memory, affecting future agents that retrieve from the same memory store.",
+      "llm_tldr_cn": "本文针对现有研究假设智能体记忆来自无偏差经验的问题，提出记忆传染现象，形式化描述了评估器偏差如何通过记忆存储和整合跨时间传播，即使整合完美也会影响未来检索同一记忆库的智能体，揭示了智能体记忆系统中的一种新型安全风险。",
+      "llm_tldr": "本文针对现有研究假设智能体记忆来自无偏差经验的问题，提出记忆传染现象，形式化描述了评估器偏差如何通过记忆存储和整合跨时间传播，即使整合完美也会影响未来检索同一记忆库的智能体，揭示了智能体记忆系统中的一种新型安全风险。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "manipulating agent memory for adversarial purposes",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.23075v1",
+      "source": "arxiv",
+      "title": "Safety in Self-Evolving LLM Agent Systems: Threats, Amplification, and Case Studies",
+      "abstract": "Self-evolving LLM agent systems, which autonomously update their model parameters, memory, tools, and architectures, introduce a qualitatively new threat landscape in which adversarial influences become permanently encoded, self-amplify across generations, and propagate through populations without sustained attacker access. We present a systematic security and privacy analysis organized around the Module-Lifecycle Attack Surface (MLAS) matrix, which decomposes the attack surface into five functional modules (Brain, Cognitive Resource, Execution, Self-Design, Collective) $\\times$ five lifecycle stages (Bootstrap, Propose, Evaluate, Commit, Serve). Analysis of the resulting 25 cells reveals that 17 face critical threats for which no effective partial mitigation. We identify seven cross-cutting amplification effects that interact synergistically and cannot be addressed by securing individual modules in isolation. Comparative case studies of two open-source frameworks demonstrate that evolution-native design activates $3.5\\times$ more attack surface cells and achieves a 100% attack persistence rate (40/40 payloads across all CIA+Privacy categories), while co-located security scanners block only 2.5% of attacks. Our findings establish that self-evolution converts every known attack category from session-bounded to lineage-persistent, gives rise to entirely new attack classes, and renders static defenses structurally inadequate, motivating evolution-aware security frameworks and formal verification for self-modifying systems.",
+      "authors": [
+        "Ruixiao Lin",
+        "Xinhao Deng",
+        "Qingming Li",
+        "Jianan Ma",
+        "Yunhao Feng",
+        "Yuqi Qing",
+        "Zhenyuan Li",
+        "Yechao Zhang",
+        "Shiwen Cui",
+        "Changhua Meng",
+        "Tianwei Zhang",
+        "Xingjun Ma",
+        "Qi Li",
+        "Ke Xu",
+        "Shouling Ji"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-22T09:23:50+00:00",
+      "link": "https://arxiv.org/pdf/2606.23075v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "systematic security analysis of self-evolving agent memory threats",
+      "llm_evidence_cn": "对自演化智能体记忆威胁的系统安全分析",
+      "llm_evidence": "对自演化智能体记忆威胁的系统安全分析",
+      "canonical_evidence": "对自演化智能体记忆威胁的系统安全分析",
+      "llm_tldr_en": "This work systematically analyzes security and privacy threats to self-evolving LLM agent systems by introducing the Module-Lifecycle Attack Surface matrix across five functional modules and five lifecycle stages, revealing that 17 of 25 cells face critical threats with no effective defenses, directly informing agent memory safety benchmark needs.",
+      "llm_tldr_cn": "为分析自演化智能体系统面临的威胁，本文提出模块-生命周期攻击面矩阵，将攻击面分解为五个功能模块与五个生命周期阶段的二十五个单元。分析发现其中十七个单元存在关键威胁且缺乏有效防御，直接揭示了面向记忆等模块的安全基准与防护需求。",
+      "llm_tldr": "为分析自演化智能体系统面临的威胁，本文提出模块-生命周期攻击面矩阵，将攻击面分解为五个功能模块与五个生命周期阶段的二十五个单元。分析发现其中十七个单元存在关键威胁且缺乏有效防御，直接揭示了面向记忆等模块的安全基准与防护需求。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.20408v1",
+      "source": "arxiv",
+      "title": "LLM agent safety, multi-turn red-teaming, jailbreak benchmarks, adversarial robustness, safety-critical systems",
+      "abstract": "Large language model (LLM) agents are increasingly proposed as supervisory components for safety-critical systems, yet their robustness under sustained, adaptive adversarial pressure remains poorly characterized. We present NRT-Bench, a benchmark for multi-turn red-teaming of LLM agents acting as operators of a safety-critical system, instantiated in a simulated nuclear power plant control room. A five-role operator team, each backed by a configurable LLM, runs a plant governed by six critical safety functions (CSFs), while adversaries inject messages over four channels in bounded multi-turn sessions with per-turn feedback. Harm is an objective signal rather than LLM-judged text: a run terminates the moment any CSF is lost, attributed to the causing message. Evaluating four frontier operator models under a fixed-attack paired-replay protocol, we find that adaptive multi-turn attacks reliably push the operator team past a safety limit: across the four models, between 8.7% and 12.1% of attack sessions end with the plant losing a critical safety function. Although the four models look almost equally robust by this aggregate rate, their failures barely overlap: of $149$ sessions, none defeat all four models while a third defeat at least one, so vulnerabilities are nearly disjoint across models rather than nested. The effect of added defences is strongly model-dependent: the same guardrail stack or safety-advisor agent that lowers attack success for one model can raise it for another. We release the simulation venue, attack dataset, and replay tooling for reproducible safety evaluation of LLM agents.",
+      "authors": [
+        "Hanwool Lee",
+        "Dasol Choi",
+        "Bokyeong Kim",
+        "Seung Geun Kim",
+        "Haon Park"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-18T15:57:53+00:00",
+      "link": "https://arxiv.org/pdf/2606.20408v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "multi-turn red-teaming benchmark for LLM agent safety",
+      "llm_evidence_cn": "面向 LLM 智能体安全的多轮红队基准",
+      "llm_evidence": "面向 LLM 智能体安全的多轮红队基准",
+      "canonical_evidence": "面向 LLM 智能体安全的多轮红队基准",
+      "llm_tldr_en": "NRT-Bench presents a multi-turn red-teaming benchmark for LLM agents in safety-critical systems, using message injection across channels and objective harm signals to evaluate adversarial robustness under sustained attack.",
+      "llm_tldr_cn": "针对 LLM 智能体在安全关键系统中抗持续对抗压力评估不足的问题，NRT-Bench 构建了多轮红队基准，在模拟核电站控制室场景中通过多通道消息注入与客观损害信号测试智能体鲁棒性。该基准可系统评估多轮对抗下的安全退化，为智能体安全评测提供了可复用框架。",
+      "llm_tldr": "针对 LLM 智能体在安全关键系统中抗持续对抗压力评估不足的问题，NRT-Bench 构建了多轮红队基准，在模拟核电站控制室场景中通过多通道消息注入与客观损害信号测试智能体鲁棒性。该基准可系统评估多轮对抗下的安全退化，为智能体安全评测提供了可复用框架。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.20047v1",
+      "source": "arxiv",
+      "title": "PACMS: Submodular Context Selection as a Pluggable Engine for LLM Agents",
+      "abstract": "Conversational and tool-using LLM agents operate over a context window that fills from several directions simultaneously. As a session proceeds, the agent accumulates user and assistant turns, entries drawn from a persistent memory store, and often largest of all, the verbatim outputs of tool calls such as file reads, search results, and API responses. Once the cumulative context exceeds the model's token budget, the framework must decide what to keep.   The prevailing mechanism is recency truncation, sometimes paired with periodic summarization. This is topic-blind: a fact established early in a session is discarded simply because it is old, even when the current user query is about exactly that fact; conversely, verbose but irrelevant recent material is retained. Agents that must recall information across many turns, the defining case for memory, are precisely where recency truncation fails.   Existing alternatives sit outside the agent's assembly step. Retrieval augmented generation fetches external documents into the prompt but does not arbitrate the agent's \\emph{already-present} pooled context. Context-compression methods reduce token count by rewriting or pruning text, but operate query-blind and lossily. Neither treats memory entries, conversation turns, and tool outputs as a single candidate pool to be selected from by relevance at the moment the prompt is assembled.",
+      "authors": [
+        "Manu Ghulyani",
+        "Arunabh Singh",
+        "Karan Bharadwaj",
+        "Ankit Nath",
+        "Suranjan Goswami"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR"
+      ],
+      "published": "2026-06-18T10:22:57+00:00",
+      "link": "https://arxiv.org/pdf/2606.20047v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "context selection for LLM agents with persistent memory",
+      "llm_evidence_cn": "面向LLM智能体及其持久化记忆的情境选择",
+      "llm_evidence": "面向LLM智能体及其持久化记忆的情境选择",
+      "canonical_evidence": "面向LLM智能体及其持久化记忆的情境选择",
+      "llm_tldr_en": "PACMS treats context selection as a pluggable engine for LLM agents, using submodular optimization to decide what conversation history, persistent memory entries, and tool outputs to keep under token budgets, replacing topic-blind recency truncation.",
+      "llm_tldr_cn": "该论文针对LLM智能体会话中上下文窗口被历史记录、持久记忆和工具输出同时填满、现有截断和摘要方法缺乏内容意识的问题，提出将上下文选择设计为可插拔引擎，并用子模优化来决定在token预算内保留哪些信息。实验表明该方法能更稳定地维持任务相关上下文，对智能体记忆管理和长期对话一致性有直接帮助。",
+      "llm_tldr": "该论文针对LLM智能体会话中上下文窗口被历史记录、持久记忆和工具输出同时填满、现有截断和摘要方法缺乏内容意识的问题，提出将上下文选择设计为可插拔引擎，并用子模优化来决定在token预算内保留哪些信息。实验表明该方法能更稳定地维持任务相关上下文，对智能体记忆管理和长期对话一致性有直接帮助。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.24595v1",
+      "source": "arxiv",
+      "title": "MEMPROBE: Probing Long-Term Agent Memory via Hidden User-State Recovery",
+      "abstract": "Long-term memory promises LLM agents that grow more capable across sessions, maintaining an accurate, evolving understanding of the user that interaction forms. In practice, however, this memory is evaluated mostly through downstream behavior, such as later answers, personalization quality, or task success, which tests that understanding only indirectly and leaves the memory artifact itself largely unaudited. We argue that long-term memory should instead be evaluated as an auditable post-interaction artifact: after ordinary assistance, what structured user state can be reconstructed from the memory the agent leaves behind? We instantiate this view in MEMPROBE, a benchmark in which a memory-equipped agent assists simulated users, each carrying a hidden, taxonomy-anchored user-state bank, across a trajectory of leak-controlled tasks, after which that bank is reconstructed from the agent's resulting memory under both full-store and top-k access. Built on synthetic ground truth for efficient, scalable measurement, MEMPROBE spans 50 simulated users with 31 hidden dimensions each (1,550 recovery targets) and tests 5 representative memory systems. Testing state-of-the-art memory agents, we find that successful assistance and recoverable memory behave as distinct capabilities. Task completion nearly saturates, even for a memoryless baseline, while category-balanced recovery stays moderate (about 0.6) and drops further under top-k retrieval. MEMPROBE is the first benchmark to study memory recovery directly, reconstructing the user state a system retains and scoring it against ground truth. We see recovery as a concrete objective for future memory agents to optimize, and MEMPROBE as a step toward an environment where agents are trained to remember their users, growing more faithful the longer they know them.",
+      "authors": [
+        "Enze Ma",
+        "Yufan Zhou",
+        "Wei-Chieh Huang",
+        "Jie Yang",
+        "Huanhuan Ma",
+        "Zixuan Wang",
+        "Chengze Li",
+        "Chunyu Miao",
+        "Philip S. Yu",
+        "Zhen Wang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-23T13:52:46+00:00",
+      "link": "https://arxiv.org/pdf/2606.24595v1",
+      "tags": [
+        "keyword:agent-safety",
+        "query:agent-safety"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "benchmark probing long-term agent memory as auditable artifact",
+      "llm_evidence_cn": "探测长期智能体记忆的可审计性基准",
+      "llm_evidence": "探测长期智能体记忆的可审计性基准",
+      "canonical_evidence": "探测长期智能体记忆的可审计性基准",
+      "llm_tldr_en": "MEMPROBE introduces a benchmark that treats long-term LLM agent memory as an auditable post-interaction artifact by measuring how well hidden structured user state can be reconstructed from stored memory after simulated assistance.",
+      "llm_tldr_cn": "针对现有长期记忆评估多依赖下游任务表现、缺乏对记忆本体检视的问题，MEMPROBE 将长期记忆视为可审计产物，通过隐藏用户状态恢复任务来量化记忆在跨会话后保留与重建用户信息的能力。实验表明该方法能系统评估记忆遗忘与泄露风险，为构建面向记忆安全的基准提供了可复用范式。",
+      "llm_tldr": "针对现有长期记忆评估多依赖下游任务表现、缺乏对记忆本体检视的问题，MEMPROBE 将长期记忆视为可审计产物，通过隐藏用户状态恢复任务来量化记忆在跨会话后保留与重建用户信息的能力。实验表明该方法能系统评估记忆遗忘与泄露风险，为构建面向记忆安全的基准提供了可复用范式。",
+      "llm_tags": [
+        "query:agent-safety"
+      ],
+      "matched_query_tag": "query:agent-safety",
+      "matched_query_text": "Papers on agent memory safety benchmarks and evaluations",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.20408v2",
+      "source": "arxiv",
+      "title": "NRT-Bench: Benchmarking Multi-Turn Red-Teaming of LLM Operator Agents in Safety-Critical Control Rooms",
+      "abstract": "Large language model (LLM) agents are increasingly proposed as supervisory components for safety-critical systems, yet their robustness under sustained, adaptive adversarial pressure remains poorly characterized. We present NRT-Bench, a benchmark for multi-turn red-teaming of LLM agents acting as operators of a safety-critical system, instantiated in a simulated nuclear power plant control room. A five-role operator team, each backed by a configurable LLM, runs a plant governed by six critical safety functions (CSFs), while adversaries inject messages over four channels in bounded multi-turn sessions with per-turn feedback. Harm is an objective signal rather than LLM-judged text: a run terminates the moment any CSF is lost, attributed to the causing message. Evaluating four frontier operator models under a fixed-attack paired-replay protocol, we find that adaptive multi-turn attacks reliably push the operator team past a safety limit: across the four models, between 8.7% and 12.1% of attack sessions end with the plant losing a critical safety function. Although the four models look almost equally robust by this aggregate rate, their failures barely overlap: of $149$ sessions, none defeat all four models while a third defeat at least one, so vulnerabilities are nearly disjoint across models rather than nested. The effect of added defences is strongly model-dependent: the same guardrail stack or safety-advisor agent that lowers attack success for one model can raise it for another. We release the simulation venue, attack dataset, and replay tooling for reproducible safety evaluation of LLM agents.",
+      "authors": [
+        "Hanwool Lee",
+        "Dasol Choi",
+        "Bokyeong Kim",
+        "Seung Geun Kim",
+        "Haon Park"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-18T15:57:53+00:00",
+      "link": "https://arxiv.org/pdf/2606.20408v2",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "multi-turn red-teaming benchmark for LLM operator agents",
+      "llm_evidence_cn": "面向 LLM 操作员智能体的多轮红队基准",
+      "llm_evidence": "面向 LLM 操作员智能体的多轮红队基准",
+      "canonical_evidence": "面向 LLM 操作员智能体的多轮红队基准",
+      "llm_tldr_en": "NRT-Bench benchmarks multi-turn red-teaming of LLM operator agents in safety-critical control rooms, using multi-channel message injection and objective harm signals to assess adversarial robustness under sustained attack.",
+      "llm_tldr_cn": "针对 LLM 操作员智能体在持续对抗下安全评估不足的问题，NRT-Bench 在模拟核电站控制室中通过多通道消息注入与客观损害信号构建多轮红队基准。实验展示了多轮对抗下智能体安全边界的量化方式，为智能体安全基准提供了可复用方法。",
+      "llm_tldr": "针对 LLM 操作员智能体在持续对抗下安全评估不足的问题，NRT-Bench 在模拟核电站控制室中通过多通道消息注入与客观损害信号构建多轮红队基准。实验展示了多轮对抗下智能体安全边界的量化方式，为智能体安全基准提供了可复用方法。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.21129v1",
+      "source": "arxiv",
+      "title": "AgenticOS: An Intent-Oriented Secure Operating System Architecture for Autonomous AI Agents",
+      "abstract": "Traditional OS security models based on \"resource exposure plus permission checks\" face structural challenges as LLM-driven autonomous agents acquire capabilities for planning, tool use, network access, and code execution. Once an agent runtime is compromised through prompt injection or malicious tool outputs, an attacker can compose POSIX-style resource primitives into behaviors far beyond the user's task authorization. To address this, we propose AgenticOS, an intent-oriented secure OS architecture that consolidates delegable, auditable software capabilities into OS-native ones rather than replacing all applications. The core insight is to reframe the OS from a \"resource manager\" into an \"intent filter\": instead of requesting low-level resources directly, agents submit structured intent declarations, from which the system synthesizes a least-privilege environment with mandatory mediation, auditing, and information-flow constraints. At the implementation level, we introduce a four-layer architecture -- Ghost Kernel, Logic Shutter, Agent Capsule, and Semantic Boundary Gateway -- together with the Intent ABI, Manifest-Only Runtime, Weaver-based capability generation, and an admission model for AgenticOS-native Skills.",
+      "authors": [
+        "Zhen Zhao",
+        "Yu Zhang",
+        "Yanpeng Zhu",
+        "Jia Wang",
+        "Songqiao Tao",
+        "Xin Cheng",
+        "Jiexin Gao"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.OS"
+      ],
+      "published": "2026-06-19T06:14:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.21129v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "intent-oriented secure OS architecture for autonomous agents",
+      "llm_evidence_cn": "面向自主智能体的意图导向安全操作系统架构",
+      "llm_evidence": "面向自主智能体的意图导向安全操作系统架构",
+      "canonical_evidence": "面向自主智能体的意图导向安全操作系统架构",
+      "llm_tldr_en": "The paper proposes AgenticOS, an intent-oriented secure OS architecture that reframes the OS as an intent filter to prevent compromised agent runtimes from exceeding task authorization, addressing system-level security foundations relevant to agent memory safety.",
+      "llm_tldr_cn": "本文提出AgenticOS，一种意图导向的安全操作系统架构，将操作系统重新定义为意图过滤器，防止被入侵的智能体运行时超越任务授权。该工作为智能体记忆安全提供了系统级安全基础。",
+      "llm_tldr": "本文提出AgenticOS，一种意图导向的安全操作系统架构，将操作系统重新定义为意图过滤器，防止被入侵的智能体运行时超越任务授权。该工作为智能体记忆安全提供了系统级安全基础。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.25189v1",
+      "source": "arxiv",
+      "title": "ActPlane: Programmable OS-Level Policy Enforcement for Agent Harnesses",
+      "abstract": "AI agents increasingly run in production through harnesses, the software around the LLM, including an engine that enforces safety and effectiveness policies, e.g., 'run tests before committing.' Enforcing these policies requires bridging a semantic gap: policy intent is expressed in underspecified natural language, while enforcement must act on concrete system actions, e.g., which test to run. Many policies also define event ordering or data flow actions. Yet existing approaches fall short. Tool-call guardrails miss system actions that bypass the tool layer, while OS sandboxes control resource access instead of actions, returning opaque errors that confuse the agent. Our key insight is that policy context lives within the agent closest to the task, while enforcement must happen at the OS to cover all execution paths. We introduce ActPlane, a policy engine that lets agents declare policies and enforces them in the OS kernel with semantic feedback and isolation. ActPlane uses a simple information-flow control (IFC) DSL to support cross-event policies. We implement ActPlane with eBPF and evaluate it on policies from the empirical study, coding-task benchmarks, and safety benchmarks. ActPlane improves policy compliance, including on indirect execution paths that tool-call interception cannot observe, with 1.9%-8.4% overhead. ActPlane is at https://github.com/eunomia-bpf/ActPlane",
+      "authors": [
+        "Yusheng Zheng",
+        "Tianyuan Wu",
+        "Quanzhi Fu",
+        "Tong Yu",
+        "Wenan Mao",
+        "Wei Wang",
+        "Dan Williams",
+        "Andi Quinn"
+      ],
+      "primary_category": "cs.OS",
+      "categories": [
+        "cs.OS"
+      ],
+      "published": "2026-06-23T21:33:13+00:00",
+      "link": "https://arxiv.org/pdf/2606.25189v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "OS-level policy enforcement for agent harness safety",
+      "llm_evidence_cn": "面向智能体 harness 安全的操作系统级策略执行",
+      "llm_evidence": "面向智能体 harness 安全的操作系统级策略执行",
+      "canonical_evidence": "面向智能体 harness 安全的操作系统级策略执行",
+      "llm_tldr_en": "ActPlane introduces a programmable OS-level policy enforcement mechanism for agent harnesses, bridging the gap between underspecified natural-language safety policies and concrete system actions that existing guardrails or sandboxes fail to enforce.",
+      "llm_tldr_cn": "ActPlane 提出可编程的操作系统级策略执行机制，用于智能体 harness 的安全防护。它弥合了自然语言策略意图与具体系统操作之间的语义鸿沟，弥补了工具调用护栏和沙箱的不足，直接面向 harness 安全策略与基准测试场景。",
+      "llm_tldr": "ActPlane 提出可编程的操作系统级策略执行机制，用于智能体 harness 的安全防护。它弥合了自然语言策略意图与具体系统操作之间的语义鸿沟，弥补了工具调用护栏和沙箱的不足，直接面向 harness 安全策略与基准测试场景。",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to 查找关于护具安全、攻击或基准测试的论文, especially work that connects or combines: harness safety research and measures; attack on harness systems; benchmark for harness performance; Papers on safety measures for harness systems; Research on attack methods targeting harness components; Benchmarks for evaluating harness safety performance.",
+      "matched_requirement_id": "req-composite-harness",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.20470v1",
+      "source": "arxiv",
+      "title": "Analyzing Defensive Misdirection Against Model-Guided Automated Attacks on Agentic AI Systems",
+      "abstract": "Agentic AI systems increasingly rely on language-model components to interpret instructions, process external data, invoke tools, and coordinate with other agents. These capabilities make prompt-injection and jailbreak attacks more consequential, especially as attackers adopt model-guided automation to scale probing, prompt refinement, and response evaluation. This work analyzes the resulting attack-defense setting through a probabilistic model of a target system, its defense mechanism, and the attacker's automated judge. Our analysis shows that conventional detect-and-block defenses can allow attacker success rate (ASR) to approach one as the query budget grows, since predictable refusals provide useful feedback to automated search. We then examine detect-and-misdirect, where detected malicious interactions receive controlled, non-operational responses designed to induce false-positive errors in the attacker's judge. This strategy reduces the positive predictive value of attacker-selected candidates and yields a bounded asymptotic ASR. We evaluate a proof-of-concept realization of this strategy through Contextual Misdirection via Progressive Engagement (CMPE), a lightweight conversational misdirection method designed to replace predictable refusal text with safe but strategically misleading responses in automated jailbreak settings. On jailbreak benchmarks, CMPE reduces estimated ASR upper bounds by up to two orders of magnitude and nearly eliminates verified attack success in end-to-end PAIR and GPTFuzz attack runs.",
+      "authors": [
+        "Reza Soosahabi",
+        "Vivek Namsani"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-18T16:50:28+00:00",
+      "link": "https://arxiv.org/pdf/2606.20470v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "probabilistic analysis of prompt-injection defenses for agents",
+      "llm_evidence_cn": "面向智能体提示注入防御的概率分析",
+      "llm_evidence": "面向智能体提示注入防御的概率分析",
+      "canonical_evidence": "面向智能体提示注入防御的概率分析",
+      "llm_tldr_en": "This paper analyzes model-guided automated attacks against agentic AI systems and shows that conventional detect-and-block defenses can allow attacker success rate to approach one as query budget grows, using a probabilistic model of attacker feedback.",
+      "llm_tldr_cn": "该论文针对智能体在模型引导的自动化攻击下，传统检测阻断防御可能失效的问题，提出包含目标系统、防御机制和攻击者自动判断器的概率模型。分析表明随着查询预算增加，攻击成功率趋近于1，因为可预测的拒绝会为攻击者提供了有效反馈。该工作直接涉及智能体攻击与防御评估，对理解智能体安全边界有重要价值。",
+      "llm_tldr": "该论文针对智能体在模型引导的自动化攻击下，传统检测阻断防御可能失效的问题，提出包含目标系统、防御机制和攻击者自动判断器的概率模型。分析表明随着查询预算增加，攻击成功率趋近于1，因为可预测的拒绝会为攻击者提供了有效反馈。该工作直接涉及智能体攻击与防御评估，对理解智能体安全边界有重要价值。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.21445v1",
+      "source": "arxiv",
+      "title": "AutoRAS: Learning Robust Agentic Systems with Primitive Representations",
+      "abstract": "The automated design of agentic systems offers a promising pathway for scaling large language models (LLMs) beyond single-agent reasoning. While prior work has advanced task performance through handcrafted or automatically generated multi-agent workflows, robustness is often treated as an afterthought, leaving systems vulnerable to external adversaries and internal failures. We propose AutoRAS, a framework for the Automated design of Robust Agentic Systems. AutoRAS formulates system design as generating a sequence of symbolic primitives that jointly encode structural connectivity and behavioral actions, and learns to optimize this sequence using execution-derived safety signals and flow-based sequence-level objectives. Extensive experiments show that AutoRAS achieves the best performance in both vanilla and adversarial settings, with the smallest performance degradation under attacks. Further analyses demonstrate strong transferability, stable optimization behavior, stability across primitive sets, and favorable cost trade-offs. Our code is available at $\\href{https://github.com/guohezuy/AutoRAS}{\\text{this https URL}}$.",
+      "authors": [
+        "Yang Yue",
+        "Xuancheng Zhu",
+        "Yuyang Ma",
+        "Guoshun Nan",
+        "Zihan Dou",
+        "Jingru Shan",
+        "Congyu Guo",
+        "Ji Zhang",
+        "Hua Wang",
+        "Jingfeng Zhang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-19T14:05:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.21445v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "robust agentic system design against adversaries",
+      "llm_evidence_cn": "面向外部对手的智能体系统鲁棒设计",
+      "llm_evidence": "面向外部对手的智能体系统鲁棒设计",
+      "canonical_evidence": "面向外部对手的智能体系统鲁棒设计",
+      "llm_tldr_en": "AutoRAS proposes an automated framework for designing robust agentic systems by generating symbolic primitives that encode connectivity and behavior, and optimizing them with execution-derived safety signals and flow-based objectives.",
+      "llm_tldr_cn": "AutoRAS 提出自动生成智能体系统原始序列的框架，联合编码结构与行为，并利用执行安全信号与流目标进行优化。该工作针对智能体系统鲁棒性和安全设计，可为智能体安全基准和鲁棒性评估提供方法论支持。",
+      "llm_tldr": "AutoRAS 提出自动生成智能体系统原始序列的框架，联合编码结构与行为，并利用执行安全信号与流目标进行优化。该工作针对智能体系统鲁棒性和安全设计，可为智能体安全基准和鲁棒性评估提供方法论支持。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.25447v1",
+      "source": "arxiv",
+      "title": "The Interplay of Harness Design and Post-Training in LLM Agents",
+      "abstract": "Tool-integrated LLM agents are often wrapped within a harness: the scaffolding that determines which tools are exposed, how they are described, and what auxiliary information accompanies each per-step observation. While agents are routinely post-trained, this scaffolding is typically treated as a fixed engineering detail, with design effort limited to the training-free regime. Moreover, existing post-training algorithms assume a static environment, even though tool environments and tasks often shift upon deployment. To address this gap, we extend $\\texttt{ALFWorld}$ (i) to treat the harness as a controllable design dimension and (ii) to support evaluation under task and tool environment shifts. Building on this, we systematically analyze how the harness design influences post-training in both in-distribution and out-of-distribution (OOD) settings. We empirically show that harness-aware post-training not only improves in-distribution performance but also enables agents to robustly adapt to OOD settings. Under a harness with minimal design effort, post-training suffers a drastic performance drop under stronger tool environment shifts, further highlighting the importance of harness-aware post-training under such shifts.",
+      "authors": [
+        "Kyungmin Kim",
+        "Youngbin Choi",
+        "Seoyeon Lee",
+        "Suhyeon Jun",
+        "Dongwoo Kim",
+        "Sangdon Park"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-06-24T06:23:02+00:00",
+      "link": "https://arxiv.org/pdf/2606.25447v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "harness design and post-training interplay",
+      "llm_evidence_cn": "护具设计与后训练的交互关系",
+      "llm_evidence": "护具设计与后训练的交互关系",
+      "canonical_evidence": "护具设计与后训练的交互关系",
+      "llm_tldr_en": "This paper extends ALFWorld to treat the harness as a controllable design dimension and systematically analyzes how harness design interacts with post-training under task and tool environment shifts.",
+      "llm_tldr_cn": "本文针对现有后训练算法假设环境固定、护具设计被视为工程细节的问题，扩展ALFWorld基准，将护具作为可控设计维度，系统分析护具设计与后训练在任务和环境偏移下的交互作用，为护具安全研究提供了重要实证依据。",
+      "llm_tldr": "本文针对现有后训练算法假设环境固定、护具设计被视为工程细节的问题，扩展ALFWorld基准，将护具作为可控设计维度，系统分析护具设计与后训练在任务和环境偏移下的交互作用，为护具安全研究提供了重要实证依据。",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to 查找关于护具安全、攻击或基准测试的论文, especially work that connects or combines: harness safety research and measures; attack on harness systems; benchmark for harness performance; Papers on safety measures for harness systems; Research on attack methods targeting harness components; Benchmarks for evaluating harness safety performance.",
+      "matched_requirement_id": "req-composite-harness",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.21071v1",
+      "source": "arxiv",
+      "title": "Local LLM Agents as Vulnerable Runtimes:A Source-Code Audit of the Agent Runtime Layer",
+      "abstract": "Local LLM agents such as OpenClaw and Nanobot run on end-user machines and act on host resources - the shell, filesystem, browser, stored credentials, and messaging applications - through natural-language goals. These agents have become privileged software runtimes that mediate between user intent, model outputs, and host-level actions. Existing research characterizes the landscape through prompt injection, malicious skills, marketplace risks, or black-box evaluation of agents. But the implementation layer that performs this mediation, the prompt builder, parser, tool dispatcher, skill loader, memory writer, network client, and permission gate, has remained an unexamined safety boundary. To our knowledge, no prior work has examined the agent's source tree to audit these components for implementation-level security weaknesses. We present CLAWAUDIT, a static auditing framework for measuring vulnerability exposure in local LLM agent runtimes. CLAWAUDIT derives a five-category vulnerability taxonomy from STRIDE and develops custom static-analysis rules that target agent-specific patterns absent from established rule sets for vulnerability analysis. We instantiate the taxonomy in two backends, 47 Semgrep YAML rules and 30 CodeQL queries, and evaluate on OPENCLAWBENCH, a benchmark of 446 source-code-level advisories from the OpenClaw repository and split temporally into 229 rule-derivation (train) and 217 held-out (test) advisories. On the held-out test, CLAWAUDIT raises Semgrep recall from 21.7% (Pro baseline) to 66.8%, and CodeQL recall from 13.8% (security-extended) to 75.1%. Train/test gaps remain within 4 percentage points for all four configurations, indicating that the rules generalize to vulnerabilities unseen during rule writing. A preliminary live-code audit shows that these recall-oriented rules require manual triage, motivating semantic filtering before production deployment.",
+      "authors": [
+        "Zhengsong Zhang",
+        "Zongze Li",
+        "Jiawei Guo",
+        "Haipeng Cai"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-19T03:40:00+00:00",
+      "link": "https://arxiv.org/pdf/2606.21071v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "source-code audit of agent runtime memory writer safety",
+      "llm_evidence_cn": "针对智能体运行时内存写入组件的源码审计",
+      "llm_evidence": "针对智能体运行时内存写入组件的源码审计",
+      "canonical_evidence": "针对智能体运行时内存写入组件的源码审计",
+      "llm_tldr_en": "This paper presents a source-code audit of the local LLM agent runtime layer, examining the unexamined safety boundary formed by components including the memory writer, prompt builder, parser, tool dispatcher, skill loader, network client, and permission gate.",
+      "llm_tldr_cn": "针对本地LLM智能体运行时层缺乏系统安全审计的问题，本文对该实现层进行源码级分析。研究聚焦于提示构建器、解析器、工具调度器、技能加载器、内存写入器、网络客户端和权限门等组件构成的安全边界。其贡献在于首次揭示了智能体运行时实现层的安全薄弱环节，对智能体内存与系统安全评测具有直接参考价值。",
+      "llm_tldr": "针对本地LLM智能体运行时层缺乏系统安全审计的问题，本文对该实现层进行源码级分析。研究聚焦于提示构建器、解析器、工具调度器、技能加载器、内存写入器、网络客户端和权限门等组件构成的安全边界。其贡献在于首次揭示了智能体运行时实现层的安全薄弱环节，对智能体内存与系统安全评测具有直接参考价值。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.22673v1",
+      "source": "arxiv",
+      "title": "AgentLens: Interpretable Safety Steering via Mechanistic Subspaces for Multi-Turn Coding Agent",
+      "abstract": "Coding agents based on large language models (LLMs) demonstrate remarkable autonomous capabilities, but they also introduce significant safety and misuse risks during multi-turn interactions with external environments. Existing safety mechanisms mainly rely on external guardrails, which have a limited ability to perform fine-grained behavioral control during execution. Meanwhile, recent mechanistic interpretability methods for LLM safety are mostly confined to single-turn or jailbreak-style QA settings, limiting their ability to capture the evolving risk dynamics of multi-turn agent execution. In this paper, we investigate the safety of multi-turn coding agents from an internal perspective. We propose AgentLens (Mechanistic Subspace Intervention and Steering), a white-box defense framework that performs runtime safety detection and representation-level mitigation for coding agents. Unlike conventional agent guardrails, AgentLens detect harmful execution states from step-level hidden representations and mitigate unsafe behavior by intervening in a 10-dimensional subspace within a single layer. To support this research, we introduce the Mechanistic Agent Safety (MAS) benchmark, comprising comprehensively annotated multi-turn execution trajectories across 194 tasks using LLaMA-3.1-8B, Qwen-2.5-7B, and Gemma-2-9B. Extensive experiments show that AgentLens achieves strong safety detection performance, provides preliminary evidence for lookahead risk anticipation, and substantially reduces harmful actions of the coding agent, establishing a foundation for applying mechanistic interpretability to dynamic LLM agent safety. The code is available at: https://github.com/EddyLuo1232/AgentLens",
+      "authors": [
+        "Weidi Luo",
+        "Qiming Zhang",
+        "Yihao Quan",
+        "Mingyu Jin",
+        "Jie Cai",
+        "Chaowei Xiao",
+        "Jingcheng Niu",
+        "Zhen Xiang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.SE"
+      ],
+      "published": "2026-06-21T21:13:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.22673v1",
+      "tags": [
+        "keyword:agent-safety",
+        "keyword:harness",
+        "query:agent-safety",
+        "query:harness"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "safety steering for multi-turn coding agents",
+      "llm_evidence_cn": "面向多轮编码智能体的安全引导方法",
+      "llm_evidence": "面向多轮编码智能体的安全引导方法",
+      "canonical_evidence": "面向多轮编码智能体的安全引导方法",
+      "llm_tldr_en": "AgentLens proposes interpretable safety steering for multi-turn coding agents by identifying mechanistic subspaces that capture evolving risk dynamics, moving beyond external guardrails to internal behavioral control during agent execution.",
+      "llm_tldr_cn": "针对现有多轮编码智能体安全机制依赖外部护栏、难以细粒度控制的问题，本文提出AgentLens，从内部视角研究智能体安全性。该方法通过机制可解释性识别捕捉风险动态的机制子空间，实现对多轮执行过程的安全引导。其贡献在于为智能体安全评测与干预提供了可解释的内部机制分析路径。",
+      "llm_tldr": "针对现有多轮编码智能体安全机制依赖外部护栏、难以细粒度控制的问题，本文提出AgentLens，从内部视角研究智能体安全性。该方法通过机制可解释性识别捕捉风险动态的机制子空间，实现对多轮执行过程的安全引导。其贡献在于为智能体安全评测与干预提供了可解释的内部机制分析路径。",
+      "llm_tags": [
+        "query:agent-safety:composite"
+      ],
+      "matched_query_tag": "query:agent-safety:composite",
+      "matched_query_text": "Papers central to Find paper about agent memory safety benchmark, especially work that connects or combines: agent memory safety benchmark evaluation; manipulating agent memory for adversarial purposes; injection attacks on agent memory systems; memory safety benchmark for AI agents; agent safety benchmark including memory issues; memory security and safety in agent systems; Find research on security of agent memory in LLM benchmarks; What are the existing benchmarks for evaluating memory safety in AI agents?; Papers on agent memory safety benchmarks and evaluations.",
+      "matched_requirement_id": "req-composite-agent-safety",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
