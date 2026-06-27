@@ -1,0 +1,24 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "The first author has no verifiable affiliation. The last author is at Old Dominion University, a mid-tier US research university. Due to the missing affiliation for the first author, a neutral score is assigned with low confidence.",
+  "author_profiles": [
+    {
+      "name": "Noe Y. Flandre",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Philippe J. Giabbanelli",
+      "role": "last_author",
+      "affiliation": "Office of Enterprise Research and Innovation, Old Dominion University, Norfolk, VA, USA",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:00:04.309604+00:00"
+}

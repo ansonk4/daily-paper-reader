@@ -1,0 +1,34 @@
+{
+  "name": "Abhik Roychoudhury",
+  "role": "last_author",
+  "affiliation": "National University of Singapore",
+  "citation_hints": "OpenAlex cited_by_count=10961; OpenAlex works_count=324; Semantic Scholar citation_count=10704; Semantic Scholar paper_count=200",
+  "confidence": "medium",
+  "evidence_source": "openalex, semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Code-Augur: Agentic Vulnerability Detection via Specification Inference",
+    "paper_year": "2026",
+    "name": "Abhik Roychoudhury",
+    "affiliations": [
+      "National University of Singapore",
+      "National University of Singapore"
+    ],
+    "works_count": 324,
+    "cited_by_count": 10961,
+    "author_id": "https://openalex.org/A5060115298",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Code-Augur: Agentic Vulnerability Detection via Specification Inference",
+    "paper_year": "2026",
+    "name": "Abhik Roychoudhury",
+    "affiliations": [],
+    "paper_count": 200,
+    "citation_count": 10704,
+    "author_id": "1789700",
+    "lookup": "author_search"
+  }
+}

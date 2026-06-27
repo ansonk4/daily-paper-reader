@@ -1,0 +1,40 @@
+{
+  "name": "Siyuan Pang",
+  "role": "first_author",
+  "affiliation": "Institute of Information Engineering, Chinese Academy of Sciences, Beijing, China; University of Illinois Urbana-Champaign",
+  "citation_hints": "OpenAlex cited_by_count=882; OpenAlex works_count=22; Semantic Scholar citation_count=744; Semantic Scholar paper_count=16",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Siyuan Pang",
+    "affiliations": [
+      "Institute of Information Engineering, Chinese Academy of Sciences, Beijing, China"
+    ],
+    "author_row": "Siyuan Pang"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "PYPILINE: Malicious PyPI Package Detection via Suspicious API Knowledge and Agent Workflow",
+    "paper_year": "2026",
+    "name": "Siyuan Pang",
+    "affiliations": [
+      "University of Illinois Urbana-Champaign"
+    ],
+    "works_count": 22,
+    "cited_by_count": 882,
+    "author_id": "https://openalex.org/A5059274452",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "PYPILINE: Malicious PyPI Package Detection via Suspicious API Knowledge and Agent Workflow",
+    "paper_year": "2026",
+    "name": "Siyuan Pang",
+    "affiliations": [],
+    "paper_count": 16,
+    "citation_count": 744,
+    "author_id": "14929885",
+    "lookup": "author_search"
+  }
+}

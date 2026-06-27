@@ -1,0 +1,24 @@
+{
+  "author_score": 8.0,
+  "author_rating_explanation": "Both focus authors are affiliated with Cornell University, a top US AI school included in the 8-9 band. Evidence comes from arxiv metadata source.",
+  "author_profiles": [
+    {
+      "name": "Linda Lu",
+      "role": "first_author",
+      "affiliation": "Cornell University",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Karthik Sridharan",
+      "role": "last_author",
+      "affiliation": "Cornell University",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:05:42.052101+00:00"
+}

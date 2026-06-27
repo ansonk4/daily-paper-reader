@@ -1,0 +1,29 @@
+{
+  "name": "Laxmipriya Ganesh Iyer",
+  "role": "first_author",
+  "affiliation": "United States of America; Rahul Suresh Babu Independent Researcher",
+  "citation_hints": "Semantic Scholar citation_count=3; Semantic Scholar paper_count=6",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Laxmipriya Ganesh Iyer",
+    "affiliations": [
+      "United States of America",
+      "Rahul Suresh Babu Independent Researcher"
+    ],
+    "author_row": "Laxmipriya Ganesh Iyer Independent Researcher"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "The Gate Is Only as Honest as Its Contracts: ContractGuard for the Contract Layer of Risk-Aware Causal Gating",
+    "paper_year": "2026",
+    "name": "Lax Iyer",
+    "affiliations": [],
+    "paper_count": 6,
+    "citation_count": 3,
+    "author_id": "2205444133",
+    "lookup": "author_search"
+  }
+}

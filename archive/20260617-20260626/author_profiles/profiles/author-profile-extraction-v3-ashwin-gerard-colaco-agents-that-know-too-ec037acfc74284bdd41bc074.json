@@ -1,0 +1,32 @@
+{
+  "name": "Ashwin Gerard Colaco",
+  "role": "last_author",
+  "affiliation": "University of California, Irvine; The University of Texas MD Anderson Cancer Center; Department of Imaging Physics, The University of Texas MD Anderson Cancer Center, Houston, TX 77030, USA; Research Network (United States)",
+  "citation_hints": "OpenAlex cited_by_count=7; OpenAlex works_count=2",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Ashwin Gerard Colaco",
+    "affiliations": [
+      "University of California, Irvine"
+    ],
+    "author_row": "Ashwin Gerard Colaco"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Agents That Know Too Much: A Data-Centric Survey of Privacy in LLM Agents",
+    "paper_year": "2026",
+    "name": "Ashwin Gerard Colaco",
+    "affiliations": [
+      "The University of Texas MD Anderson Cancer Center",
+      "Department of Imaging Physics, The University of Texas MD Anderson Cancer Center, Houston, TX 77030, USA",
+      "Research Network (United States)"
+    ],
+    "works_count": 2,
+    "cited_by_count": 7,
+    "author_id": "https://openalex.org/A5082454798",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

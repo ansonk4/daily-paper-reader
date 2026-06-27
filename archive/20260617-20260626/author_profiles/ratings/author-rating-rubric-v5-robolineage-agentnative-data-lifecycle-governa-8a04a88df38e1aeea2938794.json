@@ -1,0 +1,24 @@
+{
+  "author_score": 7.5,
+  "author_rating_explanation": "Focus authors Qian Luo and Yanchao Yang are affiliated with The University of Hong Kong, a top Hong Kong AI school. This places them in the 6-8 band, with HKU's strong AI reputation supporting a score near the top of that range.",
+  "author_profiles": [
+    {
+      "name": "Qian Luo",
+      "role": "first_author",
+      "affiliation": "Nanchun Guo; The University of Hong Kong",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Yanchao Yang",
+      "role": "last_author",
+      "affiliation": "Nanchun Guo; The University of Hong Kong",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:03:25.185410+00:00"
+}

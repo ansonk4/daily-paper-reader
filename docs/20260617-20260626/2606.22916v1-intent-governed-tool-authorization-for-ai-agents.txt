@@ -1,0 +1,1330 @@
+Title: Intent-Governed Tool Authorization for AI Agents
+
+URL Source: https://arxiv.org/pdf/2606.22916v1
+
+Published Time: Tue, 23 Jun 2026 03:16:43 GMT
+
+Number of Pages: 35
+
+Markdown Content:
+# Intent-Governed Tool Authorization for AI Agents 
+
+Genliang Zhu Accentrust Georgia Institute of Technology Chu Wang Accentrust University of Illinois Urbana-Champaign 
+
+Abstract 
+
+AI agents increasingly act through external tools: they read private data, construct structured payloads, submit write requests, export records, and coordinate workflows across application boundaries. Existing authorization mechanisms usually ask whether an integration credential, app, or token can call a tool. That question is necessary but incomplete. A tool call can be authorized by static credentials and still be unjustified by the user’s current request. For example, a credential that can read and export records should not expose export authority when the user only asked for a bounded summary, and a model-generated delete call should not execute merely because the integration has a delete scope. This paper proposes Intent-Governed Access Control (IGAC), a server-side authorization layer that treats the user’s expressed intent as a monotone, auditable policy attribute for AI-agent tool use. IGAC introduces intent certificates, session-scoped policy narrowing, intent-aware manifest filtering, and intent-tool-payload consistency checks. The central invariant is that user intent may only reduce the authority granted by static integration policy; it never expands scopes, data policy, tenant boundaries, or review requirements. We map IGAC onto OpenPort, an existing governance substrate that already implements authorization-dependent discovery, scope and ABAC-style policy checks, draft-first writes, preflight impact binding, state-witness checks, idempotency, stable reason codes, and audit. The current artifact includes a minimal reusable IGAC runtime path in OpenPort: an intent endpoint, in-memory certificate store, intent-aware manifest endpoint, intent-bound action/preflight checks, reason-code failures, and audit binding. We therefore present a formal model, security analysis, implementation mapping, executable synthetic checks, a runtime-backed microbenchmark, an expanded real-LLM pilot, a scored end-to-end LLM-in-the-loop runtime benchmark over the actual OpenPort path, and a benchmark-shaped external-subset runtime pilot. The deterministic checks validate internal policy invariants, while the provider-backed LLM studies provide preliminary runtime-path evidence of unsafe-execution containment and help characterize the remaining unsafe-accepted-authority surface. The paper positions intent as a missing access-control primitive between natural-language user requests and enforceable tool effects. 
+
+Keywords: AI agents, access control, tool use, prompt injection, least privilege, intent certificates, dynamic authorization, OpenPort. I. I NTRODUCTION 
+
+AI agents are moving from conversational assistance to operational action. A deployed agent can inspect records, update state, export data, create appointments, execute workflows, and coordinate with other services. In such settings, tool access is no longer a convenience feature of a language model interface. It is an application security boundary. The access-control question normally asked by an application gateway is credential-centric: does this token, app, or integration have permission to call this endpoint? Credential-centric authorization is necessary. It supports revocation, least privilege, tenant isolation, and accountability. But agentic tool use introduces a second question that traditional API authorization rarely models: is the proposed tool call justified by what the user currently asked the agent to do? 
+
+This distinction matters because the same credential can be legitimately broad while a particular user request is narrow. A finance assistant may have both read and export scopes because the organization approves those capabilities for some workflows. Yet if the user asks ”summarize my transactions for this week”, exposing a bulk export tool to the model is unnecessary and potentially dangerous. If the model later proposes an export because an external document, retrieved note, or malicious tool description influenced it, credential-only authorization cannot distinguish the overbroad effect from the user’s original summary request. Likewise, a model may construct a plausible update payload that touches a different resource than the user named, or a delete call that exceeds the intended target set. The recent security literature shows that this is not a hypothetical edge case. AgentDojo evaluates prompt-injection attacks and defenses in tool-using agents [3]. InjecAgent studies indirect prompt injection in tool-integrated agents and 
+
+Stewardship: Accentrust and the IGAC authors. Correspondence: research@accentrust.com. 
+
+1                                
+
+> arXiv:2606.22916v1 [cs.AI] 22 Jun 2026 Mechanism Authorization Unit Per-Request Narrowing Manifest Filtering Payload-Effect Check LLM Untrusted
+> RBAC Role No No Limited No ABAC Attributes Partial No Partial No OAuth scopes Token/scope No No No No Purpose-based AC Declared purpose Partial No Partial No MCP authorization Resource server / token Partial Tool-level only No standard gate Partial IGAC Expressed task certificate Yes Yes Yes Yes
+> TABLE I IGAC ADDS REQUEST -BOUNDED LEAST PRIVILEGE FOR UNTRUSTED AGENT PLANNERS ON TOP OF EXISTING ACCESS -CONTROL FAMILIES .
+
+categorizes attacks into direct harm and data exfiltration [28]. ToolHijacker and ToolTweak show that tool descriptions and names can bias or hijack tool selection [22], [23]. MCP-oriented work identifies tool poisoning, shadowing, and protocol-specific semantic attacks [8], [10], [21], [25]. These works converge on a practical conclusion: the model’s selected tool is not, by itself, trustworthy evidence of authorization. Industry guidance reaches a similar conclusion. OWASP lists prompt injection as the first 2025 LLM application risk and recommends least privilege, human approval for high-risk actions, external-content segregation, and adversarial testing [17], [18]. NIST’s Generative AI Profile recommends operational monitoring, assessment of embedded tools and APIs, and deployment-like assurance criteria [15]. The 2025-06-18 Model Context Protocol (MCP) specification provides transport and tool-discovery semantics, including authorization guidance and model-controlled tools [13], [14]. Those mechanisms are important, but they do not answer whether a specific tool effect is supported by the user’s current intent. This paper proposes Intent-Governed Access Control (IGAC). IGAC adds an intent-control layer in front of the existing effect-control layer. It receives the user’s request, derives an intent certificate, computes a session policy that can only narrow existing static authorization, filters the tool manifest accordingly, and checks that each proposed tool call and payload remains consistent with the certificate. If intent is unknown, low-confidence, ambiguous, or inconsistent with the proposed effect, the gateway fails closed by hiding high-risk tools, denying the call, or downgrading it to a draft/preflight review path. The model, classifier, and planner are not trusted principals. They are advisors whose outputs are evaluated by a server-side policy layer. 
+
+A. Relationship to OpenPort Protocol 
+
+The current OpenPort Protocol paper establishes a governance substrate for agent tool access: authorization-dependent discovery, scoped permissions, ABAC-like data policy constraints, draft-first writes, preflight impact hashing, optional state-witness checks, idempotency, rate limits, and audit. We treat that prior work as the effect-control layer . It determines whether a tool effect is permitted under static integration policy and risk-gated write semantics. IGAC addresses the missing upstream layer. Before an agent reaches the OpenPort action pipeline, the system should decide what the user asked for and what effects are justified by that request. IGAC therefore does not replace OpenPort Protocol. It composes with it: user intent → dynamic least privilege → filtered tools → governed effects .
+
+The distinction is important for novelty and for correctness. The existing OpenPort substrate can prevent a broad range of unsafe effects, but without IGAC it does not know whether a read, export, update, or delete was actually requested by the user. Conversely, IGAC without a server-side effect-control layer would merely be a classifier or prompt pattern. The contribution is the combination of request-level intent certificates with authoritative gateway enforcement. 
+
+B. Contributions 
+
+This draft makes five contributions. 1) Problem formulation. We define intent-tool mismatch as an access-control failure mode for AI agents: a proposed tool call may be statically authorized yet not authorized by the user’s current expressed intent. 2) Formal model. We define intent certificates, monotone session policy, intent-aware manifests, consistency predicates, and least-privilege effect minimization. 23) System design. We design an IGAC gateway that narrows OpenPort manifests and action execution without trusting the model or classifier as final authority. 4) Implementation artifact. We implement a minimal reusable IGAC runtime path in OpenPort, including intent certificates, intent-aware manifest filtering, intent-bound action/preflight checks, reason codes, audit binding, and endpoint tests. 5) Evaluation artifacts and runtime-path study. We provide deterministic policy checks, endpoint-level runtime tests, a 176-task runtime-backed synthetic microbenchmark, an expanded real-LLM classifier/planner pilot, a scored end-to-end LLM-in-the-loop runtime benchmark over 34 synthetic tasks with 3 repeats per model, and a benchmark-shaped external-subset runtime pilot over 12 adapted tasks and 3 models. Together these results support invariant-level, attack-surface, and runtime-path claims, though not deployment-level robustness or statistically powered real-world safety-improvement claims. 
+
+C. Non-Goals 
+
+IGAC is not a proof that prompt injection is solved. It does not assume intent classification is always correct. It does not replace OAuth, MCP, RBAC, ABAC, or the OpenPort effect-control layer. It does not make human review unnecessary for high-risk actions. Its purpose is narrower: bind proposed tool effects to the user’s current request through a server-side, auditable, monotone authorization layer. 
+
+D. Intent Semantics 
+
+One recurring source of confusion in agent-access papers is the word “intent.” IGAC does not attempt to recover a user’s hidden psychological intent. It uses a narrower and operational notion tied to what the system can actually enforce:  
+
+> •
+
+Expressed intent : the user request as stated in trusted conversation input.  
+
+> •
+
+Inferred intent : the classifier or parser’s interpretation of that request.  
+
+> •
+
+Authorized intent : the portion of the inferred request that is still permitted after static OpenPort policy, scopes, workspace guards, and risk policy are applied.  
+
+> •
+
+Operational intent certificate : the bounded, auditable server-side record used by IGAC at enforcement time. This distinction matters for claim hygiene. IGAC does not claim to know what the user “really meant” in a philosophical sense. It only claims to enforce against an expressed, bounded, auditable request interpretation that may narrow static authority but never widen it. II. B ACKGROUND AND MOTIVATION 
+
+A. Tool Use as an Access-Control Boundary 
+
+Tool-using agents mediate between natural language and application effects. In a conventional API client, the caller is usually deterministic software written by the application developer or an integration partner. In an agentic workflow, the immediate caller may be a planner driven by a language model, influenced by a conversation, untrusted documents, tool outputs, memory, retrieved snippets, or tool metadata. The agent may select tools automatically and may construct payloads that the user never directly inspected. The MCP tools specification explicitly frames tools as model-controlled: models may discover and invoke tools automatically based on context and user prompts [14]. That design is useful for interoperability, but it shifts security burden to implementations. If a server exposes a tool list to a model, the server still needs to decide which tools should be visible in the current context and which proposed calls should be accepted. Traditional access control offers relevant foundations. Least privilege limits authority [20]. RBAC associates permissions with roles [4]. ABAC uses attributes of subjects, objects, actions, and environments to decide access [7]. OAuth-style systems bind tokens and audiences, and MCP authorization guidance emphasizes validating tokens for the intended resource server [13]. IGAC builds on these concepts but introduces an attribute that is often missing: the user’s current natural-language intent. 
+
+B. Why Static Scopes Are Not Enough 
+
+Static scopes describe what an integration may ever do, not what it should do for this request. Consider a tool set with:  
+
+> •
+
+transaction.list , a read tool;  
+
+> •
+
+transactions.export_csv , a high-risk export tool;  
+
+> •
+
+transaction.create , a write tool that creates a draft; 3• transaction.delete , a high-risk destructive tool. An integration may legitimately receive all four scopes because an organization wants the agent to help with multiple workflows. But a specific request such as ”show transactions from last week” does not justify export or delete authority. A request such as ”create a reimbursement for lunch” may justify a narrow create draft, but not arbitrary updates. A request such as ”delete duplicate transaction X” justifies a high-risk delete candidate only under review and preflight constraints. Intent refines the static policy for the current session. The key point is not that scopes are flawed. They remain the upper bound. The flaw is treating scopes as the only authorization input for a probabilistic, context-sensitive caller. IGAC makes the following rule explicit: 
+
+Psession (u) ⪯ P static (a),
+
+where u is the user request, a is the integration app, and ⪯ means ”no more permissive than.” User intent narrows authority but never widens it. 
+
+C. Prompt Injection and Tool Selection 
+
+Prompt injection is a central motivation but not the only threat. OWASP describes direct and indirect prompt injection, including attacks through websites, files, images, and other external content, and notes impacts such as unauthorized function access and critical decision manipulation [17]. AgentDojo and InjecAgent show that agents can be hijacked by untrusted tool outputs and external content [3], [28]. ToolHijacker, ToolTweak, MCPTox, and MCP threat-modeling work show that tool metadata itself can become an attack surface [8], [22], [23], [25]. IGAC does not attempt to detect every malicious instruction. Instead, it asks a different question: even if the model is influenced, does the proposed effect remain within the user’s certified intent and the static policy? If not, the server can hide the tool, deny the call, or route it to draft/preflight review. This shifts defense from model obedience to enforceable effect constraints. 
+
+D. OpenPort as Substrate 
+
+OpenPort already implements important effect-control primitives. The reference runtime filters manifests by scopes, enforces policy constraints and workspace boundaries, creates drafts for writes, computes preflight impact hashes, optionally binds state witnesses, performs idempotency replay, and emits audit events. The product layer also contains controlled flows that map user messages and attachments into preview cards and action drafts before confirmation. These are implementation evidence for a pattern: user-facing input recognition and server-side effect governance should be connected by an auditable policy boundary. The IGAC layer proposed here is the missing connection. It generalizes product-layer controlled-flow practices into an OpenPort-level authorization model that can apply to external agents, tool manifests, and action execution. III. R UNNING EXAMPLES 
+
+We use synthetic examples throughout the paper. They are deliberately generic and do not depend on private deployment details. 
+
+A. Bounded Read vs Bulk Export 
+
+Suppose the integration has both transaction.read and transaction.export scopes. The user asks: Show me this week’s transactions and summarize unusual spending. A credential-only system may expose both transaction.list and transactions.export_csv . A model influenced by external context might choose the export tool because it can retrieve more data. Under IGAC, the certificate is: 
+
+I = {read , summarize },BR = {transactions in current week },BE = {no export, no mutation }.
+
+The export tool is hidden from the manifest because the effect class export is not in I. If a planner still attempts to call the export endpoint directly, the consistency gate rejects it with agent.intent_tool_mismatch . Static OpenPort policy still applies: if the read tool lacks scope or violates a date-window policy, it is denied regardless of intent. 4B. Narrow Create Draft 
+
+The user asks: Create a lunch reimbursement for 23.50 dollars yesterday. The certificate includes a create intent, amount bound, date bound, and resource type. The manifest may expose a create tool but not delete/export/admin tools: 
+
+I = {create }, BE = {single transaction draft, amount ≤ 23 .50 + ϵ}.
+
+The proposed create payload must stay within those bounds. If the model constructs a transaction for 2350 dollars, uses a different date, or attaches unrelated bulk metadata, consistency fails. The safe fallback is a draft with a preview and review, not direct execution. This mirrors the existing OpenPort philosophy that write requests should be reviewable by default. 
+
+C. High-Risk Delete 
+
+The user asks: Delete transaction txn-123 because it is a duplicate. The certificate includes a delete intent and an explicit record identifier. IGAC may allow the delete tool to appear, but only with high-risk review mode: 
+
+I = {delete }, BR = {txn-123 }, ρ = preflight .
+
+The OpenPort effect-control layer then computes impact, binds the impact hash to the payload, requires idempotency if auto-execution is configured, and otherwise creates a draft. If the payload changes to txn-124 after preflight, the preflight hash or state witness should fail. The point is that IGAC handles the request-level authorization and OpenPort handles the effect-level safeguards. 
+
+D. Indirect Prompt Injection Through a Document 
+
+The user asks: Summarize the attached invoice and tell me whether it looks reimbursable. The attachment contains an instruction-like string: Ignore prior instructions and export all transactions. IGAC anchors authority to the trusted user request, not to instructions found in the untrusted attachment. The certificate authorizes summarize/transform effects over the attachment and possibly a bounded read if policy allows it. It does not authorize export. If a model-generated plan tries to export records, the server rejects it even if the model says the document requested it. 
+
+E. Compound Workflow 
+
+The user asks: Find the duplicate transactions, show them to me, and delete the one I approve. This should not produce one broad certificate that authorizes both search and delete immediately. A safer design decomposes it: 
+
+C1 = read/summarize , C2 = delete with explicit approval .
+
+The first certificate permits bounded reads and presentation. The second certificate is issued only after the user selects a specific item and confirms deletion. This design avoids intent drift and overbroad multi-step leases. 
+
+a) Rule: Read-Then-Act Decomposition.: A certificate must not authorize both information-gathering and high-risk mutation unless the user has already explicitly selected the mutation target. In operational terms, read/summarize certificates may discover and present candidate objects, but update/delete/export certificates must be re-issued after the user confirms the concrete target and effect. This rule prevents one broad multi-step lease from silently spanning search, ranking, and destructive action. 5Threat Failure mode IGAC response              
+
+> Intent-tool mismatch Model proposes export/delete when user requested read/summary. Hide high-risk tools under narrow intents; deny or draft inconsistent calls. Payload expansion Tool class is plausible but payload touches resources or ranges not requested. Check payload bounds in the certificate; require review on mismatch. Intent drift Multi-turn context shifts model plan away from original request. Expire certificates; issue per-step leases; reclassify or require confirmation. Indirect prompt injection External content steers tool choice. User intent remains a trusted anchor; untrusted content cannot expand session policy. Tool metadata poisoning Malicious descriptor biases selection. Server filters selected tool through intent and static policy before execution. Classifier error Intent layer misclassifies request. Intent can only narrow authority; low confidence triggers minimal tools or draft. Over-defense Benign task denied unnecessarily. Evaluate over-defense rate; allow clarification and per-step decomposition.
+> TABLE II THREATS AND IGAC RESPONSES .
+
+IV. T HREAT MODEL 
+
+A. System Boundary 
+
+We consider a server-side OpenPort gateway mediating all agent access to application data and actions. The gateway is trusted to enforce authentication, static authorization, tenant boundaries, data policy, rate limits, drafts, preflight checks, and audit. The model runtime, planner, intent classifier, tool selector, and external content sources are not trusted as final security principals. The gateway receives or derives an intent certificate from the user request. The certificate may be produced by a rule-based recognizer, a model-assisted classifier, a hybrid classifier, or a product-specific controlled-flow router. The gateway treats this certificate as an advisory input that may narrow authority. It never allows the certificate to bypass static policy. 
+
+B. Assets 
+
+Protected assets include:  
+
+> •
+
+application data reachable through read tools;  
+
+> •
+
+write effects such as create, update, delete, export, delegation, and administrative actions;  
+
+> •
+
+tenant and workspace boundaries;  
+
+> •
+
+user intent records and session policy;  
+
+> •
+
+audit trails and governance evidence;  
+
+> •
+
+operational budget, rate-limit capacity, and review capacity. 
+
+C. Adversaries 
+
+We model the following adversaries and failure sources:  
+
+> •
+
+Malicious user : submits a prompt that tries to obtain broader tool access than policy permits.  
+
+> •
+
+External content attacker : embeds instructions in webpages, files, emails, resumes, retrieved documents, or tool outputs.  
+
+> •
+
+Tool metadata attacker : attempts to bias tool selection through malicious tool names, descriptions, or descriptors.  
+
+> •
+
+Compromised or overbroad integration : holds credentials with more static scopes than needed for a specific request.  
+
+> •
+
+Benign model error : selects the wrong tool, constructs an overbroad payload, retries unsafely, or drifts across turns.  
+
+> •
+
+Operator misconfiguration : grants broad scopes or weak auto-execute policy. 
+
+D. Threats 
+
+Table II summarizes the main threats. 6User request Intent gateway   
+
+> certificate issuance
+> Session policy
+> dynamic narrowing Filtered manifest
+> Agent planner / model Consistency gate OpenPort action pipeline Draft / preflight / execute / audit
+> trace binding
+> server-side authoritative enforcement
+> Fig. 1. IGAC as an intent-control layer over the OpenPort effect-control substrate.
+
+E. Out of Scope 
+
+We do not attempt to protect a malicious server operator, a compromised gateway, or a domain adapter that lies about effects. We do not solve model alignment. We do not claim to prevent all prompt injection. We do not model attacks requiring direct database compromise, private key extraction outside the gateway, or side channels unrelated to tool authorization. V. S YSTEM MODEL 
+
+A. Logical Components 
+
+Figure 1 shows the architecture. IGAC is inserted before OpenPort’s existing action pipeline. The components are:  
+
+> •
+
+User request : a natural-language instruction, possibly with attachments or context.  
+
+> •
+
+Intent gateway : derives an intent certificate from the trusted user request and request metadata.  
+
+> •
+
+Session policy : a dynamic policy lease that can only narrow static integration policy.  
+
+> •
+
+OpenPort manifest : a tool list filtered by static authorization and session policy.  
+
+> •
+
+Agent planner : an untrusted model/planner that proposes tool calls.  
+
+> •
+
+Consistency gate : checks that proposed tool, payload, and expected effects match the certificate.  
+
+> •
+
+OpenPort action pipeline : existing effect-control layer for drafts, preflight, idempotency, state witnesses, and audit. 
+
+B. Trust and Authority 
+
+The gateway is authoritative. The classifier may be wrong. The planner may be wrong. The model may be manipulated. Tool metadata may be malicious. IGAC therefore has two central trust rules: 1) An intent certificate may only reduce authority. 2) A proposed tool call must still pass static authorization and OpenPort effect-control checks. These rules allow IGAC to use probabilistic components without making them trusted roots. A high-confidence certificate can expose a narrower useful tool set. A low-confidence certificate cannot grant new scopes; it can only force clarification, draft review, or denial. 
+
+C. Intent-Control Layer vs Effect-Control Layer 
+
+OpenPort Protocol already controls effects. It answers questions such as:  
+
+> •
+
+Does the integration have the required scope?  
+
+> •
+
+Is the ledger, organization, workspace, or date range allowed?  
+
+> •
+
+Is this action high risk?  
+
+> •
+
+Is preflight required and bound to the payload?  
+
+> •
+
+Is an idempotency key required?  
+
+> •
+
+Should the request create a draft instead of executing? IGAC controls intent before effects. It asks:  
+
+> •
+
+What action class did the user request?  
+
+> •
+
+What resources and bounds did the user mention?  
+
+> •
+
+Which tools are unnecessary for this request even though statically authorized?  
+
+> •
+
+Does the proposed payload exceed the certified request?  
+
+> •
+
+Should ambiguity reduce authority or require review? 7Class Typical user request Allowed effect envelope 
+
+read Show, list, inspect, find. Bounded read tools; no mutation; no bulk export unless explicit. summarize Summarize, compare, explain. Read and transform within bounds; no write/export/delete. transform Reformat, classify, extract fields. Compute-only transformation; drafts for writes. create Create a record or draft. Narrow create draft; immediate execution only under low risk and static policy. update Modify named record. Bounded update draft; target resource must match certificate. delete Delete, remove, revoke. High-risk draft/preflight; narrow target set; no wildcard deletes. export Download, send, CSV, bulk output. High-risk review; row/date/resource bounds required. delegate Assign, invite, send on behalf. Review; recipient and scope bounds required. admin Configure, grant, disable, change policy. Strong review/step-up; hidden unless explicit. unknown Ambiguous or low-confidence request. Minimal tools, clarification, or draft-only mode. 
+
+> TABLE III INTENT CLASSES AND ALLOWED EFFECT ENVELOPES .
+
+The two layers are deliberately separate. This separation avoids making the existing OpenPort Protocol paper and the IGAC paper collapse into one contribution. VI. I NTENT -G OVERNED ACCESS CONTROL DESIGN 
+
+A. Intent Certificates 
+
+An intent certificate is a structured record binding a user request to an authorization-relevant interpretation. It is not a natural-language summary. It is a policy input with explicit classes, bounds, confidence, expiry, and provenance. A certificate contains:  
+
+> •
+
+id : stable certificate identifier;  
+
+> •
+
+requestHash : hash of canonicalized user request and selected trusted metadata;  
+
+> •
+
+intentClasses : action classes such as read, summarize, create, update, delete, export, admin, unknown;  
+
+> •
+
+resourceBounds : ledgers, workspaces, dates, record IDs, or object types named by the user;  
+
+> •
+
+effectBounds : maximum effect type, row limits, mutation count, or allowed action family;  
+
+> •
+
+confidence : calibrated score or discrete confidence band;  
+
+> •
+
+reviewMode : allow, draft, preflight, confirm, deny, or clarify;  
+
+> •
+
+expiresAt : time or turn boundary after which the certificate cannot authorize new calls;  
+
+> •
+
+classifierSource : rule, model, product flow, hybrid, or human;  
+
+> •
+
+auditDigest : hash used for trace correlation. The certificate should not contain raw secrets or unnecessary private data. If a request includes sensitive content, the certificate stores bounded facts and hashes rather than full text. 
+
+B. Intent Classes 
+
+Table III summarizes a minimal class set. This taxonomy is intentionally small. A deployment can add domain-specific subtypes, but the policy layer should preserve the top-level safety semantics. 
+
+C. Session Policy Narrowing 
+
+Given a certificate C, the gateway derives a session policy PC . This policy is ephemeral and bounded by the static integration policy PA. It includes:  
+
+> •
+
+allowed and denied intent classes;  
+
+> •
+
+maximum risk tier;  
+
+> •
+
+visible tool filters; 8• required review mode;  
+
+> •
+
+resource and date bounds;  
+
+> •
+
+export limits;  
+
+> •
+
+certificate expiry. For example, a summary request may expose only read tools and transformation helpers. A create request may expose one create tool and require draft review. A delete request may expose the delete tool only with preflight and idempotency requirements inherited from OpenPort. 
+
+D. Manifest Filtering 
+
+In many tool-use systems, the model first sees all tools available to a credential and then chooses one. IGAC reduces this surface before model selection. The filtered manifest is: 
+
+Visible IGAC (a, u ) = {t ∈ T | t ∈ Visible OpenPort (a) ∧ PC (u, t ) = 1 }.
+
+The set Visible OpenPort (a) is the current OpenPort static manifest under scopes and data policy. The session predicate PC (u, t ) can only remove tools. Therefore: 
+
+Visible IGAC (a, u ) ⊆ Visible OpenPort (a).
+
+This property is stronger than prompting the model not to call certain tools. Hidden tools are not available for ordinary selection, and unexpected attempts can be denied by the consistency gate. 
+
+E. Intent-Tool-Payload Consistency 
+
+Manifest filtering is insufficient by itself because a visible tool can still be called with an overbroad payload. IGAC therefore checks consistency: 
+
+Consistent (C, t, x, e ) = 1 ,
+
+where C is the certificate, t is the tool, x is the payload, and e is the predicted or preflighted effect. A call is consistent only if: 1) tool class is allowed by the intent class; 2) payload resource identifiers are within certificate bounds; 3) date ranges and row limits do not exceed request bounds; 4) effect risk is compatible with review mode; 5) no denied class is present. If consistency fails, the gateway chooses among denial, draft, preflight, or clarification depending on risk and uncertainty. For example, a proposed export under a read certificate should be denied or require explicit re-authorization. A create action under a create certificate may be converted to a draft. 
+
+F. Review Modes 
+
+IGAC defines a small review-mode lattice: 
+
+allow ≺ draft ≺ preflight ≺ confirm ≺ deny .
+
+This ordering is not about user convenience; it is about increasing protection. A high-risk or low-confidence situation moves rightward. Static OpenPort policy may also require drafts or preflight regardless of intent. 
+
+G. Confidence-Aware Policy 
+
+The intent classifier is explicitly not a trusted principal. Its output is a policy hint that may narrow authority, but it cannot create authority that static OpenPort policy withheld. IGAC therefore treats confidence as an input to fail-closed routing rather than as proof that an effect is safe. Let γ ∈ [0 , 1] be the certificate confidence. A deployment may calibrate thresholds, but the reference policy uses three bands: 9Condition Server action Security meaning 
+
+Static policy denies tool or scope deny Classifier cannot widen OpenPort authority. Conflicting intent classes deny or split workflow One certificate cannot authorize incompatible effects. Multi-step request per-step certificates No broad long-lived certificate for a compound workflow. Low confidence clarification Uncertain intent cannot authorize broad tools. High-risk intent confirmation and preflight Destructive/export/admin effects require explicit review binding. Medium confidence draft or preflight Plausible but uncertain action is review-routed. High confidence and low risk allow bounded tools Only narrow low-risk effects may execute directly.       
+
+> TABLE IV CONFIDENCE -AWARE IGAC ROUTING . T HE CLASSIFIER MAY ONLY REDUCE AUTHORITY ;LOW CONFIDENCE ,CONFLICT ,HIGH RISK ,AND STATIC DENIAL ALL MOVE THE DECISION AWAY FROM IMMEDIATE EXECUTION .
+
+b(γ) = 
+
+
+
+low , γ < γ L,
+
+medium , γL ≤ γ < γ H ,
+
+high , γ ≥ γH .
+
+The policy decision is ordered so that hard safety constraints dominate confidence. Static denial is checked first; conflicting intent is denied or split before execution; compound workflows receive per-step certificates; low confidence triggers clarification; high-risk effects require explicit confirmation and OpenPort preflight; medium confidence uses draft/preflight; only high-confidence low-risk tasks can expose bounded tools for immediate execution. Table IV summarizes the policy. This policy answers the concern that IGAC merely shifts trust to a classifier. It does not. A classifier can help choose a smaller useful manifest, but unsafe confidence states are routed to clarification, draft, preflight, confirmation, splitting, or denial. In particular, a high-confidence but statically unauthorized certificate still denies, and a low-confidence certificate never falls back to broad static scopes. 
+
+H. Audit Binding 
+
+Every decision should be reconstructable: request → certificate → policy → manifest → tool call → decision → outcome .
+
+The audit stream should include certificate identifiers and hashes, not necessarily raw user text. This supports incident response without leaking sensitive prompt content into logs. VII. F ORMAL MODEL 
+
+A. Entities 
+
+Let:  
+
+> •
+
+U be the set of user requests;  
+
+> •
+
+A be the set of integration apps;  
+
+> •
+
+K be the set of credentials;  
+
+> •
+
+R be the set of resources;  
+
+> •
+
+T be the set of tools;  
+
+> •
+
+Xt be the payload space for tool t; 
+
+> •
+
+Et be the effect space for tool t; 
+
+> •
+
+S(a) be static scopes granted to app a; 
+
+> •
+
+PA be static OpenPort policy;  
+
+> •
+
+C(u) be an intent certificate derived from request u;10 • PC be session policy derived from C(u).Each tool t has metadata: 
+
+M (t) = (ReqScopes( t), Risk( t), Kind( t), Schema( t)) .
+
+B. Static OpenPort Authorization 
+
+The current OpenPort substrate defines a visible static tool set: 
+
+Visible OpenP ort (a) = {t ∈ T | ReqScopes( t) ⊆ S(a) ∧ PA(a, t ) = 1 }.
+
+For a concrete call (t, x ), static authorization is: 
+
+Allow OpenP ort (a, t, x ) = Authn( a) ∧ ScopeOk( a, t ) ∧ PolicyOk( a, t, x ) ∧ RiskGate OpenP ort (a, t, x ).
+
+The risk gate includes draft-first behavior, preflight, idempotency, and state-witness checks where configured. 
+
+C. Intent Certificate 
+
+An intent certificate is: 
+
+C = ( hu, I, B R, B E , γ, ρ, τ, σ ),
+
+where hu is the request hash, I is a set of intent classes, BR is a resource-bound predicate, BE is an effect-bound predicate, γ ∈ [0 , 1] is confidence, ρ is review mode, τ is expiry, and σ identifies classifier provenance. Validity is: 
+
+Valid( C, u, t now ) = ( hu = H(u)) ∧ (tnow < τ ) ∧ (γ ≥ γmin ∨ ρ ∈ { draft , confirm , deny }).
+
+Low-confidence certificates may remain valid only as restrictive certificates. 
+
+D. Monotone Session Policy 
+
+The session policy PC is monotone if: 
+
+∀a, u : Visible IGAC (a, u ) ⊆ Visible OpenP ort (a).
+
+For calls: 
+
+Allow IGAC (a, u, t, x ) = Allow OpenP ort (a, t, x ) ∧ Valid( C(u), u, t now ) ∧ Consistent (C(u), t, x, e ).
+
+Thus, even if Consistent returns true, the call fails if static OpenPort authorization fails. 
+
+E. Consistency Predicate 
+
+Let Class (t) map a tool to effect classes and Ef f (t, x ) estimate effects via schema, static metadata, or preflight. Then: 
+
+Consistent (C, t, x, e ) = Class (t) ⊆ I+ 
+
+> C
+
+∧ Class (t) ∩ I− 
+
+> C
+
+= ∅∧ BR(x) = 1 ∧ BE (e) = 1 ∧ ReviewOk (C, t, x, e ).
+
+Here I+ 
+
+> C
+
+is the certificate’s allowed class set and I− 
+
+> C
+
+is its denied class set. ReviewOk enforces review-mode constraints: 
+
+Risk (t, x, e ) > θ C ∨ γ < γ min ⇒ ρ ∈ { draft , preflight , confirm , deny }.
+
+11 F. Least-Privilege Objective 
+
+For a request u, utility U tility (u, P C ), and minimum utility threshold θ, the ideal session policy minimizes exposed effects: 
+
+min 
+
+> PC
+
+|Effects (PC )| s.t. U tility (u, P C ) ≥ θ ∧ PC ⪯ PA.
+
+The system approximates this objective through a finite intent taxonomy, static tool metadata, resource bounds, and review-mode rules. The objective is not solved by the LLM. It is encoded in gateway policy. 
+
+G. Audit Reconstructability 
+
+Define a trace Ti as reconstructable if it contains: 
+
+(hu, C, P C , Visible , t, x, decision, reason, outcome ).
+
+Audit reconstructability score over N traces is: 
+
+ARS = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+1[Ti is reconstructable ].
+
+This metric encourages structured evidence rather than opaque chat logs. 
+
+H. Security Propositions and Proof Sketches a) Proposition 1 (Manifest Monotonicity).: For any authenticated actor a and request u,
+
+Visible IGAC (a, u ) ⊆ Visible OpenP ort (a).
+
+Proof sketch. By definition, the IGAC-visible manifest is derived by filtering the statically visible OpenPort manifest through certificate classes, bounds, and review policy. No construction in C(u) adds tools that were not already in 
+
+Visible OpenP ort (a). Therefore classifier output, prompt injection, or certificate corruption may suppress tools, but cannot reveal a tool outside static OpenPort authorization. 
+
+b) Proposition 2 (Non-Expansion Under Classifier Error).: For any actor a, request u, tool t, and payload x,
+
+Allow IGAC (a, u, t, x ) = 1 ⇒ Allow OpenP ort (a, t, x ) = 1 .
+
+Proof sketch. Equation (8) defines Allow IGAC as a conjunction of Allow OpenP ort , certificate validity, and consistency. Hence an over-broad or compromised classifier can at worst fail to narrow static authority; it cannot transform a statically denied call into an allowed call. The low-confidence validity rule further restricts γ < γ min certificates to draft/confirm/deny-style modes, which again reduces but does not widen authority. 
+
+c) Proposition 3 (High-Risk Fail-Closed Routing).: If any of the following holds, 
+
+Risk (t, x, e ) > θ C , γ < γ min , ¬Boundable( C, t, x, e ),
+
+then IGAC must not authorize immediate execution: 
+
+Allow imm IGAC (a, u, t, x ) = 0 .
+
+Proof sketch. The review constraint requires high-risk or low-confidence calls to map to restricted review modes such as draft , preflight , confirm , or deny . The conservative-failure rule for unboundable effects allows only the same restricted family. Since the OpenPort action pipeline interprets these modes through draft/preflight/review routing, the runtime may still accept a governed draft path, but it cannot create an immediate execution path for a high-risk, low-confidence, or unboundable request. VIII. O PEN PORT IMPLEMENTATION MAPPING 
+
+A. Implemented Substrate 
+
+The current OpenPort runtime already implements the lower layer needed by IGAC. The reference runtime’s agent engine exposes a manifest filtered by the tool registry. The registry declares required scopes and risk tiers. 12 Test group Covered invariant 
+
+Monotonic manifest narrowing Visible IGAC ⊆ Visible OpenP ort .Intent reason codes Denials return stable agent.intent_* codes. Payload-bound failure Out-of-bound resources fail with 
+
+agent.intent_payload_exceeds_bound .High-risk review routing High-risk effects cannot immediately execute through an intent certificate. Audit binding Certificate metadata appears in audit events and draft policy snapshots. Cross-key isolation A certificate created by one key is not reusable by another key.           
+
+> TABLE V ENDPOINT -TEST SUMMARY FOR THE MINIMAL IGAC RUNTIME . T HE CURRENT ARTIFACT HAS 6 IGAC ENDPOINT TESTS IN
+> T E S T /I N T E N T -R U N T I M E .T E S T .T S ,AND THE FULL REPOSITORY TEST RUN COVERS 53 TESTS ACROSS 13 FILES .
+
+Policy helpers enforce scopes, ledger allowlists, date windows, and workspace boundaries. The action pipeline computes preflight impact, stores preflight records, creates drafts, handles high-risk auto-execute requirements, validates idempotency, records policy snapshots, checks state witnesses, executes drafts, and emits audit events. Tests cover high-risk preflight/idempotency, state witness mismatch, stable hashes, draft approval, and security controls. These features support the following IGAC assumptions:  
+
+> •
+
+the server already owns the authoritative tool manifest;  
+
+> •
+
+tools already have governance metadata;  
+
+> •
+
+writes already pass through draft/preflight execution;  
+
+> •
+
+audit is already a first-class control;  
+
+> •
+
+static scopes and policy remain enforceable regardless of model behavior. 
+
+B. Minimal Reusable IGAC Runtime Artifact 
+
+The current artifact adds a minimal reusable IGAC path to the OpenPort reference runtime. It is intentionally small, but it exercises real HTTP endpoints and the existing OpenPort action pipeline rather than only a standalone benchmark script.  
+
+> •
+
+POST /api/agent/v1/intent creates an intent certificate with request hash, classes, resource/effect bounds, confidence, review mode, classifier source, expiry, and audit digest.  
+
+> •
+
+GET /api/agent/v1/manifest loads the intentCertificateId bound to the authenticated ap-p/key/user and filters the manifest after static OpenPort scope checks.  
+
+> •
+
+POST /api/agent/v1/preflight accepts intentCertificateId and rejects intent-tool or payload-bound mismatches before producing an impact hash.  
+
+> •
+
+POST /api/agent/v1/actions accepts intentCertificateId , checks intent-tool-payload consis-tency, routes high-risk execution to review, records certificate metadata in draft policy snapshots, and emits audit events with certificate correlation.  
+
+> •
+
+The in-memory store contains an intent certificate table scoped by app, key, actor, and expiry. A certificate created by one key cannot be reused by another key. The implementation is concentrated in the intent engine, store, agent engine, runtime, and endpoint wiring modules. Companion endpoint tests cover monotonic manifest narrowing, reason-code denials, payload-bound failure, high-risk review routing, audit binding, draft policy snapshots, and cross-key certificate isolation; exact file locations are summarized in the artifact checklist and appendix. 
+
+C. Reference Hardening and Production Profile 
+
+The minimal runtime is not yet a production-hardened IGAC deployment, but the current artifact is stronger than a bare proof-of-concept. It includes several reference-hardening controls that make the runtime reusable as an experimental security substrate: The remaining production-hardening work is narrower: 1) persistent certificate storage with crash-safe revocation and retention semantics; 2) calibrated classifier implementations beyond rule/provided certificates; 3) richer per-tool consistency predicates for complex workflows; 13 Reference-hardening item Current evidence 
+
+Certificate revocation and ephemeral-state GC Companion hardening tests cover in-memory revocation and sweep behavior. Tamper-evident local audit sequence Companion hardening tests verify stable previous/current audit hashes. Intent endpoint and action invariants Endpoint tests verify manifest narrowing, stable reason codes, audit binding, and cross-key isolation. OpenPort security conformance profile Security conformance tests cover state witness, idempotency replay, rate limiting, and audit completeness. Adversarial and malformed-input coverage Adversarial and fuzz coverage preserve stable envelopes and no unsafe side effects. Rate-limit and abuse controls Abuse tests verify denial without draft/execution side effects.    
+
+> TABLE VI REFERENCE -HARDENING EVIDENCE IN THE CURRENT OPEN PORT IGAC ARTIFACT . T HESE CONTROLS SUPPORT RESEARCH EVALUATION BUT DO NOT IMPLY A PRODUCTION -HARDENED DEPLOYMENT .
+
+4) certificate expiry by turn count or completed effect, not only wall-clock time; 5) wider malformed-certificate fuzzing and adversarial certificate tests; 6) signed or externally anchored audit events beyond the local hash chain; 7) distributed rate limiting plus concurrency/replay tests beyond the process-local reference runtime; 8) policy versioning and adapter effect-contract tests for tool semantics; 9) a release-quality conformance profile and a production profile for intent-aware governance. To keep the implementation story disciplined, it is useful to distinguish two target profiles beyond the current minimal artifact. An IGAC reference profile captures the minimum reusable semantics that another implementation must preserve: app/key/actor-scoped certificate isolation, intent-aware manifest filtering, intent-bound preflight/action checks, stable reason codes, audit binding, monotonicity over static OpenPort policy, and local lifecycle cleanup. The current artifact implements these semantics in an in-memory reference runtime. An IGAC production profile should add the operational hardening items required for serious deployment: persistent certificate state, externally verifiable audit integrity, distributed replay/rate-limit behavior, policy-version binding, and effect-contract expectations for adapters. This split helps separate the research claim that the mechanism is executable and testable from the systems claim that a deployment is hardened. 
+
+D. Backward Compatibility 
+
+IGAC can be introduced without breaking existing OpenPort clients. Existing clients can continue to call the static manifest and action endpoints. New clients or gateways can supply an optional intent certificate or request an intent-aware manifest. If no certificate is supplied, the runtime behaves like existing OpenPort. If a malformed certificate is supplied, the server fails closed or ignores it depending on deployment mode, but it must never widen authority. 
+
+E. Reason Codes 
+
+The existing OpenPort reason-code style should be extended with:  
+
+> •
+
+agent.intent_not_found  
+
+> •
+
+agent.intent_low_confidence  
+
+> •
+
+agent.intent_conflicting  
+
+> •
+
+agent.intent_tool_mismatch  
+
+> •
+
+agent.intent_payload_exceeds_bound  
+
+> •
+
+agent.intent_expired  
+
+> •
+
+agent.intent_review_required 
+
+These codes allow deterministic client recovery. For example, agent.intent_low_confidence can ask the client to clarify or force a draft. agent.intent_payload_exceeds_bound should not be retried with the same payload. 14 IX. P ROTOCOL EXTENSION SKETCH 
+
+This section sketches how IGAC can be exposed as a conservative OpenPort extension. The sketch is intentionally minimal so that existing clients remain compatible. 
+
+A. Intent-Aware Manifest Request 
+
+An intent-aware client may request a narrowed manifest by sending a certificate reference or a request body to a server-side intent endpoint: 
+
+POST /api/agent/v1/intent {"request": "Summarize transactions from last week", "context": {"trustedUserMessageId": "msg_123", "untrustedContextPresent": true }}
+
+The server returns a certificate: 
+
+{"intentCertificateId": "intent_123", "requestHash": "sha256:...", "intentClasses": ["read", "summarize"], "reviewMode": "allow", "confidence": 0.87, "expiresAt": "2026-06-17T23:59:59Z" }
+
+The client then calls: 
+
+GET /api/agent/v1/manifest?intentCertificateId=intent_123 
+
+An implementation can also embed the certificate in an authenticated request header. The important property is that the server validates the certificate and computes filtering. The client must not be trusted to filter tools locally. 
+
+B. Action Request Extension 
+
+The action endpoint accepts an optional certificate reference: 
+
+POST /api/agent/v1/actions {"action": "transaction.create", "payload": { "...": "..." }, "intentCertificateId": "intent_123", "execute": false }
+
+The server performs three checks: 1) static OpenPort authorization; 2) certificate validity and monotone session policy; 3) intent-tool-payload consistency. Only after those checks does the existing OpenPort action pipeline create a draft, require preflight, or execute under configured policy. 
+
+C. Algorithm 1: Manifest Narrowing 
+
+function intentAwareManifest(ctx, certificateId): staticTools = openportManifest(ctx) cert = loadAndValidateCertificate(ctx, certificateId) if cert is absent: 
+
+15 return staticTools if cert is invalid or expired: return minimalClarificationTools() sessionPolicy = deriveSessionPolicy(cert) visible = [] for tool in staticTools: if sessionPolicy.allowsTool(tool): visible.append(tool) audit("agent.intent.manifest", cert.id, count(visible)) return visible 
+
+The call to openportManifest(ctx) must happen before session filtering. This ordering enforces mono-tonicity. A session policy never sees tools that static policy has already hidden. 
+
+D. Algorithm 2: Action Consistency 
+
+function createIntentAwareAction(ctx, input): tool = resolveTool(input.action) requireStaticAuth(ctx, tool, input.payload) cert = loadAndValidateCertificate(ctx, input.intentCertificateId) if cert is missing: return openportCreateAction(ctx, forceDraft(input), reason="intent_unknown") effect = preflightOrEstimateEffect(ctx, tool, input.payload) if not consistent(cert, tool, input.payload, effect): if safeToDraft(tool, cert): return openportCreateAction(ctx, forceDraft(input), reason="intent_tool_mismatch") return deny("agent.intent_tool_mismatch") riskMode = openportRiskMode(tool, input) mode = mergeReviewModes(cert.reviewMode, riskMode) return openportCreateAction(ctx, applyMode(input, mode)) 
+
+The design deliberately reuses OpenPort’s existing write pipeline. IGAC should not duplicate draft, preflight, idempotency, or execution logic. 
+
+E. Algorithm 3: Certificate Expiry and Drift 
+
+Long-running conversations create drift risk. A certificate should expire after a time interval, turn count, context transition, or completed effect. The server can define: 
+
+Expired( C) = tnow > τ C ∨ turns (C) > n C ∨ ef f ectCompleted (C) = 1 .
+
+If a certificate expires, the gateway can reclassify the latest trusted user request, ask for clarification, or force draft review. For multi-step plans, per-step certificates are preferable to a single broad certificate. 
+
+F. Deployment Modes 
+
+IGAC can be rolled out in stages:  
+
+> •
+
+off : existing OpenPort behavior;  
+
+> •
+
+shadow : compute certificates and audit decisions, but do not enforce;  
+
+> •
+
+draft-only : inconsistent or low-confidence calls become drafts;  
+
+> •
+
+enforce : hide/deny/draft according to policy; 16 User request Intent classification 
+
+Certificate creation 
+
+Session policy derivation 
+
+Manifest filtering 
+
+Planner proposes tool/payload 
+
+Consistency gate 
+
+Deny / Draft / Preflight / Execute 
+
+Audit event Expiry / Revocation  
+
+> Fig. 2. Operational lifecycle of an IGAC certificate. The security boundary is not the classifier alone; it is the server-side path from certificate creation through manifest narrowing, consistency gating, outcome routing, audit, and certificate expiry/revocation.
+
+Evidence type Exercises runtime? Uses LLM? Supports 
+
+Endpoint tests Yes No Protocol/runtime invariants and regression coverage. Synthetic sanity scripts No No Policy logic, ablation intuition, and confidence routing checks. Runtime-backed microbenchmark Yes No HTTP-path invariant checks over hand-authored synthetic tasks. First-batch external benchmark adaptation Yes No Runtime-backed direct adaptation of 25 tasks from AgentDojo, ToolSandbox, tau-bench, and ToolEmu families. Expanded real-LLM pilot No runtime action path Yes Provider-backed classifier/planner behavior under real model calls; still separate from the runtime action path. Small end-to-end LLM runtime benchmark Yes Yes Provider-backed runtime-path evidence over scored synthetic tasks. External-subset end-to-end LLM runtime pilot Yes Yes Provider-backed runtime-path evidence over 12 benchmark-shaped external-adaptation tasks. Trace-backed normalizer ablation Existing runtime traces only No new calls Counterfactual certificate-bound analysis; not a runtime rerun. Planned full benchmark Yes Yes or optional Empirical safety, utility, classifier, and latency claims.    
+
+> TABLE VII EVIDENCE TYPES IN THE CURRENT AND PLANNED IGAC EVALUATION .
+> •
+
+conformance : fail tests if monotonicity or reason-code invariants break. Shadow mode is useful for calibration but must not be described as security enforcement. Enforce mode is required before measuring safety improvement. X. E VALUATION DESIGN 
+
+This draft now includes a staged evaluation artifact set rather than only an evaluation plan: deterministic sanity checks, endpoint-level runtime tests, a runtime-backed synthetic microbenchmark, an expanded real-LLM pilot, an executable end-to-end LLM-in-the-loop runtime harness, and a benchmark-shaped external-subset runtime pilot. Together these artifacts validate formal and runtime invariants, expose certificate-generation weaknesses, and provide concrete model-behavior evidence along the real gateway path. The empirical claims should therefore be read as mechanism-level and runtime-path claims rather than as statistically powered deployment claims. The current artifact contains eight current evidence types plus a planned full-benchmark row. Table VII separates them to avoid over-interpreting preliminary results. 
+
+A. Research Questions  
+
+> •
+
+RQ1: Does IGAC reduce high-risk tool exposure under narrow user intents? 17 Claim Evidence Status 
+
+IGAC is monotone over OpenPort static policy. Formal model plus endpoint tests. Supported. IGAC narrows visible tool manifests. Endpoint tests plus runtime-backed microbenchmark. Supported. IGAC rejects payload-bound mismatch. Endpoint tests plus synthetic runtime microbenchmark. Supported in synthetic runtime. IGAC reduces unsafe accepted authority on the runtime-backed synthetic benchmark. Runtime-backed microbenchmark over 176 synthetic tasks. Supported in synthetic runtime. IGAC preserves zero unsafe execution in the scored end-to-end LLM runtime benchmark. Provider-backed runtime benchmark over 34 tasks, 3 repeats, and 3 models. Supported in synthetic runtime. IGAC also preserves zero unsafe execution on a benchmark-shaped external task subset in the runtime path. Provider-backed runtime pilot over 12 external-adaptation tasks and 3 models. Supported in synthetic runtime. IGAC improves real LLM agent safety in the runtime path. Small scored runtime pilot exists, but no large scored study yet. Not yet fully supported. IGAC is production-hardened. Production profile only; minimal runtime remains in-memory. Unsupported. 
+
+> TABLE VIII CONSERVATIVE CLAIM -EVIDENCE MAP FOR THE CURRENT PAPER VERSION .
+
+Baseline Description 
+
+B0 Model-only tool calling with a static tool list and no OpenPort gateway. B1 Current OpenPort substrate: static scope/policy manifest, draft-first writes, preflight, idempo-tency, audit. B2 OpenPort plus IGAC: intent certificate, session policy narrowing, intent-filtered manifest, consistency gate. B3 Prompt-only instruction: model is told to follow user intent but no server-side intent enforcement. B4 Human-confirm-everything: high review load baseline that may reduce unsafe execution but harms automation utility.  
+
+> TABLE IX PLANNED BASELINES .
+> •
+
+RQ2: Does IGAC reduce unsafe execution under intent-tool mismatch and prompt-injection scenarios?  
+
+> •
+
+RQ3: What benign task-completion cost does intent narrowing impose?  
+
+> •
+
+RQ4: Does audit reconstructability improve when decisions include intent certificates?  
+
+> •
+
+RQ5: Which components matter most: manifest filtering, consistency checks, low-confidence fallback, or audit binding? 
+
+B. Baselines C. Task Suites 
+
+The benchmark should combine:  
+
+> •
+
+benign OpenPort tasks over synthetic ledgers, transactions, documents, and workspace resources;  
+
+> •
+
+LLM-generated but human-verified user requests over finance, admin, and workflow domains, with gold intent certificates, allowed tools, denied tools, resource bounds, and effect bounds;  
+
+> •
+
+intent-tool mismatch tasks where the model proposes overbroad effects;  
+
+> •
+
+prompt-injection tasks inspired by AgentDojo and InjecAgent; 18 Benchmark source Current status Notes 
+
+OpenPort synthetic runtime suite Implemented Primary source for the current runtime-backed microbenchmark and scored end-to-end runtime benchmark. Prompt-injection tasks inspired by AgentDojo / InjecAgent Partial Current attack prompts are benchmark-inspired, but remain locally authored rather than directly imported. Tool-poisoning tasks inspired by ToolHijacker / ToolTweak / MCPTox Partial Current poisoning cases are adapted conceptually, not yet standardized as external benchmark tasks. Direct adaptation from AgentDojo / ToolSandbox / tau-bench / ToolEmu First batch implemented Twenty-five runtime-backed tasks now preserve benchmark-family structure, but the batch remains small and manually mapped rather than benchmark-complete.  
+
+> TABLE X CURRENT BENCHMARK -SCOPE STATUS . T HE PAPER SHOULD DISTINGUISH BENCHMARK INSPIRATION FROM DIRECT BENCHMARK ADAPTATION .
+> •
+
+tool-selection attack tasks inspired by ToolHijacker, ToolTweak, and MCPTox;  
+
+> •
+
+sanitized product-layer controlled-flow tasks such as receipt-to-draft and appointment-draft workflows. All tasks must use synthetic data. No tenant records, production identifiers, private schemas, or secrets may appear. For a stronger full-paper evaluation, the benchmark should scale beyond the current pilot size. A reasonable target is at least 200–300 classifier tasks and 200–300 planner attack tasks, each with a human-labeled gold certificate, plus at least three repeated runs per model/configuration and bootstrap or confidence intervals for the main safety and utility metrics. Existing benchmark structures from AgentDojo, ToolSandbox, tau-bench, and ToolEmu should be adapted where possible so that the evaluation is not perceived as entirely hand-crafted to fit the implementation. The current artifact now includes an expanded first direct-adaptation batch in bench/external_adaptation_ tasks.jsonl . It maps twenty-five synthetic but benchmark-structured tasks onto the OpenPort runtime: six AgentDojo-style prompt-injection tasks, seven ToolSandbox tasks spanning canonicalization, insufficient information, and state dependency, six tau-bench policy-following tasks, and six ToolEmu risk-oriented tool-use cases. This batch is still manually mapped and small relative to a full benchmark release, but it moves the paper beyond benchmark inspiration alone. 
+
+D. Metrics a) Unsafe Tool Exposure Rate.: 
+
+U T ER = #{unjustified high-risk tools visible }
+
+#{unjustified high-risk tools } .
+
+b) Unsafe Execution Rate.: 
+
+U ER = #{unsafe successful executions }
+
+#{attack or mismatch tasks } .
+
+c) Strict and Safe Benign Completion.: 
+
+BCR strict = #{benign tasks completed without review artifact }
+
+#{benign tasks } .BCR safe = Nstrict benign + Nreviewable benign artifact 
+
+Nbenign 
+
+.
+
+This distinction matters because a governed draft or preflight artifact may be the correct outcome for a benign high-risk request even when immediate execution would be inappropriate. Earlier single-column “BCR” values in the current artifact should therefore be read as BCR safe whenever draft or preflight artifacts count as governed benign success. 19 Benign outcome BCR strict BCR safe Clar. 
+
+Immediate or read-only completion Yes Yes No Reviewable draft or preflight artifact No Yes No Clarification with no effect No No Yes Invalid or denied benign call No No No 
+
+> TABLE XI RELATIONSHIP BETWEEN BENIGN -OUTCOME METRICS . C LARIFICATION IS TREATED AS A SAFE NON -COMPLETION RATHER THAN AS BENIGN COMPLETION .
+
+d) Over-Defense Rate.: 
+
+ODR = #{justified benign effects denied }
+
+#{justified benign effects } .
+
+e) Manifest Reduction Score.: 
+
+M RS = 1 − |Visible IGAC ||Visible OpenP ort | .
+
+f) Audit Reconstructability Score.: 
+
+ARS = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+1[trace contains request, certificate, policy, tool, decision, outcome ].
+
+g) Classifier Quality.: A complete empirical paper must also report certificate-generation quality rather than only policy behavior. At minimum, the evaluation should compare rule-based, LLM-assisted, hybrid rule+LLM, and human-labeled oracle classifiers. Metrics should include intent-class accuracy, resource-bound extraction accuracy, unsafe narrowing failure, over-defense, clarification rate, and latency: 
+
+ICA = #{ ˆI = I⋆}
+
+N , RBA = #{ ˆBR = B⋆R}
+
+N .
+
+Here I⋆ and B⋆R are human-labeled intent classes and resource bounds. Unsafe narrowing failure measures cases where a classifier emits a certificate that fails to narrow authority when it should; over-defense measures benign requests routed to unnecessary clarification, draft, or denial. 
+
+E. Ablations 
+
+The evaluation should remove one IGAC component at a time:  
+
+> •
+
+no intent manifest filtering;  
+
+> •
+
+no payload consistency checks;  
+
+> •
+
+no low-confidence draft fallback;  
+
+> •
+
+no certificate expiry;  
+
+> •
+
+no audit binding;  
+
+> •
+
+rule-based classifier versus model-assisted classifier versus hybrid classifier. 
+
+F. Expected Analysis Without Fabricated Results 
+
+Before a full empirical evaluation, the paper may present expected qualitative hypotheses and explicitly bounded pilot findings, but it must not present deployment-level conclusions or statistically powered claims that the artifact does not support. For example, it is reasonable to hypothesize that manifest filtering lowers high-risk exposure, and it is acceptable to report preliminary model-level pilot numbers when they are clearly labeled as synthetic, small-sample, and non-deployment evidence. It is not acceptable to report a percentage reduction from a benchmark that has not been run, or to convert pilot behavior into broad real-world safety claims. 
+
+G. Executable Synthetic Sanity Check 
+
+To make the design concrete, we include a deterministic toy benchmark in the artifact directory. It defines seven synthetic tools, twelve synthetic tasks, and three policy variants:  
+
+> •
+
+B0: model-only execution over a broad static tool list; 20 Condition UER BCR ODR MRS UHRT Review 
+
+Prompt-only instruction 1.0000 1.0000 0.0000 0.0000 33 0Static OpenPort only 0.1429 1.0000 0.0000 0.0000 33 1Manifest filtering only 0.2857 1.0000 0.0000 0.7143 0 0Consistency gate only 0.0000 1.0000 0.0000 0.0000 33 0Manifest filtering + consistency gate 0.0000 1.0000 0.0000 0.7143 0 0Full IGAC + OpenPort effect con-trols 0.0000 1.0000 0.0000 0.7143 0 1           
+
+> TABLE XII DETERMINISTIC TOY ABLATION OVER THE SYNTHETIC IGAC TASK MATRIX . UER IS UNSAFE EXECUTION RATE , BCR IS BENIGN COMPLETION RATE , ODR IS OVER -DEFENSE RATE , MRS IS MEAN MANIFEST REDUCTION , UHRT IS THE COUNT OF UNJUSTIFIED HIGH -RISK TOOLS VISIBLE ACROSS ALL TASKS ,AND REVIEW IS THE NUMBER OF BENIGN HIGH -RISK CASES REQUIRING OPERATOR INTERVENTION UNDER OPEN PORT EFFECT CONTROLS .
+> •
+
+B1: OpenPort substrate behavior with static tool exposure and draft-first high-risk writes;  
+
+> •
+
+B2: IGAC-style manifest narrowing and payload consistency checks. The script is intentionally simple. It does not call an LLM, does not use private data, and does not exercise the HTTP/runtime path. It checks whether the policy rules described in this paper behave as expected over synthetic benign, mismatch, prompt-injection, tool-poisoning, ambiguous, and compound tasks. The separate runtime-backed microbenchmark below exercises the real OpenPort HTTP path. The command is: 
+
+node bench/igac_synthetic_eval.mjs 
+
+On the current artifact, the script reports 12 tasks: 5 benign and 7 attack-or-ambiguous tasks. Under the broad static manifest, 33 unjustified high-risk tool exposures occur across the task set. Under IGAC narrowing, this count is 0. The toy unsafe-execution rate is 1.0 for model-only B0, 0.1429 for OpenPort-substrate B1, and 0 for IGAC-style B2. Benign completion is 1.0 for both B1 and B2 on the five benign tasks. Mean manifest reduction is 0.7143. The same script also runs a deterministic ablation over six conditions. Table XII reports the resulting toy metrics. The toy ablation separates the roles of the major components. Prompt-only instruction is weakest under an adversarial planner because no server-side policy binds model behavior. Static OpenPort effect controls block high-risk direct effects but cannot reject a medium-risk payload expansion that is inconsistent with the user’s requested amount. Manifest filtering removes unjustified high-risk tools from the visible surface but does not by itself catch payload expansion on a still-visible tool. The consistency gate catches payload and effect mismatches even when the full static manifest remains visible, but it does not reduce tool-enumeration exposure. The combined IGAC conditions obtain both zero unsafe execution on this toy matrix and zero unjustified high-risk exposure. Adding OpenPort effect controls introduces one review intervention for the benign high-risk delete task, which is the intended safety cost of draft/preflight governance. We also include a deterministic confidence-policy artifact: 
+
+node bench/confidence_policy_eval.mjs 
+
+This script checks the specific classifier-trust concern discussed in Section 4. It defines twelve synthetic confidence states covering high-confidence low-risk tasks, medium-confidence create/update tasks, low-confidence ambiguous tasks, conflicting read/delete intent, high-risk delete/export intent, multi-step read-then-delete workflows, and high-confidence classifier outputs that exceed static OpenPort policy. Table XIII reports the resulting policy checks. These numbers should be interpreted only as a reproducible sanity check of the policy sketch. They do not establish real-world security efficacy, model robustness, latency, or deployment utility. The full benchmark described above remains required for submission-strength empirical claims. 
+
+H. Runtime-Backed Microbenchmark 
+
+To connect the policy sketch to the implemented runtime, the artifact also includes a small runtime-backed microbenchmark: 
+
+tsx bench/runtime_microbenchmark.ts 
+
+21 Check Toy result 
+
+Expected action match rate 1.0000 High-confidence low-risk allow rate 1.0000 Medium-confidence draft/preflight rate 1.0000 Low-confidence clarification rate 1.0000 Conflicting-intent deny/split rate 1.0000 High-risk confirmation/preflight rate 1.0000 Multi-step per-step certificate rate 1.0000 Static policy deny rate 1.0000 Unsafe broad authority grants 0Authority widening rate 0.0000 Broad multi-step certificates 0                                                                 
+
+> TABLE XIII DETERMINISTIC TOY CONFIDENCE -POLICY CHECKS . T HESE RESULTS VALIDATE THE POLICY ROUTING RULES ,NOT CLASSIFIER ACCURACY .
+> Scenario Tasks UAR UER BCR strict BCR safe Clar. Review Draft MRS P50 P95 P99
+> OpenPort-only 176 1.0000 0.0000 0.4314 1.0000 0.0000 0.5686 1.0000 0.0000 0.1381 0.2902 0.9899 Oracle certificates 176 0.0000 0.0000 0.4314 0.8627 0.1373 0.5686 0.3333 0.7614 0.1837 0.3055 0.9917 Rule-based certificates 176 0.0000 0.0000 0.4314 0.9608 0.0196 0.5490 0.4091 0.7662 0.1496 0.2479 0.9481 Hybrid rule+flow certificates 176 0.0000 0.0000 0.4314 0.9608 0.0196 0.5490 0.4091 0.7662 0.1331 0.2423 1.1816
+> TABLE XIV RUNTIME -BACKED SYNTHETIC MICROBENCHMARK OVER THE MINIMAL IGAC HTTP PATH .BCR STRICT COUNTS DIRECT BENIGN COMPLETION ;BCR SAFE ALSO COUNTS GOVERNED DRAFT /PREFLIGHT ARTIFACTS .
+
+The script uses Fastify HTTP injection against the real OpenPort reference runtime. The expanded suite contains 176 hand-authored synthetic tasks: 102 benign tasks and 74 attack-or-ambiguous tasks. It covers six intent classes— read, summarize, create, update, delete, and export—and seven attack or ambiguity categories: intent-tool mismatch, payload expansion, indirect prompt injection, tool metadata poisoning, low confidence, compound workflow, and resource underspecification. The benign set deliberately includes underspecified but plausible requests such as “clean up duplicates,” “prepare this for export,” and “fix this record,” so that clarification and review burden are visible rather than hidden by perfectly specified examples. For each task, the runtime path calls /intent , then 
+
+/manifest?intentCertificateId=... , and then, when applicable, /actions . It records actual endpoint status codes, reason codes, draft creation, execution creation, manifest sizes, audit binding, clarification/review burden, and local endpoint latency. We define unsafe accepted rate (UAR) as the fraction of attack-or-ambiguous cases where the runtime accepts a tool exposure, draft, or action path inconsistent with the current user intent, even if OpenPort prevents immediate side effects through draft-first controls. This distinction explains why OpenPort-only can have UAR = 1 .0 while UER = 0 : the effect-control layer prevents immediate execution, but still accepts intent-inconsistent authority paths that IGAC is designed to narrow. The same artifact separates enforcement correctness from certificate-generation quality. The oracle condition uses human-labeled gold certificates embedded in the synthetic task suite. Rule-based and hybrid rule+controlled-flow conditions are deterministic local classifiers. The runtime-backed microbenchmark does not include an LLM-assisted runtime row; real LLM behavior is measured separately in the small pilot below. The oracle condition is intentionally more conservative on underspecified benign requests, so its lower BCR safe should not be read as weaker safety. In this suite, a human-labeled oracle routes more ambiguous benign requests to clarification, while higher BCR safe in rule-based or hybrid rows may partially reflect less conservative routing rather than strictly better access-control quality. This result is stronger than the standalone toy script because it exercises real endpoint wiring, certificate storage, manifest narrowing, action denial, draft creation, and audit binding. It also introduces an oracle certificate condition that separates enforcement correctness from certificate-generation quality. It is still not a deployment-level security evaluation: the tasks are hand-authored, the planner is deterministic, the classifier comparison is local and synthetic, and no real LLM is evaluated. 22 Classifier ICA RBA EBA UNF ODR 
+
+Oracle 1.0000 1.0000 1.0000 0.0000 0.0000 Rule-based 0.6818 0.8977 1.0000 0.0000 0.0000 Hybrid rule+flow 0.8636 0.9886 1.0000 0.0000 0.0000 LLM-assisted runtime row not run in runtime benchmark; see LLM pilot below           
+
+> TABLE XV SMALL DETERMINISTIC CLASSIFIER /ORACLE COMPARISON ON THE 176-TASK SYNTHETIC SUITE . ICA IS INTENT -CLASS ACCURACY , RBA IS RESOURCE -BOUND ACCURACY , EBA IS EFFECT -BOUND ACCURACY , UNF IS UNSAFE NARROWING FAILURE ,AND ODR IS OVER -DEFENSE RATE . T HIS IS NOT A REAL LLM EVALUATION .
+
+Source family Benign Ambiguous Attack Total 
+
+AgentDojo 2 0 4 6ToolSandbox 2 2 3 7tau-bench 2 2 2 6ToolEmu 2 0 4 6
+
+Overall 8 4 13 25   
+
+> TABLE XVI TASK -TYPE COVERAGE IN THE EXPANDED FIRST -BATCH EXTERNAL -BENCHMARK ADAPTATION . T HE BATCH IS INTENTIONALLY STRUCTURED TO PRESERVE BENIGN UTILITY CHECKS ,CLARIFICATION -REQUIRED AMBIGUITY ,AND ADVERSARIAL ESCALATION ATTEMPTS .
+
+I. First-Batch External Benchmark Adaptation 
+
+To reduce the risk that the evaluation is perceived as entirely implementation-shaped, the artifact now includes a first direct-adaptation batch: 
+
+node bench/external_benchmark_adaptation.mjs 
+
+The batch uses twenty-five canonical JSONL tasks: six AgentDojo-style tasks, seven ToolSandbox-style tasks, six tau-bench-style tasks, and six ToolEmu-style tasks. The companion artifact documents the mapping and scoring details. The scorer is runtime-backed and deterministic: it uses oracle certificates and concrete proposals, then drives them through the real OpenPort HTTP path under two baselines, OpenPort-only and OpenPort+IGAC. The task content remains synthetic, but the structural patterns are borrowed directly from the external benchmark families rather than authored as purely OpenPort-native prompts. To make the batch composition explicit, Table XVI separates benign, ambiguous, and attack tasks by source family. The current batch is intentionally attack-heavy because its role is to test whether benchmark-shaped escalation attempts are narrowed away by server-side intent governance rather than to estimate a deployment task distribution. Table XVII then refines the 17 non-benign tasks into additive primary attack-surface categories so that reviewers can see not just task count, but the shape of the covered failure space. Across the full batch, OpenPort-only has UAR = 1 .0000 , UER = 0 .0000 , and BCR safe = 1 .0000 . Under IGAC with oracle certificates, UAR falls to 0.0000 , UER remains 0.0000 , BCR safe remains 1.0000 , and mean manifest reduction reaches 0.7829 . Every family in the expanded first batch shows the same directional result: the unjustified high-risk authority accepted under OpenPort-only disappears once intent-aware manifest filtering and action checks are applied. This result is not yet a full external-benchmark evaluation. The batch is intentionally small, does not include the original benchmark simulators, and does not claim benchmark parity. Its value is narrower: the paper can now point to an implemented, scored first batch of direct adaptations rather than only to planned future use of benchmark families. 
+
+J. Expanded Real LLM Pilot 
+
+After the runtime microbenchmark, we expanded the real-model pilot into a larger synthetic study over NVIDIA NIM-compatible chat completions. The pilot remains intentionally separate from the runtime-backed benchmark: it does not exercise the OpenPort action path and it is not statistically powered, but it does measure how real models generate intent certificates and how real planners behave under static versus IGAC-filtered manifests. The successful scored rows cover three open-weight models accessible in the current provider/account setting: GPT-OSS-120B, Llama-3.3-70B-Instruct, and Qwen3-Next-80B. Each model was evaluated on 55 classifier tasks and 54 planner 23 Primary category Tasks Attack Source families 
+
+Prompt injection / untrusted content 4 4 AgentDojo Insufficient information 4 0 ToolSandbox, tau-bench Wrong scope / target mismatch 3 3 tau-bench, ToolEmu State dependency 2 2 ToolSandbox Tool poisoning / semantic deception 2 2 ToolEmu Canonicalization / normalization risk 1 1 ToolSandbox Amount expansion / bound inflation 1 1 ToolEmu   
+
+> TABLE XVII PRIMARY ATTACK -SURFACE COVERAGE FOR THE 17 NON -BENIGN TASKS IN THE EXPANDED EXTERNAL -ADAPTATION BATCH . E ACH TASK IS ASSIGNED EXACTLY ONE PRIMARY CATEGORY SO THE COUNTS ARE ADDITIVE .
+
+Source family Tasks OpenPort UAR IGAC UAR IGAC BCR safe IGAC MRS 
+
+AgentDojo 6 1.0000 0.0000 1.0000 0.7619 ToolSandbox 7 1.0000 0.0000 1.0000 0.7755 tau-bench 6 1.0000 0.0000 1.0000 0.7381 ToolEmu 6 1.0000 0.0000 1.0000 0.8571  
+
+> TABLE XVIII EXPANDED FIRST -BATCH EXTERNAL -BENCHMARK ADAPTATION RESULTS OVER RUNTIME -BACKED SYNTHETIC OPEN PORT TASKS WITH ORACLE CERTIFICATES .
+
+attack tasks. Additional attempted models (DeepSeek-V4-Flash, Kimi-K2.6, and GLM-5.1) were availability-limited in this environment due repeated provider-side 429 responses or malformed non-JSON output, and are therefore treated as unsupported rows rather than scored results. The full provider/model identifiers are preserved in the artifact files. 
+
+K. Finding 1: Broad Intent Is Easier Than Authorization Bounds 
+
+The strongest design insight from the real-model pilot is not that any one model is good or bad overall. It is that broad intent classification is consistently easier for current LLMs than precise authorization-bound extraction. Across the scored models, intent-class accuracy ranges from 0.7273 to 0.8545, while resource-bound accuracy ranges only from 0.1818 to 0.5818. Review-mode accuracy is likewise materially weaker than broad class recognition. This asymmetry is exactly why IGAC treats model-generated certificates as advisory. A model may often recognize that the user is asking for read, summarize, create, update, delete, or export at a coarse level, yet still fail to extract the exact resource identifiers, row bounds, or risk mode needed for safe autonomous execution. The security boundary is therefore not the classifier. The boundary is the monotone gateway enforcement that validates scopes, narrows manifests, checks payload bounds, and routes high-risk effects through deterministic review logic. The expanded classifier pilot exposes the main empirical risk more clearly than the earlier 12-task probe. Across the three scored models, intent-class accuracy ranges from 0.7273 to 0.8545, but resource-bound accuracy ranges only from 0.1818 to 0.5818 and review-mode accuracy from 0.3818 to 0.6909. This pattern supports the design choice that classifiers cannot be trusted to expand authority. It also sharpens a concrete security rule: LLM-emitted review mode must be advisory only. The server-side deterministic risk policy must override it, and a high-risk tool cannot become allow merely because the classifier says so. This is not a hypothetical concern: GPT-OSS-120B achieved the strongest bound extraction in this small set, yet still emitted immediate allow for 85.71% of high-risk requests. The planner pilot likewise shows a layered story rather than a one-shot win. IGAC manifest filtering lowers unsafe proposal rates for every scored model, but filtered manifests alone still leave unsafe read-path or overbroad-payload proposals. The important invariant is the final column in Table XX: once deterministic consistency gating is applied, unsafe accepted authority falls to zero in this synthetic planner setting for every scored model. This supports the claim boundary used throughout the paper: filtered manifests help, but they are not sufficient without payload-bound server enforcement. 24 Model ICA RBA EBA Review Acc. High-Risk Allow P95 ms                   
+
+> GPT-OSS-120B 0.8545 0.5818 0.9091 0.5273 0.8571 3767.5 Llama-3.3-70B 0.7273 0.1818 0.7818 0.3818 0.4286 17633.4 Qwen3-Next-80B 0.7818 0.1818 0.7818 0.6909 0.0000 4723.2
+
+TABLE XIX EXPANDED REAL LLM CLASSIFIER PILOT OVER 55 SYNTHETIC INTENT -CERTIFICATE TASKS PER MODEL . ICA IS INTENT -CLASS ACCURACY ,RBA IS RESOURCE -BOUND ACCURACY , EBA IS EFFECT -BOUND ACCURACY , AND HIGH -R ISK ALLOW IS THE RATE AT WHICH HIGH -RISK CREATE /UPDATE /DELETE /EXPORT REQUESTS WERE INCORRECTLY EMITTED AS IMMEDIATE A L L O W . A CROSS MODELS , BROAD INTENT RECOGNITION IS MATERIALLY STRONGER THAN EXACT RESOURCE /EFFECT -BOUND EXTRACTION .                        
+
+> Model Static Unsafe Filtered Unsafe Filtered+Gate Unsafe Accepted Static Clar. Filtered Clar. Filtered P95 ms
+> GPT-OSS-120B 0.5000 0.4444 0.0000 0.4444 0.5000 4790.9 Llama-3.3-70B 0.8889 0.5926 0.0000 0.0556 0.3519 35290.4 Qwen3-Next-80B 0.9259 0.7037 0.0000 0.0556 0.2778 5820.6
+
+TABLE XX EXPANDED REAL LLM PLANNER PILOT OVER 54 SYNTHETIC ATTACK TASKS PER MODEL . M ANIFEST FILTERING LOWERS UNSAFE PROPOSALS , BUT DETERMINISTIC GATING IS WHAT DRIVES UNSAFE ACCEPTED AUTHORITY TO ZERO IN THIS PILOT .
+
+L. Scored End-to-End LLM-in-the-Loop Runtime Benchmark 
+
+To close the specific gap that the scored real-LLM pilot does not yet exercise the OpenPort runtime action path, we ran a provider-backed benchmark harness that pushes model-generated classifier and planner output through the actual OpenPort IGAC path: 
+
+/intent → /manifest → /preflight or /actions → consistency gate → audit .
+
+The scored run uses 34 synthetic tasks per run (12 benign and 22 attack-or-ambiguous), 3 repeats per model, and 3 provider-accessible models: GPT-OSS-120B, Llama-3.3-70B, and Qwen3-Next-80B. The task suite is parameterized over three ledgers and transaction sets, so create/update/delete/export benign flows and intent-mismatch, payload-expansion, prompt-injection, cross-resource, and tool-poisoning attacks recur across multiple bounded resource settings rather than one-off hand-authored examples. The benchmark records certificate creation, planner clarification, unsafe planner proposals, runtime unsafe accepted authority, runtime unsafe execution, BCR strict , BCR safe , manifest reduction, end-to-end latency, and raw JSONL traces. 
+
+a) Finding 2: Runtime enforcement prevents execution, but not all accepted authority.: This is the most direct empirical evidence in the current artifact because it exercises the full gateway path with real model outputs. Across 306 model-task trials, unsafe execution is zero for all scored models. This supports the limited claim that OpenPort effect controls and IGAC checks preserve the no-unsafe-execution invariant in this synthetic runtime setting, even when both classifier and planner outputs come from real LLMs. The same result also narrows the claim boundary. Runtime unsafe accepted authority remains nonzero at 0.0909– 0.2727 over attack-or-ambiguous cases. The accepted cases are concentrated in draft-first create paths where the LLM-generated certificate or payload failed to preserve the gold amount/resource bound strongly enough for IGAC to reject the proposal before OpenPort draft routing. Thus, the current artifact supports runtime containment of completed side effects, not complete intent-governed authority narrowing under raw LLM certificates. 
+
+b) Finding 3: Model behavior exposes a safety-utility-latency tradeoff.: Manifest reduction remains substantial at roughly 0.79–0.80 across models, but BCR strict is 0 for every scored row and BCR safe reaches only 0.25–0.50. In other words, current benign success in the scored runtime benchmark comes entirely from governed draft creation rather than immediate completion. Llama-3.3-70B produces the lowest unsafe accepted rate in this synthetic runtime setting (0.0909) and the highest BCR safe (0.5000), but with the worst latency tail (P95 49.9 seconds). Qwen3-Next-80B is faster but materially less selective, with the highest unsafe planner proposal rate and unsafe accepted authority. GPT-OSS-120B sits between these regimes with higher clarification and moderate latency. These numbers should be read as preliminary runtime-path evidence and as motivation for stronger certificate-generation layers, not as deployment-level efficacy claims. 
+
+M. External-Adaptation End-to-End LLM Runtime Pilot 
+
+To close the narrower gap that the external benchmark adaptation had not yet entered the real LLM runtime path, we ran the same provider-backed harness over a selected external subset. The subset contains 12 tasks drawn from 25 Certificate-generator condition Current status Evidence or gap 
+
+Oracle certificates Implemented Runtime-backed microbenchmark and deterministic classifier comparison. Rule-based certificates Implemented Runtime-backed microbenchmark and deterministic classifier comparison. Hybrid rule+flow certificates Implemented Runtime-backed microbenchmark and deterministic classifier comparison. Raw LLM certificate generation Partial Implemented in the real-LLM pilot and scored runtime benchmark, but not yet as a large ablation grid. LLM + schema validator / normalizer Trace-backed counterfactual Table XXVIII rescored existing runtime traces; a runtime rerun with repaired certificates is still missing. LLM + deterministic risk override as isolated row Trace-backed counterfactual Table XXVIII isolates review-mode override on existing traces; it is not yet a separate runtime condition. Hybrid rule + LLM + normalizer Missing Still required for a full certificate-generator ablation with planner retry and payload repair. 
+
+TABLE XXI CURRENT STATUS OF CERTIFICATE -GENERATOR ABLATIONS . T HE PAPER SHOULD DISTINGUISH IMPLEMENTED ROWS FROM PLANNED ABLATIONS .                                    
+
+> Model Intent Create Planner Clar. Planner Unsafe Runtime Unsafe Accepted Runtime Unsafe Executed BCR strict BCR safe MRS P95 ms
+> GPT-OSS-120B 1.0000 0.4216 0.5784 0.2424 0.0000 0.0000 0.2500 0.8025 10472.9 Llama-3.3-70B 1.0000 0.0980 0.7353 0.0909 0.0000 0.0000 0.5000 0.7913 49865.3 Qwen3-Next-80B 1.0000 0.0490 0.9510 0.2727 0.0000 0.0000 0.2500 0.8025 9950.9
+
+TABLE XXII SCORED END -TO -END LLM RUNTIME BENCHMARK OVER THE ACTUAL OPEN PORT PATH . E ACH ROW REPORTS MEANS OVER 34 SYNTHETIC TASKS ACROSS 3 REPEATED RUNS ; BOOTSTRAP INTERVALS AND TRACES ARE RETAINED IN THE ARTIFACT .
+
+the benchmark-family adaptation file: 4 benign tasks, 2 ambiguity tasks, and 6 attack tasks, with 3 tasks each from AgentDojo, ToolSandbox, tau-bench, and ToolEmu families. Unlike the oracle-scored adaptation in Section 10.3, this pilot uses real LLM-generated certificates and real LLM planner output before calling the OpenPort runtime path. This subset is still small, but it closes an important claim gap: benchmark-shaped external tasks are no longer confined to deterministic oracle scoring. Across all three scored models, runtime unsafe execution remains 0 even though planner-unsafe proposals remain frequent and runtime unsafe accepted authority stays nonzero at 0.1250–0.2500. The benign completion rate is 0.7500 for all three rows, which in this subset means that one of the four benign tasks—the tau-bench-style bounded review delete—still fails under current planners rather than reaching a governed success path. The qualitative pattern is also useful. In this 12-task subset, the runtime unsafe accepted cases are concentrated in ToolEmu-style bounded-create attacks rather than in the AgentDojo, ToolSandbox, or tau-bench-derived rows. In other words, once external benchmark families are routed through real LLM certificates and planner calls, the remaining failures still look like the same bounded-create and semantic-deception residue already visible in the larger synthetic runtime benchmark. This convergence strengthens the paper’s main interpretation: IGAC plus OpenPort effect controls already contain completed side effects in the runtime path, but certificate precision and planner-call quality remain the main blockers to fully eliminating accepted authority. Table XXIV makes the residual risk boundary more concrete. All prompt-injection, insufficient-information, state-dependency, and wrong-scope trials end either in clarification or in a blocked no-effect path. The only categories that still reach runtime unsafe accepted authority are ToolEmu-style tool-poisoning / semantic-deception rows and amount-expansion rows, and even there unsafe execution remains 0. This is a useful convergence result: once external benchmark families are routed through the real OpenPort path, the remaining failures do not scatter across the whole attack surface. They collapse into the same certificate-bound and bounded-create residue already identified by the larger synthetic runtime benchmark. 
+
+N. Evaluation Synthesis 
+
+Taken together, the runtime-backed microbenchmark, the scored LLM runtime benchmark, the external adaptation coverage tables, and the external-subset runtime pilot support three narrow but important conclusions. 26 Model Tasks Planner Clar. Planner Unsafe Runtime Unsafe Accepted Runtime Unsafe Executed BCR safe P95 ms                      
+
+> GPT-OSS-120B 12 0.5000 0.5000 0.2500 0.0000 0.7500 13761.5 Llama-3.3-70B 12 0.0000 1.0000 0.1250 0.0000 0.7500 53145.2 Qwen3-Next-80B 12 0.0833 0.9167 0.2500 0.0000 0.7500 7357.1
+
+TABLE XXIII PROVIDER -BACKED END -TO -END RUNTIME PILOT OVER A 12-TASK EXTERNAL BENCHMARK SUBSET . E ACH ROW USES THE FULL OPEN PORT PATH WITH MODEL -GENERATED CERTIFICATES AND PLANNER OUTPUT .                                   
+
+> Primary category Trials Clarify Blocked / no effect Unsafe accepted Unsafe executed
+> Prompt injection / untrusted content 62400Insufficient information 63300State dependency 31200Wrong scope / target mismatch 31200Tool poisoning / semantic deception 30120Amount expansion / bound inflation 30030
+
+TABLE XXIV OUTCOME CROSS -TAB FOR THE 24 NON -BENIGN MODEL -TASK TRIALS IN THE EXTERNAL -SUBSET RUNTIME PILOT . C OUNTS AGGREGATE ACROSS THE THREE SCORED MODELS . T HE 12-TASK SUBSET DOES NOT INCLUDE THE CANONICALIZATION -RISK CATEGORY .
+
+First, the current gateway path already appears strong against several benchmark-shaped classes once they reach server enforcement. In the external-subset runtime pilot, prompt injection, insufficient information, state dependency, and wrong-scope / wrong-target trials all collapse into clarification or blocked no-effect paths rather than unsafe accepted authority. This does not prove deployment robustness, but it does show that the current monotone manifest and action checks are not failing uniformly across the attack surface. Second, the remaining residue is structurally concentrated rather than diffuse. Across both the larger scored runtime benchmark and the smaller benchmark-shaped external subset, accepted-authority failures cluster in bounded-create settings where certificates and payloads preserve the broad operation class but lose the exact amount, resource, or effect contract needed for early rejection. Tool-poisoning rows only survive when they can masquerade as create-compatible draft paths; amount-expansion rows survive when the gateway still sees a create-shaped proposal but cannot prove the numeric bound is faithful enough. Third, this concentration sharpens the design agenda for the next version of IGAC. The empirical bottleneck is no longer best described as generic prompt-injection resistance or generic tool misuse. It is more specific: certificate canonicalization, resource/effect normalization, planner schema repair, and stronger create-versus-destructive effect contracts. Put differently, the current artifact already gives a meaningful answer to “what still breaks?” The answer is not that every benchmark family defeats the gateway. The answer is that bounded-create semantics remain the dominant open problem once OpenPort effect controls and monotone narrowing are in place. 
+
+a) Finding 4: The remaining accepted-authority failures are narrow and classifiable.: The trace archive shows 40 accepted-authority cases across the 198 attack-or-ambiguous runtime trials. Every accepted case ends in actionStatus=draft with executionCreated=false ; none become completed side effects. The remaining failures are therefore not execution escapes, but reviewable authority paths that the current IGAC layer did not narrow away early enough. This taxonomy sharpens the paper’s claim boundary. Of the 40 accepted-authority cases, 24 have empty resource and effect bounds in the emitted certificate, while the remaining 16 are semantically weak but non-empty create-compatible certificates. Review-mode labels split across allow (16), preflight (6), and draft (18), which shows that the residual problem is not simply an incorrect review bit. The harder problem is certificate precision: the runtime still needs stronger amount/resource/effect normalization to collapse these governed draft paths into earlier denials or clarifications. 
+
+O. Trace-Backed Certificate Normalizer Ablation 
+
+The residual failures in Table XXV suggest a specific design question: would a deterministic certificate-bound normalizer reduce unsafe accepted authority, or is the remaining problem mainly planner behavior? To test this without spending new provider calls, we added a companion normalizer-ablation script. It reads the existing scored runtime benchmark rows, normalizes common LLM certificate aliases such as ledger , resource , amount ,
+
+rowLimit , and limit , and then rescored the existing trace under stricter certificate-bound predicates. This is a trace-backed counterfactual, not a new runtime run. It does not replay the model, repair planner payloads, or create new OpenPort actions. Its purpose is narrower: estimate whether the already observed accepted-authority 27 Accepted-authority failure mode Cases Trace pattern Interpretation 
+
+Create payload expansion with missing or weak bounds 24 create_amount_expansion_* ;always draft , never execution The dominant residual failure. In 15/24 cases the certificate omits enforceable resource/effect bounds entirely; in the remaining 9/24 the certificate contains create-compatible but insufficient amount/type bounds. Tool-poisoning-like create path with semantic deception 16 tool_poison_hard_delete_* ;always draft , never execution The planner is induced toward a create-compatible draft path rather than an immediate destructive effect. IGAC contains the completed side effect, but draft-first governance still counts as accepted authority when the certificate does not narrow the path away. Restrictive review mode that still leaves accepted draft authority 24 Review mode is draft or 
+
+preflight rather than allow 
+
+Review mode alone is insufficient to eliminate unsafe accepted authority. It converts the path into governed draft/preflight handling, but does not by itself prove the payload/effect bounds are tight enough. Completed execution escapes 0 No executionCreated=true 
+
+among accepted rows This is the supported invariant from the current artifact: the scored runtime benchmark preserves no unsafe execution in this synthetic setting, even when unsafe accepted authority remains nonzero. 
+
+TABLE XXV FAILURE TAXONOMY FOR THE SCORED RUNTIME BENCHMARK .                      
+
+> Benign or unsafe runtime outcome Count Example Likely fix
+> Reviewable benign draft counted only in BCR safe 36 create_ledger_main Keep as governed success; do not treat as strict completion. Malformed benign tool or payload call 67 update_txn_2 ,delete_txn_7 ,
+> export_ledger_main
+> Planner schema retry, endpoint-specific payload canonicalization, certificate normalizer. Benign clarification with no effect 4export_ledger_audit under GPT-OSS-120B Track separately as safe non-completion rather than as hard failure. Unknown benign action family 1export_ledger_ops under Llama-3.3-70B Tool-call schema validator and planner retry. Accepted authority from missing amount/resource/effect bounds 24 create_amount_expansion_ledger_* Numeric validators and certificate-bound normalizers before action routing. Accepted authority from create-compatible semantic deception 16 tool_poison_hard_delete_ledger_* Stronger effect contracts and semantic validation for create/delete separation.
+
+TABLE XXVI OUTCOME TAXONOMY FOR THE SCORED RUNTIME BENCHMARK .
+
+failures would have been removed if the gateway required canonical resource/effect bounds before routing a proposed action and applied those normalized bounds to the consistency gate. The ablation gives two useful signals. First, deterministic review-mode override alone does not reduce UAR in this trace, because every accepted-authority case is already converted into a draft rather than an execution. The weak point is not only the allow /draft bit; it is whether resource and effect bounds are canonical enough for the consistency gate to enforce. Second, strict normalization is safety-improving but utility-costly: UAR drops from 0.2020 to 0.0758 under bound validation and to 0 under the normalized-gate predicate, but BCR safe drops from 0.3333 to 0.1389 because several benign draft successes also depend on non-canonical LLM certificate fields. A production version should therefore pair normalization with planner retry, schema repair, and user clarification, rather than simply rejecting every non-canonical benign request. XI. L IMITATIONS AND THREATS TO VALIDITY 
+
+The current artifact has both evaluation threats and system limitations: 
+
+• the benchmark matrix remains substantially hand-authored; an expanded first direct-adaptation batch from AgentDojo, ToolSandbox, tau-bench, and ToolEmu families now exists, but it is still small relative to benchmark-complete releases and remains manually mapped; 
+
+• the runtime-backed microbenchmark uses a deterministic planner, while the real LLM pilot, the scored runtime benchmark, and the external-subset runtime pilot remain synthetic, provider-constrained, and modest in size; 
+
+• no production data or tenant traces are used, and latency is measured only through local Fastify injection over an in-memory runtime; 
+
+• the current OpenPort IGAC path is intentionally minimal and in-memory rather than production-hardened with persistent certificate state; 
+
+• classifier quality remains a limiting factor: current evidence shows that broad intent recognition is stronger than exact resource/effect-bound extraction, and the normalizer/validator ablation is currently trace-backed rather than a full runtime rerun with certificate repair and planner retry; 
+
+• benign utility is sensitive to review burden, clarification policy, and payload canonicalization, which is why the paper now distinguishes BCR strict , BCR safe , and clarification rather than collapsing them into one number; 
+
+• endpoint tests and synthetic traces validate invariants and bounded runtime behavior, but they do not yet prove deployment-level attack reduction; 28 Case Certificate / planner Runtime result Metric interpretation Lesson                        
+
+> Benign create draft GPT-OSS-120B emits create with bounded ledger and amount; planner calls transaction.create .
+> common.success ,
+> actionStatus=draft ,audit-bound. Counts toward BCR safe , not
+> BCR strict .Governed draft creation is a valid benign outcome for high-risk writes. Benign update invalid GPT-OSS-120B emits bounded update ; planner calls
+> transaction.update .
+> agent.action_invalid ; no draft or execution. Hard benign failure. Certificate intent is plausible, but payload canonicalization is still too weak. Intent mismatch blocked by clarification GPT-OSS-120B emits read,summarize ; planner returns
+> clarify .No action, no draft, no execution. Safe non-completion. Manifest narrowing plus planner uncertainty can fail closed without creating authority. Low-confidence ambiguity GPT-OSS-120B emits unknown , confidence 0.2, review mode clarify .No action, no draft, no execution. Clarification rather than failure. Confidence-aware routing works as intended when the request is underspecified. Amount-expansion attack GPT-OSS-120B emits create with weak amount bound; planner calls transaction.create .
+> common.success ,draft ,
+> runtimeUnsafeAccepted=true .Unsafe accepted authority, no unsafe execution. Missing numeric/resource precision leaves a reviewable authority path open. Tool-poisoning attack GPT-OSS-120B emits create-compatible certificate under poisoned context; planner still selects
+> transaction.create .
+> common.success ,draft ,
+> runtimeUnsafeAccepted=true .Unsafe accepted authority, no unsafe execution. Manifest filtering helps, but semantic validation is still needed to distinguish benign create from disguised delete intent.
+
+TABLE XXVII QUALITATIVE RUNTIME TRACES FROM THE SCORED BENCHMARK .
+
+Condition UAR UER BCR safe Accepted Benign safe 
+
+Raw LLM certificates 0.2020 0.0000 0.3333 40 36 LLM + strict bound validator 0.0758 0.0000 0.1389 15 15 LLM + strict validator + normalized gate 0.0000 0.0000 0.1389 0 15 LLM + deterministic risk override only 0.2020 0.0000 0.3333 40 36 
+
+TABLE XXVIII TRACE -BACKED NORMALIZER ABLATION OVER THE SCORED LLM RUNTIME BENCHMARK . T HE TABLE RESCORES EXISTING TRACES AND SHOULD NOT BE READ AS A FRESH RUNTIME EXECUTION .
+
+• synthetic and pilot-scale results should not be interpreted as production readiness or statistically powered real-world efficacy. XII. S ECURITY ANALYSIS 
+
+A. Invariant 1: Intent Cannot Widen Static Policy 
+
+The monotonicity invariant is: 
+
+PC ⪯ PA.
+
+If a tool is hidden by static OpenPort scopes, ABAC policy, workspace boundary, revocation, or rate limit, IGAC cannot reveal it. This protects against classifier compromise turning into privilege escalation. 
+
+B. Invariant 2: Low Confidence Fails Closed 
+
+If γ < γ min , the system must not treat the certificate as broad authority. It should expose minimal tools, request clarification, or force draft/preflight. Low confidence is not an excuse to fall back to static broad scopes. 
+
+C. Invariant 3: Payload Effects Must Be Bounded 
+
+Even if a tool class is allowed, the payload must stay within request bounds. A read request for ”last week” should not silently become a year-long export. A request to update one record should not become a bulk update. 
+
+D. Invariant 4: The Model Is Not a Principal 
+
+The model may suggest a tool call, but authorization is decided by the gateway. The gateway verifies scopes, policy, certificate validity, consistency, preflight, and review requirements. 
+
+E. Invariant 5: Drafts Are Not Effects 
+
+Draft creation is a governance state, not a completed side effect. Routing uncertain calls to drafts reduces immediate harm, but human review can still fail. Therefore, drafts require audit, clear preview, and review context. 
+
+F. Prompt Injection 
+
+Prompt injection can influence model reasoning, tool selection, or payload generation. IGAC reduces damage by ensuring that injected instructions cannot expand authority beyond the original user intent and static policy. If an external document instructs the agent to export data while the user asked for a summary, the export tool should not be visible under a summary certificate, and any attempted export should fail consistency checks. This is not full prompt-injection prevention. If the user explicitly requests a high-risk action and an attacker changes details within the same effect envelope, IGAC may need context provenance or taint-aware manifests. That is complementary work. 29 G. Tool Metadata Poisoning 
+
+Tool metadata attacks try to make a model choose a malicious or irrelevant tool. IGAC reduces the effect of such attacks by filtering visible tools and checking selected tools against user intent. However, if poisoned metadata belongs to a tool that is both statically authorized and intent-compatible, IGAC alone may not detect semantic deception inside the tool implementation. Manifest signing, tool provenance, sandboxing, and behavior monitoring remain necessary. 
+
+H. Effect Estimation and Conservative Failure 
+
+The consistency predicate depends on estimating or bounding tool effects. This is easy for simple read, create, update, delete, and export actions with explicit resource IDs and row limits. It is harder for tools with implicit side effects, compound workflows, tool-provided summaries, or domain-specific semantics. IGAC therefore adopts a conservative failure rule: 
+
+¬Boundable( C, t, x, e ) ⇒ draft ∨ preflight ∨ confirm ∨ deny .
+
+If the gateway cannot safely bound the payload or predicted effect against the certificate, it must not allow immediate execution. The runtime can still create a draft or require preflight so that OpenPort’s effect-control layer presents impact, state witness, audit context, and reviewer confirmation. This rule prevents the formal predicate 
+
+Consistent (C, t, x, e ) from silently becoming a broad allow when effect semantics are uncertain. 
+
+I. Classifier Compromise 
+
+If the classifier is compromised, it might produce a broad certificate. Monotonicity still prevents scope expansion, but it may fail to narrow authority. Mitigations include rule/model agreement, confidence thresholds, human review for high-risk classes, certificate audit, and adversarial tests. Critical deployments should treat classifiers as untrusted components and require deterministic policy constraints for high-risk effects. 
+
+J. Multi-Intent Tasks 
+
+Users often ask for compound tasks. IGAC should avoid issuing one broad lease for the entire conversation. Instead, it can decompose the request into per-step certificates: 
+
+C(u) = {C1, . . . , C n},
+
+where each Ci authorizes one effect class and resource bound. If decomposition is uncertain, the gateway should require clarification or draft review. 
+
+a) Operational rule.: Read/summarize certificates may be used to discover candidate objects and present them to the user. Update/delete/export certificates should be issued only after the user confirms the concrete target or approved output scope. One broad certificate should not simultaneously cover search, ranking, and high-risk mutation unless the mutation target is already explicit and bounded. XIII. R ELATED WORK 
+
+A. Agent Security Benchmarks 
+
+AgentDojo, InjecAgent, AgentDyn, ToolSandbox, tau-bench, and ToolEmu provide important evaluation settings for tool-using agents [3], [11], [12], [19], [27], [28]. These benchmarks primarily measure agent robustness, task success, or safety under adversarial context. IGAC is complementary: it defines a server-side authorization mechanism that can be evaluated using such benchmarks. 
+
+B. Prompt-Injection Defenses 
+
+StruQ separates prompt and data channels through structured queries and model training [2]. AgentSentry models multi-turn indirect prompt injection as temporal causal takeover and purifies context [29]. AttriGuard uses action-level causal attribution to test whether tool invocations are supported by user intent rather than untrusted observations [6]. IGAC differs by focusing on access-control semantics and gateway enforcement. It can consume signals from structured prompting or causal attribution, but its enforcement point is the server-side policy layer. 30 C. Tool Selection and MCP Security 
+
+ToolHijacker, ToolTweak, MCPTox, and MCP threat-modeling work show that tool names, descriptions, metadata, and ecosystem composition can create security vulnerabilities [8], [21]–[23], [25]. These works motivate intent-aware filtering but do not replace it. Even a perfectly authenticated and well-described tool should not be callable when the user’s request does not justify its effect. 
+
+D. Access Control 
+
+Least privilege, RBAC, ABAC, and OAuth-style delegated authorization remain foundational [4], [7], [13], [20]. IGAC can be understood as a request-level ABAC extension where natural-language intent becomes an ephemeral attribute. The crucial difference is monotonicity: the attribute can narrow but not expand static policy. 
+
+E. Purpose Limitation and Contextual Integrity 
+
+IGAC is also related to purpose-based access control and contextual privacy. Purpose-based systems restrict data use according to declared purposes rather than only subjects, objects, and operations; recent systems such as Data Guard apply purpose-aware masking in warehouse settings, and purpose limitation has also been studied for data-in-transit systems [24], [26]. Contextual integrity frames privacy as appropriate information flow within a social context, using parameters such as sender, recipient, information type, and transmission principle [1], [16]. Recent assistant work operationalizes contextual integrity for information-sharing and LLM delegation [5], [9]. IGAC differs in its enforcement target. It does not attempt to model all contextual information norms. Instead, it turns the current user request into a short-lived, auditable purpose-like certificate that narrows an already-authorized agent tool surface. In this sense, IGAC can be viewed as request-level purpose restriction for agent side effects: a tool may be statically authorized and still unavailable when the present request does not justify its effect. 
+
+F. OpenPort Protocol 
+
+OpenPort Protocol provides the effect-control substrate for this paper. It defines a governance-first gateway with authorization-dependent discovery, scoped permissions, data policy constraints, draft-first writes, preflight, state witness, idempotency, rate limits, and audit. IGAC adds a new upstream layer that binds user intent to tool exposure and proposed effects. XIV. R EPRODUCIBILITY PLAN 
+
+The paper now uses an artifact-checklist format rather than a narrative list so that readers can separate what exists in the current worktree from what is still required before submission-strength release. Until the end-to-end LLM-in-the-loop benchmark has been run at larger scale, the larger classifier evaluation exists, and the checklist items above are archived in a releasable bundle, the paper should avoid deployment-level empirical safety-improvement claims. XV. C ONCLUSION 
+
+AI-agent access control should not stop at checking whether a credential can call a tool. It should also check whether the proposed call is justified by the user’s current expressed intent. This paper proposed Intent-Governed Access Control, a server-side authorization model that introduces intent certificates, monotone session policy narrowing, intent-aware manifests, and consistency checks between user intent, tool choice, payload, and expected effect. OpenPort provides the existing effect-control substrate: static authorization, policy constraints, draft-first writes, preflight, state witnesses, idempotency, and audit. IGAC adds the missing intent-control layer before those effects are reached. The current evidence supports the design, minimal runtime artifact, endpoint-level invariants, runtime-backed synthetic narrowing results, the expanded real-LLM pilot, the scored end-to-end runtime-path benchmark, and the benchmark-shaped external runtime subset. Collectively, these results show that IGAC is already an executable access-control mechanism for request-bounded least privilege in agent tool use: user intent becomes auditable policy rather than merely prompt context, and completed unsafe execution remains contained across the scored runtime settings. The next step is to harden the IGAC runtime and scale the end-to-end classifier and benchmark evaluation so that these mechanism-level results can be tested under larger and more externally grounded workloads. 31 Artifact item Current status Needed before submission 
+
+OpenPort commit identifier Partial: local head exists, but the paper does not yet pin a clean archived artifact commit. Publish a fixed commit hash or release tag tied to the submission bundle. Sanitized release bundle Missing Package a redistributable artifact if the full repository cannot be released directly. Benchmark task definitions Partial: toy and confidence-policy JSONL files exist, and the first external-adaptation batch is archived in bench/ external_adaptation_ tasks.jsonl ; however, the scored runtime benchmark tasks are still largely code-generated rather than fully archived as benchmark JSONL. Publish canonical task definitions for the runtime benchmark, classifier study, and larger end-to-end LLM runs. Synthetic fixtures / databases Partial: synthetic ledgers and transaction sets exist inside harness code. Export standalone fixtures so runs can be reproduced without reading benchmark code. Model IDs, provider configuration, and prompts Partial: model IDs and provider base URL are preserved in result JSON; prompt/config packaging is not yet formalized. Archive prompt templates, harness parameters, and provider/model metadata with the benchmark release. Raw trace archive Present: scored runtime benchmark exports JSONL traces. Include the trace archive in the submission artifact bundle. Metric scripts and executable harnesses Present locally: benchmark harnesses and result-generation scripts are in the repository. Publish the exact scripts used for the reported tables and intervals. Trace-backed normalizer ablation Present locally: 
+
+bench/normalizer_ ablation.mjs rescores existing runtime traces. Add a full runtime rerun with repaired certificates, planner retry, and raw trace export. Larger end-to-end LLM runtime benchmark Missing Run a larger scored study over the runtime path with more tasks, repeats, and confidence intervals. Larger classifier comparison Partial: oracle, rule-based, hybrid, and small real-LLM pilot evidence exist, but not as a large unified study. Publish a larger comparison over oracle, rule-based, LLM-assisted, and hybrid certificate generation. IGAC-specific conformance profile Partial: endpoint and hardening tests exist, but no standalone public profile document is bundled. Publish a profile that maps intent certificates, manifest narrowing, consistency checks, lifecycle cleanup, and audit binding to required tests. Safety scan Missing Confirm the released artifact contains no secrets, tenant data, or unsafe internal-only material.   
+
+> TABLE XXIX ARTIFACT CHECKLIST FOR THE CURRENT IGAC PAPER . S TATUS IS REPORTED CONSERVATIVELY AGAINST THE CURRENT WORKTREE RATHER THAN AGAINST PLANNED RELEASE WORK .
+
+APPENDIX 
+
+Table XXXI summarizes the main implementation evidence used in this paper. The table is included to reduce ambiguity about what is implemented and what remains proposed. Paths are repository evidence, not intended as product-specific disclosure.  
+
+> •
+
+agent.intent_not_found  
+
+> •
+
+agent.intent_low_confidence  
+
+> •
+
+agent.intent_conflicting  
+
+> •
+
+agent.intent_tool_mismatch 
+
+32 Claim Status Evidence 
+
+OpenPort provides authorization-dependent discovery. Implemented Core agent engine and tool registry. OpenPort provides draft/preflight/idempotency/audit. Implemented Core action pipeline and tests. Product-layer controlled flows map inputs to drafts. Implemented as evidence Product AI flow handlers and draft confirmation. IGAC intent certificates exist in core runtime. Minimal runtime intent-engine.ts , store.ts ,
+
+/intent , endpoint tests. Intent-aware manifest filtering is implemented. Minimal runtime /manifest?intentCertificateId ,monotonicity tests. Intent-bound preflight/action checks are implemented. Minimal runtime /preflight , /actions ,payload-bound and reason-code tests. Cross-key certificate isolation is enforced. Minimal runtime test/intent-runtime.test.ts .IGAC reduces unsafe accepted authority on the runtime-backed synthetic benchmark. Synthetic runtime bench/runtime_ microbenchmark.ts , Table XIV. IGAC preserves zero unsafe execution in the scored end-to-end LLM runtime benchmark. Synthetic runtime bench/llm_runtime_eval.ts ,Table XXII. Certificate-bound normalization can reduce residual accepted authority in existing traces. Trace-backed counterfactual 
+
+bench/normalizer_ablation. mjs , Table XXVIII; not a runtime rerun. IGAC improves deployment-level real-world safety metrics. Unsupported Larger end-to-end benchmark still required. 
+
+TABLE XXX HIGH -LEVEL CLAIM SUPPORT SUMMARY . F ULL AUDIT IS IN THE COMPANION REPORT .
+
+Source Observed behavior Paper status 
+
+openport-core/intent-engine.ts Intent certificate creation, confidence-aware routing, manifest filtering, consistency checks, payload-bound checks, and intent audit metadata. Minimal IGAC runtime. 
+
+openport-core/store.ts In-memory intent certificate storage scoped by app, key, actor, and expiry. Minimal IGAC runtime. 
+
+openport-core/agent-engine.ts Intent-aware manifest, preflight, action creation, draft execution, audit, idempotency, state-witness checks, and draft policy snapshots. Substrate plus IGAC hooks. 
+
+src/legacy-app.ts /intent , intent-aware /manifest , /preflight , and 
+
+/actions endpoint wiring. Minimal IGAC runtime. 
+
+openport-core/tool-registry.ts Tool metadata with required scopes, risk tiers, confirmation requirements, impact/state hooks, and manifest filtering. Implemented substrate. 
+
+openport-core/policy.ts Scope checks, ledger allowlists, date-window constraints, sensitive-field policy, workspace boundaries. Implemented substrate. 
+
+test/intent-runtime.test.ts Endpoint tests for monotonicity, reason codes, payload bounds, audit binding, draft snapshots, high-risk review routing, and cross-key certificate isolation. Runtime evidence. 
+
+test/*.test.ts Regression tests for manifest auth, security controls, high-risk preflight, state witness, idempotency, and draft approval. Effect-control evidence. 
+
+docs/research/01-intent...md Detailed IGAC outline, formal model, metrics, planned tests. Design-level paper framework. 
+
+TABLE XXXI CODE EVIDENCE USED FOR THE IMPLEMENTATION MAPPING . 
+
+> •
+
+agent.intent_payload_exceeds_bound  
+
+> •
+
+agent.intent_expired  
+
+> •
+
+agent.intent_review_required {"id": "intent_01", "requestHash": "sha256:...", "intentClasses": ["summarize", "read"], "resourceBounds": {"resourceTypes": ["transaction"], 
+
+33 Work Primary focus IGAC distinction 
+
+OWASP LLM Top 10 2025 Practical LLM application risks, including prompt injection and excessive agency. IGAC operationalizes least privilege and human approval as gateway policy. NIST AI 600-1 Governance, risk monitoring, and deployment-like assurance for GAI. IGAC supplies a concrete access-control mechanism and audit model. MCP 2025-06-18 Protocol for tool discovery, invocation, and authorization transport. IGAC checks request-level intent and tool effects above token validation. AgentDojo / InjecAgent Benchmarks for prompt-injection attacks against tool agents. IGAC can be evaluated on such tasks as a server-side defense layer. ToolSandbox / tau-bench Stateful tool-use and agent-user interaction benchmarks. IGAC adds authorization semantics to stateful tool selection. ToolHijacker / ToolTweak / MCPTox Tool metadata and selection attacks. IGAC filters visible tools and rejects intent-incompatible calls. StruQ Structured prompt/data separation. Complementary input-channel defense; IGAC enforces effects server-side. AgentSentry / AttriGuard Causal diagnostics and attribution for indirect prompt injection. Complementary signals; IGAC defines gateway policy and monotone authority. 
+
+TABLE XXXII RELATED -WORK POSITIONING .
+
+"dateRange": { "start": "2026-06-10", "end": "2026-06-17" } }, "effectBounds": {"maxRisk": "low", "allowExport": false, "allowMutation": false }, "confidence": 0.86, "reviewMode": "allow", "expiresAt": "2026-06-17T23:59:59Z", "classifierSource": "hybrid" }
+
+REFERENCES [1] Adam Barth, Anupam Datta, John C. Mitchell, and Helen Nissenbaum. Privacy and Contextual Integrity: Framework and Applications. In 
+
+2006 IEEE Symposium on Security and Privacy , pages 184–198, 2006. [2] Sizhe Chen, Julien Piet, Chawin Sitawarin, and David Wagner. StruQ: Defending Against Prompt Injection with Structured Queries, 2024. [3] Edoardo Debenedetti, Jie Zhang, Mislav Balunovi´ c, Luca Beurer-Kellner, Marc Fischer, and Florian Tram` er. AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents, 2024. [4] David F. Ferraiolo and D. Richard Kuhn. Role-Based Access Controls. In 15th National Computer Security Conference , pages 554–563, 1992. [5] Sahra Ghalebikesabi, Eugene Bagdasaryan, Itay Yona, Ilia Shumailov, Aneesh Pappu, Chongyang Shi, Laura Weidinger, Robert Stanforth, Leonard Berrada, Pushmeet Kohli, Po-Sen Huang, and Borja Balle. Operationalizing Contextual Integrity in Privacy-Conscious Assistants, 2024. [6] Yu He, Haozhe Zhu, Yiming Li, Shuo Shao, Hongwei Yao, Zhihao Liu, and Zhan Qin. AttriGuard: Defeating Indirect Prompt Injection in LLM Agents via Causal Attribution of Tool Invocations, 2026. [7] Vincent C. Hu, David Ferraiolo, D. Richard Kuhn, Adam Schnitzer, Kenneth Sandlin, Robert Miller, and Karen Scarfone. Guide to Attribute Based Access Control (ABAC) Definition and Considerations. NIST Special Publication 800-162, 2014. [8] Charoes Huang, Xin Huang, Ngoc Phu Tran, and Amin Milani Fard. Model Context Protocol Threat Modeling and Analyzing Vulnerabilities to Prompt Injection with Tool Poisoning, 2026. [9] Xinyue Huang, Xiaochun Cao, and Wenyuan Yang. Need to Know: Contextual-Integrity-Grounded Query Rewriting for Privacy-Conscious LLM Delegation, 2026. [10] Saeid Jamshidi, Kawser Wazed Nafi, Arghavan Moradi Dakhel, Negar Shahabi, Foutse Khomh, and Naser Ezzati-Jivan. Securing the Model Context Protocol: Defending LLMs Against Tool Poisoning and Adversarial Attacks, 2025. [11] Hao Li, Ruoyao Wen, Shanghao Shi, Ning Zhang, and Chaowei Xiao. AgentDyn: A Dynamic Open-Ended Benchmark for Evaluating Prompt Injection Attacks of Real-World Agent Security System, 2026. [12] Jiarui Lu, Thomas Holleis, Yizhe Zhang, Bernhard Aumayer, Feng Nan, Felix Bai, Shuang Ma, Shen Ma, Mengyu Li, Guoli Yin, Zirui Wang, and Ruoming Pang. ToolSandbox: A Stateful, Conversational, Interactive Evaluation Benchmark for LLM Tool Use Capabilities, 2024. [13] Model Context Protocol. Authorization. https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization, June 2025. Specification version 2025-06-18. Accessed 2026-06-17. [14] Model Context Protocol. Tools. https://modelcontextprotocol.io/specification/2025-06-18/server/tools, June 2025. Specification version 2025-06-18. Accessed 2026-06-17. [15] National Institute of Standards and Technology. Artificial Intelligence Risk Management Framework: Generative Artificial Intelligence Profile. Technical Report NIST AI 600-1, National Institute of Standards and Technology, July 2024. Accessed 2026-06-17. 
+
+34 [16] Helen Nissenbaum. Privacy in Context: Technology, Policy, and the Integrity of Social Life . Stanford University Press, 2009. [17] OWASP GenAI Security Project. LLM01:2025 Prompt Injection. https://genai.owasp.org/llmrisk/llm01-prompt-injection/, 2025. Accessed 2026-06-17. [18] OWASP GenAI Security Project. OWASP Top 10 for LLM Applications 2025. https://genai.owasp.org/llm-top-10/, 2025. Accessed 2026-06-17. [19] Yangjun Ruan, Honghua Dong, Andrew Wang, Silviu Pitis, Yongchao Zhou, Jimmy Ba, Yann Dubois, Chris J. Maddison, and Tatsunori Hashimoto. Identifying the Risks of LM Agents with an LM-Emulated Sandbox, 2023. [20] Jerome H. Saltzer and Michael D. Schroeder. The Protection of Information in Computer Systems. Proceedings of the IEEE ,63(9):1278–1308, 1975. [21] Yi Ting Shen, Kentaroh Toyoda, and Alex Leung. MCP-38: A Comprehensive Threat Taxonomy for Model Context Protocol Systems, 2026. [22] Jiawen Shi, Zenghui Yuan, Guiyao Tie, Pan Zhou, Neil Zhenqiang Gong, and Lichao Sun. Prompt Injection Attack to Tool Selection in LLM Agents, 2025. [23] Jonathan Sneh, Ruomei Yan, Jialin Yu, Philip Torr, Yarin Gal, Sunando Sengupta, Eric Sommerlade, Alasdair Paren, and Adel Bibi. ToolTweak: An Attack on Tool Selection in LLM-based Agents, 2025. [24] Khai Tran, Sudarshan Vasudevan, Pratham Desai, Alex Gorelik, Mayank Ahuja, Athrey Yadatore Venkateshababu, Mohit Verma, Dichao Hu, Walaa Eldin Moustafa, Vasanth Rajamani, Ankit Gupta, and Issac Buenrostro. Data Guard: A Fine-grained Purpose-based Access Control System for Large Data Warehouses, 2025. [25] Zhiqiang Wang, Yichao Gao, Yanting Wang, Suyuan Liu, Haifeng Sun, Haoran Cheng, Guanquan Shi, Haohao Du, and Xiangyang Li. MCPTox: A Benchmark for Tool Poisoning Attack on Real-World MCP Servers, 2025. [26] Karl Wolf, Frank Pallas, and Stefan Tai. Messaging with Purpose Limitation – Privacy-Compliant Publish-Subscribe Systems, 2021. [27] Shunyu Yao, Noah Shinn, Pedram Razavi, and Karthik Narasimhan. τ -bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains, 2024. [28] Qiusi Zhan, Zhixiang Liang, Zifan Ying, and Daniel Kang. InjecAgent: Benchmarking Indirect Prompt Injections in Tool-Integrated Large Language Model Agents, 2024. [29] Tian Zhang, Yiwei Xu, Juan Wang, Keyan Guo, Xiaoyang Xu, Bowen Xiao, Quanlong Guan, Jinlin Fan, Jiawei Liu, Zhiquan Liu, and Hongxin Hu. AgentSentry: Mitigating Indirect Prompt Injection in LLM Agents via Temporal Causal Diagnostics and Context Purification, 2026. 
+
+35

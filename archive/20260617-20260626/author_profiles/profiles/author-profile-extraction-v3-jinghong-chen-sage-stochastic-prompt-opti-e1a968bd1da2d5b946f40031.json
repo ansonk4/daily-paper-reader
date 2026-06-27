@@ -1,0 +1,18 @@
+{
+  "name": "Jinghong Chen",
+  "role": "last_author",
+  "affiliation": "Department of Engineering, University of Cambridge",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Jinghong Chen",
+    "affiliations": [
+      "Department of Engineering, University of Cambridge"
+    ],
+    "author_row": "Jinghong Chen"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

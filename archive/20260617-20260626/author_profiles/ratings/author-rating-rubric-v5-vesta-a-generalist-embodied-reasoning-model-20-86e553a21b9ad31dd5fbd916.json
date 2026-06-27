@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "Both first author Johan Bjorck and last author Jan Kautz have no available affiliation data and metadata lookup was unavailable. With no verifiable institutional evidence, a neutral score of 4 is assigned with low confidence.",
+  "author_profiles": [
+    {
+      "name": "Johan Bjorck",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Jan Kautz",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:57:33.293499+00:00"
+}

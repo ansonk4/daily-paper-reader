@@ -1,0 +1,19 @@
+{
+  "name": "Xinyue Yang",
+  "role": "first_author",
+  "affiliation": "University of Chinese Academy of Sciences, Nanjing, China; Institute of Software, Chinese Academy of Sciences, Beijing, China",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Xinyue Yang",
+    "affiliations": [
+      "University of Chinese Academy of Sciences, Nanjing, China",
+      "Institute of Software, Chinese Academy of Sciences, Beijing, China"
+    ],
+    "author_row": "Xinyue Yang 1,2 , Chaozheng Wang 3 , Chen Zheng 1,2,* , Heng Zhang 2 , Yanjun Wu 2"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

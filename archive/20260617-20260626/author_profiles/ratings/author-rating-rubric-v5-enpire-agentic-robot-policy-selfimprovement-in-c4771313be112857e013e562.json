@@ -1,0 +1,24 @@
+{
+  "author_score": 8.5,
+  "author_rating_explanation": "Both authors are affiliated with Carnegie Mellon University (CMU), a top US AI school. First author Wenli Xiao has OpenAlex cited_by_count=337, and last author Guanya Shi has OpenAlex cited_by_count=1362. CMU is a well-established top-tier AI institution, placing this in the 8-9 band.",
+  "author_profiles": [
+    {
+      "name": "Wenli Xiao",
+      "role": "first_author",
+      "affiliation": "Jimmy Wu; Cunxi Dai; Carnegie Mellon University",
+      "citation_hints": "OpenAlex cited_by_count=337; OpenAlex works_count=23",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    },
+    {
+      "name": "Guanya Shi",
+      "role": "last_author",
+      "affiliation": "Cunxi Dai; Carnegie Mellon University",
+      "citation_hints": "OpenAlex cited_by_count=1362; OpenAlex works_count=141",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:55:37.176755+00:00"
+}

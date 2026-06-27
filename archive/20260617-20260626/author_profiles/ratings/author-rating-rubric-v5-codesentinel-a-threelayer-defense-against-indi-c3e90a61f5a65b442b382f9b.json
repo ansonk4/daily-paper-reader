@@ -1,0 +1,24 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Both focus authors are affiliated with National Yang Ming Chiao Tung University and Hon Hai Research Institute. NYCU is a Taiwanese university not listed in the top-tier bands, and Hon Hai (Foxconn) research institute is not among the major AI companies listed in the 9-10 band. This falls in the 0-5 bucket.",
+  "author_profiles": [
+    {
+      "name": "Po-Han Cheng",
+      "role": "first_author",
+      "affiliation": "National Yang Ming Chiao Tung University * Hon Hai Research Institute",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Wei-Bin Lee",
+      "role": "last_author",
+      "affiliation": "National Yang Ming Chiao Tung University * Hon Hai Research Institute",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:00:55.807974+00:00"
+}

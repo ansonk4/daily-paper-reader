@@ -1,0 +1,19 @@
+{
+  "name": "Lalana Kagal",
+  "role": "last_author",
+  "affiliation": "MIT; Cambridge, MA, USA",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Lalana Kagal",
+    "affiliations": [
+      "MIT",
+      "Cambridge, MA, USA"
+    ],
+    "author_row": "Lalana Kagal CSAIL"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

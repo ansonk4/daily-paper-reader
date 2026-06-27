@@ -1,0 +1,16 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "The first author is affiliated with Amrita Vishwa Vidyapeetham in India and the Institute of Theoretical and Applied Informatics, Polish Academy of Sciences. India-based schools fall into the 0-5 bucket per the scoring rules. The Polish Academy of Sciences institute is not listed in the top European AI labs band. Citation count (OpenAlex cited_by_count=577) is notable but does not override the institutional band constraint.",
+  "author_profiles": [
+    {
+      "name": "Mert Nakıp",
+      "role": "first_author",
+      "affiliation": "Amrita Vishwa Vidyapeetham; Center for Computational Engineering and Networking, Amrita School of Engineering, Amrita Vishwa Vidyapeetham, Coimbatore, India; Institute of Theoretical and Applied Informatics; Polish Academy of Sciences",
+      "citation_hints": "OpenAlex cited_by_count=577; OpenAlex works_count=75",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:54:15.608999+00:00"
+}

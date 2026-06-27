@@ -1,0 +1,24 @@
+{
+  "author_score": 5.0,
+  "author_rating_explanation": "Both focus authors are affiliated with the University of Georgia, which is a US university not listed among the top-tier or major AI lab bands. It fits the mid-tier US research university band with concrete CS research output, warranting a score of 5.",
+  "author_profiles": [
+    {
+      "name": "Weidi Luo",
+      "role": "first_author",
+      "affiliation": "University of Georgia",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Zhen Xiang",
+      "role": "last_author",
+      "affiliation": "University of Georgia",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:06:04.106113+00:00"
+}

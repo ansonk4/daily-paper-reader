@@ -1,0 +1,24 @@
+{
+  "author_score": 5.0,
+  "author_rating_explanation": "Last author Daye Nam is affiliated with University of California, Irvine, which is a US research university with concrete AI/CS research output but does not fall into the top US AI schools band. First author Yujin Zhang has no verifiable affiliation in the metadata, so the score is based on the available institutional evidence and the lack of top-tier affiliation.",
+  "author_profiles": [
+    {
+      "name": "Yujin Zhang",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Daye Nam",
+      "role": "last_author",
+      "affiliation": "University of California, Irvine",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:01:44.581857+00:00"
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "The affiliation evidence for both focus authors is Hugging Face, which is a recognized ML platform/company but is not listed in the explicitly named major AI/tech companies or elite labs in the 9-10 band. Given the scoring rules, this does not reach 6+, so it falls into the 0-5 bucket.",
+  "author_profiles": [
+    {
+      "name": "Arastoo Zibaeirad",
+      "role": "first_author",
+      "affiliation": "figures/huggingface-emoji.png Hugging Face 1.2em figures/website-emoji.png Website",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Marco Vieira",
+      "role": "last_author",
+      "affiliation": "figures/huggingface-emoji.png Hugging Face 1.2em figures/website-emoji.png Website",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:06:04.107720+00:00"
+}

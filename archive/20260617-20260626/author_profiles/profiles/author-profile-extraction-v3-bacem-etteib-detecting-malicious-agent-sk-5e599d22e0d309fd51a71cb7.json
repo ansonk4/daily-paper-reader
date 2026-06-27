@@ -1,0 +1,27 @@
+{
+  "name": "Bacem Etteib",
+  "role": "first_author",
+  "affiliation": "University of Luxembourg",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Bacem Etteib",
+    "affiliations": [
+      "University of Luxembourg"
+    ],
+    "author_row": "Bacem Etteib, Daniele Lunghi, and Tégawend\\' e F. Bissyand\\' e"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "The malicious use of artificial intelligence: Forecasting, prevention, and mitigation",
+    "paper_year": 2018,
+    "name": "Miles Brundage",
+    "affiliations": [],
+    "works_count": null,
+    "cited_by_count": null,
+    "author_id": "https://openalex.org/A5066559387"
+  },
+  "semantic_scholar": {}
+}

@@ -1,0 +1,1088 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-26T09:06:04.936774+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 9,
+    "deep_cap": 6,
+    "deep_selected": 6,
+    "quick_candidates": 53,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2606.20922v1",
+      "source": "arxiv",
+      "title": "Think Twice Before You Act: Protecting LLM Agents Against Tool Description Poisoning via Isolated Planning",
+      "abstract": "The integration of external tools has substantially expanded the capabilities of large language model (LLM) agents, but it also introduces new attack surfaces beyond prompt injection. In particular, cross-tool description poisoning can manipulate planner-visible tool metadata to steer an agent's trajectory, even if the poisoned tool itself is never chosen. To understand the effectiveness of existing defenses against this emerging threat, we first evaluate several prompt-injection defenses and find that they transfer poorly to cross-tool description poisoning. A key observation is that poisoned descriptions persist in the planning context across steps, enabling continuous influence over subsequent tool choices. Building on this insight, we propose Tool-Guard, a novel system-level defense based on a new concept called isolated planning, in which tool invocations that are detected as misaligned or suspicious cause the corresponding tool to be placed in a quarantined list (the influenced list), breaking further influence from poisoned descriptions. With this influence isolated, the tool can continue to be used to support the task, enabling a robust defense that preserves legitimate tool utility. Experiments on the AgentDojo and ASB benchmarks show that Tool-Guard substantially reduces attack success while maintaining high task utility. Our code is available at https://github.com/shishishi123/Tool-Guard.",
+      "authors": [
+        "Shanghao Shi",
+        "Xiao Wang",
+        "Chaoyu Zhang",
+        "Hao Li",
+        "Wenjing Lou",
+        "Thomas Hou",
+        "Yevgeniy Vorobeychik",
+        "Chongjie Zhang",
+        "Ning Zhang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-06-18T20:31:08+00:00",
+      "link": "https://arxiv.org/pdf/2606.20922v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 9.4,
+      "llm_evidence_en": "",
+      "llm_evidence_cn": "protects LLM agents from tool description poisoning via isolated planning",
+      "llm_evidence": "protects LLM agents from tool description poisoning via isolated planning",
+      "canonical_evidence": "protects LLM agents from tool description poisoning via isolated planning",
+      "llm_tldr_en": "The paper identifies cross-tool description poisoning as a harness attack surface and proposes an isolated planning defense that separates planning context from poisoned tool metadata.",
+      "llm_tldr_cn": "The paper addresses the emerging attack surface where external tool integration exposes LLM agents to cross-tool description poisoning, which can manipulate planner-visible tool metadata and steer agent trajectories even when the poisoned tool is never selected. It first evaluates several prompt-injection defenses and shows they transfer poorly to this threat. A key observation is that poisoned descriptions persist in the planning context across steps, enabling continuous influence over subsequent tool choices. Building on this, the authors propose an isolated planning approach that protects agents by separating planning context from poisoned tool metadata. The work directly informs common harness attack methods and how to prevent them.",
+      "llm_tldr": "The paper identifies cross-tool description poisoning as a harness attack surface and proposes an isolated planning defense that separates planning context from poisoned tool metadata.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "What are the common harness attack methods and how to prevent them?",
+      "matched_requirement_id": "req-8",
+      "relevance_score": 10.0,
+      "author_score": 8.5,
+      "author_rating_explanation": "Both focus authors are affiliated with Washington University in St. Louis (WashU), which is listed as a top US AI school/lab in the 8-9 band (UW and similar top US institutions).",
+      "author_profiles": [
+        {
+          "name": "Shanghao Shi",
+          "role": "first_author",
+          "affiliation": "Washington University in St. Louis, St. Louis, MO, USA",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Ning Zhang",
+          "role": "last_author",
+          "affiliation": "Washington University in St. Louis, St. Louis, MO, USA",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.27243v1",
+      "source": "arxiv",
+      "title": "NOVA: A Verification-Aware Agent Harness for Architecture Evolution in Industrial Recommender Systems",
+      "abstract": "Industrial advertising recommender models are continuously improved through architecture evolution. Upgrades such as RankMixer, TokenMixer-Large, and MixFormer show that better structures remain a key source of quality and business gains. Yet developing such upgrades in production is expert-intensive and difficult to scale. Existing automation is insufficient: AutoML mainly tunes hyper-parameters, while effective gains often require cross-module changes under strict constraints; generic LLM coding agents optimize for runnable code, but runnable code does not imply a valid recommender architecture. Candidates may pass local tests while causing silent failures that degrade performance.   We present NOVA, a level-aware agent harness for verification-aware architecture evolution. NOVA uses an architecture gradient, an SGD-inspired, non-differentiable update signal that aggregates prior modifications, verification diagnostics, metric feedback, and trajectory memory to guide the next modification. A verification cascade checks structure semantics, local executability, offline effectiveness, and online impact; invalid candidates are blocked early, with failure patterns recorded as forbidden directions. L1--L4 task-level control matches automation to task complexity and risk, routing high-risk tasks to Copilot for human oversight. Deployed in an industrial advertising system, NOVA achieves the highest effective pass rate on L2 ScaleUp and L3 Literature-to-Production tasks (54.5% and 60.0%), reduces silent failures compared with coding-agent baselines, and shortens one literature-to-production cycle by over 13x in human-attended time. In online A/B testing, the selected L3 candidate improves GMV on three pCVR objectives by +1.25%, +1.70%, and +2.02%, while reducing pCVR bias by 58.8%, 66.7%, and 37.3%.",
+      "authors": [
+        "Shaohua Liu",
+        "Liang Fang",
+        "Yilong Sun",
+        "Shudong Huang",
+        "Qingsong Luo",
+        "Xiaoyang Chen",
+        "Dongqiang Liu",
+        "Chuangang Ma",
+        "Zhenzhen Chai",
+        "Henghuan Wang",
+        "Shijie Quan",
+        "Changyuan Cui",
+        "Zhangbin Zhu",
+        "Peng Chen",
+        "Wei Xu",
+        "Lei Xiao",
+        "Haijie Gu",
+        "Jie Jiang"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR",
+        "cs.SE"
+      ],
+      "published": "2026-06-25T16:30:39+00:00",
+      "link": "https://arxiv.org/pdf/2606.27243v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "verification-aware agent harness for safe architecture evolution",
+      "llm_evidence_cn": "verification-aware agent harness for safe architecture evolution",
+      "llm_evidence": "verification-aware agent harness for safe architecture evolution",
+      "canonical_evidence": "verification-aware agent harness for safe architecture evolution",
+      "llm_tldr_en": "NOVA introduces a verification-aware agent harness that uses level-aware verification to prevent silent failures when LLM-driven agents evolve industrial recommender architectures.",
+      "llm_tldr_cn": "This paper addresses the problem of using LLM coding agents to evolve industrial recommender architectures where candidates may pass local tests yet cause silent production failures. It proposes NOVA, a verification-aware agent harness that adds level-aware verification checks around agent actions so that architecture changes are validated against production constraints before deployment. The approach combines agent-driven exploration with formalized verification steps to reduce expert effort and silent performance regressions. The result is a practical harness framework for controlling agent behavior in a safety-critical production setting.",
+      "llm_tldr": "NOVA introduces a verification-aware agent harness that uses level-aware verification to prevent silent failures when LLM-driven agents evolve industrial recommender architectures.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 9.0,
+      "author_score": 9.0,
+      "author_rating_explanation": "Both focus authors are affiliated with Tencent Inc., a major global technology company with significant AI research output. The first author has additional evidence of high research impact with 437 citations and 27 papers on Semantic Scholar. This fits the 9-10 band for major AI/tech companies.",
+      "author_profiles": [
+        {
+          "name": "Shaohua Liu",
+          "role": "first_author",
+          "affiliation": "Xiaoyang Chen, Dongqiang Liu, Chuangang Ma, Zhenzhen Chai, Henghuan Wang, Shijie Quan; Changyuan Cui, Zhangbin Zhu, Peng Chen, Wei Xu, Lei Xiao, Haijie Gu, Jie Jiang; [1pt] Tencent Inc.; jimmyshliu,franklfang,elonsun,ericdhuang,qsongluo,orionsxliu,noreenchen",
+          "citation_hints": "Semantic Scholar citation_count=437; Semantic Scholar paper_count=27",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        },
+        {
+          "name": "Jie Jiang",
+          "role": "last_author",
+          "affiliation": "[1pt] Tencent Inc.; jimmyshliu,franklfang,elonsun,ericdhuang,qsongluo,orionsxliu,noreenchen; dongcialiu,chuangangma,njzzchai,asherwang,justinquan,shoncui,defyzhu; [1pt]",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.19464v1",
+      "source": "arxiv",
+      "title": "Deontic Policies for Runtime Governance of Agentic AI Systems",
+      "abstract": "Autonomous agentic AI systems driven by Large Language Models (LLMs) introduce a new class of security, privacy, and compliance challenges: an agent that can invoke tools, manipulate data, install software, and coordinate with peer agents across organizational boundaries must be constrained not just by authentication and access control, but by the full structure of enterprise governance. This includes specifying what agents are permitted and prohibited from doing, what they areobliged to do after certain actions (e.g., notify the CISO), under what conditions a standing obligation may be waived, and which rules take precedence when policies conflict. This governance problem exceeds what current policy engines provide. Systems such as XACML, Rego, and Cedar address only the permit/prohibit subset of this governance structure. They do not provide obligation lifecycle management, meta-policy conflict resolution, dispensations that waive obligations in specific circumstances, and ontological reasoning over domain class hierarchies commonly found in applications such as healthcare, cybersecurity, or data privacy. We propose AgenticRei, which realizes key governance requirements such as obligations, dispensations, policy conflict resolutions, and reasoning over policies, as well as the basic permit/prohibit constraints. We use a deontic policy language built on the Rei framework, expressed as OWL (Web Ontology Language) and evaluated at runtime by a high-performance logic engine entirely outside the LLM. The same pipeline governs both tool invocations by the agent and agent-to-agent messages. We show through examples that deontic policies capture governance constraints around security and privacy that mostly cannot be expressed in current production engines. Our approach composes naturally with industry-standard frameworks like A2AS.",
+      "authors": [
+        "Anupam Joshi",
+        "Tim Finin",
+        "Karuna Pande Joshi",
+        "Lalana Kagal"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.MA"
+      ],
+      "published": "2026-06-17T18:02:07+00:00",
+      "link": "https://arxiv.org/pdf/2606.19464v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 8.8,
+      "llm_evidence_en": "runtime governance policies for agentic AI systems",
+      "llm_evidence_cn": "runtime governance policies for agentic AI systems",
+      "llm_evidence": "runtime governance policies for agentic AI systems",
+      "canonical_evidence": "runtime governance policies for agentic AI systems",
+      "llm_tldr_en": "This paper proposes deontic policies for runtime governance of agentic AI systems, constraining what agents may do, must do, and under what conditions obligations can be waived.",
+      "llm_tldr_cn": "This paper addresses the problem that autonomous agentic AI systems powered by LLMs can invoke tools, manipulate data, install software, and coordinate across organizational boundaries, which exceeds the capabilities of standard policy engines. It proposes a deontic policy framework for runtime governance of agentic AI systems, specifying permissions, obligations, conditional waivers, and rule precedence when policies conflict. The approach is positioned as a governance layer that can constrain agent behavior more richly than authentication and access control alone. This provides a conceptual foundation for implementing safety harnesses around LLM-driven agents.",
+      "llm_tldr": "This paper proposes deontic policies for runtime governance of agentic AI systems, constraining what agents may do, must do, and under what conditions obligations can be waived.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 9.0,
+      "author_score": 8.5,
+      "author_rating_explanation": "The last author is affiliated with MIT, a top US AI school. The first author is affiliated with UMBC and the Tim Finin Center for AI, with very high citation impact (22890 citations, 489 papers). MIT affiliation places this in the 8-9 band for top US AI schools/labs.",
+      "author_profiles": [
+        {
+          "name": "Anupam Joshi",
+          "role": "first_author",
+          "affiliation": "UMBC; Baltimore, MD, USA; Tim Finin Center for AI; Karuna Joshi Information Systems Department",
+          "citation_hints": "Semantic Scholar citation_count=22890; Semantic Scholar paper_count=489",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        },
+        {
+          "name": "Lalana Kagal",
+          "role": "last_author",
+          "affiliation": "MIT; Cambridge, MA, USA",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.23449v1",
+      "source": "arxiv",
+      "title": "AOHP: An Open-Source OS-Level Agent Harness for Personalized, Efficient and Secure Interaction",
+      "abstract": "AI agents are driving a new software paradigm, with the ability to autonomously call tools, extract information, manage memory, and complete tasks that span applications and data sources. Most existing end-user operating systems, however, are designed for application-centric workflows and offer little native support for AI agents. This mismatch limits the wider adoption of agents and leads to execution overhead and safety risks when running agents on conventional systems. While the concept of agent-native operating systems is emerging, the research community lacks an open testbed to explore the architectural primitives desired for agent-mediated interaction. We present AOHP (Android Open Harness Project), an OS-level agent harness built on the Android Open Source Project (AOSP). The core design principle of AOHP is to treat agents as first-class OS actors, enabling adaptive user interfaces and agent-friendly runtime environments. AOHP preserves the mature Android software and hardware ecosystem while introducing three agent-oriented system mechanisms: personalized service composition, efficient agent interfaces, and secure information flow. Based on preliminary experiments on challenging tasks covering key capabilities of OS agents, AOHP shows clear advantages in task completion (+21.12% completion rate), execution cost (-51.55% token cost), and security-policy compliance.",
+      "authors": [
+        "Shanhui Zhao",
+        "Jiacheng Liu",
+        "Guohong Liu",
+        "Jichao Yan",
+        "Jialei Ye",
+        "Yuhao Yang",
+        "Hao Wen",
+        "Shizuo Tian",
+        "Yizhen Yuan",
+        "Yuxuan Chen",
+        "Yunxin Liu",
+        "Ju Ren",
+        "Ya-Qin Zhang",
+        "Chao Huang",
+        "Yao Guo",
+        "Yuanchun Li"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.OS"
+      ],
+      "published": "2026-06-22T15:02:42+00:00",
+      "link": "https://arxiv.org/pdf/2606.23449v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 8.6,
+      "llm_evidence_en": "",
+      "llm_evidence_cn": "open-source OS-level agent harness with secure interaction focus",
+      "llm_evidence": "open-source OS-level agent harness with secure interaction focus",
+      "canonical_evidence": "open-source OS-level agent harness with secure interaction focus",
+      "llm_tldr_en": "AOHP is an open-source OS-level agent harness that provides an open testbed for secure, efficient, agent-mediated interaction design.",
+      "llm_tldr_cn": "The paper argues that current operating systems are designed for application-centric workflows and offer little native support for AI agents, which creates execution overhead and safety risks. It presents AOHP, an open-source OS-level agent harness project aimed at enabling personalized, efficient, and secure interaction. The system is intended as an open testbed to explore architectural primitives for agent-mediated interaction. This directly relates to agent harness frameworks, design principles, and security research.",
+      "llm_tldr": "AOHP is an open-source OS-level agent harness that provides an open testbed for secure, efficient, agent-mediated interaction design.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 9.0,
+      "author_score": 8.0,
+      "author_rating_explanation": "Both first author Shanhui Zhao and last author Yuanchun Li are affiliated with Tsinghua University, Peking University, and the University of Hong Kong. These are all top-tier Chinese/Hong Kong AI institutions in the 6-8 score band, with Tsinghua and Peking being among the most elite.",
+      "author_profiles": [
+        {
+          "name": "Shanhui Zhao",
+          "role": "first_author",
+          "affiliation": "1 Tsinghua University~~~~ 2 Peking University~~~~ 3 The University of Hong Kong",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Yuanchun Li",
+          "role": "last_author",
+          "affiliation": "1 Tsinghua University~~~~ 2 Peking University~~~~ 3 The University of Hong Kong",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.26524v1",
+      "source": "arxiv",
+      "title": "VIGIL: Runtime Enforcement of Behavioral Specifications in AI Agent Skills",
+      "abstract": "Agentic systems increasingly act through third-party skills, allowing model-generated decisions to affect files, communication channels, and cyber-physical devices. These skills often include natural-language specifications that define access permissions, disclosure limits, execution privileges, and required preconditions. Although such specifications describe the intended boundaries of skill behavior, they do not by themselves provide executable runtime enforcement. Enforcing them raises a contextual granularity challenge: even when a policy is written for a particular task context, a monitor must still decide which events to observe, what state to retain, how far across the execution to reason, and where to intervene. Choosing the wrong granularity can either block benign executions or miss violations that emerge only across multiple actions. Most existing enforcement mechanisms, however, assume a fixed event model or enforcement point.   In this work, we present VIGIL, an end-to-end runtime enforcement framework for agentic systems. VIGIL checks an agent's actual execution trace against behavioral policies from skill specifications, operator-defined constraints, and global rules spanning multiple skills. To make such policies executable, VIGIL introduces a policy language that captures context-specific enforcement requirements over agent-tool events, including temporal dependencies, argument constraints, and value-flow conditions. The language is paired with symbolic evaluation rules that translate policies into SMT constraints over finite traces, allowing VIGIL to detect violations that depend on event order, argument relationships, or cross-call value flow rather than relying on fixed single-call filters. On real LLM-agent runs spanning office-document, operational, and engineering tasks, VIGIL detects policy violations with over 95% recall and a false-positive rate below 10%.",
+      "authors": [
+        "Ying Li",
+        "Yanju Chen",
+        "Hongbo Wen",
+        "Bosi Zhang",
+        "Hanzhi Liu",
+        "Peiran Wang",
+        "Yu Feng",
+        "Yuan Tian"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-06-25T01:58:44+00:00",
+      "link": "https://arxiv.org/pdf/2606.26524v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 8.4,
+      "llm_evidence_en": "runtime enforcement of behavioral specifications in AI agent skills",
+      "llm_evidence_cn": "runtime enforcement of behavioral specifications in AI agent skills",
+      "llm_evidence": "runtime enforcement of behavioral specifications in AI agent skills",
+      "canonical_evidence": "runtime enforcement of behavioral specifications in AI agent skills",
+      "llm_tldr_en": "VIGIL provides runtime enforcement of behavioral specifications for AI agent skills, addressing the gap between natural-language policy definitions and executable safety controls.",
+      "llm_tldr_cn": "As AI agents increasingly act through third-party skills that affect files and devices, natural-language specifications alone cannot provide executable runtime enforcement. VIGIL addresses this by introducing a runtime monitor that observes events, retains state, and intervenes based on contextual granularity. The system enforces access permissions, disclosure limits, and execution privileges defined in skill specifications. This work directly contributes to agent safety harness frameworks by providing a mechanism to control agent behavior at runtime, ensuring that model-generated decisions remain within intended boundaries even when executing untrusted third-party code.",
+      "llm_tldr": "VIGIL provides runtime enforcement of behavioral specifications for AI agent skills, addressing the gap between natural-language policy definitions and executable safety controls.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 9.0,
+      "author_score": 7.5,
+      "author_rating_explanation": "Focus authors Ying Li and Yuan Tian are affiliated with UCLA, UCSD, and UCSB, all top US AI schools. These are well-established AI research universities, placing them in the 6-8 band with strong confidence.",
+      "author_profiles": [
+        {
+          "name": "Ying Li",
+          "role": "first_author",
+          "affiliation": "University of California, Los Angeles University of California, San Diego\\\\[-0.2ex] University of California, Santa Barbara Riema Labs",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Yuan Tian",
+          "role": "last_author",
+          "affiliation": "University of California, Los Angeles University of California, San Diego\\\\[-0.2ex] University of California, Santa Barbara Riema Labs",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.20408v1",
+      "source": "arxiv",
+      "title": "LLM agent safety, multi-turn red-teaming, jailbreak benchmarks, adversarial robustness, safety-critical systems",
+      "abstract": "Large language model (LLM) agents are increasingly proposed as supervisory components for safety-critical systems, yet their robustness under sustained, adaptive adversarial pressure remains poorly characterized. We present NRT-Bench, a benchmark for multi-turn red-teaming of LLM agents acting as operators of a safety-critical system, instantiated in a simulated nuclear power plant control room. A five-role operator team, each backed by a configurable LLM, runs a plant governed by six critical safety functions (CSFs), while adversaries inject messages over four channels in bounded multi-turn sessions with per-turn feedback. Harm is an objective signal rather than LLM-judged text: a run terminates the moment any CSF is lost, attributed to the causing message. Evaluating four frontier operator models under a fixed-attack paired-replay protocol, we find that adaptive multi-turn attacks reliably push the operator team past a safety limit: across the four models, between 8.7% and 12.1% of attack sessions end with the plant losing a critical safety function. Although the four models look almost equally robust by this aggregate rate, their failures barely overlap: of $149$ sessions, none defeat all four models while a third defeat at least one, so vulnerabilities are nearly disjoint across models rather than nested. The effect of added defences is strongly model-dependent: the same guardrail stack or safety-advisor agent that lowers attack success for one model can raise it for another. We release the simulation venue, attack dataset, and replay tooling for reproducible safety evaluation of LLM agents.",
+      "authors": [
+        "Hanwool Lee",
+        "Dasol Choi",
+        "Bokyeong Kim",
+        "Seung Geun Kim",
+        "Haon Park"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-18T15:57:53+00:00",
+      "link": "https://arxiv.org/pdf/2606.20408v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "LLM agent safety benchmark with multi-turn red-teaming",
+      "llm_evidence_cn": "LLM agent safety benchmark with multi-turn red-teaming",
+      "llm_evidence": "LLM agent safety benchmark with multi-turn red-teaming",
+      "canonical_evidence": "LLM agent safety benchmark with multi-turn red-teaming",
+      "llm_tldr_en": "NRT-Bench evaluates LLM agent robustness in safety-critical systems via multi-turn adversarial red-teaming in a simulated nuclear plant, measuring objective harm under sustained attack.",
+      "llm_tldr_cn": "As LLM agents are increasingly deployed as supervisory components in safety-critical systems, their robustness under sustained and adaptive adversarial pressure remains poorly characterized. This paper presents NRT-Bench, a benchmark for multi-turn red-teaming of LLM agents acting as operators within a simulated nuclear power plant control room. A five-role operator team backed by configurable LLMs runs the plant while adversaries inject messages over multiple channels in bounded multi-turn sessions. The key innovation is that harm is measured as an objective signal tied to critical safety functions rather than subjective LLM-judged text. The benchmark thus provides a rigorous testbed for evaluating agent safety mechanisms and attack resilience in high-stakes environments.",
+      "llm_tldr": "NRT-Bench evaluates LLM agent robustness in safety-critical systems via multi-turn adversarial red-teaming in a simulated nuclear plant, measuring objective harm under sustained attack.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 8.0,
+      "author_score": 8.0,
+      "author_rating_explanation": "The first author has a verified affiliation with the University of Illinois Urbana-Champaign, a top US AI school in the 8-9 band, and also lists AIM Intelligence. The last author lists only AIM Intelligence, which is not a widely recognized top-tier institution/company in the defined bands and has low citation counts (OpenAlex cited_by_count=2). The first author's UIUC affiliation anchors the score at 8.",
+      "author_profiles": [
+        {
+          "name": "Hanwool Lee",
+          "role": "first_author",
+          "affiliation": "AIM Intelligence; University of Illinois Urbana-Champaign",
+          "citation_hints": "OpenAlex cited_by_count=728; OpenAlex works_count=32",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex"
+        },
+        {
+          "name": "Haon Park",
+          "role": "last_author",
+          "affiliation": "AIM Intelligence",
+          "citation_hints": "OpenAlex cited_by_count=2; OpenAlex works_count=12",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex"
+        }
+      ],
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.19980v1",
+      "source": "arxiv",
+      "title": "ENPIRE: Agentic Robot Policy Self-Improvement in the Real World",
+      "abstract": "Achieving dexterous robotic manipulation in the real world heavily relies on human supervision and algorithm engineering, which becomes a central bottleneck in the pursuit of general physical intelligence. Although emerging coding agents can generate code to automate algorithm search, their successes remain largely confined in digital environments. We conjecture that the missing abstraction to automate robotics research is a repeatable feedback loop for real-world policy improvement: reset the scene, execute a policy, verify the outcome, and refine the next iteration. To bridge this gap, we introduce ENPIRE, a harness framework for coding agents that instantiates this physical feedback routine with four core modules: an Environment module (EN) for automatic reset and verification, a Policy Improvement module (PI) that launches policy refinement, a Rollout module (R) to evaluate policies with one or multiple physical robots operating in parallel, and an Evolution module (E) in which coding agents analyze logs, consult literature, improve training infrastructure and algorithm code to address failure modes. This closed-loop system transforms real-world manipulation learning into a controllable optimization procedure, minimizing human effort while allowing fair ablations across training recipe and agent variants. Powered by ENPIRE, frontier coding agents can autonomously train a policy to achieve a 99% success rate on challenging, dexterous manipulation tasks, such as organizing a pin box, fastening a zip tie, and tool use, a process that further accelerates when we dispatch an agent team on a robot fleet. Our results suggest a practical and scalable path toward deploying coding agents to autonomously advancing robotics in the physical world.",
+      "authors": [
+        "Wenli Xiao",
+        "Jia Xie",
+        "Tonghe Zhang",
+        "Haotian Lin",
+        "Letian \"Max\" Fu",
+        "Haoru Xue",
+        "Jalen Lu",
+        "Yi Yang",
+        "Cunxi Dai",
+        "Zi Wang",
+        "Jimmy Wu",
+        "Guanzhi Wang",
+        "S. Shankar Sastry",
+        "Ken Goldberg",
+        "Linxi \"Jim\" Fan",
+        "Yuke Zhu",
+        "Guanya Shi"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-18T09:21:27+00:00",
+      "link": "https://arxiv.org/pdf/2606.19980v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 8.2,
+      "llm_evidence_en": "harness framework for coding agents in real-world robotics",
+      "llm_evidence_cn": "harness framework for coding agents in real-world robotics",
+      "llm_evidence": "harness framework for coding agents in real-world robotics",
+      "canonical_evidence": "harness framework for coding agents in real-world robotics",
+      "llm_tldr_en": "ENPIRE introduces a harness framework that structures coding-agent feedback loops for real-world robot policy improvement.",
+      "llm_tldr_cn": "Coding agents have mainly succeeded in digital settings, while real-world robotics policy improvement still depends heavily on human supervision. ENPIRE proposes a harness framework for coding agents that structures a repeatable physical feedback loop with environment reset, policy execution, outcome verification, and refinement. Although the focus is on robot learning rather than security, the work directly instantiates a harness-style control architecture for agent behavior.",
+      "llm_tldr": "ENPIRE introduces a harness framework that structures coding-agent feedback loops for real-world robot policy improvement.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 8.0,
+      "author_score": 8.5,
+      "author_rating_explanation": "Both authors are affiliated with Carnegie Mellon University (CMU), a top US AI school. First author Wenli Xiao has OpenAlex cited_by_count=337, and last author Guanya Shi has OpenAlex cited_by_count=1362. CMU is a well-established top-tier AI institution, placing this in the 8-9 band.",
+      "author_profiles": [
+        {
+          "name": "Wenli Xiao",
+          "role": "first_author",
+          "affiliation": "Jimmy Wu; Cunxi Dai; Carnegie Mellon University",
+          "citation_hints": "OpenAlex cited_by_count=337; OpenAlex works_count=23",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex"
+        },
+        {
+          "name": "Guanya Shi",
+          "role": "last_author",
+          "affiliation": "Cunxi Dai; Carnegie Mellon University",
+          "citation_hints": "OpenAlex cited_by_count=1362; OpenAlex works_count=141",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.24245v2",
+      "source": "arxiv",
+      "title": "AutoSpec: Safety Rule Evolution for LLM Agents via Inductive Logic Programming",
+      "abstract": "Large language model (LLM) agents increasingly automate complex tasks by integrating language models with external tools and environments. However, their autonomy poses significant safety risks: agents may execute destructive commands, leak sensitive data, or violate domain constraints. Existing safety approaches face a fundamental tradeoff: hand-crafted rules are interpretable but brittle, with overly conservative rules blocking safe operations (high false positives) while permissive rules miss unsafe behaviors (high false negatives). Neural classifiers lack the interpretability required for safety-critical deployments.   We present AutoSpec, a framework that automatically evolves deployed expert-designed safety rules from user safe/unsafe annotations through counterexample-guided inductive synthesis (CEGIS) guided by inductive logic programming (ILP). Starting from the expert rules and a stream of annotated traces, AutoSpec iteratively evaluates rules, mines false-positive and false-negative counterexamples, uses ILP to learn which predicates discriminate them, generates candidate rule edits, and verifies candidates to select the best revision. The key insight is that ILP efficiently identifies predicates that appear frequently in false negatives but rarely in false positives (or vice versa), dramatically pruning the exponential search space of rule edits. This continues until convergence, producing interpretable rules that balance precision and recall.   We evaluate AutoSpec on 291 execution traces spanning code execution and embodied agent domains. AutoSpec raises rule F1 to 0.98 and 0.93 across the two domains, achieving up to 94% false positive reduction while maintaining high recall, and converges within 4-5 iterations. The ILP-guided approach achieves up to 4.8x higher F1 than heuristic CEGIS. The learned rules are human-readable, auditable, and generalize to unseen scenarios.",
+      "authors": [
+        "Pingchuan Ma",
+        "Zhaoyu Wang",
+        "Zimo Ji",
+        "Yuguang Zhou",
+        "Zhantong Xue",
+        "Zongjie Li",
+        "Shuai Wang",
+        "Xiaoqin Zhang"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE",
+        "cs.AI",
+        "cs.CR"
+      ],
+      "published": "2026-06-23T07:31:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.24245v2",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.8,
+      "llm_evidence_en": "framework that evolves safety rules for LLM agents",
+      "llm_evidence_cn": "framework that evolves safety rules for LLM agents",
+      "llm_evidence": "framework that evolves safety rules for LLM agents",
+      "canonical_evidence": "framework that evolves safety rules for LLM agents",
+      "llm_tldr_en": "AutoSpec evolves expert-designed safety rules from user annotations via inductive logic programming to balance interpretability and coverage in LLM agent safety.",
+      "llm_tldr_cn": "The paper addresses the safety risk that autonomous LLM agents may execute destructive commands, leak data, or violate domain constraints. It notes that hand-crafted rules are interpretable but brittle, while neural classifiers lack the interpretability needed for safety-critical deployments. AutoSpec proposes a framework that automatically evolves deployed expert-designed safety rules from user-provided safe and unsafe annotations using inductive logic programming. This approach aims to reduce false positives from overly conservative rules and false negatives from permissive ones. The work directly supports implementing safety harnesses for AI agents by providing an interpretable and adaptive rule-evolution method.",
+      "llm_tldr": "AutoSpec evolves expert-designed safety rules from user annotations via inductive logic programming to balance interpretability and coverage in LLM agent safety.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "how to implement safety harness for AI agents",
+      "matched_requirement_id": "req-6",
+      "relevance_score": 10.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Both focus authors are affiliated with Zhejiang University of Technology. This is a Chinese university but not among the top-tier Chinese institutions listed in the 6-8 band (Tsinghua, Peking, SJTU, Zhejiang, USTC, CAS, etc.), so it falls in the 0-5 bucket.",
+      "author_profiles": [
+        {
+          "name": "Pingchuan Ma",
+          "role": "first_author",
+          "affiliation": "Zhejiang University of Technology",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Xiaoqin Zhang",
+          "role": "last_author",
+          "affiliation": "Zhejiang University of Technology",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.19191v1",
+      "source": "arxiv",
+      "title": "PhantomSkill: Malicious Code Injection in Agent Skill Ecosystems",
+      "abstract": "Agent skills allow LLM-based coding agents to acquire domain-specific capabilities from third-party packages, but they also introduce a new supply-chain attack surface. We present PhantomSkill, an attack framework that hides malicious behavior in a skill's auxiliary resources rather than in its textual description. Its core technique, VulMask, rewrites overt malicious scripts into vulnerability-shaped implementations whose malicious behavior is activated only under attacker-controlled trigger conditions. This design shifts the visible signal from explicit malicious intent to ordinary-looking insecure code. Across representative host skills, attack goals, coding agents, generation models, and automated reviewers, VulMask preserves benign utility while reducing warning and malware-level detection compared with overt malicious scripts. Our results show that skill ecosystems require resource-level vetting, execution-time containment, and security policies that treat exploitable vulnerabilities in agent skills as potential malicious payloads.",
+      "authors": [
+        "Yu-Ting Lin",
+        "Chia-Mu Yu"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-06-17T15:33:41+00:00",
+      "link": "https://arxiv.org/pdf/2606.19191v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.8,
+      "llm_evidence_en": "malicious code injection in agent skill ecosystems",
+      "llm_evidence_cn": "malicious code injection in agent skill ecosystems",
+      "llm_evidence": "malicious code injection in agent skill ecosystems",
+      "canonical_evidence": "malicious code injection in agent skill ecosystems",
+      "llm_tldr_en": "PhantomSkill presents an attack framework hiding malicious behavior in agent skill auxiliary resources via VulMask rewriting.",
+      "llm_tldr_cn": "This paper identifies that agent skills introduce a new supply-chain attack surface for LLM-based coding agents. It presents PhantomSkill, an attack framework that hides malicious behavior in a skill's auxiliary resources rather than its textual description. The core technique, VulMask, rewrites overt malicious scripts into vulnerability-shaped implementations activated only under attacker-controlled trigger conditions. This shifts the visible signal from explicit malicious intent to ordinary-looking insecure code. Across representative host skills and attack goals, VulMask preserves benign utility while reducing detection rates. This work reveals critical harness attack vectors in agent skill ecosystems.",
+      "llm_tldr": "PhantomSkill presents an attack framework hiding malicious behavior in agent skill auxiliary resources via VulMask rewriting.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness attack vectors and exploitation",
+      "matched_requirement_id": "req-4",
+      "relevance_score": 8.0,
+      "author_score": 5.0,
+      "author_rating_explanation": "Both focus authors are affiliated with National Yang Ming Chiao Tung University. This university is not included in the top European/Chinese/Hong Kong bands or major AI company bands in the provided scoring criteria. It is treated as a verifiable but non-top institution, placing it in the 0-5 bucket with a score of 5 for having confirmed affiliation metadata.",
+      "author_profiles": [
+        {
+          "name": "Yu-Ting Lin",
+          "role": "first_author",
+          "affiliation": "National Yang Ming Chiao Tung University",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Chia-Mu Yu",
+          "role": "last_author",
+          "affiliation": "National Yang Ming Chiao Tung University",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.25189v1",
+      "source": "arxiv",
+      "title": "ActPlane: Programmable OS-Level Policy Enforcement for Agent Harnesses",
+      "abstract": "AI agents increasingly run in production through harnesses, the software around the LLM, including an engine that enforces safety and effectiveness policies, e.g., 'run tests before committing.' Enforcing these policies requires bridging a semantic gap: policy intent is expressed in underspecified natural language, while enforcement must act on concrete system actions, e.g., which test to run. Many policies also define event ordering or data flow actions. Yet existing approaches fall short. Tool-call guardrails miss system actions that bypass the tool layer, while OS sandboxes control resource access instead of actions, returning opaque errors that confuse the agent. Our key insight is that policy context lives within the agent closest to the task, while enforcement must happen at the OS to cover all execution paths. We introduce ActPlane, a policy engine that lets agents declare policies and enforces them in the OS kernel with semantic feedback and isolation. ActPlane uses a simple information-flow control (IFC) DSL to support cross-event policies. We implement ActPlane with eBPF and evaluate it on policies from the empirical study, coding-task benchmarks, and safety benchmarks. ActPlane improves policy compliance, including on indirect execution paths that tool-call interception cannot observe, with 1.9%-8.4% overhead. ActPlane is at https://github.com/eunomia-bpf/ActPlane",
+      "authors": [
+        "Yusheng Zheng",
+        "Tianyuan Wu",
+        "Quanzhi Fu",
+        "Tong Yu",
+        "Wenan Mao",
+        "Wei Wang",
+        "Dan Williams",
+        "Andi Quinn"
+      ],
+      "primary_category": "cs.OS",
+      "categories": [
+        "cs.OS"
+      ],
+      "published": "2026-06-23T21:33:13+00:00",
+      "link": "https://arxiv.org/pdf/2606.25189v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 8.2,
+      "llm_evidence_en": "OS-level policy enforcement engine for agent harness safety and behavior control",
+      "llm_evidence_cn": "OS-level policy enforcement engine for agent harness safety and behavior control",
+      "llm_evidence": "OS-level policy enforcement engine for agent harness safety and behavior control",
+      "canonical_evidence": "OS-level policy enforcement engine for agent harness safety and behavior control",
+      "llm_tldr_en": "The paper introduces ActPlane, a programmable OS-level enforcement layer that maps underspecified natural-language harness policies to concrete system actions for agentic production environments.",
+      "llm_tldr_cn": "The paper addresses the gap between high-level safety or effectiveness policies in agent harnesses and the low-level system actions needed to enforce them in production. Existing tool-call guardrails miss actions that bypass the tool layer, while OS sandboxes control resources rather than action semantics. ActPlane proposes a programmable OS-level policy enforcement engine that bridges this gap by using agent context to interpret policy intent and map it to concrete system actions and ordering constraints. This work directly supports harness framework design, safety mechanism implementation, and controllable agent behavior.",
+      "llm_tldr": "The paper introduces ActPlane, a programmable OS-level enforcement layer that maps underspecified natural-language harness policies to concrete system actions for agentic production environments.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 10.0,
+      "author_score": 5.5,
+      "author_rating_explanation": "Both focus authors are affiliated with UC Santa Cruz, which is a mid-tier US research university with concrete CS research output but is not listed among the top US AI schools (Stanford, MIT, CMU, Berkeley, etc.) in the 8-9 band. The first author also lists Northwestern Polytechnical University (a Chinese institution not in the top Chinese AI band) and Aalborg University (a European institution not in the top European band). This places the profile in the 5-6 mid-tier range.",
+      "author_profiles": [
+        {
+          "name": "Yusheng Zheng",
+          "role": "first_author",
+          "affiliation": "UC Santa Cruz; eunomia-bpf; Northwestern Polytechnical University; Aalborg University",
+          "citation_hints": "OpenAlex cited_by_count=1567; OpenAlex works_count=51",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex"
+        },
+        {
+          "name": "Andi Quinn",
+          "role": "last_author",
+          "affiliation": "UC Santa Cruz; University of California, Santa Cruz",
+          "citation_hints": "OpenAlex cited_by_count=0; OpenAlex works_count=9",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.25447v1",
+      "source": "arxiv",
+      "title": "The Interplay of Harness Design and Post-Training in LLM Agents",
+      "abstract": "Tool-integrated LLM agents are often wrapped within a harness: the scaffolding that determines which tools are exposed, how they are described, and what auxiliary information accompanies each per-step observation. While agents are routinely post-trained, this scaffolding is typically treated as a fixed engineering detail, with design effort limited to the training-free regime. Moreover, existing post-training algorithms assume a static environment, even though tool environments and tasks often shift upon deployment. To address this gap, we extend $\\texttt{ALFWorld}$ (i) to treat the harness as a controllable design dimension and (ii) to support evaluation under task and tool environment shifts. Building on this, we systematically analyze how the harness design influences post-training in both in-distribution and out-of-distribution (OOD) settings. We empirically show that harness-aware post-training not only improves in-distribution performance but also enables agents to robustly adapt to OOD settings. Under a harness with minimal design effort, post-training suffers a drastic performance drop under stronger tool environment shifts, further highlighting the importance of harness-aware post-training under such shifts.",
+      "authors": [
+        "Kyungmin Kim",
+        "Youngbin Choi",
+        "Seoyeon Lee",
+        "Suhyeon Jun",
+        "Dongwoo Kim",
+        "Sangdon Park"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-06-24T06:23:02+00:00",
+      "link": "https://arxiv.org/pdf/2606.25447v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.8,
+      "llm_evidence_en": "harness as controllable design dimension for LLM agents",
+      "llm_evidence_cn": "harness as controllable design dimension for LLM agents",
+      "llm_evidence": "harness as controllable design dimension for LLM agents",
+      "canonical_evidence": "harness as controllable design dimension for LLM agents",
+      "llm_tldr_en": "This paper extends ALFWorld to treat the agent harness as a controllable design dimension and studies how harness design interacts with post-training under task and tool shifts.",
+      "llm_tldr_cn": "The paper addresses the gap where tool-integrated LLM agent harnesses are usually treated as fixed engineering details while post-training algorithms assume static environments. It extends ALFWorld to treat the harness as a controllable design dimension and to support evaluation under task and tool environment shifts. The study then systematically analyzes how harness design choices interact with post-training and influence agent behavior. By doing so, it provides a principled way to study harness architecture design rather than leaving harness decisions to ad-hoc engineering. The work directly supports design principles for agent harness architectures and their safety implications.",
+      "llm_tldr": "This paper extends ALFWorld to treat the agent harness as a controllable design dimension and studies how harness design interacts with post-training under task and tool shifts.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "design principles for agent harness architecture",
+      "matched_requirement_id": "req-3",
+      "relevance_score": 10.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "Both focus authors are affiliated with POSTECH (Graduate School of Artificial Intelligence / Department of Computer Science and Engineering). POSTECH is a well-known Korean university but is not listed in the top-tier or major-company bands and falls under the 0-5 bucket per the scoring rules.",
+      "author_profiles": [
+        {
+          "name": "Kyungmin Kim",
+          "role": "first_author",
+          "affiliation": "Graduate School of Artificial Intelligence, POSTECH",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Sangdon Park",
+          "role": "last_author",
+          "affiliation": "Graduate School of Artificial Intelligence, POSTECH; Department of Computer Science and Engineering, POSTECH",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.21129v1",
+      "source": "arxiv",
+      "title": "AgenticOS: An Intent-Oriented Secure Operating System Architecture for Autonomous AI Agents",
+      "abstract": "Traditional OS security models based on \"resource exposure plus permission checks\" face structural challenges as LLM-driven autonomous agents acquire capabilities for planning, tool use, network access, and code execution. Once an agent runtime is compromised through prompt injection or malicious tool outputs, an attacker can compose POSIX-style resource primitives into behaviors far beyond the user's task authorization. To address this, we propose AgenticOS, an intent-oriented secure OS architecture that consolidates delegable, auditable software capabilities into OS-native ones rather than replacing all applications. The core insight is to reframe the OS from a \"resource manager\" into an \"intent filter\": instead of requesting low-level resources directly, agents submit structured intent declarations, from which the system synthesizes a least-privilege environment with mandatory mediation, auditing, and information-flow constraints. At the implementation level, we introduce a four-layer architecture -- Ghost Kernel, Logic Shutter, Agent Capsule, and Semantic Boundary Gateway -- together with the Intent ABI, Manifest-Only Runtime, Weaver-based capability generation, and an admission model for AgenticOS-native Skills.",
+      "authors": [
+        "Zhen Zhao",
+        "Yu Zhang",
+        "Yanpeng Zhu",
+        "Jia Wang",
+        "Songqiao Tao",
+        "Xin Cheng",
+        "Jiexin Gao"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.OS"
+      ],
+      "published": "2026-06-19T06:14:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.21129v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.8,
+      "llm_evidence_en": "intent-oriented secure OS architecture for autonomous AI agents",
+      "llm_evidence_cn": "intent-oriented secure OS architecture for autonomous AI agents",
+      "llm_evidence": "intent-oriented secure OS architecture for autonomous AI agents",
+      "canonical_evidence": "intent-oriented secure OS architecture for autonomous AI agents",
+      "llm_tldr_en": "AgenticOS redesigns OS security around intent filtering to control autonomous AI agent behavior and limit post-compromise actions.",
+      "llm_tldr_cn": "Traditional OS permission models fail when compromised LLM agents can combine low-level resources into behavior beyond their original task scope. AgenticOS proposes an intent-oriented secure OS architecture that treats the OS as an intent filter rather than a resource manager. It consolidates delegable and auditable software capabilities into OS-native primitives so that even a compromised agent runtime faces tighter behavioral boundaries. The paper argues this reframing is a design principle for harnessing autonomous agents more safely.",
+      "llm_tldr": "AgenticOS redesigns OS security around intent filtering to control autonomous AI agent behavior and limit post-compromise actions.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 7.0,
+      "author_score": 6.5,
+      "author_rating_explanation": "First author Zhen Zhao is affiliated with East China University of Science and Technology, Sun Yat-sen University, Northwestern Polytechnical University, and Jilin University, which are reputable Chinese universities with AI/CS research output, supported by high citation counts (OpenAlex cited_by_count=32008). Last author Jiexin Gao is affiliated with Huawei Technologies (United Kingdom), a major technology company, though citation counts are modest (OpenAlex cited_by_count=205). The combination of strong Chinese university affiliations and a major tech company places this in the 6-8 band.",
+      "author_profiles": [
+        {
+          "name": "Zhen Zhao",
+          "role": "first_author",
+          "affiliation": "East China University of Science and Technology; Sun Yat-sen University; Northwestern Polytechnical University; Jilin University",
+          "citation_hints": "OpenAlex cited_by_count=32008; OpenAlex works_count=1119; Semantic Scholar citation_count=7163; Semantic Scholar paper_count=70",
+          "confidence": "medium",
+          "evidence_source": "openalex, semantic_scholar"
+        },
+        {
+          "name": "Jiexin Gao",
+          "role": "last_author",
+          "affiliation": "Huawei Technologies (United Kingdom)",
+          "citation_hints": "OpenAlex cited_by_count=205; OpenAlex works_count=12",
+          "confidence": "medium",
+          "evidence_source": "openalex"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.22916v1",
+      "source": "arxiv",
+      "title": "Intent-Governed Tool Authorization for AI Agents",
+      "abstract": "AI agents increasingly act through external tools: they read private data, construct structured payloads, submit write requests, export records, and coordinate workflows across application boundaries. Existing authorization mechanisms usually ask whether an integration credential, app, or token can call a tool. That question is necessary but incomplete. A tool call can be authorized by static credentials and still be unjustified by the user's current request. For example, a credential that can read and export records should not expose export authority when the user only asked for a bounded summary, and a model-generated delete call should not execute merely because the integration has a delete scope. This paper proposes Intent-Governed Access Control (IGAC), a server-side authorization layer that treats the user's expressed intent as a monotone, auditable policy attribute for AI-agent tool use. IGAC introduces intent certificates, session-scoped policy narrowing, intent-aware manifest filtering, and intent-tool-payload consistency checks. The central invariant is that user intent may only reduce the authority granted by static integration policy; it never expands scopes, data policy, tenant boundaries, or review requirements. We map IGAC onto OpenPort, an existing governance substrate that already implements authorization-dependent discovery, scope and ABAC-style policy checks, draft-first writes, preflight impact binding, state-witness checks, idempotency, stable reason codes, and audit.",
+      "authors": [
+        "Genliang Zhu",
+        "Chu Wang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-22T06:55:57+00:00",
+      "link": "https://arxiv.org/pdf/2606.22916v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "",
+      "llm_evidence_cn": "intent-governed tool authorization for AI agents",
+      "llm_evidence": "intent-governed tool authorization for AI agents",
+      "canonical_evidence": "intent-governed tool authorization for AI agents",
+      "llm_tldr_en": "IGAC proposes server-side intent-governed access control for AI agent tool calls, aligning tool authorization with user intent rather than static credentials.",
+      "llm_tldr_cn": "The paper addresses the limitation that existing authorization mechanisms for AI agent tool calls rely on static credentials, apps, or tokens, which can allow technically authorized but unjustified actions. It proposes Intent-Governed Access Control (IGAC), a server-side authorization framework that evaluates whether a tool call is justified by the user's current request and intent. For example, a credential with export authority should not trigger an export when the user only requested a bounded summary. This work directly supports harness safety and design principles by embedding intent-aware, fine-grained access control into the agent execution architecture.",
+      "llm_tldr": "IGAC proposes server-side intent-governed access control for AI agent tool calls, aligning tool authorization with user intent rather than static credentials.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness safety mechanisms and practices",
+      "matched_requirement_id": "req-2",
+      "relevance_score": 8.0,
+      "author_score": 8.0,
+      "author_rating_explanation": "Focus authors are affiliated with Georgia Institute of Technology and the University of Illinois Urbana-Champaign, both top US AI schools in the 8-9 band. The additional Accentrust affiliation does not raise the score beyond the verified top-school evidence.",
+      "author_profiles": [
+        {
+          "name": "Genliang Zhu",
+          "role": "first_author",
+          "affiliation": "Accentrust; Georgia Institute of Technology",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Chu Wang",
+          "role": "last_author",
+          "affiliation": "Accentrust; University of Illinois Urbana-Champaign",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.20318v1",
+      "source": "arxiv",
+      "title": "AgenticDB: Agentic Performance Reconfiguration for Database Workloads",
+      "abstract": "Database configuration tuning is critical for workload performance, but practical tuning on real deployments remains difficult. Existing automatic tuners mostly formulate tuning as iterative search over DBMS knob values. This formulation leads to high execution cost, prematurely narrows the configuration space, and leaves practical requirements insufficiently addressed: diagnosing runtime bottlenecks from system feedback, exploring OS-level reconfiguration opportunities, executing changes robustly, and learning from previous trials and tasks.   We propose AgenticDB, an agentic framework for database workload reconfiguration. AgenticDB implements a context-grounded harness that interacts with the target database environment by proposing DBMS- and OS-level changes, applying them under safety constraints, observing workload performance and runtime states, and using execution feedback to guide subsequent decisions. This runtime interaction enables AgenticDB to diagnose bottlenecks, explore a broader DBMS- and OS-level reconfiguration space, avoid unsafe or unsupported actions, and accumulate experience within and across reconfiguration tasks. As a result, AgenticDB turns database tuning into a self-refining reconfiguration process in which runtime feedback iteratively improves later decisions.   We conduct extensive experiments on MySQL and PostgreSQL using YCSB, Sysbench, and TPC-H workloads. The results show that AgenticDB achieves the best final performance on all evaluated workloads, improving over the strongest baseline by 118.1% on average and reducing aggregate time-to-best by 22.6%. The results also demonstrate that its OS-level action space, robust execution lifecycle, and memory-enhanced planning contribute to more effective and practical database reconfiguration.",
+      "authors": [
+        "Xinyue Yang",
+        "Chaozheng Wang",
+        "Chen Zheng",
+        "Heng Zhang",
+        "Yanjun Wu"
+      ],
+      "primary_category": "cs.DB",
+      "categories": [
+        "cs.DB"
+      ],
+      "published": "2026-06-18T14:57:10+00:00",
+      "link": "https://arxiv.org/pdf/2606.20318v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.6,
+      "llm_evidence_en": "Context-grounded harness for agentic database reconfiguration",
+      "llm_evidence_cn": "用於agentic數據庫重配置嘅上下文約束harness",
+      "llm_evidence": "Context-grounded harness for agentic database reconfiguration",
+      "canonical_evidence": "Context-grounded harness for agentic database reconfiguration",
+      "llm_tldr_en": "AgenticDB proposes a context-grounded harness that lets an agent interact with a target database environment to reconfigure DBMS and OS-level settings for workload performance.",
+      "llm_tldr_cn": "The paper addresses the difficulty of practical database configuration tuning on real deployments, where existing automatic tuners rely on iterative search over DBMS knob values and poorly handle runtime bottleneck diagnosis, OS-level reconfiguration, robust change execution, and learning from prior trials. The authors propose AgenticDB, an agentic framework for database workload reconfiguration that implements a context-grounded harness interacting with the target database environment. The harness proposes and evaluates DBMS- and OS-level configuration changes by incorporating system feedback and historical trial data. The approach broadens the configuration space beyond knob tuning and aims to make agent-driven reconfiguration more robust and practical. This contributes an agentic harness design pattern for safely and adaptively controlling agent behavior in production environments.",
+      "llm_tldr": "AgenticDB proposes a context-grounded harness that lets an agent interact with a target database environment to reconfigure DBMS and OS-level settings for workload performance.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 8.0,
+      "author_score": 7.0,
+      "author_rating_explanation": "First author Xinyue Yang is affiliated with the University of Chinese Academy of Sciences and the Institute of Software, Chinese Academy of Sciences. Last author Yanjun Wu is affiliated with the Institute of Software, Chinese Academy of Sciences. CAS is explicitly listed in the 6-8 top Chinese/Hong Kong AI schools/labs band.",
+      "author_profiles": [
+        {
+          "name": "Xinyue Yang",
+          "role": "first_author",
+          "affiliation": "University of Chinese Academy of Sciences, Nanjing, China; Institute of Software, Chinese Academy of Sciences, Beijing, China",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Yanjun Wu",
+          "role": "last_author",
+          "affiliation": "Institute of Software, Chinese Academy of Sciences, Beijing, China",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.18619v1",
+      "source": "arxiv",
+      "title": "Code-Augur: Agentic Vulnerability Detection via Specification Inference",
+      "abstract": "The advent of agentic vulnerability detection is already becoming a watershed moment for software security. Audits conducted entirely by autonomous LLM agents are uncovering critical vulnerabilities in fundamental software underpinning digital society. Many of these vulnerabilities remained masked for years, surfacing only now with AI agents. Yet the reasoning behind these discoveries remains alarmingly opaque and unvalidated. What assumptions did the agent make about a function's inputs when it deemed that function to be secure? Failures in reasoning and incorrect assumptions can lead to missed vulnerabilities and reduce trust in agentic analysis.   We propose a security-specification-first paradigm that (1) exposes the agent's tacit assumptions explicitly as security specifications and (2) continuously refines those specifications via runtime falsification. We realize our approach in Code-Augur, a novel harness for agentic vulnerability detection. Given a codebase, Code-Augur analyzes each component of the system for vulnerable code. When it deems a component to be secure, it commits the local invariants behind that judgment as in-source assertions. In parallel, Code-Augur leverages a guided fuzzer to attempt to falsify those assumptions. When the fuzzer triggers an assertion, this either reveals a genuine vulnerability or a flawed specification to refine. In both cases, this process grounds the agent's understanding, aligning its view of code intent with how the code actually behaves. On real-world subjects, Code-Augur effectively leverages security specifications to detect more vulnerabilities than other state-of-the-art agents. Additionally, Code-Augur found 22 new vulnerabilities in key open-source projects. Compared to curated specialized models like Claude Mythos, Code-Augur offers effective agentic vulnerability detection built on widely available LLMs like Sonnet and DeepSeek.",
+      "authors": [
+        "Zhengxiong Luo",
+        "Mehtab Zafar",
+        "Dylan Wolff",
+        "Abhik Roychoudhury"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.SE"
+      ],
+      "published": "2026-06-17T02:32:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.18619v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.6,
+      "llm_evidence_en": "security-specification-first paradigm for auditing agentic vulnerability detection",
+      "llm_evidence_cn": "security-specification-first paradigm for auditing agentic vulnerability detection",
+      "llm_evidence": "security-specification-first paradigm for auditing agentic vulnerability detection",
+      "canonical_evidence": "security-specification-first paradigm for auditing agentic vulnerability detection",
+      "llm_tldr_en": "The paper proposes Code-Augur, a security-specification-first paradigm that exposes agent assumptions and validates the reasoning behind autonomous vulnerability detection.",
+      "llm_tldr_cn": "The paper addresses the opacity of autonomous LLM-agent vulnerability discovery, where missed bugs can stem from incorrect assumptions about function inputs. It proposes Code-Augur, a security-specification-first paradigm that forces agents to expose their tacit assumptions and reason about them before declaring code secure. The method supports validation and trust in agentic analysis by making reasoning explicit. While focused on software auditing, the approach is methodologically relevant to harness vulnerability assessment and safety validation of agent systems.",
+      "llm_tldr": "The paper proposes Code-Augur, a security-specification-first paradigm that exposes agent assumptions and validates the reasoning behind autonomous vulnerability detection.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness vulnerability assessment",
+      "matched_requirement_id": "req-5",
+      "relevance_score": 6.0,
+      "author_score": 7.5,
+      "author_rating_explanation": "The first author is affiliated with the National University of Singapore and Tsinghua University, both of which are top-tier institutions (Tsinghua is in the 6-8 top Chinese band; NUS is a top global AI school). The last author is at NUS with very strong citation counts (OpenAlex cited_by_count=10961; Semantic Scholar citation_count=10704). Both institutions are well-recognized, placing this solidly in the 6-8 band with NUS and Tsinghua as concrete evidence.",
+      "author_profiles": [
+        {
+          "name": "Zhengxiong Luo",
+          "role": "first_author",
+          "affiliation": "National University of Singapore; Tsinghua University",
+          "citation_hints": "OpenAlex cited_by_count=227; OpenAlex works_count=15",
+          "confidence": "medium",
+          "evidence_source": "openalex"
+        },
+        {
+          "name": "Abhik Roychoudhury",
+          "role": "last_author",
+          "affiliation": "National University of Singapore",
+          "citation_hints": "OpenAlex cited_by_count=10961; OpenAlex works_count=324; Semantic Scholar citation_count=10704; Semantic Scholar paper_count=200",
+          "confidence": "medium",
+          "evidence_source": "openalex, semantic_scholar"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.21856v1",
+      "source": "arxiv",
+      "title": "Harness-MU: A Safe, Governed, and Effective Harness for Multi-User LLM Agents",
+      "abstract": "The increasing deployment of large language model (LLM) agents in collaborative workflows demands robust multi-user, multi-principal interaction mechanisms capable of enforcing access permissions, resolving authoritative conflicts, and preventing unauthorized data disclosure. However, a fundamental mismatch exists between the single-user training paradigm of contemporary LLMs and the hard constraints required for multi-principal governance, rendering probabilistic, prompt-based safeguards vulnerable under multi-turn adversarial interactions.Our key insight is that governance constraints -- who is authorized, what is restricted, and whose instructions take precedence -- are deterministic runtime variables that should be enforced by execution hooks rather than entrusted to the LLM. We present \\textbf{Harness-MU}, the first model-agnostic, zero-tuning infrastructure framework for multi-user LLM agents. By decoupling language generation from safety orchestration, Harness-MU guarantees unbreakable permission boundaries while maximizing compliant demand satisfaction. Across four frontier open-weight and proprietary models on the \\textit{Muses-Bench} benchmark, Harness-MU achieves the goal of privacy preservation across all access-control attacks, outperforming the standard baseline by 0.28--0.39 in utility score and improving instruction-following accuracy by up to 48.9 percentage points. Harness-MU advances the philosophy of \\textit{Harness Engineering}, establishing that systematic infrastructure is essential for solving LLM multi-principal governance challenges. The code and data are available at https://github.com/YuanJrShiuan/Harness-MulUser.",
+      "authors": [
+        "Wangxuan Fan",
+        "Xiaoyu Nie",
+        "Zhongxiang Dai"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-20T03:24:24+00:00",
+      "link": "https://arxiv.org/pdf/2606.21856v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.6,
+      "llm_evidence_en": "safe governed harness for multi-user LLM agents",
+      "llm_evidence_cn": "safe governed harness for multi-user LLM agents",
+      "llm_evidence": "safe governed harness for multi-user LLM agents",
+      "canonical_evidence": "safe governed harness for multi-user LLM agents",
+      "llm_tldr_en": "Harness-MU proposes a multi-user LLM agent harness with deterministic runtime governance to control agent behavior and prevent unauthorized actions.",
+      "llm_tldr_cn": "The paper addresses the gap between single-user LLM training and the need for multi-principal governance in collaborative agent workflows. It proposes Harness-MU, a harness design that enforces access permissions, authority resolution, and data protection through deterministic runtime mechanisms rather than prompt-based safeguards. The work directly studies how a harness can govern agent behavior safely. It contributes architectural insights for secure multi-user agent harnesses.",
+      "llm_tldr": "Harness-MU proposes a multi-user LLM agent harness with deterministic runtime governance to control agent behavior and prevent unauthorized actions.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 9.0,
+      "author_score": 5.5,
+      "author_rating_explanation": "Both focus authors are affiliated with The Chinese University of Hong Kong, Shenzhen (CUHK-Shenzhen). Per the scoring rules, CUHK-Shenzhen is distinct from CUHK Hong Kong and must not receive the top-school boost. Without explicit metadata confirming it as a top-tier campus, it falls into the 5-6 mid-tier range.",
+      "author_profiles": [
+        {
+          "name": "Wangxuan Fan",
+          "role": "first_author",
+          "affiliation": "The Chinese University of Hong Kong, Shenzhen",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Zhongxiang Dai",
+          "role": "last_author",
+          "affiliation": "The Chinese University of Hong Kong, Shenzhen",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.22278v1",
+      "source": "arxiv",
+      "title": "Any-Body Guard: Universal Safeguarding for Manipulation Policies via Action Masking",
+      "abstract": "Ensuring safety of learning-enabled robotic manipulation across diverse embodiments and tasks still requires significant manual engineering. Existing approaches typically rely on heuristically designed fallback controllers or complex forward invariance assessments. These methods are often too conservative for task success, too computationally expensive for real-time execution, too heuristic to provide useful safety guarantees, or too engineering-heavy to transfer between setups. In this paper, we propose a universal safeguarding approach, X-Safe, which reasons directly in the robot's configuration space to provide formal probabilistic guarantees for collision avoidance. By operating in the configuration space, our method transfers across embodiments while relying solely on an object-based, quasi-static scene representation and a forward kinematics model of the robotic manipulator. Thus, X-Safe provides useful formal safety guarantees without requiring additional data, or engineering effort for different embodiments or scenes. We demonstrate X-Safe for diverse embodiments and policies, both in simulation and on hardware. We observe less degradation in task performance compared to state-of-the-art safeguarding, no collisions on hardware experiments, and empirically corroborate our formal guarantees.",
+      "authors": [
+        "Alex Beaudin",
+        "Hanna Krasowski",
+        "Kartik Nagpal",
+        "Sanjit A. Seshia",
+        "Murat Arcak",
+        "Negar Mehr"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.LG",
+        "eess.SY"
+      ],
+      "published": "2026-06-21T00:11:46+00:00",
+      "link": "https://arxiv.org/pdf/2606.22278v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.6,
+      "llm_evidence_en": "",
+      "llm_evidence_cn": "universal safeguarding approach for robotic manipulation via action masking",
+      "llm_evidence": "universal safeguarding approach for robotic manipulation via action masking",
+      "canonical_evidence": "universal safeguarding approach for robotic manipulation via action masking",
+      "llm_tldr_en": "X-Safe provides formal probabilistic collision-avoidance guarantees in robot configuration space via a universal action-masking safeguarding approach.",
+      "llm_tldr_cn": "The paper addresses the challenge of ensuring safety across diverse robotic manipulation embodiments and tasks without expensive manual engineering. Existing approaches are often too conservative, too computationally expensive, too heuristic, or too hard to transfer. The authors propose X-Safe, a universal safeguarding approach that reasons directly in the robot's configuration space to provide formal probabilistic guarantees for collision avoidance. By operating in configuration space, the method transfers across embodiments and tasks. This work is relevant to agent harness safety because it exemplifies a principled safeguarding mechanism that can be adapted to constrain agent actions at runtime.",
+      "llm_tldr": "X-Safe provides formal probabilistic collision-avoidance guarantees in robot configuration space via a universal action-masking safeguarding approach.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 7.0,
+      "author_score": 8.5,
+      "author_rating_explanation": "The last author (Negar Mehr) is affiliated with the University of California, Berkeley, which is explicitly listed as a top US AI school in the 8-9 band. The first author's listed affiliation appears to be co-author names rather than an institution, but the verified Berkeley affiliation of the last author supports the 8-9 band rating.",
+      "author_profiles": [
+        {
+          "name": "Alex Beaudin",
+          "role": "first_author",
+          "affiliation": "Hanna Krasowski; Kartik Nagpal; Sanjit A. Seshia; Murat Arcak",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Negar Mehr",
+          "role": "last_author",
+          "affiliation": "University of California, Berkeley",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "name": "Maria Apostolaki",
+  "role": "last_author",
+  "affiliation": "Princeton University",
+  "citation_hints": "OpenAlex cited_by_count=3261; OpenAlex works_count=93",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Maria Apostolaki",
+    "affiliations": [
+      "Princeton University"
+    ],
+    "author_row": "Maria Apostolaki"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "HOWLR: A Client-Driven Approach to BGP Hijack Detection",
+    "paper_year": "2026",
+    "name": "Maria Apostolaki",
+    "affiliations": [
+      "Princeton University"
+    ],
+    "works_count": 93,
+    "cited_by_count": 3261,
+    "author_id": "https://openalex.org/A5026774096",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

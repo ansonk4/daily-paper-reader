@@ -1,0 +1,16 @@
+{
+  "author_score": 7.0,
+  "author_rating_explanation": "First author SingGuard Team is affiliated with the 1 AI Security Lab at Ant Group. Ant Group is a major Chinese technology company with a recognized AI research presence, placing it in the 6-8 band for strong industry research labs.",
+  "author_profiles": [
+    {
+      "name": "SingGuard Team",
+      "role": "first_author",
+      "affiliation": "1 AI Security Lab, Ant Group",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:57:33.293752+00:00"
+}

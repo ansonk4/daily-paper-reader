@@ -1241,6 +1241,62 @@ def yaml_escape_value(s: str) -> str:
     return s
 
 
+def _coerce_author_count(value: Any) -> int | None:
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    if isinstance(value, float):
+        if value < 0 or not value.is_integer():
+            return None
+        return int(value)
+    text = str(value or "").strip().replace(",", "")
+    if not re.fullmatch(r"\d+", text):
+        return None
+    return int(text)
+
+
+def _first_author_count(*values: Any) -> int | None:
+    for value in values:
+        count = _coerce_author_count(value)
+        if count is not None:
+            return count
+    return None
+
+
+def _author_count_from_hints(hints: Any, field_names: List[str]) -> int | None:
+    text = str(hints or "").strip()
+    if not text:
+        return None
+    for field in field_names:
+        match = re.search(rf"\b{re.escape(field)}\s*=\s*([0-9][0-9,]*)", text)
+        if match:
+            return _coerce_author_count(match.group(1))
+    return None
+
+
+def _author_profile_metric_count(profile: Dict[str, Any], metric: str) -> int | None:
+    openalex = profile.get("openalex") if isinstance(profile.get("openalex"), dict) else {}
+    semantic = profile.get("semantic_scholar") if isinstance(profile.get("semantic_scholar"), dict) else {}
+    if metric == "citation":
+        return _first_author_count(
+            profile.get("citation_count"),
+            semantic.get("citation_count"),
+            profile.get("cited_by_count"),
+            openalex.get("cited_by_count"),
+            _author_count_from_hints(profile.get("citation_hints"), ["citation_count", "cited_by_count"]),
+        )
+    if metric == "paper":
+        return _first_author_count(
+            profile.get("paper_count"),
+            semantic.get("paper_count"),
+            profile.get("works_count"),
+            openalex.get("works_count"),
+            _author_count_from_hints(profile.get("citation_hints"), ["paper_count", "works_count"]),
+        )
+    return None
+
+
 def format_author_affiliations(paper: Dict[str, Any]) -> str:
     explicit = str(paper.get("author_affiliations") or "").strip()
     if explicit:
@@ -1262,6 +1318,7 @@ def format_author_affiliations(paper: Dict[str, Any]) -> str:
             or profile.get("group")
             or ""
         ).strip()
+        affiliation = re.sub(r"\s*;\s*", ", ", affiliation)
         if not name and not affiliation:
             continue
         label = name
@@ -1277,6 +1334,45 @@ def format_author_affiliations(paper: Dict[str, Any]) -> str:
         seen.add(key)
         items.append(text)
     return "; ".join(items)
+
+
+def format_author_metrics(paper: Dict[str, Any]) -> str:
+    for key in ("author_metrics_json", "author_metrics"):
+        explicit_raw = paper.get(key)
+        if isinstance(explicit_raw, list):
+            return json.dumps(explicit_raw, ensure_ascii=False, separators=(",", ":"))
+        if isinstance(explicit_raw, dict):
+            return json.dumps([explicit_raw], ensure_ascii=False, separators=(",", ":"))
+        explicit = str(explicit_raw or "").strip()
+        if explicit:
+            return explicit
+    profiles = paper.get("author_profiles")
+    if not isinstance(profiles, list):
+        return ""
+    items: List[Dict[str, Any]] = []
+    seen: set[str] = set()
+    for profile in profiles:
+        if not isinstance(profile, dict):
+            continue
+        name = str(profile.get("name") or "").strip()
+        role = str(profile.get("role") or "").strip()
+        citation_count = _author_profile_metric_count(profile, "citation")
+        paper_count = _author_profile_metric_count(profile, "paper")
+        if citation_count is None and paper_count is None:
+            continue
+        key = f"{name.lower()}|{role.lower()}"
+        if not name or key in seen:
+            continue
+        seen.add(key)
+        item: Dict[str, Any] = {"name": name}
+        if role:
+            item["role"] = role
+        if citation_count is not None:
+            item["citation_count"] = citation_count
+        if paper_count is not None:
+            item["paper_count"] = paper_count
+        items.append(item)
+    return json.dumps(items, ensure_ascii=False, separators=(",", ":")) if items else ""
 
 
 def maybe_generate_paper_figures(
@@ -1367,6 +1463,7 @@ def build_markdown_content(
     relevance_score = paper.get("relevance_score")
     author_score = paper.get("author_score")
     author_affiliations = format_author_affiliations(paper)
+    author_metrics = format_author_metrics(paper)
     author_rating_explanation = str(paper.get("author_rating_explanation") or "").strip()
     evidence = str(paper.get("canonical_evidence") or "").strip()
     tldr = (
@@ -1429,6 +1526,8 @@ def build_markdown_content(
         lines.append(f"author_score: {author_score}")
     if author_affiliations:
         lines.append(f"author_affiliations: {yaml_escape_value(author_affiliations)}")
+    if author_metrics:
+        lines.append(f"author_metrics_json: {yaml_escape_value(author_metrics)}")
     if author_rating_explanation:
         lines.append(f"author_rating_explanation: {yaml_escape_value(author_rating_explanation)}")
     if evidence:
@@ -1528,6 +1627,22 @@ def process_paper(
         existing_meta = _parse_front_matter(existing)
         has_figures_json = bool(str(existing_meta.get("figures_json") or "").strip()) if existing_meta else False
         has_tables_json = bool(str(existing_meta.get("tables_json") or "").strip()) if existing_meta else False
+
+        refreshed_front_matter = {
+            "author_score": str(paper.get("author_score") or "").strip(),
+            "author_affiliations": format_author_affiliations(paper),
+            "author_metrics_json": format_author_metrics(paper),
+            "author_rating_explanation": str(paper.get("author_rating_explanation") or "").strip(),
+        }
+        for field, value in refreshed_front_matter.items():
+            if not value:
+                continue
+            updated, changed = upsert_front_matter_field(existing, field, yaml_escape_value(value))
+            if changed:
+                with open(md_path, "w", encoding="utf-8") as f:
+                    f.write(updated + ("\n" if not updated.endswith("\n") else ""))
+                existing = updated
+
         if not has_figures_json or not has_tables_json:
             figures, tables = maybe_generate_paper_media(
                 paper,
@@ -2394,6 +2509,7 @@ def _parse_generated_md_to_meta(
     relevance_score_value = _fallback_meta("relevance_score", "Relevance Score")
     author_score_value = _fallback_meta("author_score", "Author Score")
     author_affiliations_value = _fallback_meta("author_affiliations", "Author Affiliations")
+    author_metrics_value = _fallback_meta("author_metrics_json", "Author Metrics")
     author_rating_explanation_value = _fallback_meta(
         "author_rating_explanation",
         "Author Rating",
@@ -2426,6 +2542,7 @@ def _parse_generated_md_to_meta(
         "relevance_score": str(relevance_score_value or "").strip(),
         "author_score": str(author_score_value or "").strip(),
         "author_affiliations": str(author_affiliations_value or "").strip(),
+        "author_metrics_json": str(author_metrics_value or "").strip(),
         "author_rating_explanation": str(author_rating_explanation_value or "").strip(),
         "evidence": str(evidence_value or "").strip(),
         "tldr": str(tldr_value or "").strip(),

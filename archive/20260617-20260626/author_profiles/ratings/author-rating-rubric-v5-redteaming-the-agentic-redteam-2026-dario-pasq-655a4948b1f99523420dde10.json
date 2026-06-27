@@ -1,0 +1,24 @@
+{
+  "author_score": 6.5,
+  "author_rating_explanation": "Both focus authors are affiliated with New York University (NYU), which is a well-known US AI research university with strong AI output. While NYU is not explicitly listed in the 8-9 top US band (Stanford, MIT, CMU, Berkeley, etc.), it is a prominent AI research institution that exceeds the 5-6 mid-tier threshold. The first author also lists George Mason University (mid-tier) and Cracken (unverified). NYU as a recognized AI research university supports placement in the 6-8 band.",
+  "author_profiles": [
+    {
+      "name": "Dario Pasquini",
+      "role": "first_author",
+      "affiliation": "Cracken; Michał Bazyli; New York University; George Mason University",
+      "citation_hints": "OpenAlex cited_by_count=297; OpenAlex works_count=27",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    },
+    {
+      "name": "Artem Sorokin",
+      "role": "last_author",
+      "affiliation": "Cracken; New York University",
+      "citation_hints": "OpenAlex cited_by_count=0; OpenAlex works_count=4; Semantic Scholar citation_count=250; Semantic Scholar paper_count=106",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex, semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:56:52.997365+00:00"
+}

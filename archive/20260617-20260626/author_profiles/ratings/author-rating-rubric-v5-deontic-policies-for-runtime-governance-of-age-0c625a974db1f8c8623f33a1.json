@@ -1,0 +1,24 @@
+{
+  "author_score": 8.5,
+  "author_rating_explanation": "The last author is affiliated with MIT, a top US AI school. The first author is affiliated with UMBC and the Tim Finin Center for AI, with very high citation impact (22890 citations, 489 papers). MIT affiliation places this in the 8-9 band for top US AI schools/labs.",
+  "author_profiles": [
+    {
+      "name": "Anupam Joshi",
+      "role": "first_author",
+      "affiliation": "UMBC; Baltimore, MD, USA; Tim Finin Center for AI; Karuna Joshi Information Systems Department",
+      "citation_hints": "Semantic Scholar citation_count=22890; Semantic Scholar paper_count=489",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar"
+    },
+    {
+      "name": "Lalana Kagal",
+      "role": "last_author",
+      "affiliation": "MIT; Cambridge, MA, USA",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:58:39.091010+00:00"
+}

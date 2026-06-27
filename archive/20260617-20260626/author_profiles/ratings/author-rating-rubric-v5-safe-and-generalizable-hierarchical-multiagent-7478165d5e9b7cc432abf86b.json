@@ -1,0 +1,24 @@
+{
+  "author_score": 6.5,
+  "author_rating_explanation": "Both focus authors are affiliated with King's College London, a top UK university. The last author also lists The Alan Turing Institute, a recognized national AI institute. This fits the 6-8 band for top European schools/labs.",
+  "author_profiles": [
+    {
+      "name": "Zihao Guo",
+      "role": "first_author",
+      "affiliation": "King's College London",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Yali Du",
+      "role": "last_author",
+      "affiliation": "King's College London; The Alan Turing Institute",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:58:39.089398+00:00"
+}

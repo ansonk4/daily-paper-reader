@@ -1,0 +1,28 @@
+{
+  "name": "Sergey Kurilenko",
+  "role": "first_author",
+  "affiliation": "Moscow Institute of Physics and Technology",
+  "citation_hints": "Semantic Scholar citation_count=31; Semantic Scholar paper_count=8",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Sergey Kurilenko",
+    "affiliations": [
+      "Moscow Institute of Physics and Technology"
+    ],
+    "author_row": "Sergey M.\\ Kurilenko"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Hybrid privacy-aware semantic search: SVD-truncated document geometry and CKKS-encrypted query reranking under a restricted threat model",
+    "paper_year": "2026",
+    "name": "S. Kurilenko",
+    "affiliations": [],
+    "paper_count": 8,
+    "citation_count": 31,
+    "author_id": "102571043",
+    "lookup": "author_search"
+  }
+}

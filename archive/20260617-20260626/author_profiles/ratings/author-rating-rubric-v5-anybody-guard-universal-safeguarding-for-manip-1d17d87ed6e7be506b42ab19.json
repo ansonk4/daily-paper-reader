@@ -1,0 +1,24 @@
+{
+  "author_score": 8.5,
+  "author_rating_explanation": "The last author (Negar Mehr) is affiliated with the University of California, Berkeley, which is explicitly listed as a top US AI school in the 8-9 band. The first author's listed affiliation appears to be co-author names rather than an institution, but the verified Berkeley affiliation of the last author supports the 8-9 band rating.",
+  "author_profiles": [
+    {
+      "name": "Alex Beaudin",
+      "role": "first_author",
+      "affiliation": "Hanna Krasowski; Kartik Nagpal; Sanjit A. Seshia; Murat Arcak",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Negar Mehr",
+      "role": "last_author",
+      "affiliation": "University of California, Berkeley",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:00:55.809063+00:00"
+}

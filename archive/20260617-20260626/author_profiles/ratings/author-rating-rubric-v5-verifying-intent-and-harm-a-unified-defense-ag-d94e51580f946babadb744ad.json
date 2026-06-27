@@ -1,0 +1,24 @@
+{
+  "author_score": 5.0,
+  "author_rating_explanation": "Poojitha Thota is affiliated with The University of Texas at Arlington, which is a US university but not clearly in the top or mid-tier AI bands based on the supplied metadata. The last author has no verifiable affiliation. The overall source background is best treated as mid-tier/neutral, not reaching 6+.",
+  "author_profiles": [
+    {
+      "name": "Poojitha Thota",
+      "role": "first_author",
+      "affiliation": "The University of Texas at Arlington, Arlington, Texas, USA",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Shirin Nilizadeh",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:02:30.283072+00:00"
+}

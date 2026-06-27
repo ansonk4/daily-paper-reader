@@ -1,0 +1,24 @@
+{
+  "author_score": 8.0,
+  "author_rating_explanation": "Focus authors are affiliated with Georgia Institute of Technology and the University of Illinois Urbana-Champaign, both top US AI schools in the 8-9 band. The additional Accentrust affiliation does not raise the score beyond the verified top-school evidence.",
+  "author_profiles": [
+    {
+      "name": "Genliang Zhu",
+      "role": "first_author",
+      "affiliation": "Accentrust; Georgia Institute of Technology",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Chu Wang",
+      "role": "last_author",
+      "affiliation": "Accentrust; University of Illinois Urbana-Champaign",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:05:42.052936+00:00"
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 5.5,
+  "author_rating_explanation": "First author Shangzhi Xu and corresponding author Siqi Ma are affiliated with The University of New South Wales, Macquarie University, CSIRO, and University of Wollongong. These are Australian universities with CS/IT research output, but they are not listed in the top US/European/Chinese/Hong Kong bands, so they fall into the mid-tier range. No citation evidence is available.",
+  "author_profiles": [
+    {
+      "name": "Shangzhi Xu",
+      "role": "first_author",
+      "affiliation": "~Shuangxiang Kan ,~Siqi Ma 1; The University of New South Wales,~ Macquarie University,~ CSIRO,~ The University of Wollongong; * Corresponding Authors",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Siqi Ma",
+      "role": "last_author",
+      "affiliation": "The University of New South Wales,~ Macquarie University,~ CSIRO,~ The University of Wollongong; * Corresponding Authors",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:05:04.113699+00:00"
+}

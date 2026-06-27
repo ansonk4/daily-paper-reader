@@ -1,0 +1,18 @@
+{
+  "name": "Liwei Liu",
+  "role": "first_author",
+  "affiliation": "Shanghai Jiao Tong University",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Liwei Liu",
+    "affiliations": [
+      "Shanghai Jiao Tong University"
+    ],
+    "author_row": "Liwei Liu"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

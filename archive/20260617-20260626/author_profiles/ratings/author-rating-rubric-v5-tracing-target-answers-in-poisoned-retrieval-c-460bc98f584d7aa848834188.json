@@ -1,0 +1,24 @@
+{
+  "author_score": 6.5,
+  "author_rating_explanation": "The last author, Wei-Bin Lee, has a verified affiliation including National Yang Ming Chiao Tung University, IBM Research, and Hon Hai Research Institute. IBM Research is a recognized industrial research lab, and NYCU is a notable university, supporting a mid-tier score. The first author’s affiliation metadata is incomplete, so the strongest evidence comes from the last author.",
+  "author_profiles": [
+    {
+      "name": "Yan-Lun Chen",
+      "role": "first_author",
+      "affiliation": "Ying-Dar Lin * , Yu-Sung Wu *",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Wei-Bin Lee",
+      "role": "last_author",
+      "affiliation": "* National Yang Ming Chiao Tung University; IBM Research; Hon Hai Research Institute",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:02:30.294569+00:00"
+}

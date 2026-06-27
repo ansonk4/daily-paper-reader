@@ -1,0 +1,23 @@
+{
+  "name": "Mostapha Benhenda",
+  "role": "first_author",
+  "affiliation": "Laboratoire Analyse, Géométrie et Applications",
+  "citation_hints": "OpenAlex cited_by_count=198; OpenAlex works_count=22",
+  "confidence": "medium",
+  "evidence_source": "openalex",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "IPO Finance Agent: Evaluation of LLM Financial Analysts beyond Finance Agent v2, with Automated Rubric Generation -- the Case of the SpaceX (SPCX) IPO",
+    "paper_year": "2026",
+    "name": "Mostapha Benhenda",
+    "affiliations": [
+      "Laboratoire Analyse, Géométrie et Applications"
+    ],
+    "works_count": 22,
+    "cited_by_count": 198,
+    "author_id": "https://openalex.org/A5013283264",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

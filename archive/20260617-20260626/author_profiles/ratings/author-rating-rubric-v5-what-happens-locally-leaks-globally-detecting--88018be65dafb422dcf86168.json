@@ -1,0 +1,24 @@
+{
+  "author_score": 5.0,
+  "author_rating_explanation": "The first author's affiliation appears to contain author names rather than an institution, making it unverifiable. The last author is affiliated with Okayama University, Yangtze University, Guilin University of Aerospace Technology, and Westlake University. Westlake University is a newer Chinese institution not listed in the 6-8 top Chinese AI band (Tsinghua, Peking, SJTU, Zhejiang, USTC, CAS). Okayama University is a Japanese institution not in any top band. The combined profile does not meet the 6-8 threshold.",
+  "author_profiles": [
+    {
+      "name": "Biwei Yan",
+      "role": "first_author",
+      "affiliation": "Minghui Xu 1; Yijun Yang 1; Boyang Ma 1; Xuelong Dai 1",
+      "citation_hints": "OpenAlex cited_by_count=506; OpenAlex works_count=22",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    },
+    {
+      "name": "Yue Zhang",
+      "role": "last_author",
+      "affiliation": "Okayama University; Yangtze University; Guilin University of Aerospace Technology; Westlake University",
+      "citation_hints": "OpenAlex cited_by_count=15829; OpenAlex works_count=933; Semantic Scholar citation_count=350; Semantic Scholar paper_count=63",
+      "confidence": "medium",
+      "evidence_source": "openalex, semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:56:52.996217+00:00"
+}

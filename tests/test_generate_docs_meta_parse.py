@@ -131,7 +131,9 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
                 {
                     "name": "Ada Lovelace",
                     "role": "first_author",
-                    "affiliation": "Stanford University",
+                    "affiliation": "Stanford University; OpenAI",
+                    "citation_count": 1234,
+                    "paper_count": 56,
                 }
             ],
             "_figure_assets": [
@@ -163,7 +165,11 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         self.assertEqual(meta["relevance_score"], "8.0")
         self.assertEqual(meta["author_score"], "9.0")
         self.assertIn("Ada Lovelace", meta["author_affiliations"])
-        self.assertIn("Stanford University", meta["author_affiliations"])
+        self.assertIn("Stanford University, OpenAI", meta["author_affiliations"])
+        metrics = json.loads(meta["author_metrics_json"])
+        self.assertEqual(metrics[0]["name"], "Ada Lovelace")
+        self.assertEqual(metrics[0]["citation_count"], 1234)
+        self.assertEqual(metrics[0]["paper_count"], 56)
         self.assertIn("Verified Stanford", meta["author_rating_explanation"])
         figures = json.loads(meta["figures_json"])
         tables = json.loads(meta["tables_json"])

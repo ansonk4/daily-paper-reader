@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "No institutional affiliations are provided for either author. Although citation counts are available (321 and 3082), without verifiable affiliation metadata, a neutral score in the 0-5 band is assigned.",
+  "author_profiles": [
+    {
+      "name": "Weiwei Ye",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "Semantic Scholar citation_count=321; Semantic Scholar paper_count=11",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar"
+    },
+    {
+      "name": "Renhe Jiang",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "Semantic Scholar citation_count=3082; Semantic Scholar paper_count=84",
+      "confidence": "medium",
+      "evidence_source": "semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:59:20.444209+00:00"
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "First author Srimonti Dutta is affiliated with WAI USA in Austin and Seattle. This is not a widely recognized institution in the top or mid-tier bands and appears to be an author-provided affiliation without third-party verification. Last author Akshata Kishore Moharir has no verifiable affiliation. This places the paper in the 0-5 bucket.",
+  "author_profiles": [
+    {
+      "name": "Srimonti Dutta",
+      "role": "first_author",
+      "affiliation": "WAI USA; Austin, USA; Akshata Kishore Moharir WAI USA Research Labs; Seattle, USA",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Akshata Kishore Moharir",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:04:13.332717+00:00"
+}

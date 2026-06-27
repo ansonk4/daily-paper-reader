@@ -1,0 +1,21 @@
+{
+  "name": "Srimonti Dutta",
+  "role": "first_author",
+  "affiliation": "WAI USA; Austin, USA; Akshata Kishore Moharir WAI USA Research Labs; Seattle, USA",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Srimonti Dutta",
+    "affiliations": [
+      "WAI USA",
+      "Austin, USA",
+      "Akshata Kishore Moharir WAI USA Research Labs",
+      "Seattle, USA"
+    ],
+    "author_row": "Srimonti Dutta WAI USA Research Labs"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

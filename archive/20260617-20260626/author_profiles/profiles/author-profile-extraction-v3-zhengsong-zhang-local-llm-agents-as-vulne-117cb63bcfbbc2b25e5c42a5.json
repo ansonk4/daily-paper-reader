@@ -1,0 +1,19 @@
+{
+  "name": "Zhengsong Zhang",
+  "role": "first_author",
+  "affiliation": "Department of Computer Science and Engineering; University at Buffalo, SUNY",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Zhengsong Zhang",
+    "affiliations": [
+      "Department of Computer Science and Engineering",
+      "University at Buffalo, SUNY"
+    ],
+    "author_row": "Zhengsong Zhang Zongze Li Jiawei Guo Haipeng Cai"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

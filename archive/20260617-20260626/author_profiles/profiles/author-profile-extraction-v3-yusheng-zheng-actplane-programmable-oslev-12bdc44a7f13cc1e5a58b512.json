@@ -1,0 +1,32 @@
+{
+  "name": "Yusheng Zheng",
+  "role": "first_author",
+  "affiliation": "UC Santa Cruz; eunomia-bpf; Northwestern Polytechnical University; Aalborg University",
+  "citation_hints": "OpenAlex cited_by_count=1567; OpenAlex works_count=51",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yusheng Zheng",
+    "affiliations": [
+      "UC Santa Cruz",
+      "eunomia-bpf"
+    ],
+    "author_row": "Yusheng Zheng 1,4 , Tianyuan Wu 3 , Quanzhi Fu 2 , Tong Yu 4 , Wenan Mao 5 , Wei Wang 3 , Dan Williams 2 , Andi Quinn 1"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "ActPlane: Programmable OS-Level Policy Enforcement for Agent Harnesses",
+    "paper_year": "2026",
+    "name": "Yusheng Zheng",
+    "affiliations": [
+      "Northwestern Polytechnical University",
+      "Aalborg University"
+    ],
+    "works_count": 51,
+    "cited_by_count": 1567,
+    "author_id": "https://openalex.org/A5041097181",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

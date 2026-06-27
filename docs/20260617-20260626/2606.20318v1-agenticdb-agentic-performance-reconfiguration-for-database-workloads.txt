@@ -1,0 +1,644 @@
+Title: AgenticDB: Agentic Performance Reconfiguration for Database Workloads
+
+URL Source: https://arxiv.org/pdf/2606.20318v1
+
+Published Time: Fri, 19 Jun 2026 01:05:26 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# AgenticDB: Agentic Performance Reconfiguration for Database Workloads 
+
+## Xinyue Yang 1,2 , Chaozheng Wang 3, Chen Zheng 1,2,* , Heng Zhang 2, Yanjun Wu 2
+
+> 1
+
+University of Chinese Academy of Sciences, Nanjing, China 
+
+> 2
+
+Institute of Software, Chinese Academy of Sciences, Beijing, China 
+
+> 3
+
+The Chinese University of Hong Kong, Hong Kong, China 
+
+## Abstract 
+
+Database configuration tuning is critical for workload performance, but practical tuning on real deployments remains difficult. Existing automatic tuners mostly formulate tuning as iterative search over DBMS knob values. This formulation leads to high execution cost, prematurely narrows the configuration space, and leaves practical requirements insufficiently addressed: diagnosing runtime bottle-necks from system feedback, exploring OS-level reconfiguration opportunities, executing changes robustly, and learning from pre-vious trials and tasks. We propose AgenticDB , an agentic framework for database workload reconfiguration. AgenticDB implements a context-grounded harness that interacts with the target database environment by proposing DBMS- and OS-level changes, applying them under safety constraints, observing workload performance and runtime states, and using execution feedback to guide subsequent decisions. This runtime interaction enables AgenticDB to diagnose bottle-necks, explore a broader DBMS- and OS-level reconfiguration space, avoid unsafe or unsupported actions, and accumulate experience within and across reconfiguration tasks. As a result, AgenticDB 
+
+turns database tuning into a self-refining reconfiguration process in which runtime feedback iteratively improves later decisions. We conduct extensive experiments on MySQL and PostgreSQL using YCSB, Sysbench, and TPC-H workloads. The results show that AgenticDB achieves the best final performance on all evalu-ated workloads, improving over the strongest baseline by 118.1% on average and reducing aggregate time-to-best by 22.6%. The results also demonstrate that its OS-level action space, robust execution lifecycle, and memory-enhanced planning contribute to more effec-tive and practical database reconfiguration. 
+
+## Keywords 
+
+Automatic database tuning, DBMS configuration, large language models, agentic harness, cross-layer reconfiguration 
+
+## 1 Introduction 
+
+Database configuration tuning is critical for improving workload performance [ 40 , 44 , 46 ]. Modern DBMSs expose hundreds of con-figurable knobs that control memory management, concurrency, logging, query execution, caching, and I/O behavior [ 11 , 43 ]. Data-base performance is highly sensitive to these configuration choices: suboptimal settings can leave substantial performance on the ta-ble, while workload- and deployment-specific configurations can significantly improve throughput, latency, and resource utiliza-tion [ 43 ]. However, database configuration tuning remains difficult in practice. DBMSs expose a large and heterogeneous configura-tion space, where knobs differ in type, scale, and valid ranges, and their performance impact varies substantially across workloads, hardware environments, and interactions with other knobs [ 5 , 11 ]. Consequently, manual tuning is hard to scale and may still yield suboptimal configurations for the target workload or deployment environment [5, 11]. To reduce manual tuning effort, existing automatic tuning sys-tems can be broadly categorized into four lines of work. First, Bayesian optimization and reinforcement learning methods typ-ically treat tuning as an iterative optimization problem over a predefined configuration space, where the tuner repeatedly eval-uates configurations and updates its model based on workload feedback [ 2 , 7, 15 , 41 ]. Second, transfer-learning and historical-data-driven methods reuse prior tuning experience to accelerate configuration recommendation for new workloads [ 9 , 32 , 45 ]. Third, sample-efficient tuning methods reduce the configuration space through knob selection, dimensionality reduction, value bucke-tization, or range pruning to lower the number of workload re-plays [ 2, 12 ]. Finally, documentation-guided and LLM-based meth-ods leverage manuals, community discussions, and language-model reasoning to guide knob selection, range construction, and configu-ration recommendation [ 8 , 14 , 16 , 31 ]. These studies have substan-tially improved the efficiency and effectiveness of database knob tuning. Despite these advances, practical database performance recon-figuration still faces several key challenges. 
+
+C1. Configuration tuning requires costly workload replays. 
+
+Existing BO- and RL-based tuners rely on iterative workload replays to search for high-performing configurations [ 2, 7 , 15 , 41 ]. Each trial requires applying a candidate configuration and executing the workload on the target DBMS to obtain a reliable performance signal. ML-based database tuners can require hundreds of work-load replays, making a tuning session last for hours because each iteration must validate a candidate configuration through work-load execution on the target DBMS [ 16 ]. Such a replay burden is especially costly in practical tuning tasks, where each candidate configuration consumes benchmark time and may require configu-ration application, reload, or restart [ 16 , 32 , 45 ]. Practical database reconfiguration therefore needs to reduce uninformative workload replays while grounding decisions in the current workload, runtime state, and deployment context. 
+
+C2. Reduced knob and range spaces may limit the tuning upper bound. To improve sample efficiency, existing tuning sys-tems reduce the search space before optimization, such as selecting a small subset of DBMS knobs, discretizing continuous values, or narrowing candidate ranges [ 2, 12 , 14 , 16 ]. While this makes search cheaper, it also creates a quality–coverage tradeoff. DBMS knobs  
+
+> arXiv:2606.20318v1 [cs.DB] 18 Jun 2026 SIGMOD/PODS ’27, June, 2027, California, USA Yang et al.
+
+exhibit high dimensionality, continuous domains, and complex de-pendencies, and prior work has observed that using too few knobs can prevent a tuner from finding the optimal configuration [ 32 , 41 ]. Once an important knob or value region is excluded, the optimizer cannot recover it during subsequent search. Reduced-space tun-ing may therefore converge quickly, but at the cost of missing workload- or deployment-specific opportunities and limiting the final performance. 
+
+C3. Existing tuners focus on DBMS knobs but exclude OS parameters. Most automatic database tuning systems define their action space over DBMS knobs and treat the operating system as part of the fixed deployment environment [ 12 , 41 ]. However, data-base performance is also shaped by OS-managed resources that lie outside the DBMS knob space. System tuning guides and ker-nel documentation show that parameters such as vm.swappiness ,dirty-page writeback controls, and I/O scheduler policies can affect swapping, flushing behavior, and storage latency for database work-loads [ 3, 27 , 34 ]. A tuner restricted to DBMS knobs may therefore reach a DBMS-level plateau while leaving OS-level optimization opportunities unexplored. 
+
+C4. Runtime states are not fully leveraged for bottleneck diagnosis. Database systems expose rich runtime signals, includ-ing buffer usage, lock waits, I/O activity, CPU utilization, memory pressure, and checkpoint or flushing behavior. DBA tuning guides routinely use these signals to diagnose performance problems be-cause similar throughput or latency changes may come from differ-ent bottlenecks, such as buffer misses, lock contention, I/O stalls, or CPU saturation [ 19 , 20 , 25 , 27 ]. Existing automatic tuners, how-ever, mainly rely on outcome-level feedback, such as throughput, latency, or a combined performance objective [ 2, 7 , 14 , 15 , 32 , 41 ]. Even when runtime metrics are included, as in CDBTune and Agent-Tune [ 16 , 41 ], they are typically used as model features or prompt context rather than explicit evidence for bottleneck localization and tuning-direction decisions. As a result, existing tuners can react to performance changes, but provide limited insight into why a configuration succeeds or fails. 
+
+C5. Existing tuners struggle with restart-sensitive con-figuration changes. To avoid service disruption and execution overhead, existing automatic tuners restrict tuning to dynamically adjustable knobs. For example, QTune excludes knobs that require database restarts, and OtterTune maintains DBMS-version-specific lists of dynamic knobs for tuning sessions [ 15 , 32 ]. While this de-sign simplifies online evaluation, it leaves important reload- or restart-dependent parameters underexplored. Shared-buffer and buffer-pool related settings, for instance, may take effect only after reload or restart [ 21 , 26 ]. Excluding such knobs can miss important optimization opportunities, whereas changing them without proper lifecycle management can cause the tuner to evaluate configura-tions before all intended changes have actually taken effect. Exploring restart-sensitive parameters also changes the failure mode of tuning. A bad configuration may not simply reduce perfor-mance; it may prevent the DBMS from restarting, leave the service unstable, or exhaust system resources. Such failures have been observed in automatic configuration recommendation, including DBMS crashes and unsafe memory-related settings [ 16 ]. Recovery therefore requires execution-aware diagnosis and rollback, includ-ing checking service status, inspecting logs and recent configuration diffs, restoring a safe state, and verifying availability before tuning can resume. Without this support, failed trials can break the tuning loop and require manual intervention. To address these challenges, we propose AgenticDB , an agen-tic framework for database workload reconfiguration. At its core, 
+
+AgenticDB implements a context-grounded harness that connects an LLM DBA Planner with the target database environment and turns tuning into an iterative reconfiguration process. In each round, it proposes DBMS- and OS-level changes, validates and applies them under safety constraints, observes workload performance, runtime states, and execution outcomes, and feeds this evidence back into subsequent planning. This interaction allows AgenticDB to use runtime feedback as diagnostic evidence for localizing likely bot-tlenecks and generating targeted trials, instead of relying only on scalar performance scores. It also records within-run traces and cross-task experience, including effective actions, risky configura-tions, bottleneck patterns, and recovery outcomes, so later decisions can build on prior observations rather than start from scratch. In this way, AgenticDB reduces uninformative workload replays and makes reconfiguration decisions more diagnosable (addressing C1 and C4). To avoid prematurely limiting the optimization ceiling, Agen-ticDB maintains a safe global cross-layer action space. Instead of permanently restricting tuning to a small DBMS knob subset or narrow value ranges, it filters out unsupported, read-only, hardware-incompatible, or unsafe parameters while preserving tunable DBMS knobs and OS-level parameters as much as possible under safety constraints. Candidate actions are selected dynamically according to the current workload, runtime evidence, and recent reconfigu-ration trajectory, allowing the system to explore a broader DBMS-and OS-level reconfiguration space when needed and to switch layers after a DBMS-level plateau (addressing C2 and C3). Finally, 
+
+AgenticDB manages the full execution lifecycle of configuration changes: it checks whether generated actions are supported and applicable, applies them through dynamic update, reload, or restart when needed, verifies whether the intended values take effect, and restores the last safe DBMS/OS state when execution fails. This robust lifecycle enables AgenticDB to handle restart-sensitive and failure-prone changes without relying on manual repair or simply filtering failed trials as invalid samples (addressing C5). We implement AgenticDB and conduct extensive experiments on MySQL and PostgreSQL using both OLTP and OLAP work-loads, including YCSB, Sysbench, and TPC-H. AgenticDB achieves the strongest final performance across all evaluated workloads, improving over the strongest baseline by 118.1% on average and reducing aggregate time-to-best by 22.6%. Additional analyses show that OS-level reconfiguration provides workload-dependent opti-mization headroom, execution safeguards improve the reliability of configuration application, and memory-enhanced planning helps 
+
+AgenticDB reach stronger configurations earlier on complex work-loads. This paper makes the following contributions. 
+
+• We propose AgenticDB , an agentic framework for database workload reconfiguration. AgenticDB implements a context-grounded harness that forms an interaction loop between the LLM DBA Planner and the target database environment, using AgenticDB: Agentic Performance Reconfiguration for Database Workloads SIGMOD/PODS ’27, June, 2027, California, USA 
+
+workload performance, runtime states, execution outcomes, and reconfiguration traces as feedback for bottleneck diagnosis and iterative self-refinement. 
+
+• We design a practical cross-layer reconfiguration mechanism for real deployments. AgenticDB maintains a safe global action space that preserves tunable DBMS knobs and OS-level parame-ters under safety constraints, avoiding premature restriction to a small knob subset or narrow value ranges. It further provides an execution lifecycle that validates candidate actions, applies changes through dynamic update, reload, or restart when needed, verifies whether changes take effect, and recovers from failed configurations by restoring the last safe DBMS/OS state. Together with within-run and cross-task memory, this mechanism enables safer, broader, and more informed reconfiguration. 
+
+• We conduct a comprehensive evaluation of AgenticDB on MySQL and PostgreSQL using representative OLTP and OLAP workloads. The evaluation demonstrates the effectiveness of AgenticDB 
+
+and analyzes the contributions of cross-layer actions, execution safeguards, and memory-enhanced planning to practical database reconfiguration. 
+
+## 2 Background and Motivation 
+
+Recent LLM-based agent systems have increasingly moved beyond text generation toward interaction with tools, software environ-ments, and execution feedback [ 28 , 36 – 38 ]. Database workload reconfiguration provides a natural setting for this agentic para-digm: effective reconfiguration requires not only recommending configuration values, but also understanding the workload, apply-ing changes on a live server, observing runtime states and execution feedback, and revising subsequent actions. This section motivates 
+
+AgenticDB by establishing the connection between DBA-style tuning practice and agentic interaction. 
+
+DBA workflow as an agentic loop. Experienced DBAs typi-cally tune databases through an iterative, hypothesis-driven work-flow. They first characterize the workload, inspect runtime symp-toms, infer the likely bottleneck, apply targeted configuration changes, and then validate whether the observed outcome supports or re-futes their diagnosis [ 19 , 20 ]. This workflow closely matches the core pattern of agentic systems: planning, tool use, observation, and iterative refinement [28, 36–38]. 
+
+Runtime observability as grounding. Reliable reconfigura-tion decisions require reasoning to be grounded in the actual exe-cution environment, rather than relying solely on static knowledge or final performance scores. A deployed database environment ex-poses or produces rich runtime observations, including internal DBMS metrics, OS resource states, workload performance feed-back, service status, and execution logs, all of which are widely used in database diagnosis and monitoring practice [ 19 , 20 , 25 , 27 ]. Prior tuning systems have also demonstrated the value of such signals: CDBTune uses internal DBMS metrics as RL state inputs, AgentTune incorporates dynamic execution metrics into workload features, and E2ETune uses workload statistics, query plans, and in-ternal metrics as model inputs [ 9 , 16 , 41 ]. AgenticDB builds on this foundation by treating runtime observations not merely as model features, but as diagnostic evidence for reasoning about bottlenecks and the effects of candidate actions. 
+
+Memory for agent evolution. Memory is a core mechanism that enables LLM agents to retain interaction history, maintain long-term context, and evolve beyond stateless decision making [ 22 , 23 ,49 ]. Prior studies of memory-augmented agents show that stored trajectories and feedback can help agents refine later actions, avoid repeating failed decisions, and accumulate reusable experience for future tasks [ 29 , 35 , 47 , 48 ]. These capabilities make memory a nat-ural component of an agentic database reconfiguration framework: instead of generating each action as an isolated recommendation, the agent can ground later planning in accumulated interaction experience. 
+
+## 3 Positioning Relative to AgentTune 
+
+AgentTune is the closest LLM-based agent framework to Agen-ticDB . It decomposes DBMS knob tuning into workload analysis, knob selection, range pruning, and configuration recommendation, and then uses a tree-based recommender to refine configurations within the selected and pruned knob space [ 16 ]. AgenticDB shares the use of LLM-based DBA-style reasoning with AgentTune, but differs in how it defines, executes, and controls the process. 
+
+Table 1: Key differences between AgentTune and AgenticDB .           
+
+> Criterion AgentTune AgenticDB
+> Search space Selected DBMS knobs with pruned ranges Broader validated DBMS/OS action space Feedback usage Configuration refine-ment Bottleneck diagnosis and direction selection Iteration behavior Knob-value refinement Diagnosis-guided direc-tion revision Failure handling Candidate filtering Rollback and recovery during execution Loop control Replay budget or early stopping State-aware layer control and termination
+
+We now explain the comparison in Table 1 along five dimen-sions. First, in search space, AgentTune improves efficiency by selecting DBMS knobs and pruning their ranges before recommen-dation, whereas AgenticDB keeps a broader validated DBMS/OS action space to preserve higher optimization headroom. Second, in feedback usage, AgentTune mainly uses feedback to refine candi-date configurations, while AgenticDB uses workload performance, runtime states, execution outcomes, and reconfiguration traces to diagnose bottlenecks and choose the next direction. Third, in itera-tion behavior, AgentTune performs knob-value refinement inside the reduced space, whereas AgenticDB performs diagnosis-guided direction revision. Fourth, in failure handling, AgentTune filters invalid candidates before evaluation, while AgenticDB also han-dles execution-time failures through rollback and recovery. Fifth, in loop control, AgentTune proceeds under a replay budget or early-stopping rule, whereas AgenticDB decides whether to continue, switch layers, or terminate according to runtime progress. This progress-aware control helps avoid uninformative trials without relying on a fixed stopping rule. As shown later in Section 6, these SIGMOD/PODS ’27, June, 2027, California, USA Yang et al. 
+
+design differences allow AgenticDB to reach stronger final config-urations than AgentTune across the evaluated workloads. 
+
+## 4 AgenticDB Design 
+
+This section presents the design of AgenticDB , an agentic frame-work for database workload reconfiguration on a target server. Given a DBMS deployment, server environment, workload bench-mark, initial configuration, and tunable DBMS/OS parameters, Agen-ticDB first constructs a reconfiguration context that grounds plan-ning in the current workload and execution environment. It then enters an iterative reconfiguration loop. In each round, AgenticDB 
+
+generates a candidate DBMS- or OS-level action, validates its appli-cability and safety, applies the change to the target server, executes the workload, collects runtime feedback, handles execution failures when they occur, and determines whether to continue reconfig-uration, switch between DBMS- and OS-level reconfiguration, or terminate the process. Figure 1 shows the overall architecture of AgenticDB . The 
+
+AgenticDB Harness serves as the main execution substrate of the framework and operates over the target database environment. It is organized as a closed-loop reconfiguration architecture con-sisting of seven components: Initializer, Memory Book, LLM DBA Planner, Validator, Executor, Recovery, and Auditor. The Initializer constructs the workload and environment context that grounds planning, while the Memory Book maintains session-level and cross-task experience for reuse. The LLM DBA Planner proposes candidate reconfiguration actions. The Validator, Executor, and Recovery then ensure that these actions are checked, applied, ob-served, and repaired under an execution-aware lifecycle. Finally, the Auditor interprets the execution result and controls the pro-gression of the loop, including whether to continue DBMS-level reconfiguration, switch to OS-level reconfiguration, or stop. The following subsections describe these components in detail. 
+
+## 4.1 Initializer 
+
+The Initializer prepares the starting context for AgenticDB on the target database server. It collects DBMS, OS, and server informa-tion, including the DBMS type and version, current configuration, available DBMS parameters and OS tunables, hardware resources, OS settings, and initial runtime states. It also executes the target workload under the initial configuration to obtain the baseline per-formance and a corresponding state snapshot. These observations ground the subsequent planning process in the actual workload and server environment. Based on the collected information, the Initializer constructs a structured workload fingerprint. The fingerprint summarizes the workload and deployment context from multiple perspectives, in-cluding the DBMS profile, workload class, base workload type, access patterns, bottleneck signals, optimization objectives, and operational constraints. It serves as the retrieval key for matching relevant cross-task experience from the Memory Book and pro-vides workload-specific prior guidance to the LLM DBA Planner. Table 2 summarizes the representative fields used in the workload fingerprint. The Initializer also builds the safe global cross-layer action space under safety constraints. For the DBMS layer, it starts from pa-rameters exposed by the target DBMS and filters out read-only, unsupported, deprecated, deployment-incompatible, or unsafe pa-rameters using metadata, rules, and workload-aware analysis. For the OS layer, it retains tunable system parameters related to data-base execution, such as memory management, dirty-page writeback, I/O scheduling, CPU scheduling, and kernel resource limits. The resulting context contains the workload fingerprint, server profile, baseline performance, state snapshot, current configuration, and safe DBMS/OS action space. These context fields are shared by downstream components for memory retrieval, planning, valida-tion, execution, and loop control. 
+
+## 4.2 Memory Book 
+
+The Memory Book maintains reusable context for the LLM DBA Planner. It contains two complementary forms of memory: session memory , which records the trajectory of the current reconfigura-tion task, and experience memory , which stores reusable knowledge distilled from completed reconfiguration tasks. When a new task begins, AgenticDB uses the workload fingerprint constructed by the Initializer as the retrieval key to retrieve relevant experience, such as similar workload characteristics, recurring bottleneck pat-terns, effective parameter groups, risky configurations, and use-ful reconfiguration directions. This retrieved experience provides workload-specific prior guidance before the first planning round. During a reconfiguration task, session memory is updated after each completed round. It records the generated action, validation result, execution feedback, recovery outcome, performance, and state changes, the Auditor decision, and contextual guidance for the next round. This allows subsequent planning rounds to build on the actual trajectory of the current run, rather than treating each action as an independent attempt. For example, the Planner can continue promising directions, avoid previously rejected or harmful actions, and adjust the aggressiveness of later trials according to observed runtime behavior. When the task terminates, AgenticDB consolidates useful ses-sion observations into experience memory and indexes them by the workload fingerprint. The consolidated experience includes both successful and failed explorations, together with their support-ing evidence. In this way, the Memory Book supports two levels of reuse: within-run continuity, where later rounds benefit from earlier observations under the same workload, and cross-task accu-mulation, where future tasks can start from experience gathered in previous reconfiguration runs. 
+
+## 4.3 LLM DBA Planner 
+
+The LLM DBA Planner serves as the decision-making core of Agen-ticDB , translating the current reconfiguration context into a candi-date DBMS- or OS-level recommended configuration. It receives the workload fingerprint, server profile, safe cross-layer action space, runtime feedback, and memory context, and uses this context to form a bottleneck hypothesis and generate the reconfiguration patch for the current round. This design grounds LLM reason-ing in observed workload behavior, deployment constraints, and AgenticDB: Agentic Performance Reconfiguration for Database Workloads SIGMOD/PODS ’27, June, 2027, California, USA A.Initializer B. Reconfiguration Loop Knob Space Manager · Build candidate space                          
+
+> ·DBMS knobs
+> ·OS-level parameters
+> Runtime Profiler ·Collect DB ＆ OS info
+> ·State metrics
+> ·Baseline benchmark
+> Workload Intent Recognizer ·Analyze benchmark & scripts
+> ·Construct workload fingerprint
+> ·Identify reconfiguration directions
+> Memory Book ·Session memory
+> ·Experience memory
+> LLM DBA Planner ·Diagnose bottleneck
+> ·Plan action
+> Validator ·Validate constraints
+> ·Check safety rules
+> ·Reject invalid action
+> memory context for next round context, workload fingerprint & candidate space reject (revise)
+> Executor ·Apply configuration
+> ·Reload / restart & verify
+> ·Run benchmark
+> ·Collect runtime feedback
+> Recovery ·Inspect failure
+> ·Repair / restore config
+> ·Re-validate availability
+> failure valid config repaired / restored result consolidate and update memory
+> Phase Progression (controlled by Auditor) DBMS-level Reconfiguration OS-level Reconfiguration Stop
+> plateau plateau phase decision
+> Auditor ·Evaluate improvement
+> ·Maintain best config
+> ·Decide continue/ switch / stop
+> Auditor
+> candidate config
+> Target DB Environment
+> DBMS OS / Kernel Hardware Benchmark workload
+> observe restore service act
+
+AgenticDB Harness 
+
+Figure 1: Overview of the AgenticDB framework. Table 2: Workload fingerprint fields used by AgenticDB .
+
+Field Purpose Representative values or signals 
+
+DBMS profile Identify DBMS family and version. mysql-8.0 , postgresql-16 , etc. 
+
+Workload class Capture high-level workload family. oltp , olap , mixed 
+
+Base workload type Capture coarse read/write tendency. read_only , write_only , read_write , mixed , etc. 
+
+Access patterns Capture dominant access behavior. point_lookup , range_scan , index_scan , seq_scan , join_heavy ,
+
+aggregation_sort , etc. 
+
+Bottleneck signals Summarize observed runtime pressure. buffer_cache_miss , wal_fsync_pressure , checkpoint_pressure ,
+
+lock_contention , cpu_saturation , io_queue_pressure , etc. 
+
+Optimization objectives Describe performance goals. minimize_execution_time , latency_sensitive , throughput_sensitive , etc. 
+
+Operational constraints Capture execution and benchmark constraints. 
+
+fixed_workload , fixed_isolation , restart_allowed ,
+
+service_availability_required , etc. 
+
+parameter semantics, rather than relying only on generic tuning knowledge. At the beginning of a task, the Planner aims to establish a workload-specific starting point. It proposes a multi-parameter con-figuration patch that covers relevant parameter groups informed by the workload class, hardware resources, baseline runtime states, and retrieved experience. The goal is to move the target server to-ward a plausible high-performance region while remaining within the safe action space. After each completed round, the Planner refines its diagnosis using the observed performance change, runtime-state changes, validation or recovery feedback, and Auditor guidance. It then de-termines the next reconfiguration focus, such as adjusting the mag-nitude of a parameter change, exploring another DBMS parameter group, or moving to OS-level parameters when DBMS-level recon-figuration shows limited further progress. As evidence accumulates, later rounds become more targeted; when the observed trend indi-cates remaining optimization potential, the Planner explores more aggressive benchmark-oriented settings while accounting for the associated execution risk. The Planner emits each candidate configuration update in a structured form that records the proposed change and its supporting rationale, enabling downstream components to validate, apply, and interpret the action consistently. 
+
+## 4.4 Validator 
+
+The Validator serves as the pre-execution guardrail between the LLM DBA Planner and the target DBMS/OS environment. Although the Planner is grounded in workload context, its generated actions can still reference nonexistent parameters, unsupported settings, invalid value types or units, values outside safe ranges, or changes that conflict with the benchmark protocol. The Validator therefore checks each candidate action against DBMS/OS metadata, deploy-ment constraints, hardware limits, dependency rules, and server-side safety policies before the action is allowed to reach the execu-tion stage. For DBMS-level actions, the Validator verifies that the target pa-rameter exists in the current DBMS version, is writable, accepts the proposed value type and unit, falls within an allowed range, and is compatible with the workload and hardware constraints. It also de-termines how the change should be applied, distinguishing among dynamic update, reload, and restart, and whether a persistent con-figuration update is required. For OS-level actions, the Validator checks the availability and writability of the corresponding kernel or block-device parameter and rejects changes that violate sys-tem safety constraints. In addition, it filters out actions that are syntactically valid but would alter the benchmark semantics, such SIGMOD/PODS ’27, June, 2027, California, USA Yang et al. 
+
+as changing the transaction isolation level when the evaluation assumes a fixed isolation setting. If an action fails validation, the Validator returns structured feedback to the Planner for an in-round revision. Only validated actions are passed to the Executor for configuration application and workload evaluation. This mechanism prevents hallucinated, unsupported, unsafe, or benchmark-changing actions from reach-ing the execution stage, while still allowing AgenticDB to use LLM-generated reconfiguration plans under a controlled execution lifecycle. 
+
+## 4.5 Executor 
+
+The Executor is responsible for applying validated reconfiguration action on the target server and collecting runtime feedback for the current round. Given an action approved by the Validator, it invokes the appropriate DBMS or OS interface to enact the specified change through dynamic update, reload, or restart when required, and verifies that the intended value has taken effect before workload evaluation begins. This verification step ensures that the workload is executed under the configuration specified by the validated action, rather than under a stale or partially applied state. After successful application, the Executor runs the benchmark workload and collects the execution outcome. The collected feed-back includes benchmark performance, runtime states, effective configuration status, and execution logs. If configuration appli-cation, reload/restart, or workload execution fails, the Executor records the failure status, relevant logs, and recent configuration diffs for the Recovery component. The collected observations are then passed to the Auditor and recorded in the Memory Book, where they are used to evaluate the applied action, update the session context, and guide subsequent reconfiguration decisions. 
+
+## 4.6 Recovery 
+
+The Recovery component provides the post-execution safeguard for failures that occur after an action has passed the Validator. While validation reduces pre-execution risk, some failure modes are only observable when a change is applied, when the DBMS is reloaded or restarted, or when the workload runs under the updated configuration. These failures can arise from restart-time incompat-ibilities, unexpected parameter interactions, deployment-specific constraints, partially applied OS changes, or service-availability failures. When an execution failure is detected, Recovery diagnoses the failure using service status, DBMS and system logs, recent configu-ration diffs, and effective configuration values. It then repairs the faulty setting when possible, or restores the last safe DBMS/OS configuration and performs any required service reload, restart, or OS-parameter rollback. Before the loop resumes, Recovery ver-ifies that the database service is available and records the failure trace and recovery outcome in session memory. This record helps subsequent rounds avoid similar failure patterns and continue the reconfiguration process without manual intervention. 
+
+## 4.7 Auditor 
+
+The Auditor is the feedback interpretation and loop-control compo-nent of AgenticDB . It determines what each completed round im-plies for subsequent reconfiguration. After each round, it analyzes the benchmark result, DBMS/OS runtime-state changes, service status, validation or recovery records, and recent action history. It then converts these observations into a structured round assess-ment, including whether the action improved workload behavior, which bottleneck signals were alleviated or intensified, whether the current reconfiguration direction remains promising, and whether new execution risk was observed. Based on this assessment, the Auditor provides explicit guid-ance for the next planning round. The guidance specifies whether the Planner should continue the current direction, refine a param-eter value, adjust the aggressiveness of the next action, explore another DBMS parameter group, switch to OS-level reconfigura-tion after a DBMS-level plateau, or terminate the task when further improvement is unlikely. The Auditor also maintains the best stable configuration observed during the current task. If a newly evalu-ated configuration regresses or becomes unstable, it instructs the Executor to restore the best known stable configuration before the next round begins. Beyond controlling the next step, the Auditor also summarizes execution evidence for memory update at the round and task levels. After each completed loop, it writes a concise round summary into session memory, capturing the executed action and its outcome, the diagnostic interpretation of performance and runtime-state changes, and the guidance for the next planning round. When recovery is triggered, the summary also records the failure cause and recovery result. When the reconfiguration task terminates, the Auditor consolidates useful session observations into experience memory indexed by the workload fingerprint, preserving reusable evidence from both successful and failed explorations. This task-level memory supports future reconfiguration tasks by providing transferable experience rather than raw execution logs. 
+
+AgenticDB Harness. Together, these components form a DBA-style reconfiguration harness over the target database server. By integrating workload fingerprinting, runtime observability, exe-cution safeguards, recovery, loop control, and reusable memory, 
+
+AgenticDB realizes database workload reconfiguration as a pro-cess that is context-grounded, state-aware, robust in execution, and memory-enhanced. 
+
+## 5 Evaluation Methodology 5.1 Research Questions 
+
+We evaluate AgenticDB through the following research questions: 
+
+• RQ1: How effective is AgenticDB compared with exist-ing database tuning systems across different workloads and DBMSs? 
+
+• RQ2: How much additional benefit does OS-level reconfigu-ration provide beyond DBMS-level optimization? 
+
+• RQ3: How do the Validator and Recovery improve the ro-bustness of the AgenticDB framework? AgenticDB: Agentic Performance Reconfiguration for Database Workloads SIGMOD/PODS ’27, June, 2027, California, USA 
+
+• RQ4: How do LLM backends and memory mechanisms af-fect the planning quality and reconfiguration behavior of 
+
+AgenticDB ?RQ1 evaluates the overall effectiveness of AgenticDB under different workload types and DBMS implementations. RQ2 inves-tigates whether OS-level reconfiguration can provide additional performance gains after DBMS-level optimization becomes limited. RQ3 analyzes whether the Validator and Recovery can prevent invalid actions and execution-time failures from interrupting the reconfiguration process. RQ4 studies how the choice of LLM back-end and the use of memory affect planning quality, reconfiguration continuity, and convergence behavior. 
+
+## 5.2 Experimental Setup 
+
+Testbed and DBMSs. All experiments are conducted on a CPU-only Linux x86_64 server with 12 vCPUs, 64 GB memory, and a 120 GB SSD. The evaluated DBMSs are MySQL 8.0.45 and Post-greSQL 16.13. 
+
+Workloads. For MySQL, we use five representative workloads covering both OLTP and OLAP scenarios: YCSB, TPC-H, and three Sysbench workloads ( read , write , and readwrite ) [ 4, 13 , 30 ]. YCSB represents key-value OLTP access patterns, TPC-H represents ana-lytical query workloads, and the three Sysbench workloads repre-sent read-dominant, write-dominant, and mixed OLTP behaviors, respectively. For PostgreSQL, we use Sysbench read , write , and readwrite 
+
+workloads to test whether AgenticDB generalizes across different DBMS implementations under representative OLTP workloads. 
+
+Baselines. We compare AgenticDB with four representative database tuning systems. 
+
+• GPTuner [14 ] represents LLM-enhanced Bayesian optimiza-tion. It uses LLM-structured tuning knowledge to guide knob selection, search-space reduction, and coarse-to-fine config-uration search. 
+
+• DB-BERT [ 31 ] uses a BERT-based model to extract tuning hints from DBMS manuals and combines the extracted hints with reinforcement-learning-based tuning. 
+
+• AgentTune [ 16 ] is an LLM-driven multi-agent database knob tuner. It decomposes DBMS knob tuning into workload analysis, knob selection, range pruning, and configuration recommendation, and uses a tree-structured search strategy to explore candidate DBMS configurations. 
+
+• CDBTune [41 ] applies deep reinforcement learning to itera-tively optimize database configurations according to runtime performance feedback collected during tuning. For fairness, we use the hyperparameter settings reported in the original papers or released implementations. 
+
+Metrics. Following common practice in database configuration tuning, we evaluate workload performance using throughput and latency [ 16 , 41 ]. For Sysbench and YCSB workloads, we aim to improve throughput and reduce tail latency simultaneously, and thus use TPS /P95 latency as the objective metric. For TPC-H, we use query execution time, where lower values are better. 
+
+Evaluation Protocol. For fair comparison, all methods start from the same initial DBMS configuration and are evaluated with the same benchmark scripts, objective metric, and maximum tuning budget. Following prior database tuning studies [ 2 , 15 , 16 , 41 ], each method is allowed to search for performance-improving configu-rations as long as the candidate configuration is valid, executable, and does not violate the benchmark protocol or server availability constraints. Except for the LLM-backend study in RQ4, all generative-LLM-based methods, including AgenticDB , GPTuner, and AgentTune, use GPT-5.5 [ 18 ] as the underlying LLM backend. For YCSB and Sysbench workloads, each benchmark execution lasts 60 seconds; for TPC-H, each trial executes the full query workload. To reduce randomness in the reconfiguration process and benchmark execu-tion, we repeat each method three times for every workload and report the run with the middle final objective value among the three runs. 
+
+Memory Protocol. For the memory study in RQ4, experience memory is retrieved from distilled summaries of previously com-pleted reconfiguration tasks. To avoid target-run leakage, the mem-ory used in a target evaluation excludes any feedback, configura-tions, traces, or final results produced during that evaluation run. Thus, retrieved memory provides cross-task guidance rather than oracle access to the target result. 
+
+## 6 Experiment Results 
+
+In this section, we answer the research questions introduced in Section 5.1. 
+
+## 6.1 RQ1: Overall Effectiveness 
+
+RQ1 compares AgenticDB with existing database tuning systems across different workloads and DBMSs. We compare AgenticDB 
+
+with GPTuner, DB-BERT, AgentTune, and CDBTune. Figure 2 presents the performance progression over time, and Table 3 summarizes the best observed result, time-to-best, and improvement over the strongest baseline. Figure 2 and Table 3 show that AgenticDB consistently achieves the best observed result across all evaluated workloads. The base-lines exhibit different but limited improvement patterns: AgentTune often obtains strong initial gains but levels off after the first few rounds, GPTuner and DB-BERT make more gradual progress by combining textual knowledge with downstream optimization, and CDBTune improves more slowly under the short evaluation budget. In contrast, AgenticDB more consistently combines rapid improve-ment with continued refinement. Compared with the strongest baseline on each workload, AgenticDB improves the objective by 118.1% on average, with gains ranging from 5.7% to 337.7%. The gains are especially large on write-intensive workloads, where 
+
+AgenticDB outperforms the strongest baseline by 337.7% on MySQL Sysbench write and 201.8% on PostgreSQL Sysbench write . The separated TPS and P95 latency curves in Figure 2 further show that these improvements are reflected in both throughput and tail latency. On MySQL TPC-H, AgenticDB reduces the execution time to 165.8 seconds, achieving a 5.7% reduction over the strongest base-line. These large gains are consistent with AgenticDB ’s broader validated action space, which avoids prematurely restricting recon-figuration to a small set of commonly tuned DBMS knobs and allows the Planner to reach higher-performing regions when supported by runtime feedback. SIGMOD/PODS ’27, June, 2027, California, USA Yang et al. GPTuner DB-BERT AgentTune CDBTune AgenticDB OS-level 0 20 40 60 80 100                                                                                                          
+
+> time (min)
+> 400
+> 600
+> 800
+> 1000
+> TPS / p95_ms
+> PG Sysbench Read 020 40 60 80 100
+> time (min)
+> 7000
+> 8000
+> 9000
+> TPS
+> PG Sysbench Read 020 40 60 80 100
+> time (min)
+> 10
+> 12
+> 14
+> p95_ms
+> PG Sysbench Read 020 40 60 80 100
+> time (min)
+> 200
+> 400
+> 600
+> TPS / p95_ms
+> PG Sysbench ReadWrite 020 40 60 80 100
+> time (min)
+> 2000
+> 3000
+> 4000
+> 5000
+> TPS
+> PG Sysbench ReadWrite 020 40 60 80 100
+> time (min)
+> 10
+> 15
+> 20
+> p95_ms
+> PG Sysbench ReadWrite 020 40 60 80 100
+> time (min)
+> 250
+> 300
+> 350
+> 400
+> TPS / p95_ms
+> MS Sysbench Read 020 40 60 80 100
+> time (min)
+> 5000
+> 5250
+> 5500
+> 5750
+> TPS
+> MS Sysbench Read 020 40 60 80 100
+> time (min)
+> 15
+> 16
+> 17
+> 18
+> p95_ms
+> MS Sysbench Read 020 40 60 80 100
+> time (min)
+> 100
+> 200
+> 300
+> 400
+> TPS / p95_ms
+> MS Sysbench ReadWrite 020 40 60 80 100
+> time (min)
+> 2000
+> 3000
+> 4000
+> TPS
+> MS Sysbench ReadWrite 020 40 60 80 100
+> time (min)
+> 10
+> 20
+> 30
+> p95_ms
+> MS Sysbench ReadWrite 020 40 60 80 100
+> time (min)
+> 5000
+> 10000
+> 15000
+> TPS / p95_ms
+> PG Sysbench Write 020 40 60 80 100
+> time (min)
+> 10000
+> 20000
+> 30000
+> TPS
+> PG Sysbench Write 020 40 60 80 100
+> time (min)
+> 5
+> 10
+> 15
+> 20
+> 25
+> p95_ms
+> PG Sysbench Write 020 40 60 80 100
+> time (min)
+> 5000
+> 10000
+> 15000
+> TPS / p95_ms
+> MS YCSB 020 40 60 80 100
+> time (min)
+> 9994
+> 9996
+> 9998
+> 10000
+> TPS
+> MS YCSB 020 40 60 80 100
+> time (min)
+> 2.5
+> 5.0
+> 7.5
+> 10.0
+> p95_ms
+> MS YCSB 020 40 60 80 100
+> time (min)
+> 0
+> 2000
+> 4000
+> 6000
+> TPS / p95_ms
+> MS Sysbench Write 020 40 60 80 100
+> time (min)
+> 5000
+> 10000
+> 15000
+> TPS
+> MS Sysbench Write 020 40 60 80 100
+> time (min)
+> 10
+> 20
+> 30
+> p95_ms
+> MS Sysbench Write 020 40 60 80 100
+> time (min)
+> 175k
+> 200k
+> 225k
+> 250k
+> 275k
+> execution time (ms)  MS TPC-H
+
+Figure 2: Overall reconfiguration progression of AgenticDB and baseline methods across MySQL and PostgreSQL workloads. For YCSB and Sysbench, each workload reports the objective, TPS, and P95 latency; TPC-H reports execution time. Table 3: Best observed performance and time-to-best in RQ1. Each method cell reports performance / time-to-best. The last column reports AgenticDB’s relative improvement over the best baseline; for TPC-H, improvement denotes execution-time reduction. 
+
+Workload GPTuner DB-BERT AgentTune CDBTune AgenticDB Improvement 
+
+MS YCSB 12076.6 / 91.5 min 11198.5 / 77.9 min 12706.8 / 45.0 min 8790.2 / 65.2 min 19262.2 / 27.3 min +51.6% (AgentTune) MS Sysbench Read 366.47 / 37.8 min 306.16 / 44.2 min 340.16 / 44.5 min 274.30 / 28.8 min 397.48 / 9.5 min +8.5% (GPTuner) MS Sysbench Write 1638.4 / 22.4 min 1195.6 / 2.6 min 1002.7 / 1.5 min 78.79 / 24.3 min 7171.9 / 30.3 min +337.7% (GPTuner) MS Sysbench ReadWrite 254.97 / 87.5 min 200.96 / 27.0 min 281.78 / 65.9 min 38.14 / 77.3 min 470.45 / 11.7 min +67.0% (AgentTune) MS TPC-H 175734 / 20.4 min 177239 / 18.4 min 177783 / 17.8 min 262758 / 4.5 min 165769 / 46.8 min +5.7% (GPTuner) PG Sysbench Read 478.00 / 29.6 min 483.20 / 35.6 min 467.93 / 91.3 min 346.73 / 53.1 min 1083.6 / 12.4 min +124.3% (DB-BERT) PG Sysbench Write 4838.6 / 19.7 min 1815.1 / 41.3 min 5209.9 / 2.7 min 1863.3 / 78.1 min 15724.7 / 24.7 min +201.8% (AgentTune) PG Sysbench ReadWrite 238.42 / 35.5 min 198.92 / 9.8 min 260.81 / 2.5 min 111.14 / 1.5 min 647.61 / 17.0 min +148.3% (AgentTune) 
+
+The performance progression in Figure 2 further shows that 
+
+AgenticDB improves reconfiguration efficiency. Compared with the strongest baseline on each workload, AgenticDB reaches its best observed configuration faster on several workloads, with 1.6 ×–5.6 × shorter time-to-best. On workloads where AgenticDB spends more time before reaching its best result, the additional exploration leads to stronger final results rather than ineffective search. Over-all, across all evaluated workloads, the strongest baselines require 232.3 minutes in total to reach their best observed configurations, whereas AgenticDB requires 179.7 minutes, reducing aggregate time-to-best by 22.6%. This efficiency is consistent with the Auditor-controlled loop, where runtime feedback is used to decide whether to continue the current direction, refine a parameter group, switch layers, or terminate the task, reducing uninformative trials. 
+
+Answer to RQ1: AgenticDB achieves the best observed result across all evaluated workloads and DBMSs, improving over the strongest baseline by 118.1% on average. It also improves recon-figuration efficiency, reducing aggregate time-to-best from 232.3 minutes to 179.7 minutes, a 22.6% reduction. These results show that AgenticDB improves database workload reconfiguration through workload-aware planning, a broader validated action space, and Auditor-controlled feedback-driven loop control. 
+
+## 6.2 RQ2: Benefit of OS-level Reconfiguration 
+
+RQ2 examines the incremental benefit of OS-level reconfiguration after DBMS-level reconfiguration. In Figure 2, the dashed vertical line marks the point where AgenticDB switches from DBMS-level to OS-level reconfiguration. We measure the OS-level gain by com-paring the best observed result before this transition with the best observed result after OS-level actions are introduced. Table 4 reports the workloads where OS-level reconfiguration provides additional improvement beyond DBMS-level reconfigura-tion. The largest gain appears on MySQL Sysbench write , where the objective improves from 5784.2 to 7171.9, corresponding to a 24.0% additional gain. PostgreSQL Sysbench readwrite and write 
+
+also benefit from OS-level reconfiguration, with gains of 6.2% and 5.4%, respectively. For MySQL YCSB and TPC-H, the gains are smaller but still positive, with a 1.1% TPS/P95 improvement on AgenticDB: Agentic Performance Reconfiguration for Database Workloads SIGMOD/PODS ’27, June, 2027, California, USA 
+
+Table 4: Additional gains from OS-level reconfiguration after DBMS-level reconfiguration. For TPC-H, the gain denotes relative execution-time reduction.                         
+
+> Workload Best before OS-level Best after OS-level OS Gain Representative OS Parameter Groups
+> MS YCSB 19060.2 19262.2 +1.1% CPU scheduling, memory reclamation MS Sysbench Write 5784.2 7171.9 +24.0% AIO limits, CPU scheduling, dirty-page writeback MS TPC-H 169756 ms 165769 ms +2.3% block I/O scheduler, read-ahead, THP control PG Sysbench Write 14918.8 15724.7 +5.4% dirty-page writeback, CPU scheduling, memory reclamation PG Sysbench ReadWrite 610.03 647.61 +6.2% dirty-page writeback, CPU scheduling, memory reclamation
+
+YCSB and a 2.3% execution-time reduction on TPC-H. These results indicate that OS-level reconfiguration provides complementary op-timization headroom after DBMS-level reconfiguration, rather than being the sole source of AgenticDB ’s overall improvement. The workload-level results further show that OS-level reconfig-uration provides complementary rather than uniform gains. When additional improvements appear, they are associated with residual system-level overheads that remain after DBMS-level reconfigu-ration. For write-intensive workloads, AgenticDB benefits from OS-level actions related to CPU scheduling, asynchronous I/O lim-its, memory reclamation, and dirty-page writeback. These actions do not replace DBMS-level reconfiguration; instead, they comple-ment earlier adjustments to buffer-pool size, redo logging, flushing behavior, and I/O capacity by reducing remaining overheads in the underlying execution environment. This explains why the OS stage often yields smaller but still measurable gains after the DBMS stage has already reached a strong configuration. OS-level exploration is not universally beneficial. On MySQL Sysbench read , MySQL Sysbench readwrite , and PostgreSQL Sys-bench read , DBMS-level reconfiguration already removes the dom-inant bottlenecks under our evaluation setting, leaving limited additional headroom for OS-level actions. Accordingly, the Audi-tor treats OS-level reconfiguration as conditional exploration: it switches to the OS layer after DBMS-level progress becomes lim-ited and stops when runtime feedback indicates limited remaining benefit. 
+
+Answer to RQ2: OS-level reconfiguration provides complemen-tary performance headroom after DBMS-level reconfiguration, but its benefit is workload-dependent. It improves the best ob-served result on five workloads, with the largest additional gain on MySQL Sysbench write (+24.0%). These results support 
+
+AgenticDB ’s cross-layer design: OS-level parameters are useful when residual system-level bottlenecks remain, but should be explored selectively under Auditor control rather than treated as universally beneficial. 
+
+## 6.3 RQ3: Robustness of the AgenticDB 
+
+## Framework 
+
+RQ3 evaluates how the Validator and Recovery improve the robust-ness of AgenticDB ’s closed-loop reconfiguration process against invalid actions and execution-time failures. Table 5 summarizes three representative cases from the reconfiguration traces. 
+
+Validator. The first two rows of Table 5 show how the Valida-tor prevents invalid actions from becoming executable trials. In a MySQL Sysbench write run, the LLM DBA Planner proposes 
+
+transaction_isolation=READ-COMMITTED . Although this pa-rameter is valid in MySQL, applying it would change the trans-action semantics of the benchmark rather than only tune system performance. With the Validator enabled, AgenticDB rejects the candidate before execution and returns structured feedback to the Planner for an in-round retry. In an OS-level case, the Planner proposes a sysctl action containing the unsupported parameter 
+
+kernel.sched_migration_cost_ns . The Validator detects the unknown sysctl entry before execution, preventing a hallucinated OS parameter from reaching the Executor. Table 6 quantifies the cost avoided in the MySQL semantics-changing case. Without validation, the unsafe candidate enters the execution path and triggers configuration application, warmup, benchmark execution, and rollback. This increases the round time from 42.69 seconds to 132.55 seconds, introducing 89.86 seconds of avoidable downstream execution. Thus, the Validator not only protects benchmark validity, but also prevents wasted evaluation time on actions that should never be executed. 
+
+Recovery. Recovery complements the Validator by handling fail-ures that cannot be fully eliminated before execution. Some failure modes are only observable after a validated change is applied, after the DBMS is reloaded or restarted, or after the new setting interacts with existing DBMS dependencies. The PostgreSQL restart case in Table 5 illustrates this situation. A restart-sensitive action sets 
+
+wal_level=minimal while replication-related settings such as 
+
+max_wal_senders remain enabled. The inconsistency is exposed during restart, causing PostgreSQL to fail to become available. When this failure occurs, Recovery inspects the service status and error logs, localizes the faulty WAL setting, restores wal_leve l=replica , restarts PostgreSQL, verifies service availability, and records the failure trace in session memory. Without this fallback path, the reconfiguration loop would stop and require manual repair. This case shows that the Validator and Recovery protect the recon-figuration loop at different failure boundaries: the Validator reduces pre-execution risk, while Recovery keeps the loop executable when deployment-time failures still occur. 
+
+Answer to RQ3: Validator and Recovery make the reconfig-uration loop more robust at complementary stages: Validator blocks unsafe or invalid actions before execution, while Recov-ery repairs failed changes or restores the last safe state. These safeguards reduce wasted rounds and keep AgenticDB ’s explo-ration executable without manual intervention. SIGMOD/PODS ’27, June, 2027, California, USA Yang et al. 
+
+Table 5: Representative cases showing how Validator and Recovery improve reconfiguration robustness.               
+
+> Component Case Detected problem Outcome
+> Validator MySQL Sysbench Write Valid but semantics-changing DBMS setting:
+> transaction_isolation=READ-COMMITTED
+> Rejected before execution; avoids one invalid benchmark round Validator OS-level reconfiguration Hallucinated or unsupported sysctl:
+> kernel.sched_migration_cost_ns
+> Rejected before execution and regenerated through retry feedback Recovery PostgreSQL restart Inconsistent wal_level=minimal with WAL sender settings Repairs wal_level and restores DBMS availability
+
+Table 6: Timing of an unsafe DBMS candidate with and with-out Validator. 
+
+Step With Validator Without Validator 
+
+LLM proposal 42.69 s 42.69 s Apply config 0 s 1.87 s Warmup + benchmark 0 s 84.31 s Rollback 0 s 3.68 s Total time 42.69 s 132.55 s Avoided downstream time – 89.86 s GPT 5.5 Claude Opus 4.7                          
+
+> DeepSeek V4 Pro GLM 5.1 Kimi K2.6 010 20 30 40 50 60 70
+> time (min)
+> 250
+> 275
+> 300
+> 325
+> 350
+> 375
+> 400
+> TPS / p95_ms
+> Sysbench Read 020 40 60 80
+> time (min)
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> 5000
+> 6000
+> 7000
+> TPS / p95_ms
+> Sysbench Write 0510 15 20 25 30 35
+> time (min)
+> 100
+> 200
+> 300
+> 400
+> TPS / p95_ms
+> Sysbench ReadWrite 020 40 60 80 100
+> time (min)
+> 180000
+> 200000
+> 220000
+> 240000
+> 260000
+> execution time (ms)
+> TPC-H
+
+Figure 3: Reconfiguration progression of AgenticDB with different LLM backends on representative MySQL workloads. 
+
+## 6.4 RQ4: Effects of LLM Backends and Memory 
+
+RQ4 evaluates how two design choices affect AgenticDB ’s recon-figuration behavior: the LLM backend and the memory mecha-nism. We first compare multiple LLM backends under the same 
+
+AgenticDB Harness to assess their impact on planning quality, end-to-end interaction time, and API cost. We then study whether experience memory provides additional benefit beyond the default session memory used for within-run continuity. 
+
+Effect of LLM backends. We compare five LLM backends: GPT-5.5, DeepSeek V4 Pro, Claude Opus 4.7, GLM 5.1, and Kimi K2.6 [ 1, 6,17 , 18 , 39 ]. All backends are evaluated with the same AgenticDB 
+
+workflow and experimental settings, so the comparison isolates the effect of the LLM backend on planning quality, end-to-end interaction time, and API cost. Figure 3 shows that AgenticDB can operate with different LLM backends, but the backend choice leads to clear differences in re-configuration quality, end-to-end interaction time, and API cost. 
+
+Table 7: Average LLM calls, token usage, and API cost per workload in the LLM-backend experiments. LLM Calls de-notes the number of Planner invocations. 
+
+Model Avg. LLM Calls Avg. Tokens Avg. API Cost 
+
+GPT-5.5 11.00 584,458 $3.97 DeepSeek V4 Pro 11.00 548,039 $0.26 Claude Opus 4.7 10.75 795,192 $4.80 GLM 5.1 12.50 696,826 $0.84 Kimi K2.6 10.25 595,413 $0.68 
+
+Among the evaluated backends, GPT-5.5 provides the strongest and most stable performance across workloads. It reaches high-performing configurations quickly on the Sysbench workloads and achieves the lowest execution time on TPC-H. As shown in Ta-ble 7, GPT-5.5 costs $3.97 per workload on average, which is higher than several lower-cost alternatives but is accompanied by the best overall reconfiguration quality. Claude Opus 4.7 also reaches competitive configurations on several workloads, but it does not improve over GPT-5.5 in final performance and incurs a higher average API cost of $4.80 per workload. DeepSeek V4 Pro provides the most cost-effective alternative among the evaluated backends. Although it does not always match the best final performance of GPT-5.5, it achieves consistently strong results across the evaluated workloads while costing only $0.26 per workload on average. This makes DeepSeek V4 Pro a prac-tical backend when the goal is to balance reconfiguration quality, runtime efficiency, and API cost. GLM 5.1 and Kimi K2.6 have relatively low API costs, but their end-to-end efficiency is limited by interaction latency and serving reliability in our experiments. GLM 5.1 occasionally reaches com-petitive configurations, but requires more LLM calls and longer interaction time. Kimi K2.6 is especially affected on TPC-H, where it spends substantially more wall-clock time and remains far from the best execution time. This serving-availability issue is consistent with the DeepSeek-V4 technical report, which notes that some K2.6 and GLM-5.1 evaluation entries were left blank because their APIs were too busy to return responses [ 6 ]. Overall, the results reveal a quality-cost-latency tradeoff: GPT-5.5 provides the strongest plan-ning quality, while DeepSeek V4 Pro offers the best cost-effective alternative among the evaluated backends. 
+
+Effect of experience memory. We further evaluate whether cross-task experience memory improves AgenticDB beyond the default session memory used for within-run continuity. Under the same GPT-5.5 backend, we compare the default AgenticDB loop with a variant augmented by experience memory distilled from completed reconfiguration tasks, with results shown in Figure 4. The results demonstrate that experience memory improves Agen-ticDB by providing a stronger initial planning context and enabling AgenticDB: Agentic Performance Reconfiguration for Database Workloads SIGMOD/PODS ’27, June, 2027, California, USA AgenticDB AgenticDB + Experience Memory 0 5 10 15 20 25 30                    
+
+> time (min)
+> 280
+> 300
+> 320
+> 340
+> 360
+> 380
+> 400
+> TPS / p95_ms
+> sysbench read 0510 15 20 25 30 35 40
+> time (min)
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> 5000
+> 6000
+> 7000
+> TPS / p95_ms
+> sysbench write 0510 15 20 25 30
+> time (min)
+> 100
+> 200
+> 300
+> 400
+> TPS / p95_ms
+> sysbench readwrite 010 20 30 40 50
+> time (min)
+> 160000
+> 180000
+> 200000
+> 220000
+> 240000
+> 260000
+> execution time (ms)
+> tpch
+
+Figure 4: Effect of experience memory on representative MySQL workloads. 
+
+more effective refinement on complex workloads. The benefit is most visible on Sysbench write , Sysbench readwrite , and TPC-H. For the write-intensive and mixed workloads, experience memory helps AgenticDB reach strong configurations with less trial-and-error in the early rounds. On TPC-H, the effect is more pronounced: experience memory guides the system into a lower-execution-time region early in the reconfiguration process, allowing later rounds to focus on fine-grained refinement and achieve a better final result. On the read-only workload, the default variant and the experience-memory variant quickly reach a similar high-performing region. This does not indicate that experience memory is ineffective; rather, the read-only workload provides a clearer feedback signal and a narrower effective configuration space, so the default loop with session memory can already identify a strong configuration quickly. In such cases, the additional cross-task guidance has less room to further improve the result. These results show that session memory and experience memory serve complementary roles. Session memory maintains within-run continuity by carrying forward observations from earlier rounds under the same workload, while experience memory provides cross-task guidance distilled from completed tasks. As more reconfigura-tion tasks are completed, experience memory accumulates reusable knowledge about effective actions, risky configurations, and workload-specific patterns, enabling future tasks to start from more informed planning contexts rather than rediscovering similar configurations from scratch. 
+
+Answer to RQ4: LLM backends mainly affect planning qual-ity and cost, with GPT-5.5 giving the strongest overall results and DeepSeek V4 Pro providing the most cost-effective alter-native. Experience memory further improves complex tasks by adding cross-task guidance, helping AgenticDB reach strong configurations earlier. 
+
+## 7 What Makes AgenticDB Work? 
+
+This section analyzes representative reconfiguration traces to show how AgenticDB progressively identifies effective knob groups during the closed-loop process. As summarized in Figure 5, we focus on two read-only workloads, MySQL Sysbench read and PostgreSQL Sysbench read . For each case, we examine how round-level feedback accepts productive directions, rolls back ineffective combinations, and guides later rounds toward the knob groups that ultimately improve performance. 
+
+MySQL Sysbench Read. The MySQL read-only trace illustrates how AgenticDB shifts reconfiguration directions based on round-level feedback. The initial fingerprint identifies an OLTP read-only workload with point lookups, range scans, index scans, and throughput/latency-sensitive objectives. Based on this interpreta-tion, the first round applies a broad DBMS-side candidate over read-relevant parameter groups, including buffer-pool residency, read-path behavior, metadata caches, read I/O, and connection/thread caches. This round improves the objective from 250.0 to 389.0 , in-dicating that the workload benefits from a larger read-side working region and lower cache or metadata overhead. The next round then tests a narrower read-path hypothesis around adaptive hash index and read-ahead behavior. However, this trial reduces the objective to 388.1 , so it is rolled back, and the trace records that this combi-nation is not the dominant direction. The following round shifts to concurrency and thread scheduling, adjusting InnoDB thread-concurrency and sleep-delay related parameters. This step reaches the best stable objective of 397.5 . Later trials that combine previous read-path and concurrency changes or move to OS-side controls do not exceed this result and are rolled back. This trace suggests that the main gain comes from first finding a strong read-side configu-ration and then identifying concurrency control as the remaining effective bottleneck direction. 
+
+PostgreSQL Sysbench Read. For the PostgreSQL read-only work-load, the initial fingerprint highlights throughput/latency-sensitive read behavior with relevant signals around cache residency, plan-ner behavior, I/O concurrency, parallelism, and execution overhead. This interpretation leads the first round to try a broad global candi-date across cache residency, planner cost, I/O concurrency, parallel worker settings, JIT overhead, and memory-related parameters. The initial objective is 304.6 , and this broad candidate improves the objective to 451.4 . This result is accepted as a useful but coarse di-rection, indicating that PostgreSQL read performance benefits from changes around planner, I/O, parallelism, and execution overhead, but that the search still needs a more focused refinement. The next round keeps a lighter set of planner-cost, I/O-concurrency, JIT, and execution-overhead changes, improving the objective further to 
+
+792.0 . This shows that the productive region is not simply larger memory, but a combination of planner, I/O, and execution-overhead controls. Later rounds further refine this direction. In particular, a round that introduces plan-cache behavior on top of the successful planner/I/O/JIT direction raises the objective to 1060.7 , and the next accepted round refines parallel-worker settings and reaches the best stable objective of 1083.6 . Subsequent probes over memory-related, parallel-cost, or OS-side directions regress and are rolled back. This trace suggests that AgenticDB improves PostgreSQL read perfor-mance by progressively narrowing a coarse useful direction into planner/I/O/parallelism-focused refinements. 
+
+Takeaway. These traces show how AgenticDB converts each round into evidence about which knob groups match the workload bottleneck. Accepted rounds identify productive regions, rollback SIGMOD/PODS ’27, June, 2027, California, USA Yang et al.                      
+
+> MySQL Sysbench Read: from read-side capacity to thread scheduling. green : accepted improvement; red : rollback; blue : best
+> (1) Initial interpretation
+> High read intensity with point lookups, range scans, and index scans.
+> Primary directions: buffer residency, read path, metadata caches, read I/O.
+> Objective: 250.0 (2) Round 1 accepted
+> A broad DBMS-side candidate improves the objective.
+> Key factors: buffer-pool region, table/cache metadata, read I/O, connection/thread caches.
+> Objective: 389.0 (3) Round 2 rollback
+> The next trial isolates adaptive hash index and read-ahead behavior, but the objective does not improve.
+> Signal: this read-path combination is not the dominant direction.
+> Objective: 388.1 (4) Round 3 best
+> The search moves to InnoDB thread-concurrency and scheduling-related knobs.
+> Outcome: the best stable result is reached.
+> Objective: 397.5 PostgreSQL Sysbench Read: from coarse global gain to planner/I/O/parallel refinement. (1) Initial interpretation
+> High read intensity with throughput and tail-latency sensitivity.
+> Primary directions: cache residency, planner cost, I/O concurrency, parallel workers, JIT overhead.
+> Objective: 304.6 (2) Round 1 accepted
+> A broad candidate over memory, planner, I/O, and parallelism improves the objective.
+> Signal: the global direction is useful but still coarse.
+> Objective: 451.4 (3) Round 2 accepted
+> A lighter candidate focuses on planner-cost, I/O-concurrency, JIT, and execution-overhead changes.
+> Signal: planner/I/O/execution overhead is productive.
+> Objective: 792.0 (4) Rounds 4–5 best
+> Later rounds refine plan-cache behavior and parallel-worker settings on top of the successful direction.
+> Outcome: accepted refinement reaches the best result.
+> Objective: 1060.7 →1083.6
+
+Figure 5: Representative reconfiguration traces showing how AgenticDB turns round-level feedback into increasingly targeted knob-group hypotheses. 
+
+rounds rule out misleading combinations, and later rounds refine the remaining hypotheses. This feedback-driven narrowing pro-cess helps AgenticDB reach high-performing configurations while avoiding repeated exploration of ineffective directions. 
+
+## 8 Related Work 
+
+Database configuration tuning has been an active research topic because DBMS performance is highly sensitive to configuration knobs [ 24 , 33 ]. Existing automatic tuning studies can be broadly classified into search-based methods, machine-learning-based itera-tive methods, historical-data-driven methods, and language-model-assisted methods [33, 42]. 
+
+Search-based and ML-based tuning. Search-based methods ex-plore the configuration space using predefined strategies or surro-gate models. BestConfig searches promising configurations through heuristic strategies [ 50 ], while Bayesian-optimization-based meth-ods such as iTuned and SMAC formulate database tuning as black-box optimization [ 7, 10 ]. Reinforcement-learning-based methods, including CDBTune and QTune, further model tuning as a sequen-tial decision process and use DBMS metrics or workload feedback to improve configurations [ 15 , 41 ]. Hybrid systems such as HUNTER combine warm-start exploration, search-space reduction, and rein-forcement learning to improve online tuning efficiency [ 2]. These methods reduce manual effort, but still rely on repeated workload executions to evaluate candidate configurations. 
+
+Historical-data-driven tuning. Another line of work reuses his-torical tuning data to accelerate new tuning tasks. OtterTune selects important knobs, maps new workloads to similar historical work-loads, and recommends configurations using learned models [ 32 ]. ResTune uses meta-learning to transfer knowledge across histori-cal tasks under SLA constraints [ 45 ]. E2ETune trains a generative language model on workload–configuration pairs to recommend configurations for new workloads [ 9]. These methods demonstrate the value of accumulated tuning experience, but their effectiveness depends on the coverage and relevance of historical data under new workloads and deployment environments. 
+
+Language-model-assisted tuning. Recent work uses language mod-els and textual knowledge to guide database knob tuning. DB-BERT extracts tuning hints from manuals and combines them with rein-forcement learning [ 31 ]. GPTuner uses LLM-derived tuning knowl-edge to guide knob selection, range optimization, and coarse-to-fine Bayesian optimization [ 14 ]. LlamaTune improves sample efficiency through domain-knowledge-aware dimensionality reduction and value bucketization [ 12 ]. 𝜆 -Tune uses modern LLMs to generate complete configuration scripts and selects candidate configurations through controlled evaluation [ 8]. AgentTune decomposes knob tuning into workload analysis, knob selection, range pruning, and configuration recommendation, using DBMS feedback to guide iterative search [16]. 
+
+Summary. Overall, existing work has made substantial progress in automatic DBMS knob tuning through search, learning, historical-data reuse, and language-model guidance. These studies mainly focus on recommending DBMS-level configurations. AgenticDB 
+
+builds on this line of work and studies database workload reconfig-uration as an executable process on the target server, integrating workload-aware context construction, runtime-state-guided diagno-sis, memory across rounds and tasks, safe DBMS/OS action spaces, and validation/recovery during configuration execution. 
+
+## 9 Conclusion 
+
+This paper presents AgenticDB , an agentic framework that ad-vances database tuning from isolated DBMS knob recommendation to closed-loop workload reconfiguration on a target server. By integrating runtime-state-guided diagnosis and planning, a safe DBMS/OS action space, validation, execution safeguards, recovery, Auditor-controlled loop progression, and session and experience memory, AgenticDB can diagnose bottlenecks, explore broader reconfiguration opportunities under safety constraints, and reuse experience across tasks. Experiments on MySQL and PostgreSQL AgenticDB: Agentic Performance Reconfiguration for Database Workloads SIGMOD/PODS ’27, June, 2027, California, USA 
+
+across OLTP and OLAP workloads show that AgenticDB achieves the best observed result on all evaluated workloads, improving over the strongest baseline by 118.1% on average while reducing aggregate time-to-best by 22.6%. Further analyses demonstrate workload-dependent gains from OS-level reconfiguration, improved framework robustness from the Validator and Recovery, and better refinement from experience memory. These results suggest that practical database tuning benefits from treating reconfiguration as a process that is context-grounded, state-aware, robust in execution, and memory-enhanced. 
+
+## References 
+
+[1] Anthropic. 2026. Introducing Claude Opus 4.7. https://www.anthropic.com/ne ws/claude-opus-4-7 [2] Baoqing Cai, Yu Liu, Ce Zhang, Guangyu Zhang, Ke Zhou, Li Liu, Chunhua Li, Bin Cheng, Jie Yang, and Jiashu Xing. 2022. HUNTER: an online cloud database hybrid tuning system for personalized requirements. In Proceedings of the 2022 International Conference on Management of Data . 646–659. [3] Ben Cane. 2017. Improving Linux System Performance with I/O Scheduler Tuning. https://www.cloudbees.com/blog/linux-io-scheduler-tuning [4] Brian F Cooper, Adam Silberstein, Erwin Tam, Raghu Ramakrishnan, and Russell Sears. 2010. Benchmarking cloud serving systems with YCSB. In Proceedings of the 1st ACM symposium on Cloud computing . 143–154. [5] Biplob K Debnath, David J Lilja, and Mohamed F Mokbel. 2008. SARD: A statistical approach for ranking database tuning parameters. In 2008 IEEE 24th International Conference on Data Engineering Workshop . IEEE, 11–18. [6] DeepSeek-AI. 2026. DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence . Technical Report. DeepSeek-AI. https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/resolve/main/DeepSeek_V4.pdf [7] Songyun Duan, Vamsidhar Thummala, and Shivnath Babu. 2009. Tuning database configuration parameters with ituned. Proc. VLDB Endow. 2, 1 (2009), 1246–1257. [8] Victor Giannakouris and Immanuel Trummer. 2025. 𝜆 -tune: Harnessing large language models for automated database system tuning. Proceedings of the ACM on Management of Data 3, 1 (2025), 1–26. [9] Xinmei Huang, Haoyang Li, Jing Zhang, Xinxin Zhao, Zhiming Yao, Yiyan Li, Tieying Zhang, Jianjun Chen, Hong Chen, and Cuiping Li. 2024. E2etune: End-to-end knob tuning via fine-tuned generative language model. arXiv preprint arXiv:2404.11581 (2024). [10] Frank Hutter, Holger H Hoos, and Kevin Leyton-Brown. 2011. Sequential model-based optimization for general algorithm configuration. In International confer-ence on learning and intelligent optimization . Springer, 507–523. [11] Konstantinos Kanellis, Ramnatthan Alagappan, and Shivaram Venkataraman. 2020. Too many knobs to tune? towards faster database tuning by pre-selecting important knobs. In 12th USENIX Workshop on Hot Topics in Storage and File Systems (HotStorage 20) .[12] Konstantinos Kanellis, Cong Ding, Brian Kroth, Andreas Müller, Carlo Curino, and Shivaram Venkataraman. 2022. LlamaTune: sample-efficient DBMS configu-ration tuning. arXiv preprint arXiv:2203.05128 (2022). [13] Alexey Kopytov. 2009. SysBench: A Modular, Cross-Platform and Multi-Threaded Benchmark Tool . MySQL AB. https://imysql.com/wp-content/uploads/2014/10/ sysbench-manual.pdf [14] Jiale Lao, Yibo Wang, Yufei Li, Jianping Wang, Yunjia Zhang, Zhiyuan Cheng, Wanghu Chen, Mingjie Tang, and Jianguo Wang. 2025. Gptuner: An llm-based database tuning system. ACM SIGMOD Record 54, 1 (2025), 101–110. [15] Guoliang Li, Xuanhe Zhou, Shifu Li, and Bo Gao. 2019. Qtune: A query-aware database tuning system with deep reinforcement learning. Proceedings of the VLDB Endowment 12, 12 (2019), 2118–2130. [16] Yiyan Li, Haoyang Li, Jing Zhang, Renata Borovica-Gajic, Shuai Wang, Tieying Zhang, Jianjun Chen, Rui Shi, Cuiping Li, and Hong Chen. 2025. AgentTune: An Agent-Based Large Language Model Framework for Database Knob Tuning. 
+
+Proceedings of the ACM on Management of Data 3, 6 (2025), 1–29. [17] Moonshot AI. 2026. Kimi K2.6 API Guide. https://platform.kimi.ai/docs/guide/ki mi-k2-6-quickstart [18] OpenAI. 2026. Introducing GPT-5.5. https://openai.com/index/introducing-gpt-5-5/ [19] Oracle. 2020. Oracle Database 2 Day + Performance Tuning Guide, 19c. https: //docs.oracle.com/en/database/oracle/oracle-database/19/tdppt/ [20] Oracle. 2022. Oracle Database Performance Tuning Guide, 19c. https://docs.ora cle.com/en/database/oracle/oracle-database/19/tgdba/ [21] Oracle. 2026. MySQL 8.0 Reference Manual: Configuring InnoDB Buffer Pool Size Online . Oracle. https://dev.mysql.com/doc/refman/8.0/en/innodb-buffer-pool-resize.html [22] Charles Packer, Vivian Fang, Shishir_G Patil, Kevin Lin, Sarah Wooders, and Joseph_E Gonzalez. 2023. MemGPT: towards LLMs as operating systems. (2023). [23] Joon Sung Park, Joseph O’Brien, Carrie Jun Cai, Meredith Ringel Morris, Percy Liang, and Michael S Bernstein. 2023. Generative agents: Interactive simulacra of human behavior. In Proceedings of the 36th annual acm symposium on user interface software and technology . 1–22. [24] Andrew Pavlo, Gustavo Angulo, Joy Arulraj, Haibin Lin, Jiexi Lin, Lin Ma, Prashanth Menon, Todd C Mowry, Matthew Perron, Ian Quah, et al . 2017. Self-Driving Database Management Systems.. In CIDR , Vol. 4. 1. [25] PostgreSQL Global Development Group. 2026. PostgreSQL 18 Documentation: Monitoring Database Activity . PostgreSQL Global Development Group. https: //www.postgresql.org/docs/18/monitoring.html [26] PostgreSQL Global Development Group. 2026. PostgreSQL 18 Documentation: Resource Consumption . PostgreSQL Global Development Group. https://www. postgresql.org/docs/18/runtime-config-resource.html [27] Red Hat. 2020. Red Hat Enterprise Linux 6 Performance Tuning Guide: Tuning Virtual Memory. https://docs.redhat.com/en/documentation/red_hat_enterpris e_linux/6/html/performance_tuning_guide/s-memory-tunables [28] Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Eric Hambro, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. 2023. Toolformer: Language models can teach themselves to use tools. Advances in neural information processing systems 36 (2023), 68539–68551. [29] Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao. 2023. Reflexion: Language agents with verbal reinforcement learning. 
+
+Advances in neural information processing systems 36 (2023), 8634–8652. [30] Transaction Processing Performance Council. 2022. TPC Benchmark H (TPC-H), Standard Specification, Revision 3.0.1 . Transaction Processing Performance Council. https://www.tpc.org/TPC_Documents_Current_Versions/pdf/TPC-H_v3.0.1.pdf [31] Immanuel Trummer. 2022. DB-BERT: a Database Tuning Tool that" Reads the Manual". In Proceedings of the 2022 international conference on management of data . 190–203. [32] Dana Van Aken, Andrew Pavlo, Geoffrey J Gordon, and Bohan Zhang. 2017. Automatic database management system tuning through large-scale machine learning. In Proceedings of the 2017 ACM international conference on management of data . 1009–1024. [33] Dana Van Aken, Dongsheng Yang, Sebastien Brillard, Ari Fiorino, Bohan Zhang, Christian Bilien, and Andrew Pavlo. 2021. An inquiry into machine learning-based automatic configuration tuning services on real-world database manage-ment systems. Proceedings of the VLDB Endowment 14, 7 (2021), 1241–1253. [34] Rik van Riel and Peter W. Morreale. 2008. Documentation for /proc/sys/vm. https://docs.kernel.org/admin-guide/sysctl/vm.html [35] Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Mandlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. 2023. Voyager: An open-ended embodied agent with large language models. arXiv preprint arXiv:2305.16291 (2023). [36] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang, Shaokun Zhang, Jiale Liu, et al . 2024. Autogen: Enabling next-gen LLM applications via multi-agent conversations. In First conference on language modeling .[37] Zhiheng Xi, Wenxiang Chen, Xin Guo, Wei He, Yiwen Ding, Boyang Hong, Ming Zhang, Junzhe Wang, Senjie Jin, Enyu Zhou, et al . 2025. The rise and potential of large language model based agents: A survey. Science China Information Sciences 
+
+68, 2 (2025), 121101. [38] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2022. React: Synergizing reasoning and acting in language models. 
+
+arXiv preprint arXiv:2210.03629 (2022). [39] Z.AI. 2026. GLM-5.1 Overview. https://docs.z.ai/guides/llm/glm-5.1 [40] Yueyang Zhan, Rui Xi, Jianming Liao, Shuhuan Fan, and Mengshu Hou. 2024. KnobTune: A dynamic database configuration tuning strategy leveraging his-torical workload similarities. In Proceedings of the International Conference on Computing, Machine Learning and Data Science . 1–8. [41] Ji Zhang, Yu Liu, Ke Zhou, Guoliang Li, Zhili Xiao, Bin Cheng, Jiashu Xing, Yangtao Wang, Tianheng Cheng, Li Liu, et al . 2019. An end-to-end automatic cloud database tuning system using deep reinforcement learning. In Proceedings of the 2019 international conference on management of data . 415–432. [42] Limeng Zhang and M Ali Babar. 2024. Automatic configuration tuning on cloud database: A survey. arXiv preprint arXiv:2404.06043 (2024). [43] Xinyi Zhang, Zhuo Chang, Yang Li, Hong Wu, Jian Tan, Feifei Li, and Bin Cui. 2021. Facilitating database tuning with hyper-parameter optimization: a comprehensive experimental evaluation. arXiv preprint arXiv:2110.12654 (2021). [44] Xinyi Zhang, Zhuo Chang, Hong Wu, Yang Li, Jia Chen, Jian Tan, Feifei Li, and Bin Cui. 2023. A unified and efficient coordinating framework for autonomous DBMS tuning. Proceedings of the ACM on Management of Data 1, 2 (2023), 1–26. [45] Xinyi Zhang, Hong Wu, Zhuo Chang, Shuowei Jin, Jian Tan, Feifei Li, Tieying Zhang, and Bin Cui. 2021. Restune: Resource oriented tuning boosted by meta-learning for cloud databases. In Proceedings of the 2021 international conference on management of data . 2102–2114. SIGMOD/PODS ’27, June, 2027, California, USA Yang et al. 
+
+[46] Xinyi Zhang, Hong Wu, Yang Li, Jian Tan, Feifei Li, and Bin Cui. 2022. Towards dynamic and safe configuration tuning for cloud databases. In Proceedings of the 2022 International Conference on Management of Data . 631–645. [47] Zeyu Zhang, Quanyu Dai, Xiaohe Bo, Chen Ma, Rui Li, Xu Chen, Jieming Zhu, Zhenhua Dong, and Ji-Rong Wen. 2025. A survey on the memory mechanism of large language model-based agents. ACM Transactions on Information Systems 
+
+43, 6 (2025), 1–47. [48] Andrew Zhao, Daniel Huang, Quentin Xu, Matthieu Lin, Yong-Jin Liu, and Gao Huang. 2024. Expel: Llm agents are experiential learners. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 38. 19632–19642. [49] Wanjun Zhong, Lianghong Guo, Qiqi Gao, He Ye, and Yanlin Wang. 2024. Memo-rybank: Enhancing large language models with long-term memory. In Proceedings of the AAAI conference on artificial intelligence , Vol. 38. 19724–19731. [50] Yuqing Zhu, Jianxun Liu, Mengying Guo, Yungang Bao, Wenlong Ma, Zhuoyue Liu, Kunpeng Song, and Yingchun Yang. 2017. Bestconfig: tapping the perfor-mance potential of systems via automatic configuration tuning. In Proceedings of the 2017 symposium on cloud computing . 338–350.

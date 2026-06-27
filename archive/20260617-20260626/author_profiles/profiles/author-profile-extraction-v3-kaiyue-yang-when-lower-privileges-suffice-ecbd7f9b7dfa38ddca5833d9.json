@@ -1,0 +1,19 @@
+{
+  "name": "Kaiyue Yang",
+  "role": "first_author",
+  "affiliation": "Institute of Information Engineering, Chinese Academy of Sciences; Beijing Academy of Artificial Intelligence",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Kaiyue Yang",
+    "affiliations": [
+      "Institute of Information Engineering, Chinese Academy of Sciences",
+      "Beijing Academy of Artificial Intelligence"
+    ],
+    "author_row": "textbf Kaiyue Yang"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

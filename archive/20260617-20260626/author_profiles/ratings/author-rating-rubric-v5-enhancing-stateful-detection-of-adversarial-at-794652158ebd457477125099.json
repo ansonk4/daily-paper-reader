@@ -1,0 +1,24 @@
+{
+  "author_score": 7.0,
+  "author_rating_explanation": "Both first author De Zhang Lee and last author Ee-Chien Chang are affiliated with the National University of Singapore, a top Asian AI research university that fits within the 6-8 score band for top European, Chinese, Hong Kong, and other leading AI schools.",
+  "author_profiles": [
+    {
+      "name": "De Zhang Lee",
+      "role": "first_author",
+      "affiliation": "National University of Singapore",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Ee-Chien Chang",
+      "role": "last_author",
+      "affiliation": "National University of Singapore",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:57:33.293016+00:00"
+}

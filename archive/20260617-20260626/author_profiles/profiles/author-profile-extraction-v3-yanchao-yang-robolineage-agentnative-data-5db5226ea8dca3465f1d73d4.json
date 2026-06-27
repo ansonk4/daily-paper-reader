@@ -1,0 +1,19 @@
+{
+  "name": "Yanchao Yang",
+  "role": "last_author",
+  "affiliation": "Nanchun Guo; The University of Hong Kong",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yanchao Yang",
+    "affiliations": [
+      "Nanchun Guo",
+      "The University of Hong Kong"
+    ],
+    "author_row": "Yanchao Yang"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

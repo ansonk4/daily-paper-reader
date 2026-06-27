@@ -1,0 +1,19 @@
+{
+  "name": "Sangdon Park",
+  "role": "last_author",
+  "affiliation": "Graduate School of Artificial Intelligence, POSTECH; Department of Computer Science and Engineering, POSTECH",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Sangdon Park",
+    "affiliations": [
+      "Graduate School of Artificial Intelligence, POSTECH",
+      "Department of Computer Science and Engineering, POSTECH"
+    ],
+    "author_row": "textbf Sangdon Park"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

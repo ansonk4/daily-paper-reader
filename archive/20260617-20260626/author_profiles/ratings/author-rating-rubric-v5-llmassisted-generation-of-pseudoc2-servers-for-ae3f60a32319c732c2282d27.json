@@ -1,0 +1,24 @@
+{
+  "author_score": 3.0,
+  "author_rating_explanation": "First author Keth Hasui is affiliated with Kagawa University in Japan, which is not listed in any top or mid-tier band. Last author M. Hashimoto has no verifiable affiliation. This places the paper in the 0-5 bucket.",
+  "author_profiles": [
+    {
+      "name": "Keth Hasui",
+      "role": "first_author",
+      "affiliation": "Kagawa University; Takamatsu, Japan",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "M. Hashimoto",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:04:13.332328+00:00"
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Yincheng Zhou",
+  "role": "first_author",
+  "affiliation": "Shanghang Zhang 2",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yincheng Zhou",
+    "affiliations": [
+      "Shanghang Zhang 2"
+    ],
+    "author_row": "Yincheng Zhou"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "ENVS: Environment-Native Verified Search for Long-Horizon GUI Agents",
+    "paper_year": 2026,
+    "name": "Yincheng Zhou",
+    "affiliations": [],
+    "works_count": null,
+    "cited_by_count": null,
+    "author_id": "https://openalex.org/A5139133863"
+  },
+  "semantic_scholar": {}
+}

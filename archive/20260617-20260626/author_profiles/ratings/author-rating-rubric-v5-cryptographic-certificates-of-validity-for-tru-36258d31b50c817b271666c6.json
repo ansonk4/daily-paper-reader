@@ -1,0 +1,16 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "The sole focus author, Murdoch J. Gabbay, has an affiliation listed as 'document' which is not a verifiable institution. No citation hints are provided. The affiliation text does not correspond to any recognizable institution, so no score above 5 can be assigned.",
+  "author_profiles": [
+    {
+      "name": "Murdoch J. Gabbay",
+      "role": "first_author",
+      "affiliation": "document",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:56:52.997968+00:00"
+}

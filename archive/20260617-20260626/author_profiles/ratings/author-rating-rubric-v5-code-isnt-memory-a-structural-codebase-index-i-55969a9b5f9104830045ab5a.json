@@ -1,0 +1,24 @@
+{
+  "author_score": 3.0,
+  "author_rating_explanation": "First author Ishaan Bhola is affiliated with SuperAGI Research, which is not a widely recognized institution in any top or mid-tier band. Last author Mukunda NS has no available affiliation data. Both fall into the 0-5 bucket for unknown or weakly verifiable affiliations.",
+  "author_profiles": [
+    {
+      "name": "Ishaan Bhola",
+      "role": "first_author",
+      "affiliation": "Adithyan Krishnan SuperAGI Research; Sravanth Kurmala SuperAGI Research; Mukunda NS SuperAGI Research",
+      "citation_hints": "Semantic Scholar citation_count=29; Semantic Scholar paper_count=7",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar"
+    },
+    {
+      "name": "Mukunda NS",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:57:33.301216+00:00"
+}

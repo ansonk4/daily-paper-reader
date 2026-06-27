@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "Both focus authors list only a personal name (Ozan Pali) as affiliation rather than a recognized institution or company. No verifiable institutional affiliation is present, so this falls in the 0-5 bucket with low confidence.",
+  "author_profiles": [
+    {
+      "name": "Giulio Turrisi",
+      "role": "first_author",
+      "affiliation": "Ozan Pali",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Claudio Semini",
+      "role": "last_author",
+      "affiliation": "Ozan Pali",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:58:39.090656+00:00"
+}

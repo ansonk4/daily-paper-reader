@@ -1,0 +1,21 @@
+{
+  "name": "Dayeon Kang",
+  "role": "first_author",
+  "affiliation": "Hyejun Jeong UMass Amherst; Jade Sheffey UMass Amherst; Pubali Datta UMass Amherst; Amir Houmansadr UMass Amherst",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Dayeon Kang",
+    "affiliations": [
+      "Hyejun Jeong UMass Amherst",
+      "Jade Sheffey UMass Amherst",
+      "Pubali Datta UMass Amherst",
+      "Amir Houmansadr UMass Amherst"
+    ],
+    "author_row": "Dayeon Kang UMass Amherst"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

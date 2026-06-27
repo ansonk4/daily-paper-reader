@@ -1,0 +1,24 @@
+{
+  "author_score": 6.5,
+  "author_rating_explanation": "Both authors are affiliated with AI Foundations, Capital One. Capital One is a major financial company with an AI research division, which qualifies as a concrete industry research lab with verifiable output (OpenAlex cited_by_count=1758 for first author). This places the paper in the 6-8 band as a recognized industry research group, though not a top-tier AI company like DeepMind or OpenAI.",
+  "author_profiles": [
+    {
+      "name": "Chenyang Zhu",
+      "role": "first_author",
+      "affiliation": "AI Foundations, Capital One",
+      "citation_hints": "OpenAlex cited_by_count=1758; OpenAlex works_count=85",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    },
+    {
+      "name": "Erin Babinsky",
+      "role": "last_author",
+      "affiliation": "AI Foundations, Capital One; Capital One (United States)",
+      "citation_hints": "OpenAlex cited_by_count=422; OpenAlex works_count=32",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:55:37.176237+00:00"
+}

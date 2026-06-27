@@ -1,0 +1,28 @@
+{
+  "name": "Oleksandr Kosovan",
+  "role": "last_author",
+  "affiliation": "document",
+  "citation_hints": "Semantic Scholar citation_count=6; Semantic Scholar paper_count=6",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Oleksandr Kosovan",
+    "affiliations": [
+      "document"
+    ],
+    "author_row": "Marta Sumyk 1 Oleksandr Kosovan 1 \\\\ 1 Ukrainian Catholic University, Lviv, Ukraine\\\\ sumyk.pn@ucu.edu.ua, o.kosovan@ucu.edu.ua"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Reinforcement Learning for Computer-Use Agents with Autonomous Evaluation",
+    "paper_year": "2026",
+    "name": "Oleksandr Kosovan",
+    "affiliations": [],
+    "paper_count": 6,
+    "citation_count": 6,
+    "author_id": "2355423906",
+    "lookup": "author_search"
+  }
+}

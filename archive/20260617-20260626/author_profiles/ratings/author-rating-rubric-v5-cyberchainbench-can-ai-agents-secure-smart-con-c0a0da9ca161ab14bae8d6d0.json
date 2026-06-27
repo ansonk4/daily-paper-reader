@@ -1,0 +1,24 @@
+{
+  "author_score": 7.5,
+  "author_rating_explanation": "The first author is affiliated with Hong Kong Polytechnic University, which is listed in the top Hong Kong AI schools band (6-8). The last author lists Beijing Institute of Technology, Shandong University, Peking University, and Southern University of Science and Technology. Peking University is a top Chinese institution in the 6-8 band, and SUSTech is also recognized. The last author has very high citations (OpenAlex cited_by_count=6798). Combined, these affiliations place the paper solidly in the 6-8 range, leaning toward the higher end due to Peking University.",
+  "author_profiles": [
+    {
+      "name": "Jintao Huang",
+      "role": "first_author",
+      "affiliation": "Hong Kong Polytechnic University",
+      "citation_hints": "OpenAlex cited_by_count=5389; OpenAlex works_count=217",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    },
+    {
+      "name": "Zhiqiang Lin",
+      "role": "last_author",
+      "affiliation": "Beijing Institute of Technology; Shandong University; Peking University; Southern University of Science and Technology",
+      "citation_hints": "OpenAlex cited_by_count=6798; OpenAlex works_count=293",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:54:15.609457+00:00"
+}

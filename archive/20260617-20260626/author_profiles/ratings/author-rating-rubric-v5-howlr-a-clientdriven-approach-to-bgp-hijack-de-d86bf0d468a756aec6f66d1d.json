@@ -1,0 +1,24 @@
+{
+  "author_score": 8.5,
+  "author_rating_explanation": "Last author Maria Apostolaki is affiliated with Princeton University, a top US AI school, with strong citation counts (OpenAlex cited_by_count=3261). First author Constantine Doumanidis has no listed affiliation in metadata. The Princeton affiliation of the last author places this in the 8-9 band.",
+  "author_profiles": [
+    {
+      "name": "Constantine Doumanidis",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "OpenAlex cited_by_count=50; OpenAlex works_count=11",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    },
+    {
+      "name": "Maria Apostolaki",
+      "role": "last_author",
+      "affiliation": "Princeton University",
+      "citation_hints": "OpenAlex cited_by_count=3261; OpenAlex works_count=93",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:55:37.177220+00:00"
+}

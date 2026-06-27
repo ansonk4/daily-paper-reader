@@ -1,0 +1,24 @@
+{
+  "author_score": 6.5,
+  "author_rating_explanation": "The first author is affiliated with the University of Pennsylvania, a top US AI school in the 8-9 band, and Tecnalia (Spain), a research center. The last author is affiliated with Universidad de Granada and the DaSCI Andalusian Institute of Data Science and Computational Intelligence in Spain, which is a recognized AI research institute in Europe. UPenn pulls the score toward the higher end, but the last author's institution is more mid-tier European, resulting in a combined score of 6.5.",
+  "author_profiles": [
+    {
+      "name": "Alaia Solko-Breslin",
+      "role": "first_author",
+      "affiliation": "Tecnalia; Tecnalia [Derio] (Spain); University of Pennsylvania",
+      "citation_hints": "OpenAlex cited_by_count=40; OpenAlex works_count=4",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    },
+    {
+      "name": "Krishnamurthy Dj Dvijotham",
+      "role": "last_author",
+      "affiliation": "Universidad de Granada; Instituto Andaluz de Ciencias de la Tierra; DaSCI Andalusian Institute of Data Science and Computational Intelligence, University of Granada, Granada 18071, Spain; DaSCI  - Instituto Andaluz Interuniversitario en Data Science and Computational Intelligence (Spain)",
+      "citation_hints": "OpenAlex cited_by_count=0; OpenAlex works_count=1",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:54:15.609759+00:00"
+}

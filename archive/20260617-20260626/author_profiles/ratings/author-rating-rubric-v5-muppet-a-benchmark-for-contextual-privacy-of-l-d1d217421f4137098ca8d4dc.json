@@ -1,0 +1,24 @@
+{
+  "author_score": 7.5,
+  "author_rating_explanation": "Focus authors Elena Sofia Ruzzetti and Martin Gubri are affiliated with University of Oxford, a top European AI school, plus NAVER AI Lab and KAIST AI, which are recognized Asian AI labs. The presence of Oxford places them in the 6-8 band, with the additional reputable labs supporting a score near the top of that range.",
+  "author_profiles": [
+    {
+      "name": "Elena Sofia Ruzzetti",
+      "role": "first_author",
+      "affiliation": "1 Parameter Lab, 2 University of Rome Tor Vergata, 3 University of Oxford; 4 NAVER AI Lab, 5 KAIST AI",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Martin Gubri",
+      "role": "last_author",
+      "affiliation": "1 Parameter Lab, 2 University of Rome Tor Vergata, 3 University of Oxford; 4 NAVER AI Lab, 5 KAIST AI",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:03:25.184852+00:00"
+}

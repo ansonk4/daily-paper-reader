@@ -1,0 +1,30 @@
+{
+  "name": "Guanya Shi",
+  "role": "last_author",
+  "affiliation": "Cunxi Dai; Carnegie Mellon University",
+  "citation_hints": "OpenAlex cited_by_count=1362; OpenAlex works_count=141",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Guanya Shi",
+    "affiliations": [
+      "Cunxi Dai"
+    ],
+    "author_row": "Guanya Shi"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "ENPIRE: Agentic Robot Policy Self-Improvement in the Real World",
+    "paper_year": "2026",
+    "name": "Guanya Shi",
+    "affiliations": [
+      "Carnegie Mellon University"
+    ],
+    "works_count": 141,
+    "cited_by_count": 1362,
+    "author_id": "https://openalex.org/A5029314167",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

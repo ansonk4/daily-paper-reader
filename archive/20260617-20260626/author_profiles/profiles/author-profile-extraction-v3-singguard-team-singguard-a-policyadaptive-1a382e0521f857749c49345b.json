@@ -1,0 +1,27 @@
+{
+  "name": "SingGuard Team",
+  "role": "first_author",
+  "affiliation": "1 AI Security Lab, Ant Group",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "SingGuard Team",
+    "affiliations": [
+      "1 AI Security Lab, Ant Group"
+    ],
+    "author_row": "12 14 SingGuard Team"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "SingGuard: A Policy-Adaptive Multimodal LLM Guardrail with Dynamic Reasoning",
+    "paper_year": 2026,
+    "name": "SingGuard Team",
+    "affiliations": [],
+    "works_count": null,
+    "cited_by_count": null,
+    "author_id": "https://openalex.org/A5139133999"
+  },
+  "semantic_scholar": {}
+}

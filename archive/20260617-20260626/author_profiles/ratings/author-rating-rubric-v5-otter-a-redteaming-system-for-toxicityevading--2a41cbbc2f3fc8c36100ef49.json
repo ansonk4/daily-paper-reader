@@ -1,0 +1,24 @@
+{
+  "author_score": 6.5,
+  "author_rating_explanation": "Focus author Jerry Wang is affiliated with University of Illinois Urbana-Champaign, a top US AI school, while Fang Yu is at National Chengchi University, a mid-tier institution. The presence of UIUC places the overall rating in the 6-8 band.",
+  "author_profiles": [
+    {
+      "name": "Jerry Wang",
+      "role": "first_author",
+      "affiliation": "1 National Chengchi University, Taipei, Taiwan; 2 University of Illinois Urbana-Champaign",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Fang Yu",
+      "role": "last_author",
+      "affiliation": "National Chengchi University, Taipei, Taiwan",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:03:25.186108+00:00"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "K. Hasui",
+  "role": "first_author",
+  "affiliation": "Kagawa University; Takamatsu, Japan; Fujitsu (Japan)",
+  "citation_hints": "OpenAlex cited_by_count=8; OpenAlex works_count=2",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "K. Hasui",
+    "affiliations": [
+      "Kagawa University",
+      "Takamatsu, Japan"
+    ],
+    "author_row": "Kouki Hasui"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "LLM-assisted Generation of Pseudo-C2 Servers for IoT Malware Dynamic Analysis",
+    "paper_year": "2026",
+    "name": "K. Hasui",
+    "affiliations": [
+      "Fujitsu (Japan)"
+    ],
+    "works_count": 2,
+    "cited_by_count": 8,
+    "author_id": "https://openalex.org/A5039223341",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

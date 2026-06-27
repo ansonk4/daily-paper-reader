@@ -1,0 +1,24 @@
+{
+  "author_score": 9.0,
+  "author_rating_explanation": "Both focus authors are affiliated with Tencent Inc., a major global technology company with significant AI research output. The first author has additional evidence of high research impact with 437 citations and 27 papers on Semantic Scholar. This fits the 9-10 band for major AI/tech companies.",
+  "author_profiles": [
+    {
+      "name": "Shaohua Liu",
+      "role": "first_author",
+      "affiliation": "Xiaoyang Chen, Dongqiang Liu, Chuangang Ma, Zhenzhen Chai, Henghuan Wang, Shijie Quan; Changyuan Cui, Zhangbin Zhu, Peng Chen, Wei Xu, Lei Xiao, Haijie Gu, Jie Jiang; [1pt] Tencent Inc.; jimmyshliu,franklfang,elonsun,ericdhuang,qsongluo,orionsxliu,noreenchen",
+      "citation_hints": "Semantic Scholar citation_count=437; Semantic Scholar paper_count=27",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar"
+    },
+    {
+      "name": "Jie Jiang",
+      "role": "last_author",
+      "affiliation": "[1pt] Tencent Inc.; jimmyshliu,franklfang,elonsun,ericdhuang,qsongluo,orionsxliu,noreenchen; dongcialiu,chuangangma,njzzchai,asherwang,justinquan,shoncui,defyzhu; [1pt]",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:58:39.089630+00:00"
+}

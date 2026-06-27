@@ -1,0 +1,38 @@
+{
+  "name": "Junquan Deng",
+  "role": "first_author",
+  "affiliation": "Zhiyu Fan Microsoft; United Kingdom; Ruijie Meng CISPA Helmholtz Center for Information Security; Germany",
+  "citation_hints": "OpenAlex cited_by_count=353; OpenAlex works_count=34",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Junquan Deng",
+    "affiliations": [
+      "Zhiyu Fan Microsoft",
+      "United Kingdom",
+      "Ruijie Meng CISPA Helmholtz Center for Information Security",
+      "Germany"
+    ],
+    "author_row": "Junquan Deng Independent Researcher"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Understanding the (In)Security of Vibe-Coded Applications",
+    "paper_year": "2026",
+    "name": "Junquan Deng",
+    "affiliations": [
+      "University of Jordan",
+      "Jordan Hospital",
+      "Department of Clinical Laboratories and Forensic Medicine, Jordan University Hospital, Amman 11942, Jordan",
+      "Department of Pathology, Microbiology and Forensic Medicine, School of Medicine, The University of Jordan, Amman 11942, Jordan",
+      "National University of Defense Technology",
+      "Nanjing University of Information Science and Technology"
+    ],
+    "works_count": 34,
+    "cited_by_count": 353,
+    "author_id": "https://openalex.org/A5091003868",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

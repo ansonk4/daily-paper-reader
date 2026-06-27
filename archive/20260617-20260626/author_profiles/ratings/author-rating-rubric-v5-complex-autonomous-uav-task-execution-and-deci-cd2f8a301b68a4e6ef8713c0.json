@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "Neither focus author has a verifiable affiliation in the provided metadata. Both have empty affiliations and low confidence with metadata lookup unavailable. This places the paper in the 0-5 bucket with low confidence.",
+  "author_profiles": [
+    {
+      "name": "Keegan Kimbrell",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Gopal Gupta",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:04:13.332948+00:00"
+}

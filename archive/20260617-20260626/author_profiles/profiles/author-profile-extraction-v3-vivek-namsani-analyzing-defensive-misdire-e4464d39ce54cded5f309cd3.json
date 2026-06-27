@@ -1,0 +1,19 @@
+{
+  "name": "Vivek Namsani",
+  "role": "last_author",
+  "affiliation": "Application & Threat Intelligence Research Center; Keysight Technologies Inc., USA",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Vivek Namsani",
+    "affiliations": [
+      "Application & Threat Intelligence Research Center",
+      "Keysight Technologies Inc., USA"
+    ],
+    "author_row": "Reza Soosahabi, Vivek Namsani"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

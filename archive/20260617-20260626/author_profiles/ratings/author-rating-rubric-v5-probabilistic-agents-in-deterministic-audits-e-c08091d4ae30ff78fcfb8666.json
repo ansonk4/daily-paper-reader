@@ -1,0 +1,24 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Last author Marian Margraf is affiliated with Freie Universität Berlin, a European university not listed in the top European AI schools band (e.g., Oxford, Cambridge, ETH Zurich). First author Lea Roxanne Muth has no verifiable affiliation. This places the paper in the 0-5 bucket, with partial affiliation evidence preventing the lowest scores.",
+  "author_profiles": [
+    {
+      "name": "Lea Roxanne Muth",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Marian Margraf",
+      "role": "last_author",
+      "affiliation": "Freie Universität Berlin; Berlin, Germany",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:04:13.331938+00:00"
+}

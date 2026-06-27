@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "Focus authors Ruixiao Lin and Shouling Ji have no verifiable affiliation data available. With insufficient metadata to identify concrete institutions, a neutral low score is assigned in the 0-5 band.",
+  "author_profiles": [
+    {
+      "name": "Ruixiao Lin",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Shouling Ji",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:03:25.187374+00:00"
+}

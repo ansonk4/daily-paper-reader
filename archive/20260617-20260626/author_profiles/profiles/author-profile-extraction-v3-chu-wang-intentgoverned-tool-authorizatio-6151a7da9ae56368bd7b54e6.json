@@ -1,0 +1,19 @@
+{
+  "name": "Chu Wang",
+  "role": "last_author",
+  "affiliation": "Accentrust; University of Illinois Urbana-Champaign",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Chu Wang",
+    "affiliations": [
+      "Accentrust",
+      "University of Illinois Urbana-Champaign"
+    ],
+    "author_row": "Chu Wang"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

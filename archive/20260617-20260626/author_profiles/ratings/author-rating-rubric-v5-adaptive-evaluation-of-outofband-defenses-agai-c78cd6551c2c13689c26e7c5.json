@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "The only concrete affiliation evidence is LaunchSafe Research, which is not listed as a widely recognized top-tier institution or major AI company in the provided bands, and no third-party citation evidence is supplied. This falls into the 0-5 bucket.",
+  "author_profiles": [
+    {
+      "name": "Praneeth Narisetty",
+      "role": "first_author",
+      "affiliation": "[2pt] Uday Kumar Reddy Kattamanchi, Jayaram Kumarapu; [3pt] LaunchSafe Research",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Jayaram Kumarapu",
+      "role": "last_author",
+      "affiliation": "[3pt] LaunchSafe Research",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:06:04.107393+00:00"
+}

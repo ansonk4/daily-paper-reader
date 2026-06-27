@@ -1,0 +1,18 @@
+{
+  "name": "Eugene Bagdasarian",
+  "role": "last_author",
+  "affiliation": "University of Massachusetts Amherst",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Eugene Bagdasarian",
+    "affiliations": [
+      "University of Massachusetts Amherst"
+    ],
+    "author_row": "Hyejun Jeong * Dzung Pham * Amir Houmansadr Eugene Bagdasarian"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

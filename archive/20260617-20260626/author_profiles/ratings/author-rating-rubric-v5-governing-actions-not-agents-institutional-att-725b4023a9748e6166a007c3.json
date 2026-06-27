@@ -1,0 +1,16 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "The author is affiliated with metaphora.ai, which appears to be a small or independent entity. There is no evidence in the metadata that this is a widely recognized major AI company or elite research lab. The citation count is moderate but does not elevate the institutional prestige.",
+  "author_profiles": [
+    {
+      "name": "Jakob Salfeld-Nebgen",
+      "role": "first_author",
+      "affiliation": "metaphora.ai",
+      "citation_hints": "Semantic Scholar citation_count=633; Semantic Scholar paper_count=15",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:00:04.310340+00:00"
+}

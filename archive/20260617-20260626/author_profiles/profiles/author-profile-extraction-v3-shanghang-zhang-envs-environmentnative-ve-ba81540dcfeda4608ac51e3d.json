@@ -1,0 +1,30 @@
+{
+  "name": "Shanghang Zhang",
+  "role": "last_author",
+  "affiliation": "Teresa Xiaotao Shang; Peking University",
+  "citation_hints": "OpenAlex cited_by_count=11729; OpenAlex works_count=264",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Shanghang Zhang",
+    "affiliations": [
+      "Teresa Xiaotao Shang"
+    ],
+    "author_row": "quad Shanghang Zhang"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "ENVS: Environment-Native Verified Search for Long-Horizon GUI Agents",
+    "paper_year": "2026",
+    "name": "Shanghang Zhang",
+    "affiliations": [
+      "Peking University"
+    ],
+    "works_count": 264,
+    "cited_by_count": 11729,
+    "author_id": "https://openalex.org/A5013030532",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

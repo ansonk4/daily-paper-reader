@@ -1,0 +1,24 @@
+{
+  "author_score": 5.5,
+  "author_rating_explanation": "Both focus authors are affiliated with UC Santa Cruz, which is a mid-tier US research university with concrete CS research output but is not listed among the top US AI schools (Stanford, MIT, CMU, Berkeley, etc.) in the 8-9 band. The first author also lists Northwestern Polytechnical University (a Chinese institution not in the top Chinese AI band) and Aalborg University (a European institution not in the top European band). This places the profile in the 5-6 mid-tier range.",
+  "author_profiles": [
+    {
+      "name": "Yusheng Zheng",
+      "role": "first_author",
+      "affiliation": "UC Santa Cruz; eunomia-bpf; Northwestern Polytechnical University; Aalborg University",
+      "citation_hints": "OpenAlex cited_by_count=1567; OpenAlex works_count=51",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    },
+    {
+      "name": "Andi Quinn",
+      "role": "last_author",
+      "affiliation": "UC Santa Cruz; University of California, Santa Cruz",
+      "citation_hints": "OpenAlex cited_by_count=0; OpenAlex works_count=9",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:56:52.996725+00:00"
+}

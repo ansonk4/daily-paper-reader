@@ -1,0 +1,19 @@
+{
+  "name": "Praneeth Narisetty",
+  "role": "first_author",
+  "affiliation": "[2pt] Uday Kumar Reddy Kattamanchi, Jayaram Kumarapu; [3pt] LaunchSafe Research",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Praneeth Narisetty",
+    "affiliations": [
+      "[2pt] Uday Kumar Reddy Kattamanchi, Jayaram Kumarapu",
+      "[3pt] LaunchSafe Research"
+    ],
+    "author_row": "Praneeth Narisetty, Shiva Nagendra Babu Kore"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

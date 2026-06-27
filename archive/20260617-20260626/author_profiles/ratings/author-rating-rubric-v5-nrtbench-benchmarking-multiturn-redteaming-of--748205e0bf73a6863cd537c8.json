@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "Both focus authors are affiliated with 'AIM Intelligence', which is not a widely recognized major AI company, elite research lab, or top-tier institution in the provided score bands. No citation evidence is available to elevate the score. The affiliation appears only in author-provided metadata without visible third-party verification of prestige.",
+  "author_profiles": [
+    {
+      "name": "Hanwool Lee",
+      "role": "first_author",
+      "affiliation": "AIM Intelligence",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Haon Park",
+      "role": "last_author",
+      "affiliation": "AIM Intelligence",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:01:44.581311+00:00"
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "No affiliation metadata is available for either focus author. The evidence source is 'metadata lookup unavailable', so a neutral score is assigned with low confidence.",
+  "author_profiles": [
+    {
+      "name": "Prabhu Pugalenthi",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Pramod Krishnaa Dhanbalan",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:05:04.118936+00:00"
+}

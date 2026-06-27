@@ -1,0 +1,31 @@
+{
+  "name": "Biwei Yan",
+  "role": "first_author",
+  "affiliation": "Minghui Xu 1; Yijun Yang 1; Boyang Ma 1; Xuelong Dai 1",
+  "citation_hints": "OpenAlex cited_by_count=506; OpenAlex works_count=22",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Biwei Yan",
+    "affiliations": [
+      "Minghui Xu 1",
+      "Yijun Yang 1",
+      "Boyang Ma 1",
+      "Xuelong Dai 1"
+    ],
+    "author_row": "Biwei Yan 1"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "\"What Happens Locally, Leaks Globally\": Detecting Privacy Leakage Risks in MCP Servers",
+    "paper_year": "2026",
+    "name": "Biwei Yan",
+    "affiliations": [],
+    "works_count": 22,
+    "cited_by_count": 506,
+    "author_id": "https://openalex.org/A5012646469",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 5.5,
+  "author_rating_explanation": "Both focus authors are affiliated with the University of Luxembourg, which is a European research university but not listed among the top-tier European AI schools such as Oxford, Cambridge, ETH Zurich, or EPFL. The last author has strong citation evidence (OpenAlex cited_by_count=8070; works_count=412), but the institution falls outside the 6-8 top European band, placing this in the mid-tier range.",
+  "author_profiles": [
+    {
+      "name": "Bacem Etteib",
+      "role": "first_author",
+      "affiliation": "University of Luxembourg",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    },
+    {
+      "name": "Tégawendé F. Bissyandé",
+      "role": "last_author",
+      "affiliation": "University of Luxembourg",
+      "citation_hints": "OpenAlex cited_by_count=8070; OpenAlex works_count=412",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:56:52.995709+00:00"
+}

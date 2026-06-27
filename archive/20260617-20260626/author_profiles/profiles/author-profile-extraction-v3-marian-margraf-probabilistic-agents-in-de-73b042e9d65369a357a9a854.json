@@ -1,0 +1,19 @@
+{
+  "name": "Marian Margraf",
+  "role": "last_author",
+  "affiliation": "Freie Universität Berlin; Berlin, Germany",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Marian Margraf",
+    "affiliations": [
+      "Freie Universität Berlin",
+      "Berlin, Germany"
+    ],
+    "author_row": "Marian Margraf Department of Mathematics and Computer Science"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

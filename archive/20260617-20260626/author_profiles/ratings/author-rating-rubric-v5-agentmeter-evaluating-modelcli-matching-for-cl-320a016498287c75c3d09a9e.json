@@ -1,0 +1,24 @@
+{
+  "author_score": 7.0,
+  "author_rating_explanation": "Both first author Han Chi and last author Jianqiang Huang are affiliated with the Computer Network Information Center and Hangzhou Institute for Advanced Study, Chinese Academy of Sciences. CAS is a top-tier Chinese research institution in the 6-8 score band.",
+  "author_profiles": [
+    {
+      "name": "Han Chi",
+      "role": "first_author",
+      "affiliation": "Computer Network Information Center, Chinese Academy of Sciences Hangzhou Institute for Advanced Study, Chinese Academy of Sciences",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Jianqiang Huang",
+      "role": "last_author",
+      "affiliation": "Computer Network Information Center, Chinese Academy of Sciences Hangzhou Institute for Advanced Study, Chinese Academy of Sciences",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:57:33.292551+00:00"
+}

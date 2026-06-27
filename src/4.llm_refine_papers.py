@@ -10,7 +10,7 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List
 
-from author_profile import AuthorProfileRater, combine_relevance_author_scores, clamp_score
+from author_profile import AUTHOR_RATING_LLM_BATCH_SIZE, AuthorProfileRater, combine_relevance_author_scores, clamp_score
 from llm import DeepSeekClient, resolve_max_output_tokens
 from subscription_plan import build_pipeline_inputs
 
@@ -728,16 +728,47 @@ def apply_author_ratings(
     paper_map: Dict[str, Dict[str, Any]],
     rater: AuthorProfileRater,
 ) -> None:
-    for pid, item in merged.items():
-        paper = paper_map.get(pid) or {}
+    entries = list(merged.items())
+    papers = [paper_map.get(pid) or {} for pid, _ in entries]
+    try:
+        if hasattr(rater, "rate_papers"):
+            ratings = rater.rate_papers(papers, batch_size=AUTHOR_RATING_LLM_BATCH_SIZE)
+        else:
+            ratings = [rater.rate_paper(paper) for paper in papers]
+    except Exception as exc:
+        ratings = []
+        for _ in papers:
+            ratings.append(
+                {
+                    "author_score": 4.5,
+                    "author_rating_explanation": (
+                        f"Author rating failed during metadata lookup or synthesis: {exc}. "
+                        "Assigned a neutral low-confidence author rating."
+                    ),
+                    "author_profiles": [],
+                }
+            )
+
+    if len(ratings) < len(entries):
+        ratings = list(ratings) + [
+            {
+                "author_score": 4.5,
+                "author_rating_explanation": (
+                    "Author rating failed during metadata lookup or synthesis: missing batch result. "
+                    "Assigned a neutral low-confidence author rating."
+                ),
+                "author_profiles": [],
+            }
+            for _ in range(len(entries) - len(ratings))
+        ]
+
+    for (_, item), rating in zip(entries, ratings):
         relevance_score = _coerce_score(item.get("relevance_score", item.get("score")))
-        try:
-            rating = rater.rate_paper(paper)
-        except Exception as exc:
+        if not isinstance(rating, dict):
             rating = {
                 "author_score": 4.5,
                 "author_rating_explanation": (
-                    f"Author rating failed during metadata lookup or synthesis: {exc}. "
+                    "Author rating failed during metadata lookup or synthesis: author rater returned a non-object rating. "
                     "Assigned a neutral low-confidence author rating."
                 ),
                 "author_profiles": [],

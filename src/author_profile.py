@@ -16,7 +16,9 @@ import requests
 
 AUTHOR_RELEVANCE_WEIGHT = 0.60
 AUTHOR_BACKGROUND_WEIGHT = 0.40
-AUTHOR_RATING_RUBRIC_VERSION = "author-rating-rubric-v2"
+AUTHOR_PROFILE_EXTRACTION_VERSION = "author-profile-extraction-v3"
+AUTHOR_RATING_RUBRIC_VERSION = "author-rating-rubric-v5"
+AUTHOR_RATING_LLM_BATCH_SIZE = 10
 GENERIC_AUTHOR_RATING_EXPLANATION = "Author rating synthesized from available public metadata."
 
 
@@ -44,6 +46,67 @@ def clamp_score(value: Any) -> float:
     except Exception:
         score = 0.0
     return max(0.0, min(10.0, score))
+
+
+def _coerce_count(value: Any) -> int | None:
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    if isinstance(value, float):
+        if value < 0 or not value.is_integer():
+            return None
+        return int(value)
+    text = norm_text(value).replace(",", "")
+    if not re.fullmatch(r"\d+", text):
+        return None
+    return int(text)
+
+
+def _first_count(*values: Any) -> int | None:
+    for value in values:
+        count = _coerce_count(value)
+        if count is not None:
+            return count
+    return None
+
+
+def _count_from_citation_hints(hints: Any, field_names: List[str]) -> int | None:
+    text = norm_text(hints)
+    if not text:
+        return None
+    for field in field_names:
+        match = re.search(rf"\b{re.escape(field)}\s*=\s*([0-9][0-9,]*)", text)
+        if match:
+            return _coerce_count(match.group(1))
+    return None
+
+
+def _profile_metric_count(profile: Dict[str, Any], metric: str) -> int | None:
+    openalex = profile.get("openalex") if isinstance(profile.get("openalex"), dict) else {}
+    semantic = profile.get("semantic_scholar") if isinstance(profile.get("semantic_scholar"), dict) else {}
+    if metric == "citation":
+        return _first_count(
+            profile.get("citation_count"),
+            semantic.get("citation_count"),
+            profile.get("cited_by_count"),
+            openalex.get("cited_by_count"),
+            _count_from_citation_hints(profile.get("citation_hints"), ["citation_count", "cited_by_count"]),
+        )
+    if metric == "paper":
+        return _first_count(
+            profile.get("paper_count"),
+            semantic.get("paper_count"),
+            profile.get("works_count"),
+            openalex.get("works_count"),
+            _count_from_citation_hints(profile.get("citation_hints"), ["paper_count", "works_count"]),
+        )
+    return None
+
+
+def _count_text(value: Any) -> str:
+    count = _coerce_count(value)
+    return str(count) if count is not None else ""
 
 
 def combine_relevance_author_scores(relevance_score: Any, author_score: Any) -> float:
@@ -399,6 +462,14 @@ def _extract_balanced_braces(text: str, start: int) -> str:
     return ""
 
 
+def _strip_latex_comments(text: str) -> str:
+    lines: List[str] = []
+    for line in text.splitlines():
+        match = re.search(r"(?<!\\)%", line)
+        lines.append(line[: match.start()] if match else line)
+    return "\n".join(lines)
+
+
 def _latex_blocks(text: str, command: str) -> List[str]:
     out: List[str] = []
     pattern = "\\" + command
@@ -425,8 +496,115 @@ def _clean_latex_text(value: str) -> str:
     return re.sub(r"\s+", " ", text).strip(" ,;")
 
 
+def _clean_affiliation_text(value: str) -> str:
+    text = _clean_latex_text(value)
+    text = re.sub(r"\[[0-9.]+\s*cm\]", " ", text)
+    text = re.sub(r"\b(?:e-?mail|emails?|contact)\s*:.*$", " ", text, flags=re.I)
+    text = re.sub(r"https?://\S+", " ", text)
+    text = re.sub(r"\b(?:github|hf\.co|dataset|source code|code and data|tabular)\b.*$", " ", text, flags=re.I)
+    text = re.sub(r"\S+@\S+", " ", text)
+    text = text.replace("\\", " ")
+    return re.sub(r"\s+", " ", text).strip(" ,;")
+
+
+def _is_affiliation_noise(value: str) -> bool:
+    text = norm_text(value)
+    if not text:
+        return True
+    lower = text.lower()
+    if lower in {"c", "l", "r", "cc", "ll", "rr"}:
+        return True
+    if "@" in text or "http://" in lower or "https://" in lower:
+        return True
+    if re.search(r"\b(?:github|hf\.co|tabular|texttt|href|faGithub|hflogo)\b", text):
+        return True
+    return not re.search(r"[A-Za-z\u4e00-\u9fff]", text)
+
+
+def _clean_affiliation_items(values: List[str]) -> List[str]:
+    out: List[str] = []
+    for value in values:
+        text = _clean_affiliation_text(value)
+        if not _is_affiliation_noise(text):
+            _append_unique(out, text)
+    return out
+
+
+def _looks_like_person_name_line(value: str) -> bool:
+    text = norm_text(value)
+    if not text or any(token in text.lower() for token in ("university", "institute", "college", "school", "department", "lab", "center", "centre", "research", "security")):
+        return False
+    return bool(re.fullmatch(r"[A-Z][A-Za-z.'-]+(?:\s+[A-Z][A-Za-z.'-]+){1,4}", text))
+
+
 def _latex_marker_numbers(value: str) -> List[str]:
     return re.findall(r"\d+", value or "")
+
+
+def _markers_for_focus_in_latex_text(text: str, focus: Dict[str, Any]) -> List[str]:
+    markers: List[str] = []
+    author_patterns = (
+        r"([^,\\\\\n]+?)\\textsuperscript\{([^}]+)\}",
+        r"([^,\\\\\n]+?)\$\^\{([^}]+)\}\$",
+    )
+    for pattern in author_patterns:
+        for raw_name, raw_markers in re.findall(pattern, text, flags=re.S):
+            if not _name_appears_in_text(focus.get("name"), _clean_latex_text(raw_name)):
+                continue
+            for marker in _latex_marker_numbers(raw_markers):
+                _append_unique(markers, marker)
+    if markers:
+        return markers
+    for row in re.split(r",|\\\\|\\and\b", text):
+        if not _name_appears_in_text(focus.get("name"), _clean_latex_text(row)):
+            continue
+        for marker in _latex_marker_numbers(row):
+            _append_unique(markers, marker)
+    return markers
+
+
+def _marked_affiliations_from_latex(text: str) -> Dict[str, str]:
+    affiliations: Dict[str, str] = {}
+    aff_patterns = (
+        r"(?:\\normalfont)?\\textsuperscript\{(\d+)\}(.+?)(?=(?:\\normalfont)?\\textsuperscript\{\d+\}|\$\^\{\d+\}\$|\\\\|\n\s*\n|$)",
+        r"\$\^\{(\d+)\}\$(.+?)(?=\$\^\{\d+\}\$|(?:\\normalfont)?\\textsuperscript\{\d+\}|\\\\|\n\s*\n|$)",
+    )
+    for pattern in aff_patterns:
+        for marker, raw_aff in re.findall(pattern, text, flags=re.S):
+            aff = _clean_affiliation_text(raw_aff)
+            aff = re.split(r"\s+(?:quad|qquad)\s+", aff)[0].strip()
+            if not _is_affiliation_noise(aff):
+                affiliations.setdefault(marker, aff)
+    return affiliations
+
+
+def _latex_parbox_blocks(text: str) -> List[str]:
+    blocks: List[str] = []
+    for match in re.finditer(r"\\parbox(?:\[[^\]]*\])?\s*\{[^{}]*\}\s*", text):
+        block = _extract_balanced_braces(text, match.end())
+        if block:
+            blocks.append(block)
+    return blocks
+
+
+def _extract_parbox_author_profile(body: str, focus: Dict[str, Any]) -> Dict[str, Any]:
+    for block in _latex_parbox_blocks(body):
+        rows = [
+            _clean_affiliation_text(row)
+            for row in re.split(r"\\\\|\\par\b", block)
+            if _clean_affiliation_text(row)
+        ]
+        if not rows or not _name_appears_in_text(focus.get("name"), rows[0]):
+            continue
+        affiliations = _clean_affiliation_items(rows[1:])
+        if affiliations:
+            return {
+                "source": "arxiv_source",
+                "name": norm_text(focus.get("name")),
+                "affiliations": affiliations[:4],
+                "author_row": rows[0],
+            }
+    return {}
 
 
 def _extract_marked_author_profile(body: str, focus: Dict[str, Any]) -> Dict[str, Any]:
@@ -437,17 +615,7 @@ def _extract_marked_author_profile(body: str, focus: Dict[str, Any]) -> Dict[str
     )
     author_body = body[: aff_start_match.start()] if aff_start_match else body
     affiliation_body = body[aff_start_match.end() :] if aff_start_match else body
-    affiliations: Dict[str, str] = {}
-    aff_patterns = (
-        r"\\(?:normalfont)?\\textsuperscript\{(\d+)\}(.+?)(?=\\(?:normalfont)?\\textsuperscript\{\d+\}|\$\^\{\d+\}\$|\\\\|\n\s*\n|$)",
-        r"\$\^\{(\d+)\}\$(.+?)(?=\$\^\{\d+\}\$|\\(?:normalfont)?\\textsuperscript\{\d+\}|\\\\|\n\s*\n|$)",
-    )
-    for pattern in aff_patterns:
-        for marker, raw_aff in re.findall(pattern, affiliation_body, flags=re.S):
-            aff = _clean_latex_text(raw_aff)
-            aff = re.split(r"\s+(?:quad|qquad)\s+", aff)[0].strip()
-            if aff and not _name_appears_in_text(focus.get("name"), aff) and "@" not in aff:
-                affiliations.setdefault(marker, aff)
+    affiliations = _marked_affiliations_from_latex(affiliation_body)
 
     author_patterns = (
         r"([^,\\\\\n]+?)\\textsuperscript\{([^}]+)\}",
@@ -472,8 +640,8 @@ def _extract_marked_author_profile(body: str, focus: Dict[str, Any]) -> Dict[str
 def _extract_icml_author_profile(source: str, focus: Dict[str, Any]) -> Dict[str, Any]:
     affiliations: Dict[str, str] = {}
     for key, raw_aff in re.findall(r"\\icmlaffiliation\{([^}]+)\}\{([^}]+)\}", source, flags=re.S):
-        aff = _clean_latex_text(raw_aff)
-        if aff:
+        aff = _clean_affiliation_text(raw_aff)
+        if not _is_affiliation_noise(aff):
             affiliations[norm_text(key)] = aff
     if not affiliations:
         return {}
@@ -495,18 +663,38 @@ def _extract_icml_author_profile(source: str, focus: Dict[str, Any]) -> Dict[str
 def _extract_acm_author_profile(source: str, focus: Dict[str, Any]) -> Dict[str, Any]:
     matches = list(re.finditer(r"\\author\s*\{", source))
     for idx, match in enumerate(matches):
-        name = _clean_latex_text(_extract_balanced_braces(source, match.start()))
+        raw_name = _extract_balanced_braces(source, match.start())
+        name = _clean_latex_text(raw_name)
         if not _name_appears_in_text(focus.get("name"), name):
             continue
         end = matches[idx + 1].start() if idx + 1 < len(matches) else len(source)
         segment = source[match.end() : end]
+        markers = _markers_for_focus_in_latex_text(raw_name, focus)
+        marked_affiliations: Dict[str, str] = {}
+        for block in _latex_blocks(segment, "institution"):
+            for marker, affiliation in _marked_affiliations_from_latex(block).items():
+                marked_affiliations.setdefault(marker, affiliation)
+        affs = [
+            marked_affiliations[marker]
+            for marker in markers
+            if marker in marked_affiliations
+        ]
+        if affs:
+            return {
+                "source": "arxiv_source",
+                "name": norm_text(focus.get("name")),
+                "affiliations": affs[:4],
+                "author_row": name,
+            }
         affs: List[str] = []
         for block in _latex_blocks(segment, "institution"):
-            _append_unique(affs, _clean_latex_text(block))
+            aff = _clean_affiliation_text(block)
+            if not _is_affiliation_noise(aff):
+                _append_unique(affs, aff)
         if not affs:
             for block in _latex_blocks(segment, "affiliation"):
-                text = _clean_latex_text(block)
-                if text:
+                text = _clean_affiliation_text(block)
+                if not _is_affiliation_noise(text):
                     _append_unique(affs, text)
         if affs:
             return {
@@ -515,6 +703,30 @@ def _extract_acm_author_profile(source: str, focus: Dict[str, Any]) -> Dict[str,
                 "affiliations": affs[:4],
                 "author_row": name,
             }
+    return {}
+
+
+def _extract_aaai_author_profile(source: str, focus: Dict[str, Any]) -> Dict[str, Any]:
+    author_blocks = _latex_blocks(source, "author")
+    affiliation_blocks = _latex_blocks(source, "affiliations")
+    if not author_blocks or not affiliation_blocks:
+        return {}
+    author_body = max(author_blocks, key=len)
+    if not _name_appears_in_text(focus.get("name"), _clean_latex_text(author_body)):
+        return {}
+    rows = [
+        row
+        for row in re.split(r"\\\\|\\and\b", max(affiliation_blocks, key=len))
+        if norm_text(row)
+    ]
+    affiliations = _clean_affiliation_items(rows)
+    if affiliations:
+        return {
+            "source": "arxiv_source",
+            "name": norm_text(focus.get("name")),
+            "affiliations": affiliations[:4],
+            "author_row": _clean_latex_text(author_body),
+        }
     return {}
 
 
@@ -530,7 +742,8 @@ def _affiliation_overlap(affiliations: List[str], candidate_affiliations: List[s
 
 
 def _extract_latex_author_profile(source: str, focus: Dict[str, Any]) -> Dict[str, Any]:
-    for extractor in (_extract_icml_author_profile, _extract_acm_author_profile):
+    source = _strip_latex_comments(source)
+    for extractor in (_extract_icml_author_profile, _extract_acm_author_profile, _extract_aaai_author_profile):
         profile = extractor(source, focus)
         if profile:
             return profile
@@ -566,22 +779,37 @@ def _extract_latex_author_profile(source: str, focus: Dict[str, Any]) -> Dict[st
     marked = _extract_marked_author_profile(body, focus)
     if marked:
         return marked
+    parbox = _extract_parbox_author_profile(body, focus)
+    if parbox:
+        return parbox
     simple_body = re.sub(r"\\(?:thanks|footnote|footnotetext)\{.*?\}", " ", body, flags=re.S)
     simple_body = re.sub(r"\\footnotemark(?:\[[^\]]*\])?", " ", simple_body)
     simple_body = re.sub(r"\\vspace\{[^}]*\}", " ", simple_body)
     chunks = [chunk for chunk in re.split(r"\\\\|\\and\b", simple_body) if norm_text(chunk)]
     cleaned_chunks = [_clean_latex_text(chunk) for chunk in chunks]
     cleaned_chunks = [chunk for chunk in cleaned_chunks if chunk]
+    for idx, chunk in enumerate(cleaned_chunks):
+        if not _name_appears_in_text(focus.get("name"), chunk):
+            continue
+        candidate_rows: List[str] = []
+        for row in cleaned_chunks[idx + 1 :]:
+            if _looks_like_person_name_line(row):
+                break
+            candidate_rows.append(row)
+        affiliations = _clean_affiliation_items(candidate_rows)
+        if affiliations:
+            return {
+                "source": "arxiv_source",
+                "name": norm_text(focus.get("name")),
+                "affiliations": affiliations[:4],
+                "author_row": chunk,
+            }
     if len(cleaned_chunks) >= 2:
         name_row = cleaned_chunks[0]
         if _name_appears_in_text(focus.get("name"), name_row) or any(
             _name_appears_in_text(focus.get("name"), part) for part in re.split(r",| and |\s+quad\s+", name_row)
         ):
-            affiliations = [
-                chunk
-                for chunk in cleaned_chunks[1:]
-                if chunk.lower() not in {"", "none"} and "@" not in chunk
-            ]
+            affiliations = _clean_affiliation_items(cleaned_chunks[1:])
             if affiliations:
                 return {
                     "source": "arxiv_source",
@@ -611,6 +839,7 @@ class AuthorProfileRater:
     def _profile_key(self, paper: Dict[str, Any], focus: Dict[str, Any]) -> str:
         return "|".join(
             [
+                AUTHOR_PROFILE_EXTRACTION_VERSION,
                 normalize_author_name(focus.get("name")),
                 normalize_title(paper.get("title")),
                 _extract_year(paper),
@@ -1030,6 +1259,8 @@ class AuthorProfileRater:
             "name": norm_text(focus.get("name")),
             "role": norm_text(focus.get("role")),
             "affiliation": "; ".join(affiliations[:4]),
+            "citation_count": _first_count(semantic.get("citation_count"), openalex.get("cited_by_count")),
+            "paper_count": _first_count(semantic.get("paper_count"), openalex.get("works_count")),
             "citation_hints": "; ".join(item for item in citations if item),
             "confidence": "medium" if evidence_sources else "low",
             "evidence_source": ", ".join(evidence_sources) or "metadata lookup unavailable",
@@ -1054,6 +1285,8 @@ class AuthorProfileRater:
             "name": norm_text(profile.get("name")),
             "role": norm_text(profile.get("role")),
             "affiliation": norm_text(profile.get("affiliation")),
+            "citation_count": _count_text(_profile_metric_count(profile, "citation")),
+            "paper_count": _count_text(_profile_metric_count(profile, "paper")),
             "citation_hints": norm_text(profile.get("citation_hints")),
             "confidence": norm_text(profile.get("confidence")),
             "evidence_source": norm_text(profile.get("evidence_source")),
@@ -1097,6 +1330,10 @@ class AuthorProfileRater:
                     fallback = profiles[idx]
                 merged_profile = dict(fallback or {})
                 merged_profile.update(profile)
+                if isinstance(fallback, dict):
+                    for key in ("affiliation", "citation_count", "paper_count", "citation_hints", "confidence", "evidence_source"):
+                        if norm_text(fallback.get(key)):
+                            merged_profile[key] = fallback.get(key)
                 normalized_profiles.append(self._public_author_profile(merged_profile))
             author_profiles = normalized_profiles or [
                 self._public_author_profile(profile) for profile in profiles if isinstance(profile, dict)
@@ -1136,6 +1373,8 @@ class AuthorProfileRater:
                             "name": {"type": "string"},
                             "role": {"type": "string"},
                             "affiliation": {"type": "string"},
+                            "citation_count": {"type": "string"},
+                            "paper_count": {"type": "string"},
                             "citation_hints": {"type": "string"},
                             "confidence": {"type": "string"},
                             "evidence_source": {"type": "string"},
@@ -1152,6 +1391,11 @@ class AuthorProfileRater:
             "You rate AI paper author/source background from verified metadata only. "
             "Do not infer prestige from a name alone. Return JSON only."
         )
+        public_profiles = [
+            self._public_author_profile(profile)
+            for profile in profiles
+            if isinstance(profile, dict)
+        ]
         user_prompt = (
             "Rate the paper's focus authors on a 0-10 author/source background scale.\n"
             "Score bands are ranges, not ordinal list numbers:\n"
@@ -1163,6 +1407,7 @@ class AuthorProfileRater:
             "Use only the metadata below. Verified affiliation text is sufficient rating evidence; "
             "citation counts are optional tie-breakers. Do not assign a neutral score solely because citation_hints are missing "
             "when affiliations identify concrete institutions, labs, or companies. If metadata is truly insufficient, assign a neutral 4-5 score and mark confidence low.\n"
+            "Do not treat branch-campus names as the parent institution unless the supplied metadata explicitly says so; in particular, The Chinese University of Hong Kong, Shenzhen / CUHK-Shenzhen is distinct from The Chinese University of Hong Kong / CUHK and must not receive the CUHK/Hong Kong top-school boost solely from that name.\n"
             "A lab/company name that appears only in author-provided paper metadata is not enough for a 6+ score unless it is already a widely recognized institution/company in the score bands above or has visible third-party-verifiable research/citation evidence in the supplied metadata.\n"
             "The explanation must cite the concrete affiliation/source evidence and why the chosen score band applies; generic explanations are invalid.\n"
             "Return exactly one JSON object with this shape and no extra top-level keys:\n"
@@ -1174,6 +1419,8 @@ class AuthorProfileRater:
             '      "name": "author name",\n'
             '      "role": "first_author|co_first_author|last_author",\n'
             '      "affiliation": "verified affiliation or empty string",\n'
+            '      "citation_count": "total citation count or empty string",\n'
+            '      "paper_count": "total paper count or empty string",\n'
             '      "citation_hints": "citation evidence or empty string",\n'
             '      "confidence": "high|medium|low",\n'
             '      "evidence_source": "metadata source names or empty string"\n'
@@ -1183,7 +1430,7 @@ class AuthorProfileRater:
             "author_score must be a number from 0 to 10. author_profiles must be an array; include one object for each focus author when possible. "
             "Use empty strings for unknown optional profile fields instead of null. Do not include markdown, code fences, comments, or explanatory text outside the JSON.\n"
             f"Paper: {json.dumps({'title': paper.get('title'), 'year': _extract_year(paper), 'id': paper.get('id')}, ensure_ascii=False)}\n"
-            f"Focus author profiles: {json.dumps(profiles, ensure_ascii=False)}\n"
+            f"Focus author profiles: {json.dumps(public_profiles, ensure_ascii=False)}\n"
         )
         resp = self.client.chat_structured(
             messages=[
@@ -1209,6 +1456,157 @@ class AuthorProfileRater:
                 "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
             )
         return rating
+
+    def _call_llm_ratings_batch(
+        self,
+        batch: List[tuple[Dict[str, Any], List[Dict[str, Any]]]],
+    ) -> List[Dict[str, Any]]:
+        if self.client is None:
+            return [
+                self._neutral_rating(
+                    profiles,
+                    "Insufficient author metadata or no LLM client; assigned a neutral low-confidence author rating.",
+                )
+                for _, profiles in batch
+            ]
+
+        schema = {
+            "type": "object",
+            "properties": {
+                "ratings": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "paper_id": {"type": "string"},
+                            "author_score": {"type": "number"},
+                            "author_rating_explanation": {"type": "string"},
+                            "author_profiles": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "role": {"type": "string"},
+                                        "affiliation": {"type": "string"},
+                                        "citation_count": {"type": "string"},
+                                        "paper_count": {"type": "string"},
+                                        "citation_hints": {"type": "string"},
+                                        "confidence": {"type": "string"},
+                                        "evidence_source": {"type": "string"},
+                                    },
+                                    "required": ["name"],
+                                    "additionalProperties": False,
+                                },
+                            },
+                        },
+                        "required": ["paper_id", "author_score", "author_rating_explanation", "author_profiles"],
+                        "additionalProperties": False,
+                    },
+                }
+            },
+            "required": ["ratings"],
+            "additionalProperties": False,
+        }
+        system_prompt = (
+            "You rate AI paper author/source background from verified metadata only. "
+            "Do not infer prestige from a name alone. Return JSON only."
+        )
+        papers_payload = [
+            {
+                "paper_id": f"paper_{idx}",
+                "paper": {
+                    "title": paper.get("title"),
+                    "year": _extract_year(paper),
+                    "id": paper.get("id"),
+                },
+                "focus_author_profiles": [
+                    self._public_author_profile(profile)
+                    for profile in profiles
+                    if isinstance(profile, dict)
+                ],
+            }
+            for idx, (paper, profiles) in enumerate(batch)
+        ]
+        user_prompt = (
+            "Rate each paper's focus authors on a 0-10 author/source background scale.\n"
+            "Score bands are ranges, not ordinal list numbers:\n"
+            "9-10: Major AI/tech companies or elite AI research labs: DeepMind, OpenAI, Anthropic, Google Research, Meta AI, Microsoft Research, NVIDIA, FAIR, DeepSeek, ByteDance Seed, Qwen, Moonshot AI, etc.\n"
+            "8-9: Top US AI schools/labs: Stanford, MIT, CMU, Berkeley, Princeton, Harvard, UW, UIUC, Cornell, Georgia Tech, Caltech, etc.\n"
+            "6-8: Top European, Chinese, and Hong Kong AI schools/labs: Oxford, Cambridge, ETH Zurich, EPFL, Tsinghua, Peking, Shanghai Jiao Tong, Zhejiang, USTC, CAS, HKUST, CUHK, HKU, CityU, PolyU, etc.\n"
+            "5-6: Mid-tier US research universities with concrete AI/CS research output.\n"
+            "0-5: Schools not included in the top or mid-tier bands above, including Korea or India schools, unknown, independent, weakly verifiable, unrelated, self-published-only, or author-provided-only affiliations. This bucket must not receive 6+.\n\n"
+            "Use only the metadata below. Verified affiliation text is sufficient rating evidence; "
+            "citation counts are optional tie-breakers. Do not assign a neutral score solely because citation_hints are missing "
+            "when affiliations identify concrete institutions, labs, or companies. If metadata is truly insufficient, assign a neutral 4-5 score and mark confidence low.\n"
+            "Do not treat branch-campus names as the parent institution unless the supplied metadata explicitly says so; in particular, The Chinese University of Hong Kong, Shenzhen / CUHK-Shenzhen is distinct from The Chinese University of Hong Kong / CUHK and must not receive the CUHK/Hong Kong top-school boost solely from that name.\n"
+            "A lab/company name that appears only in author-provided paper metadata is not enough for a 6+ score unless it is already a widely recognized institution/company in the score bands above or has visible third-party-verifiable research/citation evidence in the supplied metadata.\n"
+            "Each explanation must cite the concrete affiliation/source evidence and why the chosen score band applies; generic explanations are invalid.\n"
+            "Return exactly one JSON object with this shape and no extra top-level keys:\n"
+            "{\n"
+            '  "ratings": [\n'
+            "    {\n"
+            '      "paper_id": "paper_0",\n'
+            '      "author_score": 0.0,\n'
+            '      "author_rating_explanation": "brief evidence-based explanation",\n'
+            '      "author_profiles": [\n'
+            "        {\n"
+            '          "name": "author name",\n'
+            '          "role": "first_author|co_first_author|last_author",\n'
+            '          "affiliation": "verified affiliation or empty string",\n'
+            '          "citation_count": "total citation count or empty string",\n'
+            '          "paper_count": "total paper count or empty string",\n'
+            '          "citation_hints": "citation evidence or empty string",\n'
+            '          "confidence": "high|medium|low",\n'
+            '          "evidence_source": "metadata source names or empty string"\n'
+            "        }\n"
+            "      ]\n"
+            "    }\n"
+            "  ]\n"
+            "}\n"
+            "Return one ratings item for every input paper_id and preserve each paper_id exactly. "
+            "author_score must be a number from 0 to 10. author_profiles must be an array; include one object for each focus author when possible. "
+            "Use empty strings for unknown optional profile fields instead of null. Do not include markdown, code fences, comments, or explanatory text outside the JSON.\n"
+            f"Papers: {json.dumps(papers_payload, ensure_ascii=False)}\n"
+        )
+        resp = self.client.chat_structured(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            schema_name="author_rating_batch",
+            schema=schema,
+            strict=True,
+            allow_json_object_fallback=True,
+        )
+        parsed = resp.get("parsed")
+        if resp.get("refusal") or not isinstance(parsed, dict) or not isinstance(parsed.get("ratings"), list):
+            return [
+                self._neutral_rating(
+                    profiles,
+                    "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+                )
+                for _, profiles in batch
+            ]
+
+        raw_by_id = {
+            norm_text(item.get("paper_id")): item
+            for item in parsed.get("ratings", [])
+            if isinstance(item, dict)
+        }
+        ratings: List[Dict[str, Any]] = []
+        for idx, (_, profiles) in enumerate(batch):
+            raw = raw_by_id.get(f"paper_{idx}")
+            rating = self._normalize_llm_rating(raw, profiles) if isinstance(raw, dict) else None
+            ratings.append(
+                rating
+                if rating is not None
+                else self._neutral_rating(
+                    profiles,
+                    "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+                )
+            )
+        return ratings
 
     def rate_paper(self, paper: Dict[str, Any]) -> Dict[str, Any]:
         focuses = select_focus_authors(paper)
@@ -1240,3 +1638,91 @@ class AuthorProfileRater:
         if not (self._is_neutral_fallback_rating(rating) and self._profiles_have_author_signal(profiles)):
             _write_json(rating_path, rating)
         return rating
+
+    def rate_papers(
+        self,
+        papers: List[Dict[str, Any]],
+        batch_size: int = AUTHOR_RATING_LLM_BATCH_SIZE,
+    ) -> List[Dict[str, Any]]:
+        batch_size = max(1, int(batch_size or AUTHOR_RATING_LLM_BATCH_SIZE))
+        results: List[Dict[str, Any] | None] = [None] * len(papers)
+        pending: List[Dict[str, Any]] = []
+
+        for idx, paper in enumerate(papers):
+            focuses = select_focus_authors(paper)
+            if not focuses:
+                results[idx] = self._neutral_rating(
+                    [],
+                    "No author metadata was available; assigned a neutral low-confidence author rating.",
+                )
+                continue
+
+            rating_path = self._cache_path("ratings", self._rating_key(paper, focuses))
+            cached = _read_json(rating_path)
+            if cached is not None and self._rating_has_author_signal(cached):
+                sanitized_cached = dict(cached)
+                cached_profiles = cached.get("author_profiles")
+                if isinstance(cached_profiles, list):
+                    sanitized_cached["author_profiles"] = [
+                        self._public_author_profile(profile)
+                        for profile in cached_profiles
+                        if isinstance(profile, dict)
+                    ]
+                results[idx] = sanitized_cached
+                continue
+
+            profiles = [self.fetch_author_profile(paper, focus) for focus in focuses]
+            pending.append(
+                {
+                    "idx": idx,
+                    "paper": paper,
+                    "profiles": profiles,
+                    "rating_path": rating_path,
+                }
+            )
+
+        for start in range(0, len(pending), batch_size):
+            chunk = pending[start : start + batch_size]
+            batch_payload = [(entry["paper"], entry["profiles"]) for entry in chunk]
+            try:
+                ratings = self._call_llm_ratings_batch(batch_payload)
+            except Exception:
+                ratings = [
+                    self._neutral_rating(
+                        entry["profiles"],
+                        "Author metadata lookup or LLM synthesis failed; assigned a neutral low-confidence author rating.",
+                    )
+                    for entry in chunk
+                ]
+            if len(ratings) < len(chunk):
+                ratings = list(ratings) + [
+                    self._neutral_rating(
+                        entry["profiles"],
+                        "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+                    )
+                    for entry in chunk[len(ratings) :]
+                ]
+
+            for entry, rating in zip(chunk, ratings):
+                if not isinstance(rating, dict):
+                    rating = self._neutral_rating(
+                        entry["profiles"],
+                        "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+                    )
+                rating["rated_at"] = datetime.now(timezone.utc).isoformat()
+                if not (
+                    self._is_neutral_fallback_rating(rating)
+                    and self._profiles_have_author_signal(entry["profiles"])
+                ):
+                    _write_json(entry["rating_path"], rating)
+                results[entry["idx"]] = rating
+
+        return [
+            rating
+            if isinstance(rating, dict)
+            else self._neutral_rating(
+                [],
+                "Author-rating LLM output was unavailable; assigned a neutral low-confidence author rating.",
+            )
+            for rating in results
+        ]

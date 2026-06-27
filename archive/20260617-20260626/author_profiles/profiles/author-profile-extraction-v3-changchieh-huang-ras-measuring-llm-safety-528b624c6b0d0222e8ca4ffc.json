@@ -1,0 +1,20 @@
+{
+  "name": "Chang-Chieh Huang",
+  "role": "first_author",
+  "affiliation": "Wei-Bin Lee; * National Yang Ming Chiao Tung University; Hon Hai Research Institute",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Chang-Chieh Huang",
+    "affiliations": [
+      "Wei-Bin Lee",
+      "* National Yang Ming Chiao Tung University",
+      "Hon Hai Research Institute"
+    ],
+    "author_row": "Chang-Chieh Huang * , Yan-Lun Chen * , Chia-Mu Yu *"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

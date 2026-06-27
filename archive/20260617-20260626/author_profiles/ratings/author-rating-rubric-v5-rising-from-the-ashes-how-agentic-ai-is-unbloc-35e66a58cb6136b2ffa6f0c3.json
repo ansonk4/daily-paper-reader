@@ -1,0 +1,24 @@
+{
+  "author_score": 6.0,
+  "author_rating_explanation": "Last author Christian Wressnegger is affiliated with KASTEL Security Research Labs, Karlsruhe Institute of Technology (KIT), Germany. KIT is a well-known European research university with concrete AI/CS research output, placing it in the 6-8 band for top European schools/labs. First author Gabriela F. Ciocarlie is at Stevens Institute of Technology, a mid-tier US research university, but the strongest verifiable affiliation drives the score into the 6-8 range.",
+  "author_profiles": [
+    {
+      "name": "Gabriela F. Ciocarlie",
+      "role": "first_author",
+      "affiliation": "Daryna Oliynyk 4 , Andrew Paverd 5 , Christian Wressnegger 6; 1 Stevens Institute of Technology, USA 2 Independent Researcher, Italy 3 University of Wisconsin-Madison, USA 4 CDL AsTra, Faculty of Computer Science, University of Vienna, Austria; 5 Microsoft Security Response Center (MSRC), UK; 6 KASTEL Security Research Labs, Karlsruhe Institute of Technology (KIT), Germany",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Christian Wressnegger",
+      "role": "last_author",
+      "affiliation": "1 Stevens Institute of Technology, USA 2 Independent Researcher, Italy 3 University of Wisconsin-Madison, USA 4 CDL AsTra, Faculty of Computer Science, University of Vienna, Austria; 5 Microsoft Security Response Center (MSRC), UK; 6 KASTEL Security Research Labs, Karlsruhe Institute of Technology (KIT), Germany",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:01:44.584452+00:00"
+}

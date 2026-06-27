@@ -1,0 +1,24 @@
+{
+  "author_score": 5.0,
+  "author_rating_explanation": "Both focus authors are affiliated with the Centre for Machine Intelligence and Data Science, IIT Bombay. Under the scoring rules, schools explicitly called out as not in the top or mid-tier bands—including India schools—should not receive 6 or above. IIT Bombay is therefore placed in the 0-5 bucket, with a score of 5 reflecting verifiable institutional affiliation without top-tier status.",
+  "author_profiles": [
+    {
+      "name": "Prarabdh Shukla",
+      "role": "first_author",
+      "affiliation": "Centre for Machine Intelligence and Data Science, IIT Bombay",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Arjun Bhagoji",
+      "role": "last_author",
+      "affiliation": "Centre for Machine Intelligence and Data Science, IIT Bombay",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:01:44.583747+00:00"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "Shaohua Liu",
+  "role": "first_author",
+  "affiliation": "Xiaoyang Chen, Dongqiang Liu, Chuangang Ma, Zhenzhen Chai, Henghuan Wang, Shijie Quan; Changyuan Cui, Zhangbin Zhu, Peng Chen, Wei Xu, Lei Xiao, Haijie Gu, Jie Jiang; [1pt] Tencent Inc.; jimmyshliu,franklfang,elonsun,ericdhuang,qsongluo,orionsxliu,noreenchen",
+  "citation_hints": "Semantic Scholar citation_count=437; Semantic Scholar paper_count=27",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Shaohua Liu",
+    "affiliations": [
+      "Xiaoyang Chen, Dongqiang Liu, Chuangang Ma, Zhenzhen Chai, Henghuan Wang, Shijie Quan",
+      "Changyuan Cui, Zhangbin Zhu, Peng Chen, Wei Xu, Lei Xiao, Haijie Gu, Jie Jiang",
+      "[1pt] Tencent Inc.",
+      "jimmyshliu,franklfang,elonsun,ericdhuang,qsongluo,orionsxliu,noreenchen"
+    ],
+    "author_row": "0.88 tabular c Shaohua Liu * , Liang Fang * , Yilong Sun * , Shudong Huang * , Qingsong Luo, Shaoxin Liu"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "NOVA: A Verification-Aware Agent Harness for Architecture Evolution in Industrial Recommender Systems",
+    "paper_year": "2026",
+    "name": "Shaohua Liu",
+    "affiliations": [],
+    "paper_count": 27,
+    "citation_count": 437,
+    "author_id": "47130575",
+    "lookup": "author_search"
+  }
+}

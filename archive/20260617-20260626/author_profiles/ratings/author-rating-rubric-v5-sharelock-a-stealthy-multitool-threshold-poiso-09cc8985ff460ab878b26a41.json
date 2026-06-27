@@ -1,0 +1,24 @@
+{
+  "author_score": 7.0,
+  "author_rating_explanation": "Both focus authors are affiliated with Shanghai Jiao Tong University, a top Chinese AI school included in the 6-8 band. Evidence comes from arxiv metadata source.",
+  "author_profiles": [
+    {
+      "name": "Liwei Liu",
+      "role": "first_author",
+      "affiliation": "Shanghai Jiao Tong University",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Na Ruan",
+      "role": "last_author",
+      "affiliation": "Shanghai Jiao Tong University",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:05:42.050827+00:00"
+}

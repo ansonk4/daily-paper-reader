@@ -1,0 +1,21 @@
+{
+  "name": "Tarin Clanuwat",
+  "role": "last_author",
+  "affiliation": "",
+  "citation_hints": "Semantic Scholar citation_count=1019; Semantic Scholar paper_count=9",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Sakana Fugu Technical Report",
+    "paper_year": "2026",
+    "name": "Tarin Clanuwat",
+    "affiliations": [],
+    "paper_count": 9,
+    "citation_count": 1019,
+    "author_id": "52214414",
+    "lookup": "author_search"
+  }
+}

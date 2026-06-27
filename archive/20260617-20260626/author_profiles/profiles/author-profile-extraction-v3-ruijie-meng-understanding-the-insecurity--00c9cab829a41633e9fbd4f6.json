@@ -1,0 +1,35 @@
+{
+  "name": "Ruijie Meng",
+  "role": "last_author",
+  "affiliation": "Germany; University of Jordan; Jordan Hospital; Department of Clinical Laboratories and Forensic Medicine, Jordan University Hospital, Amman 11942, Jordan",
+  "citation_hints": "OpenAlex cited_by_count=407; OpenAlex works_count=32",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Ruijie Meng",
+    "affiliations": [
+      "Germany"
+    ],
+    "author_row": "Ruijie Meng CISPA Helmholtz Center for Information Security"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Understanding the (In)Security of Vibe-Coded Applications",
+    "paper_year": "2026",
+    "name": "Ruijie Meng",
+    "affiliations": [
+      "University of Jordan",
+      "Jordan Hospital",
+      "Department of Clinical Laboratories and Forensic Medicine, Jordan University Hospital, Amman 11942, Jordan",
+      "Department of Pathology, Microbiology and Forensic Medicine, School of Medicine, The University of Jordan, Amman 11942, Jordan",
+      "National University of Singapore",
+      "Max Planck Institute for Security and Privacy"
+    ],
+    "works_count": 32,
+    "cited_by_count": 407,
+    "author_id": "https://openalex.org/A5053022213",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

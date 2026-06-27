@@ -1,0 +1,12 @@
+{
+  "date": "2026-06-17 ~ 2026-06-26",
+  "mode": "standard",
+  "generated_at": "2026-06-26T09:12:25.429886+00:00",
+  "recommend_path": "/root/data/daily-paper-reader/archive/20260617-20260626/recommend/arxiv_papers_20260617-20260626.standard.json",
+  "recommend_exists": true,
+  "deep_count": 6,
+  "quick_count": 11,
+  "total_count": 17,
+  "docs_dir": "/root/data/daily-paper-reader/docs",
+  "day_readme": "/root/data/daily-paper-reader/docs/20260617-20260626/README.md"
+}

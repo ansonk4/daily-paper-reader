@@ -1,0 +1,24 @@
+{
+  "author_score": 5.5,
+  "author_rating_explanation": "Both focus authors are affiliated with Zhejiang University of Technology. This is a Chinese university with AI/CS research output but not among the top-tier Chinese institutions listed in the 6-8 band (e.g., Tsinghua, Peking, CAS). It falls in the 5-6 mid-tier range.",
+  "author_profiles": [
+    {
+      "name": "Pingchuan Ma",
+      "role": "first_author",
+      "affiliation": "Zhejiang University of Technology",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Xiaoqin Zhang",
+      "role": "last_author",
+      "affiliation": "Zhejiang University of Technology",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:04:13.331577+00:00"
+}

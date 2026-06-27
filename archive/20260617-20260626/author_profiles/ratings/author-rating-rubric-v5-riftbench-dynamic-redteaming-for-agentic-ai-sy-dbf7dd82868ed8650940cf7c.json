@@ -1,0 +1,24 @@
+{
+  "author_score": 5.5,
+  "author_rating_explanation": "Focus authors Yarin Yerushalmi Levi and Roman Vainshtein are affiliated with Fujitsu Research of Europe, a corporate research lab that is not among the major AI companies or elite labs in the top bands, but has some research output. This places them in the 5-6 band.",
+  "author_profiles": [
+    {
+      "name": "Yarin Yerushalmi Levi",
+      "role": "first_author",
+      "affiliation": "Fujitsu Research of Europe (FRE)",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Roman Vainshtein",
+      "role": "last_author",
+      "affiliation": "Fujitsu Research of Europe (FRE)",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:03:25.187672+00:00"
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "The first author's affiliation field contains what appears to be author names and ORCID strings rather than an institutional name, making it unverifiable. The last author has no affiliation. This results in a low neutral score due to insufficient metadata.",
+  "author_profiles": [
+    {
+      "name": "Juho Park",
+      "role": "first_author",
+      "affiliation": "Hyunmin Choi 2,* 0009-0002-0486-9582; Kevin Nam 3,* 0000-0002-4621-2434",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Kevin Nam",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:00:04.311921+00:00"
+}

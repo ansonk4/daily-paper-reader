@@ -1,0 +1,41 @@
+{
+  "name": "Artem Sorokin",
+  "role": "last_author",
+  "affiliation": "Cracken; New York University",
+  "citation_hints": "OpenAlex cited_by_count=0; OpenAlex works_count=4; Semantic Scholar citation_count=250; Semantic Scholar paper_count=106",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Artem Sorokin",
+    "affiliations": [
+      "Cracken"
+    ],
+    "author_row": "Artem Sorokin"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Red-Teaming the Agentic Red-Team",
+    "paper_year": "2026",
+    "name": "Artem Sorokin",
+    "affiliations": [
+      "New York University",
+      "New York University"
+    ],
+    "works_count": 4,
+    "cited_by_count": 0,
+    "author_id": "https://openalex.org/A5017204678",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Red-Teaming the Agentic Red-Team",
+    "paper_year": "2026",
+    "name": "A. Sorokin",
+    "affiliations": [],
+    "paper_count": 106,
+    "citation_count": 250,
+    "author_id": "91472865",
+    "lookup": "author_search"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "First author Chang Wu is affiliated with National Taiwan University Hospital and Taipei Medical University, which are medical institutions rather than top AI/CS research labs. Last author Xiang Wang is affiliated with Chenzhou First People's Hospital, also a medical institution. Despite high citation counts, the affiliations are not top-tier AI research institutions, placing this in the 0-5 band.",
+  "author_profiles": [
+    {
+      "name": "Chang Wu",
+      "role": "first_author",
+      "affiliation": "National Taiwan University Hospital; Taipei Medical University",
+      "citation_hints": "OpenAlex cited_by_count=17720; OpenAlex works_count=192",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    },
+    {
+      "name": "Xiang Wang",
+      "role": "last_author",
+      "affiliation": "Chenzhou First People's Hospital",
+      "citation_hints": "OpenAlex cited_by_count=13118; OpenAlex works_count=326; Semantic Scholar citation_count=380; Semantic Scholar paper_count=61",
+      "confidence": "medium",
+      "evidence_source": "openalex, semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:55:37.175728+00:00"
+}

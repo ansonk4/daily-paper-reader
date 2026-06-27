@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "No verified affiliation is available for either focus author, and metadata lookup was unavailable. Without concrete institutional evidence, a neutral score in the lower range is assigned with low confidence.",
+  "author_profiles": [
+    {
+      "name": "Farhin Farhad Riya",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Kevin Tomsovic",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:58:39.090238+00:00"
+}

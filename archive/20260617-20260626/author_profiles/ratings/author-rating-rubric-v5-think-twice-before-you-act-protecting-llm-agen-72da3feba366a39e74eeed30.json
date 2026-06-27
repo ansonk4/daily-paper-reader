@@ -1,0 +1,24 @@
+{
+  "author_score": 8.5,
+  "author_rating_explanation": "Both focus authors are affiliated with Washington University in St. Louis (WashU), which is listed as a top US AI school/lab in the 8-9 band (UW and similar top US institutions).",
+  "author_profiles": [
+    {
+      "name": "Shanghao Shi",
+      "role": "first_author",
+      "affiliation": "Washington University in St. Louis, St. Louis, MO, USA",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Ning Zhang",
+      "role": "last_author",
+      "affiliation": "Washington University in St. Louis, St. Louis, MO, USA",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:00:55.808222+00:00"
+}

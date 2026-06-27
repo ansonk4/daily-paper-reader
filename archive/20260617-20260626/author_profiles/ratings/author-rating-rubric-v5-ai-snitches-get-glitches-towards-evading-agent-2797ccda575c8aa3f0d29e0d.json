@@ -1,0 +1,24 @@
+{
+  "author_score": 5.5,
+  "author_rating_explanation": "Both focus authors are affiliated with the University of Massachusetts Amherst, a mid-tier US research university with concrete CS research output, fitting the 5-6 band.",
+  "author_profiles": [
+    {
+      "name": "Hyejun Jeong",
+      "role": "first_author",
+      "affiliation": "University of Massachusetts Amherst",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Eugene Bagdasarian",
+      "role": "last_author",
+      "affiliation": "University of Massachusetts Amherst",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:05:42.051347+00:00"
+}

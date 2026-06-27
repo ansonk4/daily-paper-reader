@@ -1,0 +1,16 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "No affiliation or citation evidence is available for the first author He Wen. Without verifiable metadata, a neutral score in the 0-5 band is assigned.",
+  "author_profiles": [
+    {
+      "name": "He Wen",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:59:20.442408+00:00"
+}

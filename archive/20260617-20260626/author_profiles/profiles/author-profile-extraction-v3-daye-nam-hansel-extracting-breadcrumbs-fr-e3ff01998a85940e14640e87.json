@@ -1,0 +1,18 @@
+{
+  "name": "Daye Nam",
+  "role": "last_author",
+  "affiliation": "University of California, Irvine",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Daye Nam",
+    "affiliations": [
+      "University of California, Irvine"
+    ],
+    "author_row": "Daye Nam"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

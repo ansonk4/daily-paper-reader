@@ -1,0 +1,24 @@
+{
+  "author_score": 6.0,
+  "author_rating_explanation": "First author Yang Yue is affiliated with Beijing University of Posts and Telecommunications, a Chinese university with concrete AI/CS research output but not in the top-tier band. Last author Jingfeng Zhang is from China Telecom, a major company but not a top AI research lab. The combination supports a mid-tier score.",
+  "author_profiles": [
+    {
+      "name": "Yang Yue",
+      "role": "first_author",
+      "affiliation": "Beijing University of Posts and Telecommunications",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Jingfeng Zhang",
+      "role": "last_author",
+      "affiliation": "China Telecom",
+      "citation_hints": "Semantic Scholar citation_count=782; Semantic Scholar paper_count=8",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:57:33.292304+00:00"
+}

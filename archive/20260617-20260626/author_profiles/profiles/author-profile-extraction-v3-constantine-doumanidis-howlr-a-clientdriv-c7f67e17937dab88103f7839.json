@@ -1,0 +1,21 @@
+{
+  "name": "Constantine Doumanidis",
+  "role": "first_author",
+  "affiliation": "",
+  "citation_hints": "OpenAlex cited_by_count=50; OpenAlex works_count=11",
+  "confidence": "medium",
+  "evidence_source": "openalex",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "HOWLR: A Client-Driven Approach to BGP Hijack Detection",
+    "paper_year": "2026",
+    "name": "Constantine Doumanidis",
+    "affiliations": [],
+    "works_count": 11,
+    "cited_by_count": 50,
+    "author_id": "https://openalex.org/A5054070193",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

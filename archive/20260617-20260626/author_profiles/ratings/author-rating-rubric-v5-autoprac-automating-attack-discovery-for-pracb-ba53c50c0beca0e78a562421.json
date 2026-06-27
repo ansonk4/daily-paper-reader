@@ -1,0 +1,24 @@
+{
+  "author_score": 6.5,
+  "author_rating_explanation": "Both focus authors are affiliated with the University of Toronto, a top Canadian university with strong AI/CS research output. This fits the 6-8 band for top non-US schools with concrete research evidence.",
+  "author_profiles": [
+    {
+      "name": "Joyce Qu",
+      "role": "first_author",
+      "affiliation": "University of Toronto",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Gururaj Saileshwar",
+      "role": "last_author",
+      "affiliation": "University of Toronto",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:58:39.088909+00:00"
+}

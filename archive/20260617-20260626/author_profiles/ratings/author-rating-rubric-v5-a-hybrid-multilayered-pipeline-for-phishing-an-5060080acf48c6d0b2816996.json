@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "No verified affiliation metadata is available for either focus author, and the evidence source is metadata lookup unavailable. Without concrete institutional evidence, the score falls into the 0-5 bucket with low confidence.",
+  "author_profiles": [
+    {
+      "name": "Saifelden M. Ismail",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Omar A. Mahmoud",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:06:04.107070+00:00"
+}

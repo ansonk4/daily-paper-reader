@@ -1,0 +1,40 @@
+{
+  "name": "Prabuddha Chakraborty",
+  "role": "last_author",
+  "affiliation": "Department of Electrical & Computer Engineering, University of Maine, Orono, ME, USA; University of Maine",
+  "citation_hints": "OpenAlex cited_by_count=904; OpenAlex works_count=83; Semantic Scholar citation_count=634; Semantic Scholar paper_count=46",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Prabuddha Chakraborty",
+    "affiliations": [
+      "Department of Electrical & Computer Engineering, University of Maine, Orono, ME, USA"
+    ],
+    "author_row": "Prabuddha Chakraborty"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "DISARM: Target Electronic Device Informed Mitigation of Software Runtime Side-Channel Vulnerabilities",
+    "paper_year": "2026",
+    "name": "Prabuddha Chakraborty",
+    "affiliations": [
+      "University of Maine"
+    ],
+    "works_count": 83,
+    "cited_by_count": 904,
+    "author_id": "https://openalex.org/A5013184572",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "DISARM: Target Electronic Device Informed Mitigation of Software Runtime Side-Channel Vulnerabilities",
+    "paper_year": "2026",
+    "name": "Prabuddha Chakraborty",
+    "affiliations": [],
+    "paper_count": 46,
+    "citation_count": 634,
+    "author_id": "145293829",
+    "lookup": "author_search"
+  }
+}

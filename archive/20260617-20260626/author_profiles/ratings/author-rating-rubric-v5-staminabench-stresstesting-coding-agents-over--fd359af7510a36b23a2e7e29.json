@@ -1,0 +1,24 @@
+{
+  "author_score": 9.5,
+  "author_rating_explanation": "Both focus authors are affiliated with AWS Agentic AI, which corresponds to Amazon's major AI/tech company research environment in the 9-10 band. Evidence comes from arxiv metadata source.",
+  "author_profiles": [
+    {
+      "name": "Vlad Sobal",
+      "role": "first_author",
+      "affiliation": "[0.5em] AWS Agentic AI",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Stefano Soatto",
+      "role": "last_author",
+      "affiliation": "[0.5em] AWS Agentic AI",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:05:42.053292+00:00"
+}

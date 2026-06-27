@@ -1,0 +1,24 @@
+{
+  "author_score": 6.5,
+  "author_rating_explanation": "First author Nada Lahjouji is affiliated with University of California, Irvine and Ulster University. UC Irvine is a mid-to-high-tier US research university with concrete AI/CS output. Last author Ashwin Gerard Colaco is affiliated with UC Irvine and UT MD Anderson Cancer Center, which is a medical institution. The UC Irvine affiliation places this in the 6-8 band.",
+  "author_profiles": [
+    {
+      "name": "Nada Lahjouji",
+      "role": "first_author",
+      "affiliation": "University of California, Irvine; University of Ulster; School of Engineering, Ulster University, Belfast, BT15 1AP, United Kingdom",
+      "citation_hints": "OpenAlex cited_by_count=2; OpenAlex works_count=4",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    },
+    {
+      "name": "Ashwin Gerard Colaco",
+      "role": "last_author",
+      "affiliation": "University of California, Irvine; The University of Texas MD Anderson Cancer Center; Department of Imaging Physics, The University of Texas MD Anderson Cancer Center, Houston, TX 77030, USA; Research Network (United States)",
+      "citation_hints": "OpenAlex cited_by_count=7; OpenAlex works_count=2",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:55:37.175986+00:00"
+}

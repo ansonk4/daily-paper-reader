@@ -1,0 +1,30 @@
+{
+  "name": "Andi Quinn",
+  "role": "last_author",
+  "affiliation": "UC Santa Cruz; University of California, Santa Cruz",
+  "citation_hints": "OpenAlex cited_by_count=0; OpenAlex works_count=9",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Andi Quinn",
+    "affiliations": [
+      "UC Santa Cruz"
+    ],
+    "author_row": "Yusheng Zheng 1,4 , Tianyuan Wu 3 , Quanzhi Fu 2 , Tong Yu 4 , Wenan Mao 5 , Wei Wang 3 , Dan Williams 2 , Andi Quinn 1"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "ActPlane: Programmable OS-Level Policy Enforcement for Agent Harnesses",
+    "paper_year": "2026",
+    "name": "Andi Quinn",
+    "affiliations": [
+      "University of California, Santa Cruz"
+    ],
+    "works_count": 9,
+    "cited_by_count": 0,
+    "author_id": "https://openalex.org/A5125672098",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

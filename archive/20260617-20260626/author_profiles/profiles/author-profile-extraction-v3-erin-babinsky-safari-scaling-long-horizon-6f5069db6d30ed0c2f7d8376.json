@@ -1,0 +1,30 @@
+{
+  "name": "Erin Babinsky",
+  "role": "last_author",
+  "affiliation": "AI Foundations, Capital One; Capital One (United States)",
+  "citation_hints": "OpenAlex cited_by_count=422; OpenAlex works_count=32",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Erin Babinsky",
+    "affiliations": [
+      "AI Foundations, Capital One"
+    ],
+    "author_row": "Erin Babinsky"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "SAFARI: Scaling Long Horizon Agentic Fault Attribution via Active Investigation",
+    "paper_year": "2026",
+    "name": "Erin Babinsky",
+    "affiliations": [
+      "Capital One (United States)"
+    ],
+    "works_count": 32,
+    "cited_by_count": 422,
+    "author_id": "https://openalex.org/A5018594527",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

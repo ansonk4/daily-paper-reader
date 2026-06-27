@@ -1,0 +1,24 @@
+{
+  "author_score": 3.0,
+  "author_rating_explanation": "First author Seth Dobrin is listed with affiliation 'ARYA Labs PBC', which is not a widely recognized major AI company or elite research lab in the provided score bands. Last author Lukasz Chmiel has no verifiable affiliation. The available metadata does not support a score of 6 or above.",
+  "author_profiles": [
+    {
+      "name": "Seth Dobrin",
+      "role": "first_author",
+      "affiliation": "[2pt] ARYA Labs PBC",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Łukasz Chmiel",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:01:44.582596+00:00"
+}

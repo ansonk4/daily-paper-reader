@@ -1,0 +1,24 @@
+{
+  "author_score": 7.5,
+  "author_rating_explanation": "Focus author Jinghong Chen is affiliated with University of Cambridge, a top European AI school, while Ziyi Zhu is at Slingshot AI, a company without visible third-party research evidence. The Cambridge affiliation places the overall rating in the 6-8 band.",
+  "author_profiles": [
+    {
+      "name": "Ziyi Zhu",
+      "role": "first_author",
+      "affiliation": "Slingshot AI",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Jinghong Chen",
+      "role": "last_author",
+      "affiliation": "Department of Engineering, University of Cambridge",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:03:25.186708+00:00"
+}

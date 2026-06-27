@@ -1,0 +1,24 @@
+{
+  "author_score": 5.5,
+  "author_rating_explanation": "Focus authors Giulian Biolo and Fabio Massacci are affiliated with Vrije Universiteit Amsterdam, a mid-tier European university with concrete AI/CS research output. This places them in the 5-6 band.",
+  "author_profiles": [
+    {
+      "name": "Giulian Biolo",
+      "role": "first_author",
+      "affiliation": "2 Vrije Universiteit Amsterdam, NL",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Fabio Massacci",
+      "role": "last_author",
+      "affiliation": "Vrije Universiteit Amsterdam, NL",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:03:25.185889+00:00"
+}

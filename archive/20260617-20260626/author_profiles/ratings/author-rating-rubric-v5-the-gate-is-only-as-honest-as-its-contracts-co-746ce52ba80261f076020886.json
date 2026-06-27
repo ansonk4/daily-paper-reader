@@ -1,0 +1,24 @@
+{
+  "author_score": 3.0,
+  "author_rating_explanation": "First author Laxmipriya Ganesh Iyer is listed as an independent researcher in the United States with no institutional affiliation, and last author Rahul Suresh Babu has only a country-level affiliation with no institution. Both fall into the 0-5 bucket for unknown, independent, or weakly verifiable affiliations.",
+  "author_profiles": [
+    {
+      "name": "Laxmipriya Ganesh Iyer",
+      "role": "first_author",
+      "affiliation": "United States of America; Rahul Suresh Babu Independent Researcher",
+      "citation_hints": "Semantic Scholar citation_count=3; Semantic Scholar paper_count=6",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar"
+    },
+    {
+      "name": "Rahul Suresh Babu",
+      "role": "last_author",
+      "affiliation": "United States of America",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:57:33.291743+00:00"
+}

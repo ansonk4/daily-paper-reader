@@ -1,0 +1,16 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "The sole focus author has no verified affiliation or citation evidence. 'metadata lookup unavailable' means no institutional backing can be confirmed, so a neutral score in the 0-5 bucket is required.",
+  "author_profiles": [
+    {
+      "name": "Md Anas Biswas",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:00:55.808703+00:00"
+}

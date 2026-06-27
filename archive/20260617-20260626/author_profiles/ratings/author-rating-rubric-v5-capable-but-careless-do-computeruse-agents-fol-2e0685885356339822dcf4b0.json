@@ -1,0 +1,24 @@
+{
+  "author_score": 7.0,
+  "author_rating_explanation": "Both authors are affiliated with the Ubiquitous Knowledge Processing Lab (UKP Lab) at TU Darmstadt, a well-known German technical university with strong AI/CS research, and the National Research Center for Applied Cybersecurity ATHENE. This places them in the top European research band.",
+  "author_profiles": [
+    {
+      "name": "Anmol Goel",
+      "role": "first_author",
+      "affiliation": "Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science; TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Iryna Gurevych",
+      "role": "last_author",
+      "affiliation": "Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science; TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:00:04.311141+00:00"
+}

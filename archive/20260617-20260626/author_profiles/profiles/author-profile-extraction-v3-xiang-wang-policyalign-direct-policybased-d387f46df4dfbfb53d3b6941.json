@@ -1,0 +1,32 @@
+{
+  "name": "Xiang Wang",
+  "role": "last_author",
+  "affiliation": "Chenzhou First People's Hospital",
+  "citation_hints": "OpenAlex cited_by_count=13118; OpenAlex works_count=326; Semantic Scholar citation_count=380; Semantic Scholar paper_count=61",
+  "confidence": "medium",
+  "evidence_source": "openalex, semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "PolicyAlign: Direct Policy-Based Safety Alignment for Large Language Models",
+    "paper_year": "2026",
+    "name": "Xiang Wang",
+    "affiliations": [
+      "Chenzhou First People's Hospital"
+    ],
+    "works_count": 326,
+    "cited_by_count": 13118,
+    "author_id": "https://openalex.org/A5100389014",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Efficient Safety Alignment of Large Language Models via Preference Re-ranking and Representation-based Reward Modeling",
+    "paper_year": 2025,
+    "name": "Min Zhang",
+    "affiliations": [],
+    "paper_count": 61,
+    "citation_count": 380,
+    "author_id": "2273887691"
+  }
+}

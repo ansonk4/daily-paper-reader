@@ -1,0 +1,37 @@
+{
+  "name": "Hongxin Hu",
+  "role": "last_author",
+  "affiliation": "Dongguk University; Department of Industrial and Systems Engineering, Dongguk University, Seoul, South Korea; Beijing Academy of Agricultural and Forestry Sciences; University at Buffalo, State University of New York",
+  "citation_hints": "OpenAlex cited_by_count=6646; OpenAlex works_count=239; Semantic Scholar citation_count=7772; Semantic Scholar paper_count=180",
+  "confidence": "medium",
+  "evidence_source": "openalex, semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "SoK: AI Secure Code Generation: Progress, Pitfalls, and Paths Forward",
+    "paper_year": "2026",
+    "name": "Hongxin Hu",
+    "affiliations": [
+      "Dongguk University",
+      "Department of Industrial and Systems Engineering, Dongguk University, Seoul, South Korea",
+      "Beijing Academy of Agricultural and Forestry Sciences",
+      "University at Buffalo, State University of New York",
+      "Fuzhou University"
+    ],
+    "works_count": 239,
+    "cited_by_count": 6646,
+    "author_id": "https://openalex.org/A5056657952",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "SoK: AI Secure Code Generation: Progress, Pitfalls, and Paths Forward",
+    "paper_year": "2026",
+    "name": "Hongxin Hu",
+    "affiliations": [],
+    "paper_count": 180,
+    "citation_count": 7772,
+    "author_id": "7150554",
+    "lookup": "author_search"
+  }
+}

@@ -1,5 +1,6 @@
 import importlib.util
 import io
+import json
 import pathlib
 import tarfile
 import tempfile
@@ -114,6 +115,55 @@ class FakeClient:
                         "evidence_source": "openalex, semantic_scholar",
                     },
                 ],
+            },
+            "parse_error": None,
+            "refusal": "",
+        }
+
+
+class FakeBatchClient:
+    def __init__(self):
+        self.calls = []
+
+    def chat_structured(self, messages, schema_name, schema, strict, allow_json_object_fallback):
+        payload = json.loads(messages[1]["content"].rsplit("Papers: ", 1)[1])
+        self.calls.append(
+            {
+                "messages": messages,
+                "schema_name": schema_name,
+                "strict": strict,
+                "allow_json_object_fallback": allow_json_object_fallback,
+                "paper_count": len(payload),
+            }
+        )
+        return {
+            "parsed": {
+                "ratings": [
+                    {
+                        "paper_id": item["paper_id"],
+                        "author_score": 8.0,
+                        "author_rating_explanation": "Verified Stanford University and OpenAI affiliations.",
+                        "author_profiles": [
+                            {
+                                "name": "Alice First",
+                                "role": "first_author",
+                                "affiliation": "Stanford University",
+                                "citation_hints": "",
+                                "confidence": "high",
+                                "evidence_source": "openalex",
+                            },
+                            {
+                                "name": "Bob Last",
+                                "role": "last_author",
+                                "affiliation": "OpenAI",
+                                "citation_hints": "",
+                                "confidence": "high",
+                                "evidence_source": "openalex",
+                            },
+                        ],
+                    }
+                    for item in payload
+                ]
             },
             "parse_error": None,
             "refusal": "",
@@ -270,16 +320,23 @@ class AuthorProfileTest(unittest.TestCase):
         self.assertIn('"author_score"', client.messages[1]["content"])
         self.assertIn('"author_rating_explanation"', client.messages[1]["content"])
         self.assertIn('"author_profiles"', client.messages[1]["content"])
+        self.assertIn('"citation_count": "500"', client.messages[1]["content"])
+        self.assertIn('"paper_count": "20"', client.messages[1]["content"])
         self.assertIn("no extra top-level keys", client.messages[1]["content"])
         self.assertIn("Score bands are ranges, not ordinal list numbers", client.messages[1]["content"])
         self.assertIn("Schools not included in the top or mid-tier bands above", client.messages[1]["content"])
         self.assertIn("must not receive 6+", client.messages[1]["content"])
+        self.assertIn("CUHK-Shenzhen is distinct", client.messages[1]["content"])
         self.assertNotIn('"group"', client.messages[1]["content"])
         self.assertNotIn('"school"', client.messages[1]["content"])
         self.assertNotIn('"company"', client.messages[1]["content"])
         self.assertNotIn("group", rating["author_profiles"][0])
         self.assertNotIn("school", rating["author_profiles"][0])
         self.assertNotIn("company", rating["author_profiles"][0])
+        self.assertEqual(rating["author_profiles"][0]["citation_count"], "500")
+        self.assertEqual(rating["author_profiles"][0]["paper_count"], "20")
+        self.assertEqual(rating["author_profiles"][1]["citation_count"], "1600")
+        self.assertEqual(rating["author_profiles"][1]["paper_count"], "60")
 
     def test_author_rater_accepts_usable_payload_with_schema_warning(self):
         with tempfile.TemporaryDirectory() as cache_dir:
@@ -355,6 +412,38 @@ class AuthorProfileTest(unittest.TestCase):
         self.assertEqual(rating["author_score"], 4.5)
         self.assertEqual(rating["author_rating_status"], "fallback")
 
+    def test_author_rater_preserves_source_affiliation_over_llm_profile_text(self):
+        with tempfile.TemporaryDirectory() as cache_dir:
+            rater = self.mod.AuthorProfileRater(cache_dir=cache_dir, session=FakeSession(), timeout=1)
+            rating = rater._normalize_llm_rating(
+                {
+                    "author_score": 7.0,
+                    "author_rating_explanation": "Verified UC Santa Cruz affiliation from arXiv metadata.",
+                    "author_profiles": [
+                        {
+                            "name": "Yusheng Zheng",
+                            "role": "first_author",
+                            "affiliation": "UC Santa Cruz",
+                            "confidence": "high",
+                            "evidence_source": "llm",
+                        }
+                    ],
+                },
+                [
+                    {
+                        "name": "Yusheng Zheng",
+                        "role": "first_author",
+                        "affiliation": "UC Santa Cruz; eunomia-bpf",
+                        "citation_hints": "",
+                        "confidence": "medium",
+                        "evidence_source": "arxiv_source",
+                    }
+                ],
+            )
+
+        self.assertEqual(rating["author_profiles"][0]["affiliation"], "UC Santa Cruz; eunomia-bpf")
+        self.assertEqual(rating["author_profiles"][0]["evidence_source"], "arxiv_source")
+
     def test_author_rating_cache_key_includes_rubric_version(self):
         with tempfile.TemporaryDirectory() as cache_dir:
             rater = self.mod.AuthorProfileRater(cache_dir=cache_dir, session=FakeSession(), timeout=1)
@@ -364,6 +453,34 @@ class AuthorProfileTest(unittest.TestCase):
             )
 
         self.assertTrue(key.startswith(self.mod.AUTHOR_RATING_RUBRIC_VERSION + "|"))
+
+    def test_author_rater_batches_llm_ratings_in_tens(self):
+        with tempfile.TemporaryDirectory() as cache_dir:
+            client = FakeBatchClient()
+            rater = self.mod.AuthorProfileRater(
+                cache_dir=cache_dir,
+                client=client,
+                session=FakeSession(),
+                timeout=1,
+            )
+            ratings = rater.rate_papers(
+                [
+                    {
+                        "id": f"p-{idx}",
+                        "title": f"A Test Paper {idx}",
+                        "published": "2026-01-01",
+                        "authors": ["Alice First", "Bob Last"],
+                    }
+                    for idx in range(11)
+                ]
+            )
+
+        self.assertEqual(len(ratings), 11)
+        self.assertTrue(all(rating["author_score"] == 8.0 for rating in ratings))
+        self.assertEqual([call["paper_count"] for call in client.calls], [10, 1])
+        self.assertEqual(client.calls[0]["schema_name"], "author_rating_batch")
+        self.assertTrue(client.calls[0]["strict"])
+        self.assertTrue(client.calls[0]["allow_json_object_fallback"])
 
     def test_author_rater_prefers_paper_author_row_from_arxiv_source(self):
         with tempfile.TemporaryDirectory() as cache_dir:
@@ -385,6 +502,168 @@ class AuthorProfileTest(unittest.TestCase):
 
         self.assertEqual(profile["affiliation"], "Stanford AI Lab, Stanford University")
         self.assertIn("arxiv_source", profile["evidence_source"])
+
+    def test_latex_marked_author_profile_maps_postech_superscripts(self):
+        source = r"""
+        \author{%
+          \textbf{Kyungmin Kim}$^{1,*}$,
+          \textbf{Youngbin Choi}$^{1,*}$,
+          \textbf{Seoyeon Lee}$^1$,
+          \textbf{Suhyeon Jun}$^2$,\\
+          \textbf{Dongwoo Kim}$^{1,2,\dagger}$,
+          \textbf{Sangdon Park}$^{1,2,\dagger}$
+          \\
+         \textsuperscript{1}Graduate School of Artificial Intelligence, POSTECH,
+        \\
+         \textsuperscript{2}Department of Computer Science and Engineering, POSTECH,
+        \\
+         \small{\texttt{\{kkm959595, sangdon\}@postech.ac.kr}}
+        }
+        """
+
+        first = self.mod._extract_latex_author_profile(
+            source,
+            {"name": "Kyungmin Kim", "role": "first_author", "index": 0},
+        )
+        last = self.mod._extract_latex_author_profile(
+            source,
+            {"name": "Sangdon Park", "role": "last_author", "index": 5},
+        )
+
+        self.assertEqual(first["affiliations"], ["Graduate School of Artificial Intelligence, POSTECH"])
+        self.assertEqual(
+            last["affiliations"],
+            [
+                "Graduate School of Artificial Intelligence, POSTECH",
+                "Department of Computer Science and Engineering, POSTECH",
+            ],
+        )
+
+    def test_latex_acm_author_profile_maps_only_author_marked_affiliations(self):
+        source = r"""
+        \author{Yusheng Zheng$^{1,4}$, Tianyuan Wu$^{3}$, Quanzhi Fu$^{2}$,
+        Tong Yu$^{4}$, Wenan Mao$^{5}$, Wei Wang$^{3}$, Dan Williams$^{2}$, Andi Quinn$^{1}$}
+        \affiliation{%
+          \institution{$^{1}$UC Santa Cruz \quad $^{2}$Virginia Tech \quad $^{3}$HKUST \quad $^{4}$eunomia-bpf \quad $^{5}$Alibaba Group}
+          \country{}}
+        """
+
+        first = self.mod._extract_latex_author_profile(
+            source,
+            {"name": "Yusheng Zheng", "role": "first_author", "index": 0},
+        )
+        last = self.mod._extract_latex_author_profile(
+            source,
+            {"name": "Andi Quinn", "role": "last_author", "index": 7},
+        )
+
+        self.assertEqual(first["affiliations"], ["UC Santa Cruz", "eunomia-bpf"])
+        self.assertEqual(last["affiliations"], ["UC Santa Cruz"])
+
+    def test_latex_parbox_author_profile_does_not_merge_adjacent_author_cards(self):
+        source = r"""
+        \author{%
+        \parbox[t]{0.48\linewidth}{\centering
+          Genliang Zhu\\
+          Accentrust\\
+          Georgia Institute of Technology
+        }
+        \hfill
+        \parbox[t]{0.48\linewidth}{\centering
+          Chu Wang\\
+          Accentrust\\
+          University of Illinois Urbana-Champaign
+        }
+        }
+        """
+
+        first = self.mod._extract_latex_author_profile(
+            source,
+            {"name": "Genliang Zhu", "role": "first_author", "index": 0},
+        )
+        last = self.mod._extract_latex_author_profile(
+            source,
+            {"name": "Chu Wang", "role": "last_author", "index": 1},
+        )
+
+        self.assertEqual(first["affiliations"], ["Accentrust", "Georgia Institute of Technology"])
+        self.assertEqual(last["affiliations"], ["Accentrust", "University of Illinois Urbana-Champaign"])
+        self.assertNotIn("Chu Wang", "; ".join(first["affiliations"]))
+
+    def test_latex_row_pair_author_profile_maps_mas_promptbench_affiliation(self):
+        source = r"""
+        \author{
+          Juyang Bai\thanks{Department of Electrical and Computer Engineering, Johns Hopkins University, Baltimore, MD 21218, USA.} \\
+          Johns Hopkins University \\
+          \texttt{jbai@jhu.edu} \\
+          Laixi Shi\footnotemark[1] \\
+          Johns Hopkins University \\
+          \texttt{lshi123@jhu.edu}
+        }
+        """
+
+        first = self.mod._extract_latex_author_profile(
+            source,
+            {"name": "Juyang Bai", "role": "first_author", "index": 0},
+        )
+        last = self.mod._extract_latex_author_profile(
+            source,
+            {"name": "Laixi Shi", "role": "last_author", "index": 1},
+        )
+
+        self.assertEqual(first["affiliations"], ["Johns Hopkins University"])
+        self.assertEqual(last["affiliations"], ["Johns Hopkins University"])
+
+    def test_latex_simple_author_profile_filters_link_rows(self):
+        source = r"""
+        \author{Anmol Goel \textnormal{and} Iryna Gurevych \\
+          Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science\\
+          TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE\\
+          \begin{tabular}{c}
+            \footnotesize\href{https://github.com/UKPLab/arxiv2026-agentcibench}{\faGithub\ \texttt{https://github.com/UKPLab/arxiv2026-agentcibench}}\\[0.05cm]
+            \footnotesize\href{https://hf.co/datasets/UKPLab/AgentCIBench}{\hflogo\ \texttt{https://hf.co/datasets/UKPLab/AgentCIBench}}
+          \end{tabular}
+        }
+        """
+
+        profile = self.mod._extract_latex_author_profile(
+            source,
+            {"name": "Iryna Gurevych", "role": "last_author", "index": 1},
+        )
+
+        self.assertEqual(
+            profile["affiliations"],
+            [
+                "Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science",
+                "TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE",
+            ],
+        )
+        self.assertNotIn("github", "; ".join(profile["affiliations"]).lower())
+        self.assertNotIn("tabular", "; ".join(profile["affiliations"]).lower())
+
+    def test_latex_aaai_affiliations_filters_email_rows(self):
+        source = r"""
+        \author{
+            Wangxuan Fan, Xiaoyu Nie, Zhongxiang Dai\footnote{Corresponding author.}
+        }
+        \affiliations{
+            The Chinese University of Hong Kong, Shenzhen\\
+            Emails: Wangxuan Fan $\langle$fanwx@cuhk.edu.cn$\rangle$, Xiaoyu Nie $\langle$xiaoyunie@link.cuhk.edu.cn$\rangle$, Zhongxiang Dai $\langle$daizhongxiang@cuhk.edu.cn$\rangle$
+        }
+        """
+
+        first = self.mod._extract_latex_author_profile(
+            source,
+            {"name": "Wangxuan Fan", "role": "first_author", "index": 0},
+        )
+        last = self.mod._extract_latex_author_profile(
+            source,
+            {"name": "Zhongxiang Dai", "role": "last_author", "index": 2},
+        )
+
+        self.assertEqual(first["affiliations"], ["The Chinese University of Hong Kong, Shenzhen"])
+        self.assertEqual(last["affiliations"], ["The Chinese University of Hong Kong, Shenzhen"])
+        self.assertNotIn("Emails", "; ".join(first["affiliations"]))
 
     def test_author_rater_uses_local_author_affiliations_before_search_metadata(self):
         with tempfile.TemporaryDirectory() as cache_dir:

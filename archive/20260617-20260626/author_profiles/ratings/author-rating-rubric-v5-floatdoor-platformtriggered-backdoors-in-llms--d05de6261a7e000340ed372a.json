@@ -1,0 +1,24 @@
+{
+  "author_score": 5.0,
+  "author_rating_explanation": "Both first author Nils Loose and last author Thomas Eisenbarth are affiliated with the University of Luebeck, a European university not listed among the top-tier AI schools. It falls into the mid-tier range at the boundary, warranting a score of 5.",
+  "author_profiles": [
+    {
+      "name": "Nils Loose",
+      "role": "first_author",
+      "affiliation": "University of Luebeck",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Thomas Eisenbarth",
+      "role": "last_author",
+      "affiliation": "University of Luebeck",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:57:33.293269+00:00"
+}

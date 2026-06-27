@@ -1,0 +1,24 @@
+{
+  "author_score": 5.5,
+  "author_rating_explanation": "Focus authors Dayeon Kang and Amir Houmansadr are affiliated with UMass Amherst, a mid-tier US research university with concrete AI/CS research output. This places them in the 5-6 band.",
+  "author_profiles": [
+    {
+      "name": "Dayeon Kang",
+      "role": "first_author",
+      "affiliation": "Hyejun Jeong UMass Amherst; Jade Sheffey UMass Amherst; Pubali Datta UMass Amherst; Amir Houmansadr UMass Amherst",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Amir Houmansadr",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:03:25.186397+00:00"
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 5.5,
+  "author_rating_explanation": "Both focus authors are affiliated with the Department of Computer Science and Engineering at the University at Buffalo, SUNY. This is a mid-tier US research university with concrete CS research output, placing it in the 5-6 band.",
+  "author_profiles": [
+    {
+      "name": "Zhengsong Zhang",
+      "role": "first_author",
+      "affiliation": "Department of Computer Science and Engineering; University at Buffalo, SUNY",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Haipeng Cai",
+      "role": "last_author",
+      "affiliation": "Department of Computer Science and Engineering; University at Buffalo, SUNY",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:04:13.330940+00:00"
+}

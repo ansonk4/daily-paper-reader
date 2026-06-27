@@ -1,0 +1,24 @@
+{
+  "author_score": 6.5,
+  "author_rating_explanation": "First author Zhen Zhao is affiliated with East China University of Science and Technology, Sun Yat-sen University, Northwestern Polytechnical University, and Jilin University, which are reputable Chinese universities with AI/CS research output, supported by high citation counts (OpenAlex cited_by_count=32008). Last author Jiexin Gao is affiliated with Huawei Technologies (United Kingdom), a major technology company, though citation counts are modest (OpenAlex cited_by_count=205). The combination of strong Chinese university affiliations and a major tech company places this in the 6-8 band.",
+  "author_profiles": [
+    {
+      "name": "Zhen Zhao",
+      "role": "first_author",
+      "affiliation": "East China University of Science and Technology; Sun Yat-sen University; Northwestern Polytechnical University; Jilin University",
+      "citation_hints": "OpenAlex cited_by_count=32008; OpenAlex works_count=1119; Semantic Scholar citation_count=7163; Semantic Scholar paper_count=70",
+      "confidence": "medium",
+      "evidence_source": "openalex, semantic_scholar"
+    },
+    {
+      "name": "Jiexin Gao",
+      "role": "last_author",
+      "affiliation": "Huawei Technologies (United Kingdom)",
+      "citation_hints": "OpenAlex cited_by_count=205; OpenAlex works_count=12",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:55:37.174565+00:00"
+}

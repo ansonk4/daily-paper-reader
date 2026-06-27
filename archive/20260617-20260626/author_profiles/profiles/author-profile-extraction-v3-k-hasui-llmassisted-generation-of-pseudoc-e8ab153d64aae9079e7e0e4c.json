@@ -1,0 +1,19 @@
+{
+  "name": "K. Hasui",
+  "role": "first_author",
+  "affiliation": "Kagawa University; Takamatsu, Japan",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "K. Hasui",
+    "affiliations": [
+      "Kagawa University",
+      "Takamatsu, Japan"
+    ],
+    "author_row": "Kouki Hasui"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 7.0,
+  "author_rating_explanation": "Both focus authors are affiliated with Zhejiang University, which is listed as a top Chinese AI school/lab in the 6-8 score band. The evidence is directly from arxiv_source metadata.",
+  "author_profiles": [
+    {
+      "name": "Yong Yang",
+      "role": "first_author",
+      "affiliation": "Zhejiang University",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Wenzhi Chen",
+      "role": "last_author",
+      "affiliation": "Zhejiang University",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:02:30.299401+00:00"
+}

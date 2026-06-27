@@ -1,0 +1,24 @@
+{
+  "author_score": 6.5,
+  "author_rating_explanation": "Both focus authors are affiliated with Politecnico di Milano, which is a well-known European technical university with concrete AI/CS research output. Based on the supplied metadata, this fits the 6-8 band as a recognized non-US research institution.",
+  "author_profiles": [
+    {
+      "name": "Gabriele Digregorio",
+      "role": "first_author",
+      "affiliation": "Politecnico di Milano",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Michele Carminati",
+      "role": "last_author",
+      "affiliation": "Politecnico di Milano",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:02:30.300072+00:00"
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "No verifiable affiliations were available for either focus author; metadata lookup was unavailable and no citation evidence was provided. This is insufficient for a 6+ score, so a neutral score is assigned with low confidence.",
+  "author_profiles": [
+    {
+      "name": "Gulshan Saleem",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Ali Hassan",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:02:30.283903+00:00"
+}

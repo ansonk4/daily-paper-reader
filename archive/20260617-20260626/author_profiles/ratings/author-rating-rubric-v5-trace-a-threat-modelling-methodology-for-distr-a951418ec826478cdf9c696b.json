@@ -1,0 +1,16 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "The focus author is affiliated with Oak Security, which is not a widely recognized top-tier company or research lab in the provided score bands and lacks third-party-verifiable research evidence in the metadata.",
+  "author_profiles": [
+    {
+      "name": "Stefan Beyer",
+      "role": "first_author",
+      "affiliation": "Oak Security",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:05:42.051586+00:00"
+}

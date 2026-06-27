@@ -1,0 +1,18 @@
+{
+  "name": "Yuanchun Li",
+  "role": "last_author",
+  "affiliation": "1 Tsinghua University~~~~ 2 Peking University~~~~ 3 The University of Hong Kong",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yuanchun Li",
+    "affiliations": [
+      "1 Tsinghua University~~~~ 2 Peking University~~~~ 3 The University of Hong Kong"
+    ],
+    "author_row": "Shanhui Zhao 1 * , Jiacheng Liu 2 * , Guohong Liu 1 * , Jichao Yan 1 , Jialei Ye 2 , Yuhao Yang 3 , Hao Wen 1 , Shizuo Tian 1 , Yizhen Yuan 1 , Yuxuan Chen 1 , Yunxin Liu 1 , Ju Ren 1 , Ya-Qin Zhang 1 , Chao Huang 3 , Yao Guo 2 , Yuanchun Li 1"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

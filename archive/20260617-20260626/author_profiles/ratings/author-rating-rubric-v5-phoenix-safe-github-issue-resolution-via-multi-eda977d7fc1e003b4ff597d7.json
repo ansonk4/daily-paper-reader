@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "Both focus authors are listed only with 'Department of Electrical and Computer Engineering' and no specific university name is provided in the metadata. Because the institution cannot be concretely identified, the affiliation is treated as insufficient for scoring above the lower bucket.",
+  "author_profiles": [
+    {
+      "name": "Kipngeno Koech",
+      "role": "first_author",
+      "affiliation": "Department of Electrical and Computer Engineering",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Joao Barros",
+      "role": "last_author",
+      "affiliation": "Department of Electrical and Computer Engineering",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:01:44.584023+00:00"
+}

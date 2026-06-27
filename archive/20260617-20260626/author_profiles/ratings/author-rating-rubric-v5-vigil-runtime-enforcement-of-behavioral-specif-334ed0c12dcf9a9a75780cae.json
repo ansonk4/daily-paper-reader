@@ -1,0 +1,24 @@
+{
+  "author_score": 7.5,
+  "author_rating_explanation": "Focus authors Ying Li and Yuan Tian are affiliated with UCLA, UCSD, and UCSB, all top US AI schools. These are well-established AI research universities, placing them in the 6-8 band with strong confidence.",
+  "author_profiles": [
+    {
+      "name": "Ying Li",
+      "role": "first_author",
+      "affiliation": "University of California, Los Angeles University of California, San Diego\\\\[-0.2ex] University of California, Santa Barbara Riema Labs",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Yuan Tian",
+      "role": "last_author",
+      "affiliation": "University of California, Los Angeles University of California, San Diego\\\\[-0.2ex] University of California, Santa Barbara Riema Labs",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:03:25.185675+00:00"
+}

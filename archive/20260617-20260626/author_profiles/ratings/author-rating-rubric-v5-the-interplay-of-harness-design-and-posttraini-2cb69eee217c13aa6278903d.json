@@ -1,0 +1,24 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Both focus authors are affiliated with POSTECH (Graduate School of Artificial Intelligence / Department of Computer Science and Engineering). POSTECH is a well-known Korean university but is not listed in the top-tier or major-company bands and falls under the 0-5 bucket per the scoring rules.",
+  "author_profiles": [
+    {
+      "name": "Kyungmin Kim",
+      "role": "first_author",
+      "affiliation": "Graduate School of Artificial Intelligence, POSTECH",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Sangdon Park",
+      "role": "last_author",
+      "affiliation": "Graduate School of Artificial Intelligence, POSTECH; Department of Computer Science and Engineering, POSTECH",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:00:55.807061+00:00"
+}

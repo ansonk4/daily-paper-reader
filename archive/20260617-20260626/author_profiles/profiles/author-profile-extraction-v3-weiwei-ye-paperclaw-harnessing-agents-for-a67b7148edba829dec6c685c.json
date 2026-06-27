@@ -1,0 +1,21 @@
+{
+  "name": "Weiwei Ye",
+  "role": "first_author",
+  "affiliation": "",
+  "citation_hints": "Semantic Scholar citation_count=321; Semantic Scholar paper_count=11",
+  "confidence": "medium",
+  "evidence_source": "semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "PaperClaw: Harnessing Agents for Autonomous Research and Human-in-the-Loop Refinement",
+    "paper_year": "2026",
+    "name": "Weiwei Ye",
+    "affiliations": [],
+    "paper_count": 11,
+    "citation_count": 321,
+    "author_id": "2052980250",
+    "lookup": "author_search"
+  }
+}

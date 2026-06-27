@@ -1,0 +1,16 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "The sole focus author, Mostapha Benhenda, has no affiliation listed and no citation evidence. The evidence source is 'metadata lookup unavailable.' With no verifiable institutional affiliation or citation data, a neutral low score in the 0-5 band is appropriate with low confidence.",
+  "author_profiles": [
+    {
+      "name": "Mostapha Benhenda",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:56:52.997597+00:00"
+}

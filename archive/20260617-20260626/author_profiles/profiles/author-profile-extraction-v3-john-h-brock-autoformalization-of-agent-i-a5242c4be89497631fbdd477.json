@@ -1,0 +1,18 @@
+{
+  "name": "John H. Brock",
+  "role": "last_author",
+  "affiliation": "Sondera",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "John H. Brock",
+    "affiliations": [
+      "Sondera"
+    ],
+    "author_row": "John H. Brock"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

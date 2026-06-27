@@ -1,0 +1,94 @@
+{
+  "version": 2,
+  "extractor": "pymupdf-images",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.23927v1/fig-001.webp",
+      "caption": "",
+      "page": 2,
+      "index": 1,
+      "width": 1934,
+      "height": 813
+    },
+    {
+      "url": "assets/figures/arxiv/2606.23927v1/fig-002.webp",
+      "caption": "",
+      "page": 4,
+      "index": 2,
+      "width": 1413,
+      "height": 1113
+    },
+    {
+      "url": "assets/figures/arxiv/2606.23927v1/fig-003.webp",
+      "caption": "",
+      "page": 8,
+      "index": 3,
+      "width": 965,
+      "height": 727
+    },
+    {
+      "url": "assets/figures/arxiv/2606.23927v1/fig-004.webp",
+      "caption": "",
+      "page": 8,
+      "index": 4,
+      "width": 643,
+      "height": 727
+    },
+    {
+      "url": "assets/figures/arxiv/2606.23927v1/fig-005.webp",
+      "caption": "",
+      "page": 8,
+      "index": 5,
+      "width": 1024,
+      "height": 727
+    },
+    {
+      "url": "assets/figures/arxiv/2606.23927v1/fig-006.webp",
+      "caption": "",
+      "page": 8,
+      "index": 6,
+      "width": 1759,
+      "height": 951
+    },
+    {
+      "url": "assets/figures/arxiv/2606.23927v1/fig-007.webp",
+      "caption": "",
+      "page": 37,
+      "index": 7,
+      "width": 5337,
+      "height": 3115
+    },
+    {
+      "url": "assets/figures/arxiv/2606.23927v1/fig-008.webp",
+      "caption": "",
+      "page": 38,
+      "index": 8,
+      "width": 3563,
+      "height": 2375
+    },
+    {
+      "url": "assets/figures/arxiv/2606.23927v1/fig-009.webp",
+      "caption": "",
+      "page": 38,
+      "index": 9,
+      "width": 6577,
+      "height": 2178
+    },
+    {
+      "url": "assets/figures/arxiv/2606.23927v1/fig-010.webp",
+      "caption": "",
+      "page": 39,
+      "index": 10,
+      "width": 3634,
+      "height": 2434
+    },
+    {
+      "url": "assets/figures/arxiv/2606.23927v1/fig-011.webp",
+      "caption": "",
+      "page": 39,
+      "index": 11,
+      "width": 3634,
+      "height": 2434
+    }
+  ]
+}

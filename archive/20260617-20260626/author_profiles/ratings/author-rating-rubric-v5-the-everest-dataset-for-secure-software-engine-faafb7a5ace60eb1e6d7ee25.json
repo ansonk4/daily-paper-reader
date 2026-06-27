@@ -1,0 +1,24 @@
+{
+  "author_score": 5.5,
+  "author_rating_explanation": "The last author is affiliated with the Karlsruhe Institute of Technology, a recognized German technical university with AI/CS research output. The first author has no verified affiliation. The verified KIT affiliation places this in the 5-6 mid-tier range.",
+  "author_profiles": [
+    {
+      "name": "Sophie Corallo",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Anne Koziolek",
+      "role": "last_author",
+      "affiliation": "Karlsruhe Institute of Technology",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:58:39.090831+00:00"
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 7.0,
+  "author_rating_explanation": "First author Xinyue Yang is affiliated with the University of Chinese Academy of Sciences and the Institute of Software, Chinese Academy of Sciences. Last author Yanjun Wu is affiliated with the Institute of Software, Chinese Academy of Sciences. CAS is explicitly listed in the 6-8 top Chinese/Hong Kong AI schools/labs band.",
+  "author_profiles": [
+    {
+      "name": "Xinyue Yang",
+      "role": "first_author",
+      "affiliation": "University of Chinese Academy of Sciences, Nanjing, China; Institute of Software, Chinese Academy of Sciences, Beijing, China",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Yanjun Wu",
+      "role": "last_author",
+      "affiliation": "Institute of Software, Chinese Academy of Sciences, Beijing, China",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:05:04.131913+00:00"
+}

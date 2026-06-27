@@ -1,0 +1,24 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "Focus authors Adam Mondl and John H. Brock are affiliated with Sondera, which is not a widely recognized institution/company in the top or mid-tier bands and lacks visible third-party-verifiable research evidence. This places them in the 0-5 band.",
+  "author_profiles": [
+    {
+      "name": "Adam Mondl",
+      "role": "first_author",
+      "affiliation": "Sondera",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "John H. Brock",
+      "role": "last_author",
+      "affiliation": "Sondera",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:03:25.187050+00:00"
+}

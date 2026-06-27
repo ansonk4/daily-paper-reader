@@ -1,0 +1,18 @@
+{
+  "name": "Ying Li",
+  "role": "first_author",
+  "affiliation": "University of California, Los Angeles University of California, San Diego\\\\[-0.2ex] University of California, Santa Barbara Riema Labs",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Ying Li",
+    "affiliations": [
+      "University of California, Los Angeles University of California, San Diego\\\\[-0.2ex] University of California, Santa Barbara Riema Labs"
+    ],
+    "author_row": "Ying Li"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

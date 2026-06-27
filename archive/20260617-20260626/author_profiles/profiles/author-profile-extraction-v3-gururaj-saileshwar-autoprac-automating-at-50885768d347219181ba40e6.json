@@ -1,0 +1,18 @@
+{
+  "name": "Gururaj Saileshwar",
+  "role": "last_author",
+  "affiliation": "University of Toronto",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Gururaj Saileshwar",
+    "affiliations": [
+      "University of Toronto"
+    ],
+    "author_row": "Joyce Qu Gururaj Saileshwar"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

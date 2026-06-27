@@ -1,0 +1,16 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "First author Hiroki Tamba is affiliated with Tamba Research Academy, which is not a widely recognized institution in any top or mid-tier band, and only an ORCID identifier is provided. This falls into the 0-5 bucket for weakly verifiable or unknown affiliations.",
+  "author_profiles": [
+    {
+      "name": "Hiroki Tamba",
+      "role": "first_author",
+      "affiliation": "Tamba Research Academy; ORCID: 0009-0004-7635-0741",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:57:33.292793+00:00"
+}

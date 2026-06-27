@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "First author Aniket Wattamwar's affiliation field contains only a person's name (Mrunal Kakirwar), not a verifiable institution. Last author Mrunal Kakirwar has no affiliation metadata. The evidence source is 'metadata lookup unavailable' for the last author, so a neutral score is assigned with low confidence.",
+  "author_profiles": [
+    {
+      "name": "Aniket Wattamwar",
+      "role": "first_author",
+      "affiliation": "Mrunal Kakirwar",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Mrunal Kakirwar",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:05:04.133742+00:00"
+}

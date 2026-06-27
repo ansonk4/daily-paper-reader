@@ -1,0 +1,24 @@
+{
+  "author_score": 6.0,
+  "author_rating_explanation": "The first author is affiliated with Pfizer (United States), a major US company but not a top AI/tech company in the defined bands. The last author lists Fitbit (United States), also a recognized company but not in the top AI company band. Neither affiliation qualifies for 9-10, and neither is an academic institution in the top or mid-tier bands. However, both are well-known US corporations with verifiable research output, placing this at the lower end of 6-8 is inappropriate; it fits 5-6 as mid-tier verifiable organizations.",
+  "author_profiles": [
+    {
+      "name": "Hannah Le",
+      "role": "first_author",
+      "affiliation": "Pfizer (United States)",
+      "citation_hints": "OpenAlex cited_by_count=329; OpenAlex works_count=38",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    },
+    {
+      "name": "Kenny Workman",
+      "role": "last_author",
+      "affiliation": "Fitbit (United States)",
+      "citation_hints": "OpenAlex cited_by_count=3; OpenAlex works_count=12",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:54:15.610057+00:00"
+}

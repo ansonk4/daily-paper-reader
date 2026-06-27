@@ -1,0 +1,28 @@
+{
+  "name": "Tasneem Suha",
+  "role": "first_author",
+  "affiliation": "Department of Electrical & Computer Engineering, University of Maine, Orono, ME, USA",
+  "citation_hints": "OpenAlex cited_by_count=10; OpenAlex works_count=8",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Tasneem Suha",
+    "affiliations": [
+      "Department of Electrical & Computer Engineering, University of Maine, Orono, ME, USA"
+    ],
+    "author_row": "Tasneem Suha"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "DISARM: Target Electronic Device Informed Mitigation of Software Runtime Side-Channel Vulnerabilities",
+    "paper_year": "2026",
+    "name": "Tasneem Suha",
+    "affiliations": [],
+    "works_count": 8,
+    "cited_by_count": 10,
+    "author_id": "https://openalex.org/A5092921393",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

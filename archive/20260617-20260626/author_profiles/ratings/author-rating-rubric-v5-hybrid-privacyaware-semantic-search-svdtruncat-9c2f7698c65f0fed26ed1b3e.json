@@ -1,0 +1,16 @@
+{
+  "author_score": 5.0,
+  "author_rating_explanation": "The first author is affiliated with the Moscow Institute of Physics and Technology, which is not included in the top-tier or mid-tier bands specified. It falls outside the listed top European/Chinese/Hong Kong schools and mid-tier US research universities, so it is placed in the 0-5 bucket.",
+  "author_profiles": [
+    {
+      "name": "Sergey Kurilenko",
+      "role": "first_author",
+      "affiliation": "Moscow Institute of Physics and Technology",
+      "citation_hints": "Semantic Scholar citation_count=31; Semantic Scholar paper_count=8",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:58:39.089832+00:00"
+}

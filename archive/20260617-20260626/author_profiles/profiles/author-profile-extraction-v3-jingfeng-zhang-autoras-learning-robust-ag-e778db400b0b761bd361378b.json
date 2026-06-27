@@ -1,0 +1,27 @@
+{
+  "name": "Jingfeng Zhang",
+  "role": "last_author",
+  "affiliation": "China Telecom",
+  "citation_hints": "Semantic Scholar citation_count=782; Semantic Scholar paper_count=8",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Jingfeng Zhang",
+    "affiliations": [
+      "China Telecom"
+    ],
+    "author_row": "Ji Zhang"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "RAPTOR Plus : Implementing a Robust Systems Architecture foSocial Hierarchical Learning",
+    "paper_year": 2012,
+    "name": "Thaddeus Diamond",
+    "affiliations": [],
+    "paper_count": 8,
+    "citation_count": 782,
+    "author_id": "34489526"
+  }
+}

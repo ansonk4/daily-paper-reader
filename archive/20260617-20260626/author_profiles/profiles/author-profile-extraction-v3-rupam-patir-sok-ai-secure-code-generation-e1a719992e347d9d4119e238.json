@@ -1,0 +1,24 @@
+{
+  "name": "Rupam Patir",
+  "role": "first_author",
+  "affiliation": "Dongguk University; Department of Industrial and Systems Engineering, Dongguk University, Seoul, South Korea",
+  "citation_hints": "OpenAlex cited_by_count=1; OpenAlex works_count=2",
+  "confidence": "medium",
+  "evidence_source": "openalex",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "SoK: AI Secure Code Generation: Progress, Pitfalls, and Paths Forward",
+    "paper_year": "2026",
+    "name": "Rupam Patir",
+    "affiliations": [
+      "Dongguk University",
+      "Department of Industrial and Systems Engineering, Dongguk University, Seoul, South Korea"
+    ],
+    "works_count": 2,
+    "cited_by_count": 1,
+    "author_id": "https://openalex.org/A5119401380",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

@@ -1,0 +1,31 @@
+{
+  "name": "Wenli Xiao",
+  "role": "first_author",
+  "affiliation": "Jimmy Wu; Cunxi Dai; Carnegie Mellon University",
+  "citation_hints": "OpenAlex cited_by_count=337; OpenAlex works_count=23",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Wenli Xiao",
+    "affiliations": [
+      "Jimmy Wu",
+      "Cunxi Dai"
+    ],
+    "author_row": "Wenli Xiao"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "ENPIRE: Agentic Robot Policy Self-Improvement in the Real World",
+    "paper_year": "2026",
+    "name": "Wenli Xiao",
+    "affiliations": [
+      "Carnegie Mellon University"
+    ],
+    "works_count": 23,
+    "cited_by_count": 337,
+    "author_id": "https://openalex.org/A5101341250",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

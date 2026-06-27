@@ -5830,6 +5830,42 @@ article.markdown-section {
   overflow-wrap: anywhere;
 }
 
+.paper-author-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.paper-author-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(52, 152, 219, 0.09);
+  border: 1px solid rgba(52, 152, 219, 0.16);
+  color: #2c3e50;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.paper-author-metric-label {
+  color: #6b7c8f;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.markdown-section .paper-author-metric {
+  color: #2c3e50 !important;
+}
+
+.markdown-section .paper-author-metric-label {
+  color: #6b7c8f !important;
+}
+
 .paper-meta-link-row {
   display: flex;
   flex-wrap: wrap;

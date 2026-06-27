@@ -1,0 +1,28 @@
+{
+  "name": "Haon Park",
+  "role": "last_author",
+  "affiliation": "AIM Intelligence",
+  "citation_hints": "OpenAlex cited_by_count=2; OpenAlex works_count=12",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Haon Park",
+    "affiliations": [
+      "AIM Intelligence"
+    ],
+    "author_row": "Haon Park"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "LLM agent safety, multi-turn red-teaming, jailbreak benchmarks, adversarial robustness, safety-critical systems",
+    "paper_year": "2026",
+    "name": "Haon Park",
+    "affiliations": [],
+    "works_count": 12,
+    "cited_by_count": 2,
+    "author_id": "https://openalex.org/A5104956003",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "The affiliation for both authors is listed as 'document', which is not a verifiable institution. Without concrete affiliation metadata, a neutral score in the 0-5 band is assigned.",
+  "author_profiles": [
+    {
+      "name": "Marta Sumyk",
+      "role": "first_author",
+      "affiliation": "document",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Oleksandr Kosovan",
+      "role": "last_author",
+      "affiliation": "document",
+      "citation_hints": "Semantic Scholar citation_count=6; Semantic Scholar paper_count=6",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:59:20.444439+00:00"
+}

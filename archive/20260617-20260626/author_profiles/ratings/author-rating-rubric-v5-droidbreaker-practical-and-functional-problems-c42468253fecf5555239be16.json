@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "First author Christian Scano is affiliated with the University of Cagliari, which is not listed in the top or mid-tier bands. Last author Battista Biggio has no verifiable affiliation in the metadata. The available evidence places this in the 0-5 bucket.",
+  "author_profiles": [
+    {
+      "name": "Christian Scano",
+      "role": "first_author",
+      "affiliation": "University of Cagliari",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Battista Biggio",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:04:13.330704+00:00"
+}

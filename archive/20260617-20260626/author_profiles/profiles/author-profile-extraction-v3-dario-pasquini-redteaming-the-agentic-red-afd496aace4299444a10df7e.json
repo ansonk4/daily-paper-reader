@@ -1,0 +1,35 @@
+{
+  "name": "Dario Pasquini",
+  "role": "first_author",
+  "affiliation": "Cracken; Michał Bazyli; New York University; George Mason University",
+  "citation_hints": "OpenAlex cited_by_count=297; OpenAlex works_count=27",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Dario Pasquini",
+    "affiliations": [
+      "Cracken",
+      "Michał Bazyli"
+    ],
+    "author_row": "Dario Pasquini"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Red-Teaming the Agentic Red-Team",
+    "paper_year": "2026",
+    "name": "Dario Pasquini",
+    "affiliations": [
+      "New York University",
+      "New York University",
+      "George Mason University",
+      "Spring Techno (Germany)",
+      "École Polytechnique Fédérale de Lausanne"
+    ],
+    "works_count": 27,
+    "cited_by_count": 297,
+    "author_id": "https://openalex.org/A5010805376",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

@@ -1,0 +1,642 @@
+Title: NOVA: A Verification-Aware Agent Harness for Architecture Evolution in Industrial Recommender Systems
+
+URL Source: https://arxiv.org/pdf/2606.27243v1
+
+Published Time: Fri, 26 Jun 2026 01:25:47 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# NOVA: A Verification-Aware Agent Harness for Architecture Evolution in Industrial Recommender Systems 
+
+# Shaohua Liu ∗, Liang Fang ∗, Yilong Sun ∗, Shudong Huang ∗† , Qingsong Luo, Shaoxin Liu, Xiaoyang Chen, Dongqiang Liu, Chuangang Ma, Zhenzhen Chai, Henghuan Wang, Shijie Quan, Changyuan Cui, Zhangbin Zhu, Peng Chen, Wei Xu, Lei Xiao, Haijie Gu, Jie Jiang Tencent Inc. 
+
+# {jimmyshliu,franklfang,elonsun,ericdhuang,qsongluo,orionsxliu,noreenchen, dongcialiu,chuangangma,njzzchai,asherwang,justinquan,shoncui,defyzhu, pengchen,davidxu,shawnxiao,jerrickgu,zeus}@tencent.com 
+
+## Abstract 
+
+Industrial advertising recommender models are continuously im-proved through architecture evolution . Upgrades such as RankMixer, TokenMixer-Large, and MixFormer show that better structures re-main a key source of quality and business gains. Yet developing such upgrades in production is expert-intensive and difficult to scale. Existing automation is insufficient: AutoML mainly tunes hyper-parameters, while effective gains often require cross-module changes under strict constraints; generic LLM coding agents opti-mize for runnable code, but runnable code does not imply a valid 
+
+recommender architecture. Candidates may pass local tests while causing silent failures that degrade performance. We present NOVA , a level-aware agent harness for verification-aware architecture evolution. NOVA uses an architecture gradient ,an SGD-inspired, non-differentiable update signal that aggregates prior modifications, verification diagnostics, metric feedback, and trajectory memory to guide the next modification. A verification cascade checks structure semantics, local executability, offline ef-fectiveness, and online impact; invalid candidates are blocked early, with failure patterns recorded as forbidden directions. L1–L4 task-level control matches automation to task complexity and risk, rout-ing high-risk tasks to Copilot for human oversight. Deployed in an industrial advertising system, NOVA achieves the highest effec-tive pass rate on L2 ScaleUp and L3 Literature-to-Production tasks (54 .5% and 60 .0% ), reduces silent failures compared with coding-agent baselines, and shortens one literature-to-production cycle by over 13 × in human-attended time. In online A/B testing, the selected L3 candidate improves GMV on three pCVR objectives by 
+
++1.25% , +1.70% , and +2.02% , while reducing pCVR bias by 58 .8% ,
+
+66 .7% , and 37 .3% .
+
+## CCS Concepts 
+
+• Information systems → Recommender systems .
+
+## Keywords 
+
+Recommender systems, architecture evolution, multi-agent systems, model verification, industrial advertising 
+
+> ∗Equal contribution.
+> †Corresponding author.
+
+## 1 Introduction 
+
+The evolution of large-scale recommendation models has largely been a history of architectural innovation: from early feature-crossing and shallow models such as LR, FM and FFM [ 10 , 13 , 18 ], to deep architectures with explicit memory and cross networks such as Wide & Deep, DeepFM, and DCN [ 4, 6, 22 ], to user-behavior sequence modeling such as DIN, DIEN, and SIM [ 15 , 29 , 30 ], and more recently to ranking backbones that introduce Transformer-attention mechanisms and tokenized interactions, such as RankMixer, TokenMixer-Large, and MixFormer-style interaction models [ 7–9 , 28 , 31 ]. Across this trajectory, a clear pattern emerges: as simple feature-engineering improvements become harder to obtain, fur-ther gains in recommendation quality and business impact increas-ingly depend on more expressive backbones and richer interaction mechanisms. This makes architecture evolution a natural target for automation in industrial recommender development. Despite its critical importance, architectural evolution in produc-tion still faces numerous challenges, ranging from combinatorial parameter tuning under capacity budgets to research-paper repro-duction. Each demands expert intuition to navigate vast or even unbounded search spaces, careful assessment of structural compat-ibility, and validation through extensive offline-to-online pipelines. The process remains difficult to scale due to its operational com-plexity in industrial production environments and heavy reliance on expert judgment. Existing AutoML and generic coding-agent approaches only au-tomate fragments of this workflow. AutoML methods [ 1, 5, 12 , 20 ]mainly optimize local variables such as learning rate, hidden size, embedding dimension, or layer depth. However, effective model improvements often require cross-module topology changes. For example, a model update may upgrade target attention into joint Seq-Token and Non-Seq-Token modeling, redesign the logit-fusion path, or replace a standard residual connection with an Attention-Res module [ 19 ]. Such changes must further preserve input-output shape compatibility, dtype consistency, feature dependencies, train-ing stability, and online inference compatibility across the produc-tion pipeline. LLMs have greatly improved generic coding agents, enabling them to generate and modify code according to user intent. Their success, however, is usually measured by software-level signals such as compilation success and unit-test passing [ 23 , 25 ]. In industrial recommender systems, an implementation may run without errors while still violating architecture semantics, for example by incor-rectly removing sequence masking, degenerating self-attention into 
+
+> 1
+> arXiv:2606.27243v1 [cs.IR] 25 Jun 2026
+
+a simple MLP, or altering the logit-fusion path. Such runnable-but-negative candidates can degrade offline and online recommendation performance, including AUC, calibration, and business metrics; we refer to them as silent failures .Recent self-evolving recommender systems [ 21 ] have shown that LLM agents can participate in production model optimization by proposing model changes and validating them through offline and online feedback. NOVA builds on this direction, but focuses on auditable architecture-level modifications rather than general model-change proposals. To make these modifications effective under production constraints, NOVA introduces two key mecha-nisms. First, it organizes architecture evolution as a feedback-driven search: previous modifications, metric changes, verification diag-nostics, and trajectory memory are aggregated into an architecture gradient that guides the next modification direction. Second, it addresses silent failures by checking architecture semantics be-fore expensive training and feeding diagnostics back as reusable forbidden directions. As a result, verification not only rejects the current invalid candidate, but also shapes later search by discourag-ing similar failure patterns. Figure 1 illustrates how NOVA connects architecture generation, verification, evaluation, and feedback into a production agent harness. In summary, this paper makes three contributions: 
+
+• Architecture-gradient-guided evolution. We present NOVA, a level-aware agent harness for verification-aware architecture generation in industrial recommender systems. NOVA introduces the architecture gradient , an SGD-inspired, non-differentiable update signal that converts prior modifications, verification out-comes, metric feedback, and trajectory memory into the next modification direction. Combined with L1–L4 task levels and Au-toRun/Copilot control, the architecture gradient enables NOVA to progressively generate higher-quality architecture candidates while keeping the evolution process auditable and risk-aware in production. 
+
+• Silent-failure-aware verification. We introduce a multi-stage verification cascade that catches runnable but structurally invalid candidates before costly training or online trials. Its diagnostics are converted into reusable forbidden directions, making verifi-cation part of the search signal rather than a post-hoc filter. 
+
+• Production deployment. We deploy NOVA in a large-scale industrial advertising system serving over one billion users and evaluate it against human expert loops, AutoML, and generic coding-agent baselines. On the L3 Literature-to-Production task, NOVA achieves 86 .7% LPR and 60 .0% EPR, substantially outper-forming coding-agent baselines and more than doubling the EPR of the human expert loop. It also shortens one Literature-to-Production cycle by over 13 × in human-attended time. Online A/B testing further shows that the selected candidate delivers positive business impact in live traffic, improving GMV across the top three pCVR objectives while reducing prediction bias. 
+
+## 2 Related Work 
+
+Related work around NOVA spans four lines: self-evolving and agent-optimized recommender systems, LLM-feedback-based op-timization methods, AutoML/NAS/HPO, and coding agents. We begin with the closest agentic recommender systems, followed by broader methods that motivate NOVA’s design. 
+
+Self-evolving recommender systems. Recent agentic recommender systems show that LLM agents can participate in production model optimization. YouTube’s Self-Evolving Recommendation System [21 ]uses offline and online agents to generate, evaluate, and deploy model-improvement proposals. AgenticRecTune [ 24 ] and Meta’s Ranking Engineer Agent (REA) [ 11 ] further demonstrate the value of agent-assisted configuration tuning and ads-ranking experimen-tation. NOVA builds on this line of work with a focus on auditable architecture-level modifications, including changes to model struc-ture, feature configuration, and interaction modules under produc-tion constraints. The main distinction is how verification is used: NOVA performs architecture-semantic checks before training and feeds the resulting diagnostics into the architecture gradient as forbidden directions. This allows later iterations to avoid repeated structural failure patterns and reduces runnable-but-negative can-didates during architecture evolution. 
+
+LLM feedback as gradient. ProTeGi [ 16 ] and TextGrad [ 27 ] use LLM-written feedback as a textual gradient for improving prompts, code, and other artifacts. NOVA adopts the high-level idea of feedback-driven updates, but applies it to constrained production architecture evolution. In this setting, the update signal must refer to concrete architecture modifications and aggregate multiple sources: the pre-vious modification, verification diagnostics, metric changes, and trajectory memory. Therefore, NOVA’s architecture gradient is not a standalone textual suggestion, but a structured signal for select-ing the next feasible modification. We include a feedback-ablated variant in Section 5 to isolate the value of feeding diagnostics and historical outcomes into the next search direction. 
+
+AutoML, NAS, and HPO. Traditional AutoML, neural architec-ture search, and hyper-parameter optimization search over hyper-parameters or restricted operator spaces [ 1 , 5 , 12 , 14 , 17 , 20 ]. They are effective for local, well-defined choices, but industrial recom-mender architecture evolution often requires cross-module topol-ogy changes under strict production constraints. NOVA therefore uses modifications to model structure, feature configuration, and interaction modules as the search unit rather than only hyperpa-rameters or pre-defined operators. 
+
+Coding agents. General-purpose coding agents such as SWE-agent and OpenHands [ 23 , 25 ] optimize for software-level cor-rectness, such as compilation success, unit-test passing, and task completion. They are useful for code generation and repair, but they do not verify whether a runnable implementation preserves recommender-specific architectural semantics. NOVA targets this gap by adding architecture-semantic verification and feeding its diagnostics back into the search process. 
+
+## 3 Problem Formulation 
+
+NOVA studies automated architecture evolution for production rec-ommender systems. Given an existing production model, the goal is to iteratively propose, verify, and evaluate feasible architecture modifications that improve recommendation quality and business metrics under production constraints. These modifications form the 
+
+> 2
+
+Table 1: Examples of architecture and feature modifications.       
+
+> Modification type Typical modification Structural hyper-parameters Adjust token dimension, token count, layer count, and their combinations. Feature addition/removal Add new features; remove redundant or biased features; adjust feature grouping. Sequence-modeling upgrade Upgrade target attention to sequence/non-sequence token interaction or MixFormer-style interaction. Module/operator replacement Replace residual modules with AttentionRes; inject a mixer or cross-attention block. Architecture transfer Adapt TokenMixer-Large, MixFormer, or other paper-derived modules to the production model.
+
+search units of NOVA and cover model topology, feature routing, interaction modules, and structural hyper-parameters. 
+
+Architecture state and feasible modification space. NOVA repre-sents each candidate architecture as 𝐴 𝑡 = (𝐺 𝑡 , 𝜙 𝑡 , 𝐹 𝑡 ), where 𝐺 𝑡 
+
+is the model graph, 𝜙 𝑡 contains structural hyper-parameters, and 
+
+𝐹 𝑡 contains feature configuration. The initial state 𝐴 0 is derived from the production codebase 𝐶 , while paper sources 𝑃 and a static knowledge base 𝐾𝐵 provide architecture priors and historical ev-idence about effective or ineffective modification directions. The search is evaluated on data 𝐷 and bounded by a budget 𝐵 over rounds, LLM tokens, GPU hours, and wall-clock time. We include 
+
+𝐹 𝑡 in the architecture state because industrial recommender im-provements often require coordinated changes to features, model structure, and feature–structure interactions. Each iteration applies a modification 𝑒 𝑡 ∈ E to transform the current architecture into a new candidate: 
+
+𝐴 𝑡 +1 = Apply (𝐴 𝑡 , 𝑒 𝑡 ). (1) Representative modifications are listed in Table 1. A candidate is feasible only if it satisfies the hard production constraints: 
+
+AΩ = {𝐴 | 𝐴 satisfies Ω}, (2) where Ω includes interface compatibility, tensor shape consistency, dtype consistency, feature availability, training-framework compat-ibility, serving compatibility, latency limits, and parameter/FLOPs budgets. 
+
+Offline and online evaluation objectives. NOVA ranks feasible can-didates in the offline inner loop using AUC as the pre-deployment evaluation metric: 
+
+max  
+
+> 𝐴
+
+𝐽 offline (𝐴 ) = AUC (𝐴 )
+
+s.t. 𝐴 ∈ A Ω . (3) After the offline search stops, NOVA selects the best feasible offline candidate and validates it with online business metrics: 
+
+𝐽 online (𝐴 ) =∑︁ 
+
+> 𝑖
+
+𝑤 𝑖 · 𝑚 𝑖 (𝐴 ), 𝑚 𝑖 ∈ { GMV , Bias }, (4) where 𝑤 𝑖 denotes business weights, and lower-is-better metrics such as Bias are assigned negative weights. 
+
+Optimizing architectures with architecture gradients. Because the architecture state 𝐴 𝑡 = (𝐺 𝑡 , 𝜙 𝑡 , 𝐹 𝑡 ) is discrete and constrained, standard gradients with respect to 𝐴 𝑡 are unavailable. NOVA in-stead uses an architecture gradient as a structured update signal in the architecture-modification space. Table 2 summarizes this 
+
+Table 2: SGD-inspired view of NOVA’s architecture-modification update.                                            
+
+> Standard SGD NOVA architecture modification Optimized variable 𝜃 Architecture state 𝐴 =(𝐺, 𝜙, 𝐹 )
+> Feasible domain Production-constrained architecture space AΩ
+> Objective feedback Metric change Δ𝐽 from offline evaluation and online valida-tion Update direction −∇ 𝐿 (𝜃 𝑡 )Architecture gradient 𝑔 𝑡 =Grad (𝑒 𝑡 −1, 𝑉 𝑡 ,Δ𝐽 𝑡 , 𝐻 𝑡 )
+> Update operation 𝜃 𝑡 +1=𝜃 𝑡 −
+> 𝜂 ∇𝐿 (𝜃 𝑡 )
+> 𝐴 𝑡 +1=Apply (𝐴 𝑡 , 𝑒 ∗)
+> Momentum / history Trajectory memory 𝐻 of successful and failed modifications Noise rejection Semantic verification 𝑉 and forbidden directions Stopping criterion Offline improvement threshold or budget exhaustion
+
+SGD-inspired update rule; the comparison is only an analogy and does not imply mathematical gradients. At iteration 𝑡 , NOVA computes the architecture gradient as 
+
+𝑔 𝑡 = Grad (𝑒 𝑡 −1, 𝑉 𝑡 , Δ𝐽 𝑡 , 𝐻 𝑡 ), (5) where 𝑒 𝑡 −1 is the previous architecture modification, 𝑉 𝑡 denotes verification diagnostics, Δ𝐽 𝑡 is the observed change in the offline ob-jective, and 𝐻 𝑡 is the historical trajectory of modifications, failures, diagnostics, and metric feedback. The architecture gradient 𝑔 𝑡 specifies three types of update in-formation: 
+
+• Weak components : which parts of 𝐺 𝑡 /𝜙 𝑡 /𝐹 𝑡 are likely respon-sible for the current bottleneck; 
+
+• Modification directions : which candidate modification direc-tions should be explored next; 
+
+• Forbidden directions : which previously failed, semantically invalid, or repeatedly negative modification patterns should be avoided. Given 𝑔 𝑡 , NOVA selects the next feasible architecture modifica-tion: 
+
+𝑒 ∗ 
+
+> 𝑡
+
+∈ arg max   
+
+> 𝑒 ∈ E
+
+Score (𝑒 ; 𝑔 𝑡 , 𝐻 𝑡 ) s.t. Apply (𝐴 𝑡 , 𝑒 ) ∈ A Ω . (6) The architecture is then updated as 
+
+𝐴 𝑡 +1 = Apply (𝐴 𝑡 , 𝑒 ∗ 
+
+> 𝑡
+
+). (7) Verification diagnostics are included in 𝑔 𝑡 : failed candidates are blocked before expensive training and recorded as forbidden direc-tions in 𝐻 𝑡 , while verified candidates contribute metric feedback 
+
+Δ𝐽 𝑡 . Thus, NOVA iteratively updates architectures by converting verification and metric feedback into the next architecture gradient. 
+
+Problem summary. Within budget 𝐵 , NOVA first selects the best feasible architecture discovered by the offline inner loop: 
+
+𝐴 ∗ 
+
+> off
+
+= arg max  
+
+> 𝐴 ∈ T 𝐵 ∩A Ω
+
+𝐽 offline (𝐴 ), (8) where T𝐵 denotes the set of architectures visited within budget 𝐵 .The selected candidate is then validated online using 𝐽 online (𝐴 ∗ 
+
+> off
+
+).Section 4 describes how NOVA operationalizes this formulation. 
+
+## 4 The NOVA Framework 
+
+Building on Section 3, this section describes how NOVA operational-izes architecture-gradient search in the harness. We first introduce the level-aware closed-loop workflow and initialization signals, 
+
+> 3
+
+Figure 1: Overview of the NOVA level-aware architecture-gradient workflow. The Main Agent fixes the task level and execution mode, coordinates seven specialized stages, and updates the architecture gradient from the previous modification, verification diagnostics, metric feedback, and trajectory memory. The offline inner loop explores candidate modifications, while the online outer loop validates the selected candidate with business metrics. Table 3: Capability levels and execution modes. The mode depends on skill-specification coverage, not directly on the level.             
+
+> Level Task type Typical task Mode L1 Atomic structural tuning Adjust a single architecture variable, such as RankMixer layer count or token dimension AutoRun L2 Constraint-aware ScaleUp Jointly scale coupled architecture variables, such as token count, token dimension, and RankMixer layers, under parameter/FLOPs budgets AutoRun L3 Literature-to-production transfer Adapt TokenMixer-Large, AttentionRes, MixFormer, OneTrans, or other paper-derived modules to production models AutoRun or Copilot L4 Open-ended innovation Propose new structures from trends, business needs, or historical evidence Copilot
+
+then present the architecture-gradient search algorithm, followed by the verification cascade and multi-agent implementation. 
+
+## 4.1 Overview: Level-Aware Architecture-Gradient Workflow 
+
+Figure 1 summarizes the NOVA harness. The top layer fixes task-level controls, including the complexity level (L1–L4) and execu-tion mode (AutoRun or Copilot). The middle layer executes the seven-stage workflow from Initialization to Online Experiment & Evaluation. The bottom layer records verification diagnostics and metric feedback, which are converted into the next architecture gradient for subsequent rounds. The level controls the modification scope, while the mode con-trols whether human confirmation is needed. The mode is deter-mined by skill-specification coverage rather than by the level alone: covered modifications run in AutoRun, whereas uncovered or high-risk decisions are routed to Copilot. Table 3 summarizes the assign-ment. 
+
+## 4.2 Initialization and Signal Sources 
+
+Before the iterative search begins, NOVA constructs the initial architecture state 𝐴 0 and gathers the initial signals used to compute the first architecture gradient. This initialization can be written as 
+
+𝑔 0 ← Grad (∅ , 𝑉 (𝐴 0), baseline metrics , 𝐻 0), (9) where ∅ indicates that no previous modification exists in the current run, 𝑉 (𝐴 0) denotes initial diagnostics of the production model, baseline metrics provide the reference performance, and 𝐻 0 is the trajectory memory initialized for the current run. Initialization uses three signal sources. First, production code analysis parses the codebase 𝐶 to obtain 𝐴 0 = (𝐺 0, 𝜙 0, 𝐹 0) and the feasible modification boundary. Second, source-document analysis extracts architecture priors from paper sources 𝑃 and converts them into production-adaptable modification directions. Third, knowl-edge loading retrieves historical evidence from the static knowledge base 𝐾𝐵 about effective and ineffective directions. Unlike 𝐾𝐵 , the trajectory memory 𝐻 is updated during the current run with modi-fications, diagnostics, failures, and metric feedback. 
+
+> 4
+
+Algorithm 1 NOVA Architecture-Gradient Evolution Loop   
+
+> Input: Initial architecture
+
+𝐴 0, modification space 𝐸 , constraint set Ω, offline budget 𝑁 , candidate count 𝐾 , 𝐽 offline , 𝐽 online  
+
+> Output:
+
+𝐴 ∗: the best feasible architecture found along the search trajectory 
+
+1: 𝐴 𝑡 ← 𝐴 0; 𝐻 ← ∅ ; 𝑡 ← 0
+
+> // Task-level routing, fixed at task entry.
+
+2: 𝑙𝑒𝑣𝑒𝑙 ← ComplexityTier (𝑡𝑎𝑠𝑘 ) ⊲ L1–L4 
+
+3: if BeyondSkillCoverage (𝑡𝑎𝑠𝑘 ) then 
+
+4: 𝑚 ← Copilot ⊲ human judgment 
+
+5: else 
+
+6: 𝑚 ← AutoRun ⊲ semantic gate checks automatically 
+
+7: end if 
+
+8: 𝑔 0 ← Grad (∅ , 𝑉 (𝐴 0 ), baseline metrics , 𝐻 )
+
+9: while ¬Converged (𝐴 𝑡 ) and 𝑡 < 𝑁 do 
+
+> // 1. Propose candidate modifications along the gradient direction.
+
+10: 𝐶𝑎𝑛𝑑 ← Propose (𝐴 𝑡 , 𝑔 𝑡 , 𝐻 ) ⊲ |𝐶𝑎𝑛𝑑 | = 𝐾 
+
+11: 𝐶𝑎𝑛𝑑 ← FilterByConstraints (𝐶𝑎𝑛𝑑, Ω, 𝑔 𝑡 .forbidden )
+
+> // 2. Verification cascade: denoise feedback and intercept silent failures.
+
+12: 𝑠𝑢𝑟 𝑣𝑖𝑣𝑜𝑟𝑠 ← ∅ 
+
+13: for 𝑒 ∈ 𝐶𝑎𝑛𝑑 do 
+
+14: 𝑟 𝑠𝑒𝑚 ← 𝑉 𝑠𝑒𝑚 (Apply (𝐴 𝑡 , 𝑒 ) ) ⊲ shape, mask, mapping, fusion 
+
+15: if 𝑟 𝑠𝑒𝑚 .𝑓 𝑎𝑖𝑙 then 
+
+16: 𝐻 ← 𝐻 ∪ { ( 𝑒, 𝑟 𝑠𝑒𝑚 , ⊥) } ; continue 
+
+17: end if 
+
+18: 𝑟 𝑙𝑜𝑐 ← 𝑉 𝑙𝑜𝑐𝑎𝑙 (Apply (𝐴 𝑡 , 𝑒 ) ) ⊲ local executability 
+
+19: if 𝑟 𝑙𝑜𝑐 .𝑓 𝑎𝑖𝑙 then 
+
+20: 𝐻 ← 𝐻 ∪ { ( 𝑒, 𝑟 𝑙𝑜𝑐 , ⊥) } ; continue 
+
+21: end if 
+
+22: 𝑠𝑢𝑟 𝑣𝑖𝑣𝑜𝑟𝑠 ← 𝑠𝑢𝑟 𝑣𝑖𝑣𝑜𝑟𝑠 ∪ { 𝑒 }
+
+23: end for 
+
+24: if 𝑠𝑢𝑟 𝑣𝑖𝑣𝑜𝑟𝑠 = ∅ then 
+
+25: 𝑔 𝑡 +1 ← Grad (failed modifications , diagnostics , Δ𝐽 𝑓 𝑎𝑖𝑙 , 𝐻 )
+
+26: 𝑡 ← 𝑡 + 1; continue 
+
+27: end if 
+
+> // 3. Apply the update; Copilot requires human confirmation.
+
+28: 𝑒 ∗ ← Select (𝑠𝑢𝑟 𝑣𝑖𝑣𝑜𝑟𝑠, 𝑔 𝑡 , 𝐻, Ω)
+
+29: if 𝑚 = Copilot then 
+
+30: 𝑒 ∗ ← HumanConfirm (𝑒 ∗ )
+
+31: end if 
+
+32: 𝐴 𝑡 +1 ← Apply (𝐴 𝑡 , 𝑒 ∗ )
+
+> // 4. Offline inner-loop evaluation.
+
+33: 𝐽 offline ← OfflineTrain (𝐴 𝑡 +1 ) ⊲ 𝐴𝑈 𝐶 
+
+34: Δ𝐽 ← 𝐽 offline (𝐴 𝑡 +1 ) − 𝐽 offline (𝐴 𝑡 )
+
+> // 5. Record feedback and construct the next architecture gradient.
+
+35: 𝐻 ← 𝐻 ∪ { ( 𝑒 ∗, 𝑉 (𝐴 𝑡 +1 ), Δ𝐽 ) } 
+
+36: 𝑔 𝑡 +1 ← Grad (𝑒 ∗, 𝑉 (𝐴 𝑡 +1 ), Δ𝐽 , 𝐻 )
+
+37: 𝑡 ← 𝑡 + 1
+
+38: end while 
+
+> // 6. Outer loop: validate the best offline candidate online.
+
+39: 𝐴 ∗ ← arg max 𝐴 ∈trajectory , 𝐴 feasible 𝐽 offline (𝐴 )
+
+40: (𝐺𝑀𝑉 , 𝐵𝑖𝑎𝑠 ) ← OnlineExp (𝐴 ∗ ) return 𝐴 ∗
+
+## 4.3 The Architecture-Gradient Search Algorithm 
+
+Section 3 defines the architecture gradient 𝑔 𝑡 = Grad (𝑒 𝑡 −1, 𝑉 𝑡 , Δ𝐽 𝑡 , 𝐻 𝑡 )
+
+and the update rule 𝐴 𝑡 +1 = Apply (𝐴 𝑡 , 𝑒 ∗
+
+𝑡 ). This subsection explains how NOVA executes this rule in the harness. At each round, NOVA proposes candidate modifications conditioned on 𝑔 𝑡 , filters infea-sible or forbidden candidates, verifies the remaining candidates before training, applies the selected modification, and updates the next architecture gradient from verification and metric feedback. 
+
+Algorithmic intuition. Algorithm 1 instantiates the update rule from Section 3: it proposes modifications along 𝑔 𝑡 , uses 𝑔 𝑡 .forbidden 
+
+to filter repeated failure patterns, verifies candidates before training, evaluates survivors offline, and writes feedback back to 𝐻 for the next gradient. Table 4 summarizes the key operations in Algorithm 1, including candidate generation, constraint filtering, pre-training verification, candidate selection, and stopping. 
+
+Table 4: Key operations in Algorithm 1.  
+
+> Symbol / operation Meaning
+
+Converged (𝐴 𝑡 ) Early stopping. Triggered by a predefined offline AUC im-provement threshold; otherwise, run until the budget 𝑁 .
+
+Propose (𝐴 𝑡 , 𝑔 𝑡 , 𝐻 ) Candidate generation. Produces up to 𝐾 modifications con-ditioned on the state, gradient, and history. 
+
+Apply (𝐴 𝑡 , 𝑒 ) Candidate construction. Applies 𝑒 to 𝐴 𝑡 for verification or update. 
+
+Select (·) Pre-training ranking. Ranks survivors by gradient align-ment, history, and constraint margin; the final effect is mea-sured by AUC. 
+
+Δ𝐽 𝑓 𝑎𝑖𝑙 Failure signal. Negative sentinel used when all candidates are rejected before training. 
+
+𝐽 offline Offline objective. Uses AUC to rank candidates in the inner loop. 
+
+𝐽 online Online objective. Uses GMV/Bias to validate the selected offline candidate. 
+
+FilterByConstraints Static filtering. Checks legality, framework availability, hard constraints, and forbidden hits without constructing the model. 
+
+𝑉 𝑠𝑒𝑚 Semantic verification. Constructs the candidate graph and checks tensor-level semantics. 
+
+Figure 2: Silent-failure-aware verification cascade. 𝐾 can-didate architecture modifications pass through structure-semantic checking, local executability testing, offline evalu-ation, and online validation. Failed candidates are recorded in trajectory memory 𝐻 and fed back as forbidden directions for the next architecture gradient 𝑔 𝑡 .
+
+## 4.4 Silent-Failure-Aware Multi-Stage Architecture Verification 
+
+NOVA uses silent failure to refer to architecture modifications that pass explicit engineering checks and can run or train, but fail to deliver the expected offline or online improvement. Such failures arise from two sources: architecture-semantic errors that can be detected before training, and structurally valid modifications that are ineffective for the business objective. As shown in Figure 2, NOVA addresses both cases with a progressive verification cascade: early stages perform lightweight semantic and executability checks to filter invalid candidates, while later stages apply offline and online evaluation to a smaller set of verified candidates. 
+
+• Structure-semantic gate. Checks modification logic, shape/d-type, feature-to-token mapping, attention direction, mask seman-tics, and logit fusion. It catches runnable but structurally wrong candidates before training. 
+
+• Local testing gate. Checks single-machine executability and blocks engineering failures before offline training. 
+
+• Offline inner loop. Uses AUC to evaluate verified candidates before deployment. 
+
+5• Online outer loop. Uses GMV/Bias for production validation. 
+
+Why the semantic gate helps before training. A candidate can be executable while still violating recommender-specific architec-ture semantics. For example, the training framework can execute a mask, branch connection, or feature fusion path as long as ten-sor shapes are compatible, but it cannot determine whether the masking direction, feature routing, or logit-fusion logic matches the intended architecture. Thus, compilation and local tests show that a graph can run, not that the architecture modification is semanti-cally valid. The semantic gate checks these constraints according to skill specifications, rather than relying only on executability. 
+
+Verification as gradient denoising. Verification diagnostics are fed back into the architecture gradient defined in Section 3. When a candidate is rejected, its failure pattern is stored in trajectory memory 𝐻 and used as a forbidden direction in later rounds. This feedback denoises the search by blocking false-positive directions before training and reducing repeated semantic failures. 
+
+Origin and generalization of skill specifications. The semantic gate is driven by skill specifications rather than standalone lint rules. These specifications combine historical seed rules, accumulated forbidden patterns, and LLM-assisted checks against the intended design and model context. For uncovered cases, the gate avoids overconfident rejection and leaves the candidate to offline and online evaluation. The mechanism remains fixed across tasks, while improvements to skill specifications in one task can be reused by later tasks with similar architectures or failure patterns. 
+
+Capability boundary. The semantic gate does not judge whether a semantically valid modification is effective for the business objec-tive; such performance-related failures are handled by offline and online evaluation. 
+
+## 4.5 System Implementation 
+
+NOVA is implemented as a Main Agent orchestrating specialized sub-agents. This execution layer is not a separate algorithmic con-tribution; it operationalizes the architecture-gradient search and verification cascade in production. 
+
+Stage dependencies. The sub-agents form a directed workflow: Initialization → Solution Design → Code Generation → Quality Assessment → Local Testing → Offline Training & Evaluation →
+
+Online Experiment & Evaluation. A downstream agent can consume outputs from multiple earlier stages. For example, Code Generation uses the structural hypothesis from Solution Design together with production context from Initialization; Quality Assessment and Local Testing verify the 𝐾 generated candidates; Offline Training & Evaluation returns metric feedback and diagnostics to the Main Agent, which updates 𝐻 and 𝑔 for the next round. 
+
+Exception handling. NOVA distinguishes three failure types: 
+
+• Temporary execution failures come from the environment rather than the candidate. NOVA retries the same step with a bounded retry budget and prevents such noise from polluting the architecture gradient. 
+
+• Candidate-level failures include structural-semantic violations and trainable candidates with negative offline feedback. NOVA records them in 𝐻 as forbidden or low-value directions and returns to Solution Design. 
+
+• Rule-uncovered or high-risk failures are routed to Copilot mode to avoid autonomous extrapolation beyond covered skill specifications. 
+
+Iteration budget and selection rule. The offline stage runs for at most 𝑁 rounds or until the stopping criterion is met. Each round reports offline AUC and updates 𝐻 and 𝑔 . After the offline search stops, the Main Agent selects the feasible candidate with the best offline AUC from the trajectory and sends it to online experimen-tation. This implements low-cost offline exploration followed by selective online validation. 
+
+## 5 Experiments 5.1 Research Questions 
+
+We evaluate NOVA around four research questions: 
+
+• RQ1: Effectiveness. Does NOVA find more AUC-positive ar-chitecture modifications than competitive baselines under the same budget? 
+
+• RQ2: Mechanism ablation. How do NOVA’s main components, including paper reproduction, solution design, multi-candidate generation, quality assessment, and architecture-gradient feed-back, contribute to its effective pass rate? 
+
+• RQ3: Production-code modification. How does NOVA actu-ally modify real production recommender code in a literature-to-production architecture transfer task? 
+
+• RQ4: Production validation. Do the offline-selected candidates improve online GMV/Bias in production A/B tests? 
+
+## 5.2 Experimental Settings 
+
+Tasks. We evaluate NOVA on two architecture-modification set-tings. L2 ScaleUp uses a production RankMixer-style [ 31 ] backbone and searches over coupled structural hyper-parameters, including 
+
+token_cnt , token_dim , and the number of RankMixer layers, while keeping the total model size within a ±10% range of the production baseline. L3 Literature-to-Production tests whether a method can transplant TokenMixer-Large [ 9] into the same production back-bone by modifying token interaction modules while preserving the feature pipeline, tensor shapes, training stability, and inference compatibility. 
+
+Dataset. Experiments are conducted on a large-scale industrial advertising recommendation dataset collected from production traffic. The training corpus spans one month and contains billion-scale user–item interaction records. Each record is associated with over one thousand feature fields, covering both sequential and non-sequential signals. Every candidate model produced by every method is trained from scratch on the same dataset. 
+
+Budget and protocol. All LLM-based methods are powered by the same base model, Claude Sonnet 4.6 [2 ] , so performance differences reflect the harness design rather than raw LLM capa-bility. All methods are evaluated under the same offline budget. For each method, we run 𝑁 task = 10 independent tasks, with at most 𝑁 iter = 10 iterations per task. In each iteration, a method may 
+
+> 6
+
+generate up to 𝐾 candidate modifications; candidates that pass the required gates are evaluated by offline AUC. The offline-selected architecture 𝐴 ∗ 
+
+> off
+
+is the best feasible candidate discovered within this budget. 
+
+Metrics. We report metrics from four perspectives. 
+
+Recommendation quality. Offline quality is measured by ΔAUC 
+
+relative to the production baseline. A candidate is considered AUC-positive if ΔAUC > 0.001 . Online quality is measured by ΔGMV 
+
+and ΔBias in production A/B tests. 
+
+Engineering validity. Local Pass Rate (LPR) measures the frac-tion of generated candidates that pass local executability checks: 
+
+LPR = 𝑁 𝑝 
+
+𝑁 𝑔 
+
+, (10) where 𝑁 𝑔 is the number of generated candidate modifications and 
+
+𝑁 𝑝 is the number that pass local testing. 
+
+Silent-failure rate. Silent Failure Rate (SFR) measures runnable but ineffective candidates: 
+
+SFR = 1 − 𝑁 +
+
+𝑁 𝑝 
+
+= 𝑁 𝑝 − 𝑁 +
+
+𝑁 𝑝 
+
+, (11) where 𝑁 + is the number of local-pass candidates that are AUC-positive. 
+
+Effective pass rate. Effective Pass Rate (EPR) measures the end-to-end success rate from generated candidate to positive offline result: 
+
+EPR = 𝑁 +
+
+𝑁 𝑔 
+
+= LPR · ( 1 − SFR ). (12) 
+
+## 5.3 Baselines 
+
+We compare NOVA with human, coding-agent, and AutoML base-lines under the same evaluation protocol. 
+
+• Human Expert Loop. Historical iteration logs of senior engi-neers on the same production model, including human-authored design, code modification, debugging, training, and analysis, re-played under our unified evaluation protocol. 
+
+• ReActAgent-only. A single LLM agent under the standard Re-Act [ 26 ] paradigm. It does not use NOVA’s skill specifications, multi-candidate generation, trajectory memory, semantic verifi-cation, or architecture-gradient feedback. This baseline isolates the value of NOVA’s harness beyond a vanilla reasoning-and-acting agent. 
+
+• OpenHands. A state-of-the-art open-source coding agent [ 23 ]that reads the repository, modifies files, and iterates against ex-ecution feedback. It optimizes for runnable code rather than recommender-specific architecture validity. 
+
+• Optuna-TPE. An AutoML baseline using Tree-structured Parzen Estimator search [ 3] with population-based asynchronous early stopping over a predefined switch space, including learning rate, hidden dimension, block number, dropout, token dimension, and token count. This baseline is applicable only to the L2 ScaleUp setting. 
+
+• NOVA. The full system with architecture-gradient feedback, semantic verification, trajectory memory, skill specifications, and level/mode control. 
+
+## 5.4 Main Results for RQ1 
+
+Table 5 compares NOVA with representative baselines on L2 ScaleUp and L3 Literature-to-Production tasks. Each method is evaluated under the same candidate-generation and offline-evaluation budget. 
+
+L2 ScaleUp. The L2 ScaleUp task is conducted on a production RankMixer-style backbone. Although it appears to be simple pa-rameter tuning, the target variables are structurally coupled; for example, token_cnt must be divisible by token_dim due to the tokenization and interaction design [31]. These constraints directly affect LPR. Human experts achieve high LPR, while AutoML, generic coding agents, and ReActAgent-only baselines often ignore such architectural couplings and pro-duce invalid configurations. NOVA avoids these failures through architecture-aware rules and verification feedback, and further im-proves SFR/EPR by using historical optimization knowledge to identify effective scaling directions. This shows that L2 ScaleUp requires architecture-aware constraint handling rather than blind parameter search. 
+
+L3 Literature-to-Production. L3 tasks require adapting paper-derived modules to an existing production backbone while preserv-ing feature routing, tensor shapes, training stability, and inference compatibility. Human experts can usually form semantically valid designs after understanding the paper, but translating the design into production code and passing local debugging often requires repeated trial and error, which lowers LPR. ReActAgent-only and OpenHands-style coding agents mainly optimize for runnable code, but do not reliably preserve production recommender semantics across such structural changes. NOVA achieves substantially higher LPR and EPR by translating the research architecture into production-compatible modification plans, generating executable implementations, and using verifi-cation feedback to correct incompatible directions across rounds. This shows that literature-to-production transfer requires both architecture-aware adaptation and reliable production-code real-ization, rather than runnable code generation alone. 
+
+## 5.5 Ablation Study for RQ2 
+
+To answer RQ2, we conduct component-level ablations on the L3 Literature-to-Production setting, where adapting a research archi-tecture to a production backbone is most challenging. Each variant removes one component from the full harness while keeping the task budget and evaluation protocol unchanged. Table 6 reports the results. 
+
+w/o Paper Reproduction. Removing structured paper analysis raises LPR to 91 .7% , but increases SFR to 63 .6% and reduces EPR to 33 .3% . This variant can still produce runnable code, but it lacks a structured understanding of the paper’s architectural intent. As a result, many candidates pass local checks but fail to produce positive offline gains. This suggests that shallow paper information is insufficient for reliable literature-to-production adaptation. 
+
+w/o Solution Design. Removing Solution Design leads to the worst result, with SFR increasing to 77 .8% and EPR dropping to 
+
+18 .2% . Without an explicit design step, the system jumps from paper information directly to implementation, without decomposing the 
+
+> 7
+
+Table 5: Main comparison on L2 ScaleUp and L3 Literature-to-Production tasks. LPR measures local pass rate, SFR measures runnable-but-negative candidates, and EPR measures end-to-end effective pass rate.                                            
+
+> Method L2 ScaleUp L3 Literature-to-Production LPR ↑SFR ↓EPR ↑LPR ↑SFR ↓EPR ↑
+> Human Expert Loop 95.5% 48.4% 49.3% 40.0% 22.2% 31.1% OpenHands 33.3% 80.0% 6.7% 27.3% 62.5% 10.2% ReActAgent-only 37.5% 66.7% 12.5% 25.0% 71.4% 7.1% Optuna-TPE 17.2% 72.7% 4.7% –––NOVA 99.0% 45.5% 54.5% 86.7% 30.8% 60.0%
+
+Table 6: Component-level ablation on the L3 task. Each variant disables one NOVA component while keeping the rest of the harness unchanged. Higher is better for LPR/EPR, lower is better for SFR.                              
+
+> Variant Removed component LPR ↑SFR ↓EPR ↑
+> NOVA (full) Full system 86 .7% 30 .8%60 .0%
+> w/o Paper Reproduction Removes structured analysis and reproduction artifacts for source materials; the agent only receives raw documents and a short task description
+> 91 .7%63 .6% 33 .3%
+> w/o Solution Design Removes the planning step that maps the analyzed paper architecture to concrete changes in the production model
+> 81 .8% 77 .8% 18 .2%
+> w/o Multi-Candidate Generation Multi-candidate generation; only one candidate modification is generated per iteration 66 .7% 61 .1% 25 .9%
+> w/o Quality Assessment Architecture-aware candidate review before local testing and training 71 .9% 69 .6% 21 .9%
+> w/o Architecture-Gradient Feedback Iteration-level diagnostic feedback into the architecture gradient 87 .5% 57 .1% 37 .5%
+
+architecture change, checking module dependencies, or aligning the new module with the production backbone. This confirms that Solution Design is the key bridge between paper-level ideas and production-compatible modifications. 
+
+w/o Multi-Candidate Generation. Removing Multi-Candidate Gen-eration reduces LPR to 66 .7% and EPR to 25 .9% . Generating only one candidate per iteration makes the search more sensitive to early mistakes: if the single candidate follows a wrong adaptation path, the system has no alternative implementation to compare against or fall back on. 
+
+w/o Quality Assessment. Removing Quality Assessment keeps multi-candidate generation but removes architecture-aware review before local testing and training. Therefore, the system may forward a risky candidate even when better alternatives exist, leading to an SFR of 69 .6% and an EPR of 21 .9% . This result shows that multi-candidate generation must be paired with quality assessment. 
+
+w/o Architecture-Gradient Feedback. Removing Gradient Feed-back keeps LPR relatively high at 87 .5% , but increases SFR to 57 .1% 
+
+and reduces EPR to 37 .5% . Without diagnostic feedback to guide 𝑔 𝑡 ,the system tends to propose simpler code-level modifications that are easier to run but less likely to be architecturally effective. Al-though this variant still observes per-round outcomes, failures are not converted into reusable forbidden directions. This shows that NOVA’s gain depends on turning failures into search knowledge, not merely on observing final metrics. 
+
+Summary. Overall, the ablations show that NOVA improves EPR by jointly improving LPR and reducing SFR. Paper reproduc-tion, solution design, and multi-candidate generation help produce production-compatible candidates, while quality assessment and architecture-gradient feedback reduce runnable-but-negative fail-ures. 
+
+## 5.6 Production-Code Modification Case Study for RQ3 
+
+To understand how NOVA modifies real production recommender code, we analyze multiple L3 tasks based on TokenMixer-Large and report two representative cases. Both cases are validated by online experiments. 
+
+Case 1: Parameter-efficient architecture variant. NOVA adapts TokenMixer-Large to a production RankMixer-style backbone un-der parameter, FLOPs, and serving constraints. A direct paper-aligned variant uses four TokenMixer blocks with inter-residual con-nections and auxiliary loss. In contrast, NOVA discovers a lighter two-block variant that achieves comparable offline effectiveness with about 43% of the dense parameters. The final variant reduces the number of TokenMixer blocks, narrows the FFN expansion ratio, and adds an additional norm + FFN + residual path beyond the standard mixing/reverting structure. This modification preserves the paper’s token-interaction intent while better matching the capacity and latency constraints of the production backbone. The case shows that NOVA performs architecture adaptation rather than paper reproduction: it searches for a feasible modification that works under production constraints. 
+
+Case 2: Architecture-gradient correction through auxiliary loss. 
+
+The second case shows how NOVA uses target-level feedback to revise a production modification. The initial transfer brings positive signals overall, but task1 remains below the desired lift. NOVA 
+
+> 8
+
+Table 7: Online A/B results against the production baseline. 
+
+Objective GMV pCVR bias 
+
+task1 +1.25% −58 .8% 
+
+task2 +1.70% −66 .7%
+
+task3 +2.02 % −37 .3% 
+
+therefore explores whether auxiliary supervision should be shared globally or specialized for specific targets. The trajectory contains three stages. First, NOVA transfers the main TokenMixer components but observes insufficient lift on 
+
+task1 . Second, it removes the auxiliary loss to reduce interfer-ence, but this hurts task2 and task3 , suggesting that auxiliary supervision is still useful for part of the model. Third, NOVA rein-troduces auxiliary loss with a smaller weight and adds a task1 -specific auxiliary signal. When this still produces limited task1 
+
+gain and negative task3 impact, NOVA diagnoses two issues: the 
+
+task1 auxiliary loss may read from the wrong target representa-tion, and the global auxiliary objective may interfere with task3 .The next modification corrects the task1 auxiliary-loss index and masks task3 from the global auxiliary objective. After this correction, NOVA further tests whether task1 can be improved with a stronger target-specific branch, adding an ex-tra task-token MLP and increasing the auxiliary-loss weight. This more aggressive refinement produces negative results, indicating over-specialization to task1 . NOVA therefore returns to the better previous trajectory, lowers the task1 auxiliary-loss weight, and obtains the expected positive result. This case illustrates the role of architecture-gradient feedback: historical outcomes and diagnostics help NOVA revise modification directions, avoid repeated mistakes, and converge toward a production-compatible design. 
+
+## 5.7 Online Validation for RQ4 
+
+We further validate the online performance of the offline-AUC-best candidate from the L3 Literature-to-Production task. The selected TokenMixer-Large transfer candidate is deployed on the production pCVR model and compared with the live baseline in a standard A/B test using 5% of production traffic, with request-level randomiza-tion. We report per-objective GMV and pCVR bias, where lower absolute bias indicates better calibration. All reported GMV gains are significant under the platform’s standard significance test. 
+
+Online impact. Table 7 shows that the selected L3 candidate de-livers a positive business impact in production. GMV improves across the top three pCVR objectives: +1.25% on task1, +1.70% on task2, and +2.02% on task3. These gains are not accompanied by worse calibration: pCVR bias decreases by 58 .8% , 66 .7% , and 37 .3% ,respectively. The results show that the offline-selected architec-ture modification improves online business metrics while reducing prediction bias. 
+
+## 6 Conclusion and Future Work 
+
+We present NOVA, a level-aware agent harness for industrial recom-mender architecture evolution. NOVA formulates architecture evo-lution as a verification-aware architecture-gradient search, embeds 
+
+Figure 3: Future evolution roadmap of NOVA across full-funnel scope expansion, full-lifecycle R&D automation, self-evolving skills, and gradient-aware resource scheduling. 
+
+silent-failure suppression into the optimization loop, and validates the resulting system in production. Future work will extend NOVA in four directions. First, NOVA will evolve from fine-ranking pCTR/pCVR optimization to full-funnel recommender model optimization, covering retrieval, pre-ranking, fine-ranking, and re-ranking. Second, NOVA will evolve from model-centric optimization to full-lifecycle recommender R&D automation, coordinating agents for business analysis, data discovery, feature generation, architecture evolution, engineering optimization, and online experimentation. Third, NOVA will up-grade its stage-level skills from manually maintained prompts and rules to self-evolving skills that continuously record task traces, diagnose failures, update skills, and evaluate skill effectiveness. Fourth, NOVA will make architecture exploration more resource-aware by adaptively allocating GPU and training budgets according to verification confidence, early-training signals, historical promise, and cluster availability. This can reduce wasted training on low-value candidates and increase the throughput of offline search. 
+
+## References               
+
+> [1] Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, and Masanori Koyama. 2019. Optuna: A Next-generation Hyperparameter Optimization Frame-work. In Proceedings of the 25th ACM SIGKDD International Conference on Knowl-edge Discovery and Data Mining . 2623–2631. [2] Anthropic. 2026. Claude Sonnet 4.6. https://www.anthropic.com/claude/sonnet. Accessed: 2026-06-08. [3] James Bergstra, Rémi Bardenet, Yoshua Bengio, and Balázs Kégl. 2011. Algorithms for Hyper-Parameter Optimization. In Advances in Neural Information Processing Systems (NeurIPS) , Vol. 24. [4] Heng-Tze Cheng, Levent Koc, Jeremiah Harmsen, Tal Shaked, Tushar Chandra, Hrishi Aradhye, Glen Anderson, Greg Corrado, Wei Chai, Mustafa Ispir, Rohan Anil, Zakaria Haque, Lichan Hong, Vihan Jain, Xiaobing Liu, and Hemal Shah. 2016. Wide & Deep Learning for Recommender Systems. In Proceedings of the 1st Workshop on Deep Learning for Recommender Systems . 7–10. [5] Matthias Feurer, Aaron Klein, Katharina Eggensperger, Jost Tobias Springenberg, Manuel Blum, and Frank Hutter. 2015. Efficient and Robust Automated Machine Learning. In Advances in Neural Information Processing Systems .[6] Huifeng Guo, Ruiming Tang, Yunming Ye, Zhenguo Li, and Xiuqiang He. 2017. DeepFM: A Factorization-Machine Based Neural Network for CTR Prediction. In Proceedings of the 26th International Joint Conference on Artificial Intelligence .1725–1731. [7] Xu Huang, Hao Zhang, Zhifang Fan, Yunwen Huang, Zhuoxing Wei, Zheng Chai, Jinan Ni, Yuchao Zheng, and Qiwei Chen. 2026. MixFormer: Co-Scaling Up Dense and Sequence in Industrial Recommenders. arXiv preprint arXiv:2602.14110
+> (2026). [8] Yunwen Huang, Shiyong Hong, Xijun Xiao, Jinqiu Jin, Xuanyuan Luo, Zhe Wang, Zheng Chai, Shikang Wu, Yuchao Zheng, and Jingjian Lin. 2026. HyFormer: Revisiting the Roles of Sequence Modeling and Feature Interaction in CTR 9
+
+Prediction. arXiv preprint arXiv:2601.12681 (2026). [9] Yuchen Jiang, Jie Zhu, Xintian Han, Hui Lu, Kunmin Bai, Mingyu Yang, Shikang Wu, Ruihao Zhang, Wenlin Zhao, Shipeng Bai, et al . 2026. TokenMixer-Large: Scaling Up Large Ranking Models in Industrial Recommenders. arXiv preprint arXiv:2602.06563 (2026). [10] Yuchin Juan, Yong Zhuang, Wei-Sheng Chin, and Chih-Jen Lin. 2016. Field-aware Factorization Machines for CTR Prediction. In Proceedings of the 10th ACM Conference on Recommender Systems . 43–50. [11] Ashwin Kumar, Erwin Gao, Matan Levi, Sheela Yadawad, Sherman Wong, Sneha Iyer, and Vinodh Kumar Sunkara. 2026. Ranking Engineer Agent (REA): The Autonomous AI Agent Accelerating Meta’s Ads Ranking Innovation. Meta Engineering Blog. https://engineering.fb.com/2026/03/17/developer-tools/ranking-engineer-agent-rea-autonomous-ai-system-accelerating-meta-ads-ranking-innovation/ Accessed: 2026-05-28. [12] Hanxiao Liu, Karen Simonyan, and Yiming Yang. 2019. DARTS: Differentiable Architecture Search. In International Conference on Learning Representations .[13] H. Brendan McMahan, Gary Holt, David Sculley, Michael Young, Dietmar Ebner, Julian Grady, Lan Nie, Todd Phillips, Eugene Davydov, Daniel Golovin, Sharat Chikkerur, Dan Liu, Martin Wattenberg, Arnar Mar Hrafnkelsson, Tom Boulos, and Jeremy Kubica. 2013. Ad Click Prediction: A View from the Trenches. In 
+
+Proceedings of the 19th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining . 1222–1230. [14] Hieu Pham, Melody Guan, Barret Zoph, Quoc V. Le, and Jeff Dean. 2018. Efficient Neural Architecture Search via Parameter Sharing. In Proceedings of the 35th International Conference on Machine Learning . 4095–4104. [15] Qi Pi, Weijie Bian, Guorui Zhou, Xiaoqiang Zhu, and Kun Gai. 2020. Search-based Interest Model for Lifelong User Behavior Sequence Modeling in Click-Through Rate Prediction. In Proceedings of the 29th ACM International Conference on Information and Knowledge Management . 2685–2692. [16] Reid Pryzant, Dan Iter, Jerry Li, Yin Lee, Chenguang Zhu, and Michael Zeng. 2023. Automatic Prompt Optimization with “Gradient Descent” and Beam Search. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing . Association for Computational Linguistics, 7957–7968. https://doi. org/10.18653/v1/2023.emnlp-main.494 [17] Esteban Real, Alok Aggarwal, Yanping Huang, and Quoc V. Le. 2019. Regularized Evolution for Image Classifier Architecture Search. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 33. 4780–4789. [18] Steffen Rendle. 2010. Factorization Machines. In Proceedings of the 2010 IEEE International Conference on Data Mining . 995–1000. [19] Kimi Team, Guangyu Chen, Yu Zhang, Jianlin Su, Weixin Xu, Siyuan Pan, Yaoyu Wang, Yucheng Wang, Guanduo Chen, Bohong Yin, et al . 2026. Attention residuals. arXiv preprint arXiv:2603.15031 (2026). [20] Chris Thornton, Frank Hutter, Holger H. Hoos, and Kevin Leyton-Brown. 2013. Auto-WEKA: Combined Selection and Hyperparameter Optimization of Clas-sification Algorithms. In Proceedings of the 19th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining . 847–855. [21] Haochen Wang, Yi Wu, Daryl Chang, Li Wei, and Lukasz Heldt. 2026. Self-evolving recommendation system: End-to-end autonomous model optimization with LLM agents. arXiv preprint arXiv:2602.10226 (2026). [22] Ruoxi Wang, Bin Fu, Gang Fu, and Mingliang Wang. 2017. Deep & Cross Network for Ad Click Predictions. In Proceedings of the ADKDD’17 . 1–7. [23] Xingyao Wang, Boxuan Li, Yufan Song, Frank F. Xu, Xiangru Tang, Mingchen Zhuge, Jiayi Pan, Yueqi Song, Bowen Li, Jaskirat Singh, Hoang H. Tran, Fuqiang Li, Ren Ma, Mingzhang Zheng, Bill Qian, Yanjun Shao, Niklas Muennighoff, Yizhe Zhang, Binyuan Hui, Junyang Lin, Robert Brennan, Hao Peng, Heng Ji, and Gra-ham Neubig. 2025. OpenHands: An Open Platform for AI Software Developers as Generalist Agents. In International Conference on Learning Representations .[24] Xidong Wu, Yue Zhuan, Ruoqiao Wei, Hangxin Chen, Di Bai, Jintao Liu, Xinyi Wang, Xue Wang, Luoshu Wang, and Xinwu Cheng. 2026. AgenticRecTune: Multi-Agent with Self-Evolving Skillhub for Recommendation System Optimiza-tion. arXiv preprint arXiv:2604.26969 (2026). [25] John Yang, Carlos E. Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. 2024. SWE-agent: Agent-Computer Inter-faces Enable Automated Software Engineering. In Advances in Neural Information Processing Systems , Vol. 37. [26] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2023. ReAct: Synergizing Reasoning and Acting in Language Models. In The Eleventh International Conference on Learning Representations (ICLR) .[27] Mert Yuksekgonul, Federico Bianchi, Joseph Boen, Sheng Liu, Zhi Huang, Carlos Guestrin, and James Zou. 2024. TextGrad: Automatic “Differentiation” via Text. https://doi.org/10.48550/arXiv.2406.07496 arXiv:2406.07496 [cs.CL] [28] Zhaoqi Zhang, Haolei Pei, Jun Guo, Tianyu Wang, Yufei Feng, Hui Sun, Shaowei Liu, and Aixin Sun. 2026. Onetrans: Unified feature interaction and sequence modeling with one transformer in industrial recommender. In Proceedings of the ACM Web Conference 2026 . 8162–8170. [29] Guorui Zhou, Na Mou, Ying Fan, Qi Pi, Weijie Bian, Chang Zhou, Xiaoqiang Zhu, and Kun Gai. 2019. Deep Interest Evolution Network for Click-Through Rate Prediction. In Proceedings of the AAAI Conference on Artificial Intelligence ,Vol. 33. 5941–5948. [30] Guorui Zhou, Xiaoqiang Zhu, Chenru Song, Ying Fan, Han Zhu, Xiao Ma, Yanghui Yan, Junqi Jin, Han Li, and Kun Gai. 2018. Deep Interest Network for Click-Through Rate Prediction. In Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining . 1059–1068. [31] Jie Zhu, Zhifang Fan, Xiaoxie Zhu, Yuchen Jiang, Hangyu Wang, Xintian Han, Haoran Ding, Xinmin Wang, Wenlin Zhao, Zhen Gong, et al . 2025. Rankmixer: Scaling up ranking models in industrial recommenders. In Proceedings of the 34th ACM International Conference on Information and Knowledge Management .6309–6316. 10 A Appendix: Harness Footprint, Efficiency, and Reproducibility 
+
+This appendix has three parts. We first report the public artifact footprint of the NOVA harness and its per-agent LLM usage, then compare end-to-end efficiency with the legacy human workflow, and finally present reproducibility artifacts that reveal NOVA at the mechanism level without releasing proprietary production prompts verbatim. 
+
+## A.1 NOVA Harness Footprint 
+
+Table 8 reports the public artifact size of NOVA agents and their average LLM usage in production. Token usage is dominated by Solution-Design and Quality-Review: the former consumes the richest context and appears in every outer iteration, while the latter performs dense multi-candidate checking, including semantic review 𝑉 sem . The Main Agent only orchestrates and never calls an LLM directly. 
+
+Table 8: NOVA harness footprint and per-agent LLM usage. “Size” is the prompt + skill bundle size; “Input” and “Output” are average tokens per call; “Tool Calls” is the average num-ber of calls per task; and “Tokens” is the average total token usage per task, computed as (Input + Output ) × Tool Calls .The Main Agent runs the control loop and does not call an LLM directly.                                         
+
+> Agent Size Input/call Output/call Tool Calls Tokens Init 45 KB 92.5K 0.9K 29.3 2.74M Solution-Design 110 KB 154.5K 1.1K 136.1 21.17M Code-Gen 50 KB 89.6K 0.5K 83.5 7.51M Quality-Review 40 KB 96.0K 0.3K 155.3 14.95M Local-Testing 15 KB 67.9K 0.4K 95.7 6.54M Offline 5 KB 71.9K 0.5K 32.8 2.38M Online 10 KB 54.3K 0.4K 28.3 1.55M
+
+## A.2 Efficiency: NOVA vs. Human Workflow 
+
+Here we compare the engineering efficiency of NOVA with that of the legacy human workflow. We decompose one full Literature-to-Production cycle into five stages and report both wall-clock duration and human-attended time in a common abstract engineer-hour unit 𝑢 ; the absolute scale of 𝑢 is hidden for confidentiality, but the ratios are exact because both workflows are measured under the same unit. 
+
+Savings concentrate on engineer time, not GPU throughput. The two training stages keep the same wall-clock under either workflow because they are GPU-bound, so the gain there comes from collaps-ing human monitoring ( 4 𝑢 → 1 𝑢 ) rather than from faster training. The dominant compression appears in the human-bound design-and-debug stages: paper reading and reproduction ( 28 𝑢 → 0.7 𝑢 ,
+
+40 ×), single-machine debugging ( 6 𝑢 → 0.3 𝑢 , 20 ×), and reflection plus planning ( 12 𝑢 → 0.3 𝑢 , 40 ×). End-to-end wall-clock falls from 
+
+82 𝑢 to 37 𝑢 (2.2×), while end-to-end human-attended time falls from 54 𝑢 to 4 𝑢 (13 .5×). The residual human effort is concentrated on the strategic gates NOVA deliberately keeps in the loop — re-quirement submission, plan/code review, and final result review — which allows one team to sustain substantially higher experimental throughput at fixed headcount. 
+
+## A.3 Reproducibility Artifacts 
+
+Because the production prompt corpus contains proprietary opera-tional rules and identifiers, we do not release it verbatim. Instead, reproducibility is supported at the mechanism level through three artifact types: a prompt skeleton exposing interface contracts, a tra-jectory snippet showing how verification updates the architecture gradient, and compressed but structured skill summaries. Together, these artifacts reveal NOVA’s core mechanisms — multi-source aggregation for Grad , verification-as-gradient-denoising, and the self-growing forbidden memory — without disclosing proprietary content. 
+
+A.3.1 Prompt Template Skeleton. We reproduce below the section structure of the actual NOVA Solution-Design system prompt (the prompt that hosts Grad ), with runtime rule corpora and proprietary identifiers redacted. The same section template is reused, with role and task slots adapted, by proposal-generation prompts and the 
+
+𝑉 sem reviewer prompts. 
+
+Solution-Design Agent Prompt                  
+
+> # ROLE You are the Solution-Design agent of the NOVA harness. Each outer round you (i) consume prior agents’ outputs, (ii) route the request to a level ∈{L1,...,L4} and the matching skill, and (iii) emit a Grad diagnostic plus a ranked set of edits. ... # PATH CONVENTION BASE = {workspace}/.../<topology_id> WORK = ... DESIGN = ... All outputs must be written under DESIGN. # AUTONOMY LEVELS & SKILL ROUTING L1/L2 (atomic / goal-driven parameter changes) route to the Architecture-Edit Planner Skill; L3/L4 (Literature-to-Production upgrade / open-ended research) rely on PAPER_REPRO, production grounding, and business objectives. ... # INPUTS TO Grad e_prev, V = {sem, loc, failure_localisation},
+> ΔJ = { ΔAUC, ΔDelayAUC, ΔParams, ΔFLOPs}, H = trajectory memory (SUMMARY + prior EVALUATION). ... # TASKS T1. Attribute the worst ΔJ indicator to weak_components
+> ⊆{M,𝜃 ,Γ}, using V as a complement. T2. Expand into directions; prune by V; rank by H. T3. Abstract V/H failures into "edit-pattern →defect-class" rules and append to forbidden. T4. Emit four ranked candidates (plan_a, ..., plan_d). ... # OUTPUT PROTOCOL A strict JSON header g = {weak_components, directions, forbidden} followed by DESIGN/design.md with the four plans (target module, expected ΔJ, guardrails, runnable diff). Proposals must satisfy Ωand reject any forbidden direction. ... # MULTI-ROUND ITERATION On rounds 𝑡 >0, read prior EVALUATION and the cumulative SUMMARY, and refine directions instead of regenerating from scratch. ...
+
+A.3.2 A forbidden Rule and a Trajectory Snippet. Panel (a) shows a causal-mask-related rule learned from a failed proposal, and panel (b) shows how that rule redirects the next-round search trajectory. 
+
+> 11
+
+Table 9: End-to-end velocity: legacy human workflow vs. NOVA harness, by stage. All values in the abstract engineer-hour unit 
+
+𝑢 . The two training rows have the same wall-clock time in both workflows because they are GPU-bound; the savings come from reduced human monitoring. 
+
+Human Workflow NOVA Harness Stage Wall-clock Human-attended Wall-clock Human-attended 
+
+Paper reading & reproduction 28 𝑢 28 𝑢 0.7 𝒖 1.0 𝒖 
+
+Training setup & single-machine debug 6 𝑢 6 𝑢 0.3 𝒖 0.5 𝒖 
+
+Cold-start training 28 𝑢 4 𝑢 28 𝑢 1.0 𝒖 
+
+Online training 8 𝑢 4 𝑢 8 𝑢 1.0 𝒖 
+
+Reflection & iteration planning 12 𝑢 12 𝑢 0.3 𝒖 0.5 𝒖 
+
+End-to-end 82 𝒖 54 𝒖 37 𝒖 4 𝒖 
+
+(a) A forbidden Rule (learned at round 7) 
+
+{pattern : "sequence self-attention without causal mask", defect_class : "future-information leakage", origin_round : 7, enforcement : [hard-filter, negative-example-in-Propose] }
+
+(b) Excerpted Trajectory (rounds 7–8) 
+
+# t = 7 g_t.directions = [sequential interaction refinement, ...] 
+
+→ Propose emits e: "replace pooling with bidirectional self-attention over the behavior sequence" 
+
+→ V_sem(Apply): FAIL 
+
+(future-information leakage: later clicks can attend to future events because no causal mask is composed with the padding mask) 
+
+→ written to H as the forbidden rule in (a); training is skipped. # t = 8 Grad reads the updated H and redirects directions toward causality-preserving sequence modeling. 
+
+→ Propose emits e’: "target-aware self-attention with an upper-triangular causal mask" 
+
+→ V_sem: PASS (causal mask + padding mask composed correctly) 
+
+→ V_loc: PASS 
+
+→ OfflineTrain: ΔJ_off > 0 
+
+A.3.3 Skill Library Examples. NOVA decomposes architecture evo-lution into stage-specific agents that invoke reusable, file-grounded skills. Below we show compressed summaries of three representa-tive skills. Each summary keeps the operational structure — inputs, core workflow, representative guardrails, and outputs — while omit-ting long rule lists and proprietary field names. 
+
+Paper-to-Code Skill (Init Agent) 
+
+# INPUTS - Paper PDF - Target framework - Reproduction scope ... # CORE WORKFLOW 1. Parse the full paper before any local implementation; extract architecture, equations, tensor shapes, and dependencies. 2. Separate paper-stated facts from inferences and engineering assumptions; log unresolved ambiguities explicitly. 3. Generate faithful code, tests, runnable examples, and audit artifacts under paper_repro/. ... 
+
+# REPRESENTATIVE GUARDRAILS - Never code directly from vague intuition. - Every major implementation choice MUST be tagged as {paper-stated | inferred-from-paper | engineering-assumption}. ... # OUTPUTS spec.md, equation_map.md, ambiguity_log.md, src/model.py, tests/, audit_report.md, ... 
+
+Architecture-Edit Planner Skill (Solution-Design Agent) 
+
+# INPUTS - Base topology files - Scene-specific context - Prior evaluation logs - System constraints (latency budget, parameter-server compatibility, exported-graph schema, ...) # CORE WORKFLOW 1. Retrieve the correct context/topo/ and context/scene/ files BEFORE proposing any modification. 2. Select one optimization direction using priority matrices plus failure history from prior rounds... # REPRESENTATIVE GUARDRAILS - Read topology and scene grounding files first. - Reject changes that violate latency budget, exported-graph schema, or production deployment constraints. ... # OUTPUTS A ranked design.md containing records of the form (explanation, diff, expected_delta, risk_tag), ... 
+
+Multi-LLM Code Review Skill (Quality-Review Agent) 
+
+# INPUTS - Baseline code - Multiple candidate implementations - Design document - Fixed multi-criteria review rubric ... # CORE WORKFLOW 1. Build unified diffs from each candidate to the baseline rather than reviewing raw code in isolation. 2. Launch heterogeneous LLM reviewers in parallel and reconcile their findings by location and severity... # REPRESENTATIVE GUARDRAILS - Every finding MUST cite line ranges. - Unresolved block-level findings MUST be fixed or explicitly waived before training. ... # OUTPUTS - Per-reviewer reports - Consolidated summary.md - gate_decision ∈ {pass, revise, reject}, ... 
+
+12

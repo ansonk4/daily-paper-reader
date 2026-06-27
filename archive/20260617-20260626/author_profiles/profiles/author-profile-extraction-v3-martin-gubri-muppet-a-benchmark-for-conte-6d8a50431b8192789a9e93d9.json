@@ -1,0 +1,19 @@
+{
+  "name": "Martin Gubri",
+  "role": "last_author",
+  "affiliation": "1 Parameter Lab, 2 University of Rome Tor Vergata, 3 University of Oxford; 4 NAVER AI Lab, 5 KAIST AI",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Martin Gubri",
+    "affiliations": [
+      "1 Parameter Lab, 2 University of Rome Tor Vergata, 3 University of Oxford",
+      "4 NAVER AI Lab, 5 KAIST AI"
+    ],
+    "author_row": "Elena Sofia Ruzzetti 1,2 , Cornelius Emde 1,3 , Sangdoo Yun 4 , Seong Joon Oh 1,5 , Martin Gubri 1"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

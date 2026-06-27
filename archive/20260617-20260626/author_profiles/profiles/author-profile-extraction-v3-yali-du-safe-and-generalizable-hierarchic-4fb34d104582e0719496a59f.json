@@ -1,0 +1,19 @@
+{
+  "name": "Yali Du",
+  "role": "last_author",
+  "affiliation": "King's College London; The Alan Turing Institute",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yali Du",
+    "affiliations": [
+      "King's College London",
+      "The Alan Turing Institute"
+    ],
+    "author_row": "Yali Du"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Jakob Salfeld-Nebgen",
+  "role": "first_author",
+  "affiliation": "metaphora.ai",
+  "citation_hints": "Semantic Scholar citation_count=633; Semantic Scholar paper_count=15",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, semantic_scholar",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Jakob Salfeld-Nebgen",
+    "affiliations": [
+      "metaphora.ai"
+    ],
+    "author_row": "Jakob Salfeld-Nebgen"
+  },
+  "openalex": {},
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "Governing Actions, Not Agents: Institutional Attestation as a Governance Model for Autonomous AI Systems",
+    "paper_year": "2026",
+    "name": "Jakob Salfeld-Nebgen",
+    "affiliations": [],
+    "paper_count": 15,
+    "citation_count": 633,
+    "author_id": "1455852833",
+    "lookup": "author_search"
+  }
+}

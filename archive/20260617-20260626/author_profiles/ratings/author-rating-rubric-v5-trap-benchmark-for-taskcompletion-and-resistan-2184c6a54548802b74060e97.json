@@ -1,0 +1,24 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "The first author is from POSTECH and the last author is from KAIST. Both are prestigious Korean institutions. However, per the scoring rules, schools in Korea fall into the 0-5 bucket, which includes schools not included in the top or mid-tier bands.",
+  "author_profiles": [
+    {
+      "name": "Moon Ye-Bin",
+      "role": "first_author",
+      "affiliation": "Dept. of Electrical Engineering, POSTECH",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Tae-Hyun Oh",
+      "role": "last_author",
+      "affiliation": "School of Computing, KAIST",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:00:04.316433+00:00"
+}

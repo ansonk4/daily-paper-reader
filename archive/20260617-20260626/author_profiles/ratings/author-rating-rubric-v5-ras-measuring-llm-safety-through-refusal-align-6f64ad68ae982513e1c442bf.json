@@ -1,0 +1,24 @@
+{
+  "author_score": 6.5,
+  "author_rating_explanation": "Both authors are affiliated with National Yang Ming Chiao Tung University and Hon Hai Research Institute. National Yang Ming Chiao Tung University is a top Taiwanese university, and Hon Hai Research Institute is an industry research lab, placing the score in the 6-8 band.",
+  "author_profiles": [
+    {
+      "name": "Chang-Chieh Huang",
+      "role": "first_author",
+      "affiliation": "Wei-Bin Lee; * National Yang Ming Chiao Tung University; Hon Hai Research Institute",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Wei-Bin Lee",
+      "role": "last_author",
+      "affiliation": "* National Yang Ming Chiao Tung University; Hon Hai Research Institute",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:59:20.443651+00:00"
+}

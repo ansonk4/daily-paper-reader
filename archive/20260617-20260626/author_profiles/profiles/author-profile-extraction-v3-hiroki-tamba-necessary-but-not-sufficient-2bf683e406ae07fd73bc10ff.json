@@ -1,0 +1,19 @@
+{
+  "name": "Hiroki Tamba",
+  "role": "first_author",
+  "affiliation": "Tamba Research Academy; ORCID: 0009-0004-7635-0741",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Hiroki Tamba",
+    "affiliations": [
+      "Tamba Research Academy",
+      "ORCID: 0009-0004-7635-0741"
+    ],
+    "author_row": "Hiroki Tamba contact@tamba-research.academy"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

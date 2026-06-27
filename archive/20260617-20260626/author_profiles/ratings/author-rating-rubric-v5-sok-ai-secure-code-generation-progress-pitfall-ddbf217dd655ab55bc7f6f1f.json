@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "First author Rupam Patir is affiliated with Dongguk University in South Korea, which is not in the top or mid-tier AI research institutions listed. Last author Hxin Hu is affiliated with Dongguk University, Beijing Academy of Agricultural and Forestry Sciences, and University at Buffalo, SUNY. While University at Buffalo is a US research university, it is not in the top-tier AI schools. The overall institutional profile places this in the 0-5 band, though Hxin Hu has high citation counts (OpenAlex cited_by_count=6646).",
+  "author_profiles": [
+    {
+      "name": "Rupam Patir",
+      "role": "first_author",
+      "affiliation": "Dongguk University; Department of Industrial and Systems Engineering, Dongguk University, Seoul, South Korea",
+      "citation_hints": "OpenAlex cited_by_count=1; OpenAlex works_count=2",
+      "confidence": "medium",
+      "evidence_source": "openalex"
+    },
+    {
+      "name": "Hxin Hu",
+      "role": "last_author",
+      "affiliation": "Dongguk University; Department of Industrial and Systems Engineering, Dongguk University, Seoul, South Korea; Beijing Academy of Agricultural and Forestry Sciences; University at Buffalo, State University of New York",
+      "citation_hints": "OpenAlex cited_by_count=6646; OpenAlex works_count=239; Semantic Scholar citation_count=7772; Semantic Scholar paper_count=180",
+      "confidence": "medium",
+      "evidence_source": "openalex, semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:55:37.176950+00:00"
+}

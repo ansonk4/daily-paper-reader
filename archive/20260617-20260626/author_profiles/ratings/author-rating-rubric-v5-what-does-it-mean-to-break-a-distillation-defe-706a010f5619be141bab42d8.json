@@ -1,0 +1,24 @@
+{
+  "author_score": 3.0,
+  "author_rating_explanation": "Neither focus author has a verifiable affiliation in the supplied metadata. Florian Tramèr is a known researcher, but per the scoring rules, prestige cannot be inferred from name alone without verified metadata. Therefore the score falls in the insufficient-evidence bucket below 5.",
+  "author_profiles": [
+    {
+      "name": "Lena Libon",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    },
+    {
+      "name": "Florian Tramèr",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:01:44.582887+00:00"
+}

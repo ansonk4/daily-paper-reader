@@ -1,0 +1,16 @@
+{
+  "author_score": 4.5,
+  "author_rating_explanation": "No verified affiliation is available for the focus author and metadata lookup was unavailable, so a neutral score is assigned with low confidence.",
+  "author_profiles": [
+    {
+      "name": "Padmaraj Madatha",
+      "role": "first_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:05:42.051746+00:00"
+}

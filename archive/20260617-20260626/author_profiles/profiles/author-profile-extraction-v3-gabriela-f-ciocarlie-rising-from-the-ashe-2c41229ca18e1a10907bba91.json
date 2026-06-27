@@ -1,0 +1,21 @@
+{
+  "name": "Gabriela F. Ciocarlie",
+  "role": "first_author",
+  "affiliation": "Daryna Oliynyk 4 , Andrew Paverd 5 , Christian Wressnegger 6; 1 Stevens Institute of Technology, USA 2 Independent Researcher, Italy 3 University of Wisconsin-Madison, USA 4 CDL AsTra, Faculty of Computer Science, University of Vienna, Austria; 5 Microsoft Security Response Center (MSRC), UK; 6 KASTEL Security Research Labs, Karlsruhe Institute of Technology (KIT), Germany",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Gabriela F. Ciocarlie",
+    "affiliations": [
+      "Daryna Oliynyk 4 , Andrew Paverd 5 , Christian Wressnegger 6",
+      "1 Stevens Institute of Technology, USA 2 Independent Researcher, Italy 3 University of Wisconsin-Madison, USA 4 CDL AsTra, Faculty of Computer Science, University of Vienna, Austria",
+      "5 Microsoft Security Response Center (MSRC), UK",
+      "6 KASTEL Security Research Labs, Karlsruhe Institute of Technology (KIT), Germany"
+    ],
+    "author_row": "Gabriela F. Ciocarlie 1 , Kathrin Grosse 2 , Somesh Jha 3"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

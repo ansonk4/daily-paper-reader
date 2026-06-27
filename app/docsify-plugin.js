@@ -1286,6 +1286,7 @@ window.$docsify = {
           const relevance_score = String(meta.relevance_score || '').trim();
           const author_score = String(meta.author_score || '').trim();
           const author_affiliations = String(meta.author_affiliations || '').trim();
+          const author_metrics_json = String(meta.author_metrics_json || '').trim();
           const author_rating_explanation = String(meta.author_rating_explanation || '').trim();
           const evidence = String(meta.evidence || '').trim();
           const tldr = String(meta.tldr || meta.summary || '').trim();
@@ -1315,6 +1316,7 @@ window.$docsify = {
             relevance_score,
             author_score,
             author_affiliations,
+            author_metrics_json,
             author_rating_explanation,
             evidence,
             tldr,
@@ -4514,6 +4516,14 @@ window.$docsify = {
           .map((item) => {
             const match = item.match(/^(.+?)(?:\s*\(([^)]*)\))?\s*[:：]\s*(.+)$/);
             if (!match) {
+              const labelOnlyMatch = item.match(/^(.+?)\s*\(([^)]*)\)\s*$/);
+              if (labelOnlyMatch) {
+                return {
+                  name: String(labelOnlyMatch[1] || '').trim(),
+                  role: String(labelOnlyMatch[2] || '').trim(),
+                  affiliation: '',
+                };
+              }
               return { name: '', role: '', affiliation: item };
             }
             return {
@@ -4523,23 +4533,108 @@ window.$docsify = {
             };
           })
           .filter((item) => item.name || item.affiliation);
-        const renderAuthorsAndAffiliations = (authors, authorAffiliations) => {
+        const normalizeAuthorMetricKey = (name, role = '') => [
+          String(name || '').trim().toLowerCase().replace(/\s+/g, ' '),
+          String(role || '').trim().toLowerCase(),
+        ].join('|');
+        const normalizeAuthorCount = (value) => {
+          const text = String(value === undefined || value === null ? '' : value).trim().replace(/,/g, '');
+          return /^\d+$/.test(text) ? text : '';
+        };
+        const formatAuthorCount = (value) => {
+          const text = normalizeAuthorCount(value);
+          if (!text) return '';
+          try {
+            return Number(text).toLocaleString('en-US');
+          } catch (_err) {
+            return text;
+          }
+        };
+        const parseAuthorMetrics = (value) => {
+          const raw = String(value || '').trim();
+          if (!raw) return [];
+          let parsed = null;
+          try {
+            parsed = JSON.parse(raw);
+          } catch (_err) {
+            return [];
+          }
+          if (!Array.isArray(parsed)) return [];
+          return parsed
+            .filter((item) => item && typeof item === 'object')
+            .map((item) => ({
+              name: String(item.name || '').trim(),
+              role: String(item.role || '').trim(),
+              citation_count: normalizeAuthorCount(item.citation_count),
+              paper_count: normalizeAuthorCount(item.paper_count),
+            }))
+            .filter((item) => item.name && (item.citation_count || item.paper_count));
+        };
+        const buildAuthorMetricMap = (items) => {
+          const map = new Map();
+          items.forEach((item) => {
+            const exactKey = normalizeAuthorMetricKey(item.name, item.role);
+            const nameKey = normalizeAuthorMetricKey(item.name);
+            if (!map.has(exactKey)) map.set(exactKey, item);
+            if (!map.has(nameKey)) map.set(nameKey, item);
+          });
+          return map;
+        };
+        const findAuthorMetrics = (map, item) => (
+          map.get(normalizeAuthorMetricKey(item.name, item.role))
+          || map.get(normalizeAuthorMetricKey(item.name))
+          || null
+        );
+        const renderAuthorMetricChips = (metrics) => {
+          if (!metrics) return '';
+          const chips = [];
+          const citations = formatAuthorCount(metrics.citation_count);
+          const papers = formatAuthorCount(metrics.paper_count);
+          if (citations) {
+            chips.push(`<span class="paper-author-metric"><span class="paper-author-metric-label">Citations</span>${escapeHtml(citations)}</span>`);
+          }
+          if (papers) {
+            chips.push(`<span class="paper-author-metric"><span class="paper-author-metric-label">Papers</span>${escapeHtml(papers)}</span>`);
+          }
+          return chips.length ? `<div class="paper-author-metrics">${chips.join('')}</div>` : '';
+        };
+        const renderAuthorsAndAffiliations = (authors, authorAffiliations, authorMetricsJson) => {
           const authorText = String(authors || 'Unknown').trim() || 'Unknown';
           const affiliationItems = parseAuthorAffiliationItems(authorAffiliations);
+          const authorMetrics = parseAuthorMetrics(authorMetricsJson);
+          const metricsByAuthor = buildAuthorMetricMap(authorMetrics);
+          const displayItems = affiliationItems.slice();
+          const displayed = new Set(displayItems.flatMap((item) => [
+            normalizeAuthorMetricKey(item.name, item.role),
+            normalizeAuthorMetricKey(item.name),
+          ]));
+          authorMetrics.forEach((item) => {
+            const exactKey = normalizeAuthorMetricKey(item.name, item.role);
+            const nameKey = normalizeAuthorMetricKey(item.name);
+            if (displayed.has(exactKey) || displayed.has(nameKey)) return;
+            displayed.add(exactKey);
+            displayed.add(nameKey);
+            displayItems.push({ name: item.name, role: item.role, affiliation: '' });
+          });
           const lines = [
             '<div class="paper-author-block">',
-            '<div class="paper-meta-label">Authors &amp; Affiliations</div>',
+            `<div class="paper-meta-label">${authorMetrics.length ? 'Authors, Metrics &amp; Affiliations' : 'Authors &amp; Affiliations'}</div>`,
             `<div class="paper-author-list">${escapeHtml(authorText)}</div>`,
           ];
-          if (affiliationItems.length) {
+          if (displayItems.length) {
             lines.push('<div class="paper-affiliation-list">');
-            affiliationItems.forEach((item) => {
+            displayItems.forEach((item) => {
               const heading = item.name || 'Affiliation';
               const role = item.role ? `<span class="paper-author-role">${escapeHtml(item.role)}</span>` : '';
+              const metricHtml = renderAuthorMetricChips(findAuthorMetrics(metricsByAuthor, item));
+              const affiliationHtml = item.affiliation || !metricHtml
+                ? `<div class="paper-affiliation-text">${escapeHtml(item.affiliation || '-')}</div>`
+                : '';
               lines.push(
                 '<div class="paper-affiliation-item">'
                 + `<div class="paper-affiliation-author">${escapeHtml(heading)}${role}</div>`
-                + `<div class="paper-affiliation-text">${escapeHtml(item.affiliation || '-')}</div>`
+                + affiliationHtml
+                + metricHtml
                 + '</div>'
               );
             });
@@ -4577,7 +4672,7 @@ window.$docsify = {
 
         // 右侧：基本信息
         lines.push('<div class="paper-meta-right">');
-        lines.push(renderAuthorsAndAffiliations(meta.authors, meta.author_affiliations));
+        lines.push(renderAuthorsAndAffiliations(meta.authors, meta.author_affiliations, meta.author_metrics_json));
         if (meta.source) {
           lines.push(`<p><strong>Source</strong>: ${renderSourceChips(meta.source)}</p>`);
         }

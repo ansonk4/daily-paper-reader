@@ -1,0 +1,19 @@
+{
+  "name": "Anmol Goel",
+  "role": "first_author",
+  "affiliation": "Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science; TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Anmol Goel",
+    "affiliations": [
+      "Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science",
+      "TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE"
+    ],
+    "author_row": "Anmol Goel and Iryna Gurevych"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

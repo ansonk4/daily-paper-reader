@@ -1,0 +1,16 @@
+{
+  "author_score": 6.0,
+  "author_rating_explanation": "First author Shiyang Chen is affiliated with Beijing Institute of Technology, Weifang Medical University, Swansea University, and Center for Excellence in Molecular Cell Science. Beijing Institute of Technology is a reputable Chinese university with AI/CS research output, though not in the very top tier. The mixed affiliations and moderate citation count (OpenAlex cited_by_count=813) place this in the 6-8 band, leaning toward the lower end.",
+  "author_profiles": [
+    {
+      "name": "Shiyang Chen",
+      "role": "first_author",
+      "affiliation": "Beijing Institute of Technology; Weifang Medical University; Swansea University; Center for Excellence in Molecular Cell Science",
+      "citation_hints": "OpenAlex cited_by_count=813; OpenAlex works_count=36",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:55:37.176440+00:00"
+}

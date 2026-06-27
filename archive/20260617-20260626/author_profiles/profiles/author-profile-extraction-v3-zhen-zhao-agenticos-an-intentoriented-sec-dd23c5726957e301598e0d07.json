@@ -1,0 +1,43 @@
+{
+  "name": "Zhen Zhao",
+  "role": "first_author",
+  "affiliation": "East China University of Science and Technology; Sun Yat-sen University; Northwestern Polytechnical University; Jilin University",
+  "citation_hints": "OpenAlex cited_by_count=32008; OpenAlex works_count=1119; Semantic Scholar citation_count=7163; Semantic Scholar paper_count=70",
+  "confidence": "medium",
+  "evidence_source": "openalex, semantic_scholar",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "AgenticOS: An Intent-Oriented Secure Operating System Architecture for Autonomous AI Agents",
+    "paper_year": "2026",
+    "name": "Zhen Zhao",
+    "affiliations": [
+      "East China University of Science and Technology",
+      "Sun Yat-sen University",
+      "Northwestern Polytechnical University",
+      "Jilin University",
+      "China University of Petroleum, Beijing",
+      "Shenyang Normal University",
+      "Institute of Catalysis and Petrochemistry",
+      "Sixth Affiliated Hospital of Sun Yat-sen University",
+      "First Hospital of Jilin University",
+      "Seismological Bureau of Shanghai",
+      "State Key Laboratory of Heavy Oil"
+    ],
+    "works_count": 1119,
+    "cited_by_count": 32008,
+    "author_id": "https://openalex.org/A5100423046",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {
+    "source": "semantic_scholar",
+    "paper_title": "AgenticOS: An Intent-Oriented Secure Operating System Architecture for Autonomous AI Agents",
+    "paper_year": "2026",
+    "name": "Z. Zhao",
+    "affiliations": [],
+    "paper_count": 70,
+    "citation_count": 7163,
+    "author_id": "1762156",
+    "lookup": "author_search"
+  }
+}

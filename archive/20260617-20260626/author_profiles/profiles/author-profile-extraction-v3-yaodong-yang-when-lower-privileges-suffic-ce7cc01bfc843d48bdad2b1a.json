@@ -1,0 +1,19 @@
+{
+  "name": "Yaodong Yang",
+  "role": "last_author",
+  "affiliation": "Beijing Academy of Artificial Intelligence; Institute for Artificial Intelligence, Peking University",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Yaodong Yang",
+    "affiliations": [
+      "Beijing Academy of Artificial Intelligence",
+      "Institute for Artificial Intelligence, Peking University"
+    ],
+    "author_row": "textbf Yaodong Yang"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

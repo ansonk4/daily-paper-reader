@@ -1,0 +1,24 @@
+{
+  "author_score": 8.0,
+  "author_rating_explanation": "The first author has a verified affiliation with the University of Illinois Urbana-Champaign, a top US AI school in the 8-9 band, and also lists AIM Intelligence. The last author lists only AIM Intelligence, which is not a widely recognized top-tier institution/company in the defined bands and has low citation counts (OpenAlex cited_by_count=2). The first author's UIUC affiliation anchors the score at 8.",
+  "author_profiles": [
+    {
+      "name": "Hanwool Lee",
+      "role": "first_author",
+      "affiliation": "AIM Intelligence; University of Illinois Urbana-Champaign",
+      "citation_hints": "OpenAlex cited_by_count=728; OpenAlex works_count=32",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    },
+    {
+      "name": "Haon Park",
+      "role": "last_author",
+      "affiliation": "AIM Intelligence",
+      "citation_hints": "OpenAlex cited_by_count=2; OpenAlex works_count=12",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:54:15.608080+00:00"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Shangzhi Xu",
+  "role": "first_author",
+  "affiliation": "~Shuangxiang Kan ,~Siqi Ma 1; The University of New South Wales,~ Macquarie University,~ CSIRO,~ The University of Wollongong; * Corresponding Authors",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Shangzhi Xu",
+    "affiliations": [
+      "~Shuangxiang Kan ,~Siqi Ma 1",
+      "The University of New South Wales,~ Macquarie University,~ CSIRO,~ The University of Wollongong",
+      "* Corresponding Authors"
+    ],
+    "author_row": "Shangzhi Xu ,~Ziqi Ding ,~Xiao Cheng ,~Yuekang Li ,~Nan Sun ,~Benjamin Turnbull"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

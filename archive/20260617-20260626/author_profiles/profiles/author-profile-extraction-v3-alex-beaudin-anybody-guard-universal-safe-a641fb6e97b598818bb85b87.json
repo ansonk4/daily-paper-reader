@@ -1,0 +1,21 @@
+{
+  "name": "Alex Beaudin",
+  "role": "first_author",
+  "affiliation": "Hanna Krasowski; Kartik Nagpal; Sanjit A. Seshia; Murat Arcak",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Alex Beaudin",
+    "affiliations": [
+      "Hanna Krasowski",
+      "Kartik Nagpal",
+      "Sanjit A. Seshia",
+      "Murat Arcak"
+    ],
+    "author_row": "Alex Beaudin"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

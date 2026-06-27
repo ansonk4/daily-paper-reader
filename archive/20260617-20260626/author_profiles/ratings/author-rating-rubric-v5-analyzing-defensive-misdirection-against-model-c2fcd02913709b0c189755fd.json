@@ -1,0 +1,24 @@
+{
+  "author_score": 7.0,
+  "author_rating_explanation": "Both authors are affiliated with Keysight Technologies Inc., a major US technology company, specifically within its Application & Threat Intelligence Research Center. This places them in the industry research band, though not at the very top tier of AI-focused labs like DeepMind or OpenAI.",
+  "author_profiles": [
+    {
+      "name": "Reza Soosahabi",
+      "role": "first_author",
+      "affiliation": "Application & Threat Intelligence Research Center; Keysight Technologies Inc., USA",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Vivek Namsani",
+      "role": "last_author",
+      "affiliation": "Application & Threat Intelligence Research Center; Keysight Technologies Inc., USA",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:00:04.309933+00:00"
+}

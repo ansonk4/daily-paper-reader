@@ -1,0 +1,24 @@
+{
+  "name": "Chang Wu",
+  "role": "first_author",
+  "affiliation": "National Taiwan University Hospital; Taipei Medical University",
+  "citation_hints": "OpenAlex cited_by_count=17720; OpenAlex works_count=192",
+  "confidence": "medium",
+  "evidence_source": "openalex",
+  "arxiv_source": {},
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "PolicyAlign: Direct Policy-Based Safety Alignment for Large Language Models",
+    "paper_year": "2026",
+    "name": "Chang‐Jiun Wu",
+    "affiliations": [
+      "National Taiwan University Hospital",
+      "Taipei Medical University"
+    ],
+    "works_count": 192,
+    "cited_by_count": 17720,
+    "author_id": "https://openalex.org/A5017759600",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

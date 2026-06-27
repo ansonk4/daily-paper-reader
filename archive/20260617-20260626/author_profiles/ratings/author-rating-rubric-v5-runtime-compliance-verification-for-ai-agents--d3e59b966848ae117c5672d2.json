@@ -1,0 +1,24 @@
+{
+  "author_score": 4.0,
+  "author_rating_explanation": "The affiliation text for Nafiseh Kahani contains only author names and identifiers, not a verifiable institution. Diana Addae has no affiliation. Without concrete institutional evidence, a neutral score in the 0-5 band is assigned.",
+  "author_profiles": [
+    {
+      "name": "Nafiseh Kahani",
+      "role": "first_author",
+      "affiliation": "Masoud Barati 1 0000-0001-7829-2240; Diana Addae 1 0009-0009-8833-0488",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Diana Addae",
+      "role": "last_author",
+      "affiliation": "",
+      "citation_hints": "",
+      "confidence": "low",
+      "evidence_source": "metadata lookup unavailable"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:59:20.443205+00:00"
+}

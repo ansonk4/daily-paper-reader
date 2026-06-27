@@ -1,0 +1,24 @@
+{
+  "author_score": 7.0,
+  "author_rating_explanation": "First author Kaiyue Yang is affiliated with the Institute of Information Engineering, Chinese Academy of Sciences (CAS) and the Beijing Academy of Artificial Intelligence (BAAI). Last author Yaodong Yang is affiliated with BAAI and the Institute for Artificial Intelligence, Peking University. Both CAS and Peking University are top Chinese institutions, and BAAI is a prominent AI research lab, placing the score in the 6-8 band.",
+  "author_profiles": [
+    {
+      "name": "Kaiyue Yang",
+      "role": "first_author",
+      "affiliation": "Institute of Information Engineering, Chinese Academy of Sciences; Beijing Academy of Artificial Intelligence",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Yaodong Yang",
+      "role": "last_author",
+      "affiliation": "Beijing Academy of Artificial Intelligence; Institute for Artificial Intelligence, Peking University",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:59:20.441853+00:00"
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Giulian Biolo",
+  "role": "first_author",
+  "affiliation": "2 Vrije Universiteit Amsterdam, NL",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Giulian Biolo",
+    "affiliations": [
+      "2 Vrije Universiteit Amsterdam, NL"
+    ],
+    "author_row": "Giulian Biolo 1 , Michael Tezza 1 , Yuanjun Gong 1 , Fabio Massacci 1,2 1 University of Trento, IT"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

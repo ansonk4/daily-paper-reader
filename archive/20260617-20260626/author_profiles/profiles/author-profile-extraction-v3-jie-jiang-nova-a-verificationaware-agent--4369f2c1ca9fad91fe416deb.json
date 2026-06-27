@@ -1,0 +1,21 @@
+{
+  "name": "Jie Jiang",
+  "role": "last_author",
+  "affiliation": "[1pt] Tencent Inc.; jimmyshliu,franklfang,elonsun,ericdhuang,qsongluo,orionsxliu,noreenchen; dongcialiu,chuangangma,njzzchai,asherwang,justinquan,shoncui,defyzhu; [1pt]",
+  "citation_hints": "",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Jie Jiang",
+    "affiliations": [
+      "[1pt] Tencent Inc.",
+      "jimmyshliu,franklfang,elonsun,ericdhuang,qsongluo,orionsxliu,noreenchen",
+      "dongcialiu,chuangangma,njzzchai,asherwang,justinquan,shoncui,defyzhu",
+      "[1pt]"
+    ],
+    "author_row": "Changyuan Cui, Zhangbin Zhu, Peng Chen, Wei Xu, Lei Xiao, Haijie Gu, Jie Jiang"
+  },
+  "openalex": {},
+  "semantic_scholar": {}
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Chenyang Zhu",
+  "role": "first_author",
+  "affiliation": "AI Foundations, Capital One",
+  "citation_hints": "OpenAlex cited_by_count=1758; OpenAlex works_count=85",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Chenyang Zhu",
+    "affiliations": [
+      "AI Foundations, Capital One"
+    ],
+    "author_row": "Chenyang Zhu"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "SAFARI: Scaling Long Horizon Agentic Fault Attribution via Active Investigation",
+    "paper_year": "2026",
+    "name": "Chenyang Zhu",
+    "affiliations": [],
+    "works_count": 85,
+    "cited_by_count": 1758,
+    "author_id": "https://openalex.org/A5114859293",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

@@ -1,0 +1,24 @@
+{
+  "author_score": 5.5,
+  "author_rating_explanation": "Both focus authors are affiliated with The Chinese University of Hong Kong, Shenzhen (CUHK-Shenzhen). Per the scoring rules, CUHK-Shenzhen is distinct from CUHK Hong Kong and must not receive the top-school boost. Without explicit metadata confirming it as a top-tier campus, it falls into the 5-6 mid-tier range.",
+  "author_profiles": [
+    {
+      "name": "Wangxuan Fan",
+      "role": "first_author",
+      "affiliation": "The Chinese University of Hong Kong, Shenzhen",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    },
+    {
+      "name": "Zhongxiang Dai",
+      "role": "last_author",
+      "affiliation": "The Chinese University of Hong Kong, Shenzhen",
+      "citation_hints": "",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T09:04:13.330366+00:00"
+}

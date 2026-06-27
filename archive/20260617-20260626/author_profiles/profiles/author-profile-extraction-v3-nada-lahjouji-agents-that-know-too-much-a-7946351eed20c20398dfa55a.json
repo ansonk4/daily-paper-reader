@@ -1,0 +1,32 @@
+{
+  "name": "Nada Lahjouji",
+  "role": "first_author",
+  "affiliation": "University of California, Irvine; University of Ulster; School of Engineering, Ulster University, Belfast, BT15 1AP, United Kingdom",
+  "citation_hints": "OpenAlex cited_by_count=2; OpenAlex works_count=4",
+  "confidence": "medium",
+  "evidence_source": "arxiv_source, openalex",
+  "arxiv_source": {
+    "source": "arxiv_source",
+    "name": "Nada Lahjouji",
+    "affiliations": [
+      "University of California, Irvine"
+    ],
+    "author_row": "Nada Lahjouji"
+  },
+  "openalex": {
+    "source": "openalex",
+    "paper_title": "Agents That Know Too Much: A Data-Centric Survey of Privacy in LLM Agents",
+    "paper_year": "2026",
+    "name": "Nada Lahjouji",
+    "affiliations": [
+      "University of Ulster",
+      "School of Engineering, Ulster University, Belfast, BT15 1AP, United Kingdom",
+      "University of California, Irvine"
+    ],
+    "works_count": 4,
+    "cited_by_count": 2,
+    "author_id": "https://openalex.org/A5099513088",
+    "lookup": "author_search"
+  },
+  "semantic_scholar": {}
+}

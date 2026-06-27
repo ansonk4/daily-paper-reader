@@ -1,0 +1,24 @@
+{
+  "author_score": 5.0,
+  "author_rating_explanation": "Both focus authors are affiliated with the Department of Electrical & Computer Engineering, University of Maine, a mid-tier US research university with concrete research output but not a top-tier AI school. The last author has strong citation counts (OpenAlex cited_by_count=904, Semantic Scholar citation_count=634), which supports mid-tier positioning but does not push the affiliation into top bands.",
+  "author_profiles": [
+    {
+      "name": "Tasneem Suha",
+      "role": "first_author",
+      "affiliation": "Department of Electrical & Computer Engineering, University of Maine, Orono, ME, USA",
+      "citation_hints": "OpenAlex cited_by_count=10; OpenAlex works_count=8",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex"
+    },
+    {
+      "name": "Prabuddha Chakraborty",
+      "role": "last_author",
+      "affiliation": "Department of Electrical & Computer Engineering, University of Maine, Orono, ME, USA; University of Maine",
+      "citation_hints": "OpenAlex cited_by_count=904; OpenAlex works_count=83; Semantic Scholar citation_count=634; Semantic Scholar paper_count=46",
+      "confidence": "medium",
+      "evidence_source": "arxiv_source, openalex, semantic_scholar"
+    }
+  ],
+  "author_rating_status": "rated",
+  "rated_at": "2026-06-26T08:54:15.607573+00:00"
+}
