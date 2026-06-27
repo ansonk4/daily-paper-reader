@@ -1,0 +1,773 @@
+Title: ShareLock: A Stealthy Multi-Tool Threshold Poisoning Attack Against MCP
+
+URL Source: https://arxiv.org/pdf/2606.27027v1
+
+Published Time: Fri, 26 Jun 2026 01:16:35 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# ShareLock: A Stealthy Multi-Tool Threshold Poisoning Attack Against MCP 
+
+# Liwei Liu 
+
+tobellw169@sjtu.edu.cn Shanghai Jiao Tong University Shanghai, China 
+
+# Tianzhu Han 
+
+Shanghai Jiao Tong University Shanghai, China 
+
+# Zijian Liu 
+
+Shanghai Jiao Tong University Shanghai, China 
+
+# Zishu Dong 
+
+Shanghai Jiao Tong University Shanghai, China 
+
+# Na Ruan ∗
+
+naruan@sjtu.edu.cn Shanghai Jiao Tong University Shanghai, China 
+
+## Abstract 
+
+With the rapid evolution of LLM-driven agents, Model Context Protocol (MCP), an open protocol bridging LLMs with external tools, has quickly become foundational to modern agent ecosys-tems. However, the expanding adoption of MCP has also introduced novel security concerns such as Tool Poisoning Attack(TPA), which exploit LLM-server interactions to inject malicious prompts. Ex-isting poisoning schemes typically adopt a monolithic plaintext embedding paradigm, which fails to withstand manual inspection or automated detectors. Current research still lacks a systematic analysis on multi-tool poisoning, where multiple tools can be ex-ploited cooperatively to disperse detection risk. In this paper, we introduce ShareLock, a multi-tool threshold poisoning framework that utilizes Shamir’s threshold scheme to ensure exceptional stealth and fault tolerance. ShareLock distributes the malicious instruction as benign-looking secret shares across multiple tool descriptions, achieving both information-theoretic secrecy and attack robustness against moderate auditing. After a covert reconstruction trigger is planted during server update, the aggregated shares reconstruct the hidden instruction, resulting in critical breaches of system assets or private data. To evaluate the realistic threat of ShareLock, we con-structed a comprehensive benchmark encompassing four multi-tool scenarios and conducted extensive experiments across mainstream LLMs on two distinct MCP clients. Our results demonstrate that ShareLock significantly outperforms existing single-tool poisoning strategies in tool description-based detection while maintaining an average attack success rate exceeding 90%. 
+
+## CCS Concepts 
+
+• Computing methodologies → Intelligent agents ; • Security and privacy → Information-theoretic techniques ; • Networks 
+
+→ Network protocols . 
+
+> Permission to make digital or hard copies of all or part of this work for personal or classroom use is granted without fee provided that copies are not made or distributed for profit or commercial advantage and that copies bear this notice and the full citation on the first page. Copyrights for components of this work owned by others than the author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or republish, to post on servers or to redistribute to lists, requires prior specific permission and/or a fee. Request permissions from permissions@acm.org.
+> Conference’17, Washington, DC, USA
+> ©2026 Copyright held by the owner/author(s). Publication rights licensed to ACM. ACM ISBN 978-x-xxxx-xxxx-x/YYYY/MM https://doi.org/XXXXXXX.XXXXXXX
+
+## Keywords 
+
+Large Language Model, Model Context Protocol, Tool Poisoning, Shamir Secret Sharing 
+
+ACM Reference Format: 
+
+Liwei Liu, Tianzhu Han, Zijian Liu, Zishu Dong, and Na Ruan. 2026. Share-Lock: A Stealthy Multi-Tool Threshold Poisoning Attack Against MCP. In .
+
+ACM, New York, NY, USA, 16 pages. https://doi.org/XXXXXXX.XXXXXXX 
+
+## 1 Introduction 
+
+With significant advancement in Large Language Model (LLM)[ 21 ], researchers are increasingly focused on LLM-driven agents, which can precisely understand user intent and autonomously perform complex tasks. The tool invocation module plays a pivotal role in the design of agents. It transforms LLMs from simple text-generating chatbots into powerful systems. Through predefined interfaces, LLMs can leverage structured language to invoke external tools, such as web search, terminal control, and file system operations, thus greatly expanding functional boundaries of AI. Previous tool invocation mechanisms, such as the function call-ing mechanism [ 19 ], required developers to manually define com-plex JSON schemas, making it difficult to reuse across different platforms. The Model Context Protocol (MCP) [2 ] is an open, platform-agnostic protocol that adopts an extensible client-server architecture, providing a unified interface for AI applications to connect with external data sources, tools, and workflows. The stan-dard workflow of the MCP protocol is illustrated in Fig.1. The MCP ecosystem has experienced rapid growth in a short period, with thousands of MCP servers emerging on public hosting platforms like Smithery.ai[ 26 ]. Notably, most of the prominent AI applications such as Claude Code support connection to external MCP server. Because of the inherent limitation of protocol design, numer-ous latent vulnerabilities have been revealed with the widespread adoption of MCP. Research on poisoning attacks against MCP has therefore attracted considerable attention owing to their low cost, direct exploitation manners, and pronounced impact. Tool Poison-ing Attack (TPA) [ 11 ], is emblematic of these threats in the MCP ecosystem. It exploits interactions across the MCP lifecycle to per-form prompt injection attack by subtly modifying tool descriptions or embedding adversarial payloads in external resources linked by MCP servers[7, 16]. Despite the significant attack potential of TPA, existing attack strategies are based on a simplified MCP security model and are  
+
+> arXiv:2606.27027v1 [cs.CR] 25 Jun 2026 Conference’17, July 2017, Washington, DC, USA Liwei Liu, Tianzhu Han, Zijian Liu, Zishu Dong, and Na Ruan
+
+Figure 1: Overview of MCP workflow and tool poisoning at-tack mechanism. 
+
+fragile against real-world defenses, e.g., manual review of MCP Servers in practical deployments, especially following the disclo-sure of MCP risk. The straightforward embedding method is likely to deceive users with limited MCP security awareness and will not withstand expert review or automated security scanners such as MCPSafetyScanner[ 23 ], MCP-Guard[ 31 ]. Moreover, although some benchmarking works have proposed simple exploitation among multi-tools, they haven’t made profound progress towards a stealthy and robust attack. There is still a lack of a systematic analysis on multi-tool poisoning attacks, rather than merely treating additional tools as channels for variable transmission[8]. To reveal the practical threat in multi-tool scenario, we introduce 
+
+ShareLock , a stealthy and robust multi-tool threshold poisoning scheme for MCP ecosystem. Leveraging the properties of threshold protocols, our attack simultaneously achieves concealment of ad-versarial prompts and robustness to moderate vetting in multi-tool deployments. Rather than employing the plaintext injections com-mon in extant MCP poisoning work, ShareLock combines encoding-based obfuscation with a threshold secret-sharing construction. The secret shares are subtly embedded within the tool descriptions of multiple tools. When a reconstruction trigger, covertly introduced via a server update, is activated, the aggregated shares reconstruct the adversarial prompt and thus precipitate severe consequences such as unauthorized file operations or property damages. To the best of our knowledge, this work is the first dedicated MCP multi-tool poisoning framework that integrates Shamir’s thresh-old scheme[ 24 ]. Through a systematic analysis of prior work, we highlight the role of moderate vetting in realistic MCP security deployments and identify the unique stealth and robustness chal-lenges posed by multi-tool poisoning scenarios. Our threshold-based design not only demonstrates how to balance concealment and resilience in MCP ecosystem, but also can be generalized to a broader class of distributed prompt-injection threats in agent systems. Our key contributions are summarized as follows: 
+
+• Realistic Threat Model. Unlike prior studies confined to single-tool plaintext injections, we systematically analyze the MCP ecosystem to formulate a novel threat model un-der a moderate vetting assumption. We formally define the unique challenges of multi-tool poisoning, demonstrating how an adversary can exploit multiple tools to disperse de-tection risk and orchestrate complex, unauthorized agent behaviors.. 
+
+• ShareLock. We propose ShareLock, the first threshold-based multi-tool poisoning framework for LLM agents. By adapt-ing Shamir’s Secret Sharing, ShareLock fragments adversar-ial prompts into cryptographic shares and disguises them as benign metadata. This semantic-preserving obfuscation achieves dual objectives: it ensures information-theoretic secrecy and provides inherent fault tolerance, allowing the attack to succeed even if a subset of poisoned tools is re-moved. 
+
+• Comprehensive Multi-Domain Evaluation. We evalu-ated ShareLock on custom-built benchmark comprising four diverse multi-tool domains ( Travel, Coding, Finance, Office ). Extensive experiments on four mainstream LLMs across two MCP clients (Cherry Studio, Cline) show an average Attack Success Rate exceeding 90%. Crucially, ShareLock demon-strated high evasiveness when assessed by most mainstream models in safety classification, substantially outperforming existing single-tool baseline strategies in both stealth and robustness. 
+
+## 2 Background 2.1 Model Context Protocol (MCP) 
+
+To unify the interface between AI applications and diverse external resources, the Model Context Protocol (MCP) was first introduced by Anthropic[ 2]. It follows a client-server architecture, where AI applications like Claude Desktop work as MCP host. MCP host manage connections to one or more MCP servers. Specifically, it in-stantiates an MCP client object to maintain a one-to-one connection with corresponding MCP server. A standard MCP interaction workflow consists of five phases in a coarse-grained manner: 1) Registration, MCP server registers its capabilities through a tool definition in json format, including tool name, tool description, inputschema, etc. 2) Request, user input its request in natural language. 3) Planning, LLM assesses whether the user’s task requires tool invocation. If so, it selects the appropriate tool and generate invocation request based on tool definitions pro-vided by MCP server. 4) Invocation, MCP client send the request to MCP server to invoke corresponding tool. 5) Response, LLM generate final answer combining with tool results returned. 
+
+## 2.2 Poisoning Attacks on MCP 
+
+Different from the traditional LLM security model, which focus on the interaction between user and model, the introduction of the third-party server in MCP ecosystem, enlarges the potential attack surface significantly[ 11 , 27 ]. Invariant Labs first identified a feasible threat within the MCP ecosystem named Tool Poisoning Attack (TPA)[ 11 ]. When malicious instructions are embedded within tool descriptions, the model’s inherent trust in these descriptions can trigger unauthorized behaviors, leading to severe consequences. Song et al.[ 27 ] conducted a detailed analysis of the MCP workflow and identified another threat, the Malicious External Resource At-tack (MERA), in which attackers inject malicious prompts through ShareLock: A Stealthy Multi-Tool Threshold Poisoning Attack Against MCP Conference’17, July 2017, Washington, DC, USA 
+
+compromised third-party resources linked to MCP servers. Further-more, some research.[ 4, 28 ] found that attackers can manipulate tool selection of LLMs by modifying tool names and descriptions. Even Claude Code has been found vulnerable to tool behavior hi-jacking based on Tool Invocation Prompt (TIP)[ 30 ], one prompt component in agent workflow that guide the model to correctly invoke external tools in a secure manner. In summary, existing MCP tool poisoning attacks can be catego-rized as follows: 1) Tool Description Poisoning Attack (TDPA) ,embedding malicious prompts into tool descriptions to achieve instruction injection through the tool registration phase; 2) Tool Return Poisoning Attack (TRPA) , malicious prompts are in-jected into the tool return from MCP server, exploiting the MCP tool invocation phase. Notably, MERA is a specific case of TRPA. A schematic illustration of MCP poisoning attacks is also shown in Fig.1. Although both attacks are essentially variants of prompt in-jection attack, the unique complexity of the MCP ecosystem makes them more diverse and stealthy, significantly reducing the effec-tiveness of detection and defense mechanisms in conventional LLM security. However, existing attack strategies perform prompt injec-tion in plaintext. Anomalous tool descriptions can be flagged by human reviewers or guard models readily, which diminishes the practical feasibility of attack. 
+
+## 2.3 Existing Defense on MCP 
+
+With the disclosure of MCP vulnerabilities, various evaluation and defense strategies[ 13 , 20 , 25 ] have been proposed recently, despite some of them lack sufficient experimental validation. Considering on the source of malicious prompts, some researchers attempt to design external guardrail mechanisms for MCP services. Kumar et al. [ 13 ] proposed the MCP Guardian framework, which imple-ments authentication, rate limiting , logging and WAF scanning by setting up a unified security middleware between the MCP client and server. Radosevich et al.[ 23 ] designed a multi-agent framework composed of a hacker, auditor, and supervisor to generate a detailed security audit report for MCP servers. Furthermore, enhancing the model’s awareness of tool security through supervised fine-tuning is another important strategy[ 9, 12 ]. For instance, Jing et al. pro-posed MCIP[ 12 ], which systematically analyzes MCP threats and constructs fine-tuning and evaluation datasets based on the MAE-STRO framework[ 3 ], effectively improving the model’s contextual robustness and tool security awareness. While these defensive works have made considerable progress, current research on MCP security remains underdeveloped in fields such as multi-tool collaboration attacks or toolchain-based attacks. According to statistics from Zhao et al[ 33 ], nearly 78 .5% of MCP servers contain at least one threat-relevant MCP tool, underscor-ing the need for more attention on multi-tool security in MCP ecosystem. There is an urgent need to develop a comprehensive framework for multi-tool poisoning attacks. 
+
+## 2.4 Threshold Scheme 
+
+Shamir’s Threshold Scheme [ 24 ]. This scheme provides a delicate method to divide a secret into multiple parts called shares. The secret can only be reconstructed when a sufficient number of shares, known as the threshold, are combined. This ensures that no single participant, or any subgroup smaller than the threshold, can access the secret on their own. The fundamental principle of Shamir’s scheme lies in polynomial interpolation. A unique polynomial of degree 𝑘 − 1 can be determined by 𝑘 distinct points. Formally, the process can be break as follows: 
+
+• Initialization : A secret 𝑆 is represented as a number. A prime number 𝑝 larger than both the secret and the number of shares 𝑛 , is chosen to define a finite field for the calculation. 
+
+• Polynomial Creation : A random polynomial of degree 
+
+𝑘 − 1 is constructed, where 𝑘 is the threshold number of shares required for reconstruction. The constant term of this polynomial is the secret S. The other coefficients of the polynomial are chosen randomly.The polynomial can be formulated as follows, i.e., 𝑞 (𝑥 ) = 𝑎 0 + 𝑎 1𝑥 + 𝑎 2𝑥 2 + · · · + 
+
+𝑎 𝑘 −1𝑥 𝑘 −1, where 𝑎 0 = 𝑆 .
+
+• Share Generation : To create 𝑛 shares, 𝑛 distinct points on this polynomial are calculated. Each participant is given a unique point (𝑥 𝑖 , 𝑦 𝑖 ), where 𝑦 𝑖 = 𝑞 (𝑥 𝑖 ). This pair of (𝑥 𝑖 , 𝑦 𝑖 )
+
+constitutes each share. 
+
+• Secret Reconstruction : To reconstruct the secret, at least 𝑘 
+
+participants must cooperate together and their shares. With k distinct points, the original polynomial of degree 𝑘 − 1
+
+can be uniquely reconstructed using methods like Lagrange interpolation. Once the polynomial is reconstructed, the secret S is revealed as the constant term, which satisfies 
+
+𝑆 = 𝑎 0 = 𝑞 (0).Shamir’s Threshold Scheme offers several crucial functionalities and properties that make it a robust and widely applicable crypto-graphic tool. The scheme provides information-theoretic secrecy, meaning that even with unlimited computational power, an adver-sary with fewer than k shares cannot gain any information about the secret. In this paper, we extend Shamir’s threshold scheme into the design of multi -tool poisoning attacks within the MCP ecosys-tem in a subtle manner, shifting it from a secure secret sharing mechanism to an attack module to enhance robustness and stealth of ShareLock. 
+
+## 3 Problem Statement 3.1 Prompt in MCP Workflow 
+
+From the perspective of prompt input, the essence of MCP poison-ing attacks is a variant of the Indirect Prompt Injection Attack (IPIA) 
+
+[5 , 17 , 18 ]. Therefore, a thorough understanding of the prompt struc-ture within the MCP ecosystem, as well as its dynamic evolution throughout the MCP workflow, is crucial. 
+
+General Prompt Structure. To formalize the attack surface within the MCP ecosystem, we follow the well-adopted prompt classifi-cation scheme [ 6] and model the LLM’s input sequence P𝑖𝑛 as a concatenation of three primary components: 
+
+P𝑖𝑛 = 𝑝 𝑠𝑦𝑠𝑡𝑒𝑚 ∥ 𝑝 𝑐𝑜𝑛𝑡𝑒𝑥𝑡 ∥ 𝑝 𝑢𝑠𝑒𝑟 (1) where 𝑝 𝑠𝑦𝑠𝑡𝑒𝑚 defines the agent’s core guidelines and tool capabili-ties, 𝑝 𝑐𝑜𝑛𝑡𝑒𝑥𝑡 retains multi-turn memory and tool execution results, and 𝑝 𝑢𝑠𝑒𝑟 represents the human task. 
+
+the Source of Malicious Prompts in MCP. Considering the workflow of MCP in five phases, we further analyze the source of Conference’17, July 2017, Washington, DC, USA Liwei Liu, Tianzhu Han, Zijian Liu, Zishu Dong, and Na Ruan 
+
+injected prompts. We assume that the adversary intends to inject a malicious prompt denoted as 𝑝 𝑎𝑑𝑣 .During the MCP server registration phase, the LLM-based agent retrieves a list of available tools via the list_tools interface defined by the protocol. The returned JSON-formatted tool definitions typically include fields such as tool name, tool description, and inputschema, which are concatenated with original system prompts. These tool definitions enable the agent to determine capability boundaries of tools and specific input requirements. Denoted as 𝑝 𝑑𝑒𝑠𝑐 , the tool description satisfies 𝑝 𝑑𝑒𝑠𝑐 ⊆ 𝑝 𝑠𝑦𝑠𝑡𝑒𝑚 . 𝑝 𝑑𝑒𝑠𝑐 are typically authored by MCP server developers to facilitate LLMs’ understanding of tool. However, if the user connects to a malicious MCP server controlled by adversary due to negligence or a supply-chain compromise, the attacker can embed 𝑝 𝑎𝑑𝑣 into 𝑝 𝑑𝑒𝑠𝑐 by altering the tool descrip-tion, i.e., 𝑝 𝑑𝑒𝑠𝑐 = (𝑝 𝑏𝑒𝑛𝑖𝑔𝑛 ∥ 𝑝 𝑎𝑑𝑣 ) ⊆ 𝑝 𝑠𝑦𝑠𝑡𝑒𝑚 . Crucially, the injected instruction does not imply guaranteed execution. 𝑝 𝑎𝑑𝑣 is still con-strained by existing security restrictions such as TIP[ 30 ] in system prompts. In the subsequent experimental section, we will explore how multi-tool interactions can be exploited to circumvent these security constraints and induce the model to carry out adversarial instructions. During the invocation phase, the client issues a tool call and obtains response from MCP server, e.g. stock price. Denote the tool’s returned content by 𝑝 𝑟𝑒𝑡 , this content is incorporated into the agent’s contextual prompt, i.e. 𝑝 𝑟𝑒𝑡 ⊆ 𝑝 𝑐𝑜𝑛𝑡𝑒𝑥𝑡 . Similarly, an adversary can embed a malicious payload into the returned data, thereby effecting P𝑖𝑛 via tool outputs. Such return-based in-jections exploit the model’s dependence on contextual information and can bypass defenses that focus solely on tool descriptions or registration-time vetting. 
+
+## 3.2 Motivations 
+
+Tool Trust Paradox in MCP[ 27 ]. In the MCP ecosystem, the roles of agent developers and tool developers are distinctly separated, allowing each party to focus on its respective domain. This mutual trust between the agent and third-party developers facilitates seam-less and efficient cooperation. However, there exists a notable tool trust paradox in MCP. On the one hand, the agent cannot rule out the possibility of a malicious third party. As analyzed previously, a malicious third party can easily inject prompts into the agent system by modifying tool descriptions or tool return results, thus expanding the agent’s attack surface. On the other hand, the tool invocation capabilities of LLMs often require substantial super-vised fine-tuning. However, due to the lack of adversarial samples in existing training data to defend against malicious tools, LLMs with high instruction-following capability tend to blindly trust tool descriptions to improve the accuracy of tool invocations. 
+
+Multi-Tool Scenarios in MCP. For an agent, its tool invocation capabilities define its functional boundaries. The emergence of MCP enables agents to easily integrate third-party tools by connecting to MCP servers. For an agent handling complex tasks, it typically requires access to a large number of external MCP servers. A large-scale survey of MCP servers in the MCP market (e.g. PulseMCP, Awesome MCP Servers, MCP Market)[ 33 ] found that nearly 78.5% of MCP servers host at least one threat-relevant tool. Furthermore, even for agents handling simpler tasks that rely on a single MCP server, the server may still provide multiple tools. In summary, multi-tool scenarios are ubiquitous within the MCP ecosystem. Compared with single-tool poisoning, our multi-tool poisoning scheme exhibits greater potential to evade current static defenses. By dispersing adversarial intent across multiple tools, our approach enhances payload stealth, thereby imposing stricter requirements on the design of effective defenses. 
+
+Heuristic Risk Dispersion. While recent works have expanded the catalogue of MCP threats (e.g., Rug Pull [ 27 ], Preference Ma-nipulation [ 28 ]), an in-depth empirical study of multi-tool attacks remains critically absent. Existing Tool Poisoning Attacks inher-ently suffer from a single point of failure : they concentrate the entire malicious payload in plaintext within a single tool’s metadata. If targeted defenses (e.g., rule-matching scanners, guard models) remove that specific tool, the entire attack collapses. To overcome this fragility, we draw inspiration from cryptographic secret shar-ing to introduce a novel paradigm. By fragmenting the malicious prompt into innocuous shares distributed across multiple tools, an adversary effectively disperses the detection risk. Crucially, employ-ing a threshold scheme (where only 𝑡 out of 𝑛 tools are required to reconstruct the payload) provides inherent fault tolerance . Even if rigorous auditing filters out (𝑛 − 𝑡 ) poisoned tools, the attack remains viable. This structural shift from single-point vulnerability to distributed, threshold-based resilience forms the core motivation for developing ShareLock. 
+
+## 3.3 Threat Model 
+
+MCP System Model. Compared with the traditional binary LLM security model, the MCP system model typically involves three components[ 2]: MCP Client (Host), LLM, and MCP Server (Third-Party Service Provider). Each playing an important role within the MCP workflow. 
+
+• LLM. Provided by major LLM API vendors, it serves as the external interface that receives input prompts from the client and generates responses aligned with human ethical and safety standards. The model’s capabilities in task planning and tool invocation directly influence the effectiveness of task completion for end users. 
+
+• MCP Client (Host). The MCP host is the local AI application or agent such as Claude Desktop that interacts directly with the user. It communicates with the LLM and transform the tool calls into a protocol messages. The host instantiates an MCP client object to maintain a one-to-one connection with each server. 
+
+• MCP Server. The MCP server is a local or remote program to which an agent connects. It exposes external interfaces that third-party providers implement in accordance with the MCP specification. Within the MCP ecosystem, tool descriptions are authored by tool developers to assist the model in un-derstanding tool functionality and invoking tools correctly. However, these descriptions constitute an attack surface that adversaries can exploit for prompt injection attacks. 
+
+Attacker’s Goal. In MCP system model, we usually consider MCP server as adversary and the MCP Host typically acts as the victim. Driven by economic incentives, third-party service providers ex-ploit the MCP workflow to inject prompts into the model’s context to further illegal objectives including unauthorized actions, privacy ShareLock: A Stealthy Multi-Tool Threshold Poisoning Attack Against MCP Conference’17, July 2017, Washington, DC, USA 
+
+breaches or denial-of-service(DoS). For instance, an adversary could modify the recipient address during a ETH transfer or exfiltrate the user’s API key from environment variables. 
+
+Key Assumptions. In our threat model, we adopt several key assumptions to more accurately characterize real-world MCP poi-soning attacks and defenser with more security awareness. 1) Moderate Vetting Before Service Connection. Attacker should assume that agents connect to MCP servers only after moderate vetting by the user or a guard model such as Llama-Prompt-Guard[ 1 ] to avoid security risks. This is a weaker assumption compared to the assumption for extant poison-ing attack that users connect to malicious servers without comprehensive verification. In such cases, the agent must rely on intrinsic mechanisms such as safety alignment to resist potential prompt injection attempts. While introduc-ing additional internal access control policies or middleware [13 , 31 ] can mitigate the impact of poisoning, overly restric-tive measures may impair agent usability. Therefore, we emphasize the assumption of moderate rather than strict vetting. 2) Control of a Multi-Tool MCP Server. We assume the adversary controls at least one MCP server that exposes mul-tiple tools and provides legitimate functionality (e.g., web search, email dispatch) under normal operation. As analyzed in section 3.2, multi-tool deployments are ubiquitous. By of-fering benign services before attack, the compromised server can be adopted by users with higher probability, thereby en-abling the adversary to covertly embed adversarial artifacts. 3) Basic Agent Capabilities. We assume that the LLM in agent possesses a substantial agentic capability. In other words, it can accurately interpret user intent, devise task plans, and execute multi-tool invocation workflows. This assumption is universal, as an agent performance on user task inherently depends on whether the model is able to efficiently orchestrate multiple tools. 
+
+## 4 ShareLock: a Multi-Tool Threshold Poisoning Attack Framework 
+
+In this section, we introduce the challenges on multi-tool poisoning attack in real world , offer our key insights and then present a three-stage methodology ShareLock to achieve a stealthy multi-tool poisoning attack based on threshold scheme. 
+
+## 4.1 Challenges and Insights 
+
+C1. Stealthy Embedding. In section 3.2 we observe that extant MCP poisoning attacks typically embed adversarial prompts in plaintext within tool descriptions. As MCP security research has progressed, such overt injections are increasingly susceptible to detection by guard model, resulting in rejected server integrations. Recent prompt-injection work has explored a range of obfusca-tion techniques such as text encodings, invisible characters, font transformations[ 32 ]. Encoding-based methods, which map natural language into numeric representations, can substantially reduce de-tection rates against simple keyword-filter defenses at low cost[ 22 ], since the payload’s semantic form is masked until model decoding. However, these approaches are principally effective only against naive filters, dedicated detectors(e.g., UniGuardian[ 15 ]) can often undo simple encodings and restore detectability. In the multi-tool MCP setting, where adversarial artifacts may be dispersed across multiple benign-looking tools, the limitations of existing schemes motivate the need for new obfuscation paradigms. 
+
+C2. Attack Robustness. The ubiquity of multi-tool deployments affords adversaries substantial opportunities to conceal malicious prompts, yet it also introduces robustness challenges for attack schemes. Existing work on multi-tool poisoning in MCP has em-phasized the potentially severe consequences of tool combinations and has treated additional tools largely as channels for passing variables[ 8], rather than effectively exploiting the stealth benefits inherent in multi-tool environments. Moreover, because such at-tacks rely on cooperation among multiple tools, adversaries must consider robustness under partial rejection when some tools are filtered out by vetting. Motivated by challenges C1 and C2, we draw inspiration from cryptographic threshold schemes, first devised for secret sharing. The key insight is as follows: 
+
+Insight 1: Leverage shamir’s threshold scheme to substi-tute malicious prompts with multiple benign shares rather than just text encoding. 
+
+C3. Reconstruction Trigger. Encoding-based obfuscation can substantially reduce detect rates, but it necessitates a correspond-ing decoding mechanism during the attack workflow to activate the adversarial prompt. In our scheme, the malicious prompt is frag-mentized into multiple numeric shares using Shamir’s threshold method, and these shares are distributed across the tool descrip-tions of different tools. To activate the malicious prompts, a recon-struction trigger is required to initiate the reconstruction process. Drawing inspiration from the Rug Pull attack[ 27 ], we introduce an auxiliary tool EnvSetup through server’s version update. By masquerading the trigger as an innocuous system environment initialization step, the design covertly embeds the reconstruction trigger into the model’s context. Once the model has aggregated a sufficient number of shares, the agent will reconstruct the malicious prompt and perform the unauthorized action before completing user tasks. 
+
+Insight 2: Embed the reconstruction trigger within the adversary-controlled server’s update artifacts by disguis-ing it as initialization procedure. 
+
+## 4.2 Overview of ShareLock 
+
+Leveraging Shamir’s threshold scheme, we propose ShareLock, a 
+
+(𝑡, 𝑛 )− threshold, three-phase, multi-tool poisoning framework. When the agent accumulates any 𝑡 out of the 𝑛 distributed shares, the system automatically reconstructs the malicious prompt 𝑃 𝑎𝑑𝑣 
+
+and perform the unauthorized behavior. Here 𝑛 denotes the total number of shares distributed across tools, and 𝑡 denotes the recon-struction threshold (i.e., the minimum number of shares required to restore 𝑃 𝑎𝑑𝑣 ). Conference’17, July 2017, Washington, DC, USA Liwei Liu, Tianzhu Han, Zijian Liu, Zishu Dong, and Na Ruan 
+
+Figure 2: Overview of ShareLock, a multi-tool threshold poisoning attack. For instance, considering the scenario where user query a weather assistant to make a travel to Oakland, adversary attempt to steal its api_key or anything else. Adversary generate benign secret shares through initial encoding and a (𝑡, 𝑛 )-Share generator, disguising the share as tool_id and tool_seq into a normal tool in order to evade the potential audit. After adversary server updates, as long as t shares collected from tool descriptions or other model context sources, the reconstruction of malicious prompts will activate in the task execution process, resulting in severe property loss. Phase 1. Initial Encoding Setup. To support the arithmetic op-erations required by the threshold protocol, we define an encod-ing rule 𝐸𝑛𝑐 (·) that maps characters to numerical values. Let the adversarial prompt be 𝑃 𝑎𝑑𝑣 = 𝑃 1 ∥ 𝑃 2 ∥ . . . 𝑃 𝑚 , where each frag-ment 𝑃 𝑖 = 𝑐 1𝑐 2 . . . 𝑐 𝑛 and 𝑐 𝑗 ∈ C denotes a single character in the adversarial prompt. We obtain the numeric representation of the adversarial prompt by applying the encoding, i.e. 𝑁 𝑎𝑑𝑣 = 𝐸𝑛𝑐 (𝑃 𝑎𝑑𝑣 ),with 𝑁 𝑖 = 𝐸𝑛𝑐 (𝑃 𝑖 ) for each fragment. It is important to emphasize that fragmenting the prompt has practical engineering benefits, par-ticularly when the payload is long. Formally, the encoding 𝐸𝑛𝑐 (·) 
+
+may be chosen freely so long as it defines a bijection between the character set and its numeric image. This bijectivity guarantees lossless reconstruction in the threshold phase. For simplicity, our experimental evaluation adopts a conventional ASCII -based en-coding. This choice does not affect ShareLock’s stealth, since the numeric encodings are further obfuscated during share generation. 
+
+Phase 2. Benign-Share Generation. Direct encoding of prompts has been shown empirically to be recoverable and thus detected by guard models. In our scheme, we treat the numeric represen-tation of the adversarial prompt 𝑁 𝑎𝑑𝑣 , as a secret and transform it into multiple benign-looking secret shares that are embedded within tool descriptions. Concretely, we employ Shamir’s thresh-old scheme. Under ideal assumptions (truly random coefficients and unbounded computation), Shamir’s scheme is information-theoretically secure[ 24 ], i.e., any set of fewer than 𝑡 shares yields no information leakage about the secret 𝑁 𝑎𝑑𝑣 . As a result, these shares, which manifest as innocuous numeric sequences in tool metadata, are less likely to arouse suspicion during tool vetting. Only when the LLM aggregates at least 𝑡 shares and a reconstruction trigger is present, the collection reveal the adversarial instruction. There are mainly three steps to generate benign shares. 1) Initialization. Choose a prime number 𝑝 larger than both the secret 𝑁 𝑖 and the number of shares 𝑛 .2) Polynomial Creation. Given threshold t, we construct a degree 𝑡 − 1 polynomial as F𝑗 (𝑥 ; 𝑁 𝑗 ) = 𝑁 𝑗 + 𝑎 1𝑥 + 𝑎 2𝑥 2 +· · · + 𝑎 𝑡 −1𝑥 𝑡 −1 (𝑚𝑜𝑑 𝑝 ), 𝑗 ∈ [ 1, 𝑚 ], where each coefficient 𝑎 𝑖 
+
+is independently drawn from a uniform distribution over 
+
+[0, 𝑝 − 1].3) Benign-Share Generation. To embed the generated nu-meric sequences more naturally into tool metadata, the ad-versary augments each tool description with two parameters: tool_ id and checksum. For each compromised tool 𝑇 𝑖 ∈ T ,let its assigned identifier be 𝐼𝐷 𝑖 . For every numeric frag-ment 𝑁 𝑗 , compute the fake hash checksum by concatenation 
+
+𝑆𝑒𝑞 𝑖 = F1 (𝐼𝐷 𝑖 ; 𝑁 1) ∥ F2 (𝐼𝐷 𝑖 ; 𝑁 2) ∥ · · · ∥ F𝑚 (𝐼𝐷 𝑖 ; 𝑁 𝑚 ).The secret share embedded in tool 𝑇 𝑖 is then represented as 
+
+𝑆ℎ𝑎𝑟𝑒 𝑖 = (𝐼𝐷 𝑖 , 𝑆𝑒𝑞 𝑖 ). In practice, we further encode 𝑆𝑒𝑞 𝑖 in base64 and start with sha384 for camouflage. 
+
+Phase 3. Reconstruction of Malicious Prompts. According to Lagrange interpolation, the LLM must aggregate at least 𝑡 shares 
+
+𝑆ℎ𝑎𝑟𝑒 𝑖 = (𝐼𝐷 𝑖 , 𝑆𝑒𝑞 𝑖 ) from its context window to uniquely determine the polynomial coefficients 𝑎 1, 𝑎 2, . . . , 𝑎 𝑡 −1 and the numeric prompt fragments 𝑁 1, 𝑁 2, . . . , 𝑁 𝑚 . The recovered numeric fragments are then mapped via the decoding rule to yield 𝑃 𝑟𝑒𝑐 𝑎𝑑𝑣 = 𝑃 1 ∥ 𝑃 2 ∥
+
+. . . 𝑃 𝑚 , 𝑃 𝑖 = 𝐷𝑒𝑐 (𝑁 𝑖 ). Shamir’s information-theoretic secrecy guar-antees that, absent knowledge of the encoding and threshold pa-rameters, fewer than 𝑡 shares reveal no information about 𝑁 𝑎𝑑𝑣 ,which greatly complicates prompt-injection detection. A central practical challenge, however, is inducing the model to recognize the reconstruction rule and to actively collect and execute the recon-struction. Motivated by Insight 2, we therefore propose embedding a reconstruction trigger within a seemingly benign initialization ShareLock: A Stealthy Multi-Tool Threshold Poisoning Attack Against MCP Conference’17, July 2017, Washington, DC, USA 
+
+Algorithm 1 ShareLock: (𝑡, 𝑛 )-Threshold Multi-Tool Attack 
+
+Input: Malicious prompt 𝑃 𝑎𝑑𝑣 , threshold 𝑡 , number of shares 𝑛 ,tool set T = {𝑇 1, . . . ,𝑇 𝑛 }, prime 𝑝 
+
+Output: Share set S = {𝑆ℎ𝑎𝑟𝑒 1, . . . , 𝑆ℎ𝑎𝑟𝑒 𝑛 } 
+
+> 1:
+
+Phase 1: Initial Encoding Setup  
+
+> 2:
+
+Define bijective encoding 𝐸𝑛𝑐 (·) and decoding 𝐷𝑒𝑐 (·) . 
+
+> 3:
+
+Split 𝑃 𝑎𝑑𝑣 into 𝑚 fragments: 𝑃 𝑎𝑑𝑣 = 𝑃 1 ∥ 𝑃 2 ∥ · · · ∥ 𝑃 𝑚 . 
+
+> 4:
+
+for 𝑗 = 1 to 𝑚 do  
+
+> 5:
+
+𝑁 𝑗 ← 𝐸𝑛𝑐 (𝑃 𝑗 ). 
+
+> 6:
+
+end for  
+
+> 7:
+
+Phase 2: Benign-Share Generation  
+
+> 8:
+
+Choose a prime 𝑝 > max 𝑗 𝑁 𝑗 and 𝑝 > 𝑛 . 
+
+> 9:
+
+Randomly select coefficients 𝑎 1, . . . , 𝑎 𝑡 −1 ∈ Z𝑝 . 
+
+> 10:
+
+for 𝑗 = 1 to 𝑚 do  
+
+> 11:
+
+Construct polynomial F𝑗 (𝑥 ; 𝑁 𝑗 ) = 𝑁 𝑗 + 𝑎 1𝑥 + · · · + 𝑎 𝑡 −1𝑥 𝑡 −1
+
+(mod 𝑝 ). 
+
+> 12:
+
+end for  
+
+> 13:
+
+for each compromised tool 𝑇 𝑖 ∈ T with ID 𝐼𝐷 𝑖 do  
+
+> 14:
+
+Initialize 𝑆𝑒𝑞 𝑖 ← ∅ . 
+
+> 15:
+
+for 𝑗 = 1 to 𝑚 do  
+
+> 16:
+
+𝑠 𝑖,𝑗 ← F 𝑗 (𝐼𝐷 𝑖 ; 𝑁 𝑗 ) ( mod 𝑝 ). 
+
+> 17:
+
+Concatenate 𝑆𝑒𝑞 𝑖 ← 𝑆𝑒𝑞 𝑖 ∥ 𝑠 𝑖,𝑗 . 
+
+> 18:
+
+end for  
+
+> 19:
+
+𝑆ℎ𝑎𝑟𝑒 𝑖 ← ( 𝐼𝐷 𝑖 , 𝑆𝑒𝑞 𝑖 ). 
+
+> 20:
+
+Embed 𝑆ℎ𝑎𝑟𝑒 𝑖 into the metadata of tool 𝑇 𝑖 . 
+
+> 21:
+
+end for  
+
+> 22:
+
+Phase 3: Reconstruction of Malicious Prompts Input: At least 𝑡 shares {( 𝐼𝐷 𝑖 𝑘 , 𝑆𝑒𝑞 𝑖 𝑘 )} 𝑟 𝑘 =1 collected in the context window.  
+
+> 23:
+
+if 𝑟 < 𝑡 then  
+
+> 24:
+
+Abort reconstruction.  
+
+> 25:
+
+end if  
+
+> 26:
+
+for 𝑗 = 1 to 𝑚 do  
+
+> 27:
+
+Extract evaluations {( 𝐼𝐷 𝑖 𝑘 , 𝑠 𝑖 𝑘 ,𝑗 )} 𝑟 𝑘 =1 from each 𝑆𝑒𝑞 𝑖 𝑘 . 
+
+> 28:
+
+Recover 𝑁 𝑗 using Lagrange interpolation: 
+
+𝑁 𝑗 =
+
+> 𝑡
+
+∑︁ 
+
+> 𝑘 =1
+
+𝑠 𝑖 𝑘 ,𝑗 𝑡 Ö  
+
+> 𝑟 =1
+> 𝑟 ≠𝑘
+
+𝐼𝐷 𝑖 𝑟 
+
+(𝐼𝐷 𝑖 𝑟 − 𝐼𝐷 𝑖 𝑘 ) (mod 𝑝 ) 
+
+> 29:
+
+𝑃 𝑗 ← 𝐷𝑒𝑐 (𝑁 𝑗 ). 
+
+> 30:
+
+end for  
+
+> 31:
+
+Reconstruct 𝑃 𝑟𝑒𝑐 𝑎𝑑𝑣 = 𝑃 1 ∥ 𝑃 2 ∥ · · · ∥ 𝑃 𝑚 . 
+
+> 32:
+
+Execute 𝑃 𝑟𝑒𝑐 𝑎𝑑𝑣 if reconstruction trigger is implanted. procedure introduced during a server update. By placing appropri-ate guidance in the initialization tool’s description and outputs, the system can covertly signal when the quorum of shares has been obtained and the reconstruction process should proceed. The three phase attack are illustrated in Algorithm 1. 
+
+## 4.3 Significant Property of ShareLock 
+
+Based on the information-theoretic secrecy property of Shamir’s threshold scheme, we can derive the following corollary: 
+
+Corollary 1 (Information-Theoretic Secrecy of ShareLock) . Let 
+
+𝐼 (𝐴 ; 𝐵 ) denotes mutual information between A and B. If the adver-sarial prompt 𝑃 adv is mapped to the numeric form 𝑁 adv = 𝐸𝑛𝑐 (𝑃 adv )
+
+through a bijective encoding function, and this encoding rule is un-known to the auditor, then fewer than 𝑡 shares reveal no information about 𝑃 adv as well, i.e. 𝐼 (𝑃 adv ; 𝑌 R ) = 𝐼 (𝑁 adv ; 𝑌 R ) = 0
+
+where 𝑌 R denote the random variable corresponding to the 𝑟 (< 𝑡 )
+
+observed shares. For simplicity, more details about proof are pro-vided in Appendix C. Under idealized conditions, the Shamir (𝑡, 𝑛 )
+
+threshold scheme provides perfect, information-theoretic secrecy. That is, any subset of fewer than 𝑡 tools (or tool descriptions) reveals absolutely no information about the encoded adversarial prompt. This formally explains why, in the ShareLock framework, isolated audit of individual tool descriptors cannot expose the hidden ma-licious instructions without access to a sufficient subset of shares and the reconstruction trigger. Furthermore, we can solve the problem of attack robustness combine with the inherent functionality of (𝑡, 𝑛 )-threshold scheme. Let the adversarial reconstruction process in ShareLock be based on a (𝑡, 𝑛 ) Shamir threshold scheme, where 𝑛 denotes the total number of embedded shares across tools and 𝑡 is the reconstruction threshold. 
+
+Corollary 2 (Robustness of ShareLock) . Even if a subset of shares is removed due to auditing of tool descriptions, the attack remains effective as long as at least 𝑡 valid shares are preserved. Formally, let 
+
+S′ ⊆ S denote the remaining shares after auditing. The adversarial prompt 𝑃 𝑎𝑑𝑣 can still be reconstructed if |S ′ | ≥ 𝑡 , i.e., 
+
+Pr [Rec (S ′) = 𝑃 𝑎𝑑𝑣 ] = 1, for |S ′ | ≥ 𝑡 (2) Therefore, smaller 𝑡 values favor the adversary, enhancing the ro-bustness of ShareLock against detector-based defenses considering the low cost to insert a benign share in any adversary-controlled server, while preserving information-theoretic secrecy when fewer than 𝑡 shares are observed. 
+
+## 5 Evaluation 
+
+In this section, we empirically evaluate ShareLock against realistic agent systems integrated with MCP. Through a series of ablation studies, we rigorously examine the differences between single-tool and multi-tool poisoning and the attack robustness in simulated tool auditing scenario. 
+
+## 5.1 Experimental Setup 
+
+Models and Agents. To better examine the practical threat of ShareLock, we select two popular MCP agent (MCP Hosts): Cherry Studio, Cline, all of which provide MCP integration for most main-stream models. Furthermore, to ensure comprehensive evaluation, we conduct extensive experiments mainly on four representative large language models: Google’s Gemini-2.5-Flash, DeepSeek-V3.1, DeepSeek-V3.2 and Qwen3-235B-A22B-Thinking. Unless specified statement, the hyperparameter model temperature is set to 1 by de-fault in the experiments. All LLM APIs utilized in our experiments were accessed via OpenRouter. 
+
+Dataset and Scenario. To rigorously evaluate the real-world threat of ShareLock and address the missing of multi-turn benchmarks, we constructed a comprehensive evaluation dataset featuring natural Conference’17, July 2017, Washington, DC, USA Liwei Liu, Tianzhu Han, Zijian Liu, Zishu Dong, and Na Ruan 
+
+multi-tool scenarios. Our dataset is designed to inherently require the orchestration of multiple MCP tools to fulfill a single user query. 
+
+• Scenario Design: We constructed four distinct and realistic agent domains: Travel Assistant , Coding Assistant , Financial Analyst , and Office Manager . For each domain, we deployed a custom MCP server exposing a suite of task-specific, le-gitimate tools alongside a disguised trigger tool (e.g., En-vSetup ). Crucially, reflecting standard practices in modern agent ecosystems, all agents were universally configured to connect to a foundational MCP server, specifically, the official filesystem server. To ensure deterministic evalua-tion and isolate external noise, all task-specific tools return semantically valid mocked responses. 
+
+• Query Generation: For each scenario, we crafted a repre-sentative seed query. Through Gemini-3.1-Pro , we generated 25 diverse linguistic variations of each seed query, encom-passing different tones, entities (e.g., cities, dates), and ver-bosity levels. After rigorous data cleaning to ensure semantic consistency and realistic human phrasing, our final dataset comprises 100 unique, multi-step user queries across the four domains. 
+
+Automated Evaluation. To ensure a robust and objective assess-ment of ShareLock across multiple agents and clients, we devel-oped an automated evaluation pipeline. Across all scenarios, the attacker’s consistent objective is to induce the agent to perform an unauthorized file operation, specifically, to read a simulated local api_key file and append a specific sentinel token ( FLAG ) to it before completing the user’s primary task. One FLAG hints one successsful attack. We use the number of distinct FLAG in api_key 
+
+to quickly determine successful compromises. 
+
+Evaluation Metrics. To jointly characterize the real-world threat of ShareLock in terms of efficacy and stealth, we adopt three key metrics: 1) Attack Success Rate (ASR). The proportion of user tasks where the malicious payload is successfully reconstructed and executed (i.e., appending the FLAG ). To mitigate randomness in LLM generation, we employ a ASR@k metric ( 𝑘 = 3): an attack succeeds if the payload executes in at least one of up to three independent trials from scratch. 2) Task Completion Rate (TCR). 
+
+The proportion of tasks where the agent correctly fulfills the user’s original intent (e.g., booking a hotel), irrespective of the malicious injection. A high TCR ensures the attack preserves system usability and remains unnoticed. 3) Attack Stealth Effectiveness (ASE). 
+
+To synthesize attack potency and operational stealth, we compute the harmonic mean of ASR and TCR. A high ASE indicates that the attack reliably compromises the system without alerting the user via disrupted task workflows. 
+
+Compared Baselines. To rigorously evaluate ShareLock, we adapted three representative single-tool poisoning strategies. Here, a single-tool baseline denotes that the entire malicious payload is localized within the metadata of one compromised tool. A comprehensive explanation of the operational mechanics and prompt designs for these baselines is provided in Appendix E. 
+
+• TPA[ 11 ]. Tool Poisoning Attack (TPA) works in a direct attack manner, where the unencoded malicious prompt is inserted entirely in plaintext into a task-critical tool’s descrip-tion (e.g., weather_info ), contrasting directly with Share-Lock’s cryptographically distributed shares. 
+
+• Puppet Attack[ 27 ]. The Puppet attack is an indirect poi-soning vector that exploits cross-server privilege abuse. The malicious payload in plaintext is injected into an isolated, adversary-controlled tool (e.g., the EnvSetup in our experi-ments) to hijack the agent’s workflow and manipulate benign tools on other servers. 
+
+• Encode-Only Attack [ 29 ]. To validate the indispensabil-ity of the threshold protocol, we implement an encode-only baseline that relies solely on encoding-based obfuscation. Concretely, the malicious prompt is ASCII-encoded and em-bedded directly into a single task-critical tool’s description (e.g., weather_info in travel assistant scenario). The altered description contains an explicit directive that requires de-coding the embedded sequence and executing the recovered instruction prior to completing the user’s task. This baseline contrasts with ShareLock by omitting threshold protocol and multi-tool dispersion. 
+
+## 5.2 Attack Performance 
+
+Vulnerabilty to ShareLock in Real-World. We evaluated Share-Lock across a range of mainstream models and observed that, in addition to the open-source DeepSeek and Qwen families, closed-source model like Gemini-2.5-flash also exhibit pronounced vulner-ability to ShareLock. As shown in Table 1, ShareLock attains an ASR as high as 94.0% on Gemini-2.5-flash, and the average success rate exceeds 90%. Moreover, the average task completion rate under ShareLock is approximately 96.4%, indicating that users who only focus on task outcomes are unlikely to notice the injected behavior. Constrained by the workflow instructions returned by the trigger tool, the agent executes the malicious payload in a silent mode rela-tive to the user interface. While advanced Chain-of-Thought (CoT) models inevitably generate internal reasoning traces to orchestrate the malicious task, the reconstructed adversarial commands are strictly confined to the tool invocation parameters and the hidden reasoning states. The response directly presented to the user re-mains entirely benign in most cases, containing no plaintext trace of the malicious intent. This decoupling of internal execution from user-facing output ensures that the attack remains highly stealthy and unobservable to the victim. 
+
+Single-Tool vs Multi-Tool. To better demonstrate the effective-ness of the ShareLock framework, we compared it against repre-sentative methods in MCP poisoning attacks, including TPA, Pup-pet Attack, and Encoder-Only Attack as baselines. We conducted systematic experiments using the same attack task suits, and the results are shown in Table 2. We can observe that ShareLock shows considerable advantages over the Single-Tool baselines across all three metrics, especially for Gemini-2.5-Flash, which reveals that ShareLock indeed can achieve comparable attack performance in multi-tool scenarios than single-tool. While multi-tool scenarios may introduce more dependence on the robustness of an agent’s tool invocation, they also offer superior conditions for conceal-ing the embedded prompts and evade from the potential security mechanisms. ShareLock: A Stealthy Multi-Tool Threshold Poisoning Attack Against MCP Conference’17, July 2017, Washington, DC, USA 
+
+TABLE 1: ShareLock attack performance across four diverse multi-tool scenarios on two MCP clients (Cherry Studio v1.5.11 and Cline v3.35.0). The evaluation includes four representative mainstream LLMs. For this primary evaluation, the Shamir threshold is uniformly set to 𝑡 = 2, meaning the agent must collect and pass at least two distinct camouflaged shares to the trigger tool to successfully reconstruct the malicious prompt. To mitigate the impact of inherent randomness in LLM generation, we incorporate a retry mechanism and adopted ASR@3. For each unique user query, the agent is granted up to 𝑘 = 3 independent attempts to process the task from scratch. LLM Cherry Studio(%) Cline(%) Average(%) ASR TCR ASE ASR TCR ASE ASR TCR ASE 
+
+Scenario I: Travel Assistant (Weather, Flight, Hotel, etc.) 
+
+Gemini-2.5-Flash 92.0 88.0 90.0 96.0 88.0 91.8 94.0 88.0 90.9 DeepSeek-V3.1 88.0 96.0 91.8 92.0 100.0 95.8 90.0 98.0 93.8 DeepSeek-V3.2 96.0 96.0 96.0 96.0 92.0 94.0 96.0 94.0 95.0 Qwen3-235B-Thinking 100.0 100.0 100.0 96.0 100.0 98.0 98.0 100.0 99.0 
+
+Travel Avg. 94.0 95.0 94.4 95.0 95.0 95.0 94.5 95.0 94.8 
+
+Scenario II: Coding Assistant ( Github, Error Logging, Service Deploy, etc.) 
+
+Gemini-2.5-Flash 100.0 96.0 98.0 76.0 100.0 86.4 86.0 98.0 91.6 DeepSeek-V3.1 92.0 84.0 87.8 88.0 92.0 90.0 90.0 88.0 89.0 DeepSeek-V3.2 100.0 96.0 98.0 92.0 92.0 92.0 96.0 94.0 95.0 Qwen3-235B-Thinking 96.0 96.0 96.0 96.0 100.0 98.0 96.0 98.0 97.0 
+
+Coding Avg. 97.0 93.0 94.9 88.0 96.0 91.8 92.0 94.5 93.2 
+
+Scenario III: Financial Analyst (Stock Price, ROI Calculator, Currency Convert, etc. ) 
+
+Gemini-2.5-Flash 92.0 92.0 92.0 92.0 96.0 94.0 92.0 94.0 93.0 DeepSeek-V3.1 92.0 92.0 92.0 92.0 96.0 94.0 92.0 94.0 93.0 DeepSeek-V3.2 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0 Qwen3-235B-Thinking 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0 
+
+Finance Avg. 96.0 96.0 96.0 96.0 98.0 97.0 96.0 97.0 96.5 
+
+Scenario IV: Office Manager (Email Operation, Calendar, Summarizer, etc.) 
+
+Gemini-2.5-Flash 96.0 100.0 98.0 96.0 100.0 98.0 96.0 100.0 98.0 DeepSeek-V3.1 80.0 100.0 88.9 92.0 100.0 95.8 86.0 100.0 92.5 DeepSeek-V3.2 100.0 100.0 100.0 96.0 100.0 98.0 98.0 100.0 99.0 Qwen3-235B-Thinking 92.0 96.0 94.0 100.0 96.0 98.0 96.0 96.0 96.0 
+
+Office Avg. 92.0 99.0 95.2 96.0 99.0 97.5 94.0 99.0 96.4 
+
+Overall Avg. 94.5 95.8 95.1 93.8 97.0 95.3 94.1 96.4 95.2 
+
+Notably, in the TPA attempts, we observed that Gemini-2.5-Flash achieved only 46.0% ASR, which is significantly lower than Share-Lock’s 92.0% , whereas DeepSeek-V3.1 and Qwen3-235B-Thinking exhibited a marginal advantage ( ∼4%) in Sharelock over TPA. Fur-ther investigation into specific failure cases provides a two-fold explanation for this phenomenon. First, ShareLock’s multi-tool in-vocation chain implicitly grants Gemini-2.5-Flash more reasoning space to accurately execute the hidden payload. In contrast, under single-tool baselines like TPA, Gemini tends to prioritize execu-tion efficiency, which is consistent with the architectural design of Google’s Flash model series. This inclination paradoxically in-duces comprehension deviations, such as erroneously interpreting the append FLAG command as an instruction to create a new file rather than modifying the target asset. Second, Gemini exhibited a higher instruction-ignore rate in single-tool settings compared to other models, frequently dismissing malicious descriptions to safely prioritize the user’s benign intent. However, this inherent resilience almost vanishes under ShareLock. A plausible inference is that while the safety alignment mechanism in Gemini partially mitigates single-tool injections, ShareLock’s distributed multi-tool orchestration effectively dilutes the model’s attention, incidentally bypassing its safety guardrails to some extent. 
+
+Enc-Only vs ShareLock. Among prompt injection strategies, the Encode-Only attack is the most similar to our approach. Share-Lock conceals a disguised initialization routine ( EnvSetup ) within a server update and the reconstructed malicious prompts are in-jected into the model’s context window via tool returns. Impor-tantly, the victim tool itself such as weather_info is not directly Conference’17, July 2017, Washington, DC, USA Liwei Liu, Tianzhu Han, Zijian Liu, Zishu Dong, and Na Ruan 
+
+TABLE 2: Attack performance comparison among ShareLock and Single-Tool baselines for three representative models in Cherry Studio in Scenario I: Travel Assistant . In the table, we bold the maximum values in each metric column and use arrows to indicate the increasing or decreasing trend of ShareLock performance compared to the Single-Tool baselines. Attack Type Gemini-2.5-Flash DeepSeek-V3.1 Qwen3-235B-Thinking Average ASR TCR ASE ASR TCR ASE ASR TCR ASE ASR TCR ASE 
+
+TPA Single 46.0 80.0 58.4 84.0 96.0 89.6 96.0 100.0 98.0 75.3 92.0 82.8 Puppet Single 64.0 76.0 69.5 84.0 96.0 89.6 80.0 96.0 87.3 76.0 89.3 82.1 Encode-Only Single 76.0 88.0 81.6 80.0 96.0 87.3 92.0 84.0 87.8 82.7 89.3 85.9 ShareLock Multi 92.0 ↑ 88.0 90.0 ↑ 88.0 ↑ 96.0 91.8 ↑ 100.0 ↑ 100.0 100.0 ↑ 93.3 ↑ 94.7 ↑ 93.9 ↑
+
+tampered with during this process. The primary distinction be-tween Encode-Only and ShareLock is that Encode-Only assumes direct manipulation of the task-critical tool and employs a much shorter attack chain (just decoding) than ShareLock’s distributed, threshold-mediated workflow. Empirically, Encode-Only performs worse than ShareLock but better than other single-tool baselines across models. A plausible inference is that Encode-Only’s decod-ing step directly exposes adversarial intent and therefore provokes security-interrupt mechanisms, whereas ShareLock’s disguised in-tialization procedure and longer attack chain reduce the likelihood of exposure. 
+
+Failure Mode Analysis. To understand the operational limits of ShareLock, we analyzed the unsuccessful trials. A detailed break-down of failure case studies is provided in Appendix F. We identified three primary factors that disrupt the multi-tool attack chain: 1) 
+
+Tool Invocation Fragility . The increased complexity of orches-trating multiple tools amplifies the risk of parameter errors, causing the attack to halt if the agent lacks robust error handling. 2) Time Anxiety . Models with extensive Chain-of-Thought (CoT) reason-ing occasionally prioritize immediate user task completion over auxiliary compliance routines, bypassing the trigger tool to opti-mize latency. 3) Fine-Grained Interaction . Highly aligned agents sometimes pause to request explicit user consent before executing the final malicious file modification, thereby exposing the attack intent. These failures highlight a critical trade-off in agent design: aggressive latency optimization and strict human-in-the-loop in-teraction strategies inherently mitigate multi-step stealth attacks, albeit at the cost of agent autonomy and user convenience. 
+
+## 5.3 Adaptive Defenses 
+
+Policy-based Safety Classification. To comprehensively validate the stealth of the ShareLock mechanism against state-of-the-art defenses, inspired by the SFT mechanism of Llama Guard [ 10 ], we perform a safety classification task using two distinct paradigms: 1) Zero-Shot Detection Models , advanced LLMs guided by system prompts, and 2) SFT Guard Models , which are safety-fine-tuned to detect malicious intent and prompt injections. For the zero-shot LLMs, we prompt the models to act as safety auditors. The LLM generates a safety label indicating whether a given tool description is safe or not, lists violated categories, and provides a risk score (1-3). Our safety policy follows the design of LLaMA Guard and incorporates the MLCommons taxonomy of 13 hazard categories, along with an additional hazard category for Code Interpreter Abuse in tool invocations. Further implemen-tation details are provided in Appendix D. Experimental results are shown in Table 3 and Figure 3. Observing the classification outcomes, we find that tool poisoning attack strategies based on plaintext injection are uniformly flagged as Unsafe due to the direct exposure of attack intentions, mapping to hazard categories such as Non-Violent Crimes, Privacy, and Code Interpreter Abuse. In contrast, ShareLock demonstrates exceptional evasiveness. By dis-guising the malicious payload as standard metadata ( tool_id and 
+
+checksum ), the injected tools seamlessly bypass the safety guardrail, consistently yielding Safe labels. Furthermore, we separately conduct safety classification on tools containing the inserted trigger EnvSetup , as illustrated in Table 3. The results show that the trigger, when camouflaged as part of the initialization procedure, successfully deceives most of detec-tion models except for Claude. This exceptional evasiveness aligns with the latest findings in Odysseus[ 14 ], which demonstrate that modern safety filters inherently rely on the flawed assumption that malicious content must be explicitly visible in the prompt. By decentralizing and obfuscating the payload via Shamir shares, ShareLock breaks this assumption at the protocol level, rendering conventional text-based auditing mechanisms ineffective. TABLE 3: Detectability evaluation of malicious tool descrip-tions across Zero-Shot LLMs and specialized SFT Guard Mod-els. ( ✓) indicates the tool was classified as Safe , while ( ✗)indicates Unsafe . To evaluate the stealth of our reconstruc-tion mechanism, the tool embedding the EnvSetup trigger is assessed independently. Attack Method Zero-Shot Detection Models SFT Guard Models GPT-5 Gemini-2.5-FLash Claude-Sonnet-4.5 Llama-Guard-3-8B [10] PromptGuard-86M [1]                           
+
+> TPA ✗✗✗✓✓
+> Puppet ✗✗✗✓✓
+> Encode-Only ✗✗✗✓✓
+> ShareLock (Ours) ✓✓✓✓✓
+> EnvSetup Tool ✓✓✗✓✓
+
+Entropy-based Detector. A possible defense mechanism against tool poisoning involve scanning tool descriptions for anomalous, high-entropy character sequences, which often indicate embed-ded payloads. To evaluate ShareLock’s robustness against such ShareLock: A Stealthy Multi-Tool Threshold Poisoning Attack Against MCP Conference’17, July 2017, Washington, DC, USA #1  
+
+> #2
+> #3
+> #4
+> #5
+> #6
+> #7
+> #8
+> #9
+> #10
+> #11
+> #12
+> #13
+> #14
+> 1
+> 2
+> 3
+> #1
+> #2
+> #3
+> #4
+> #5
+> #6
+> #7
+> #8
+> #9
+> #10
+> #11
+> #12
+> #13
+> #14
+> 1
+> 2
+> 3
+> GPT-5
+> Claude-Sonnet-4.5
+> Gemini-2.5-Flash #1
+> #2
+> #3
+> #4
+> #5
+> #6
+> #7
+> #8
+> #9
+> #10
+> #11
+> #12
+> #13
+> #14
+> 1
+> 2
+> 3
+> #1
+> #2
+> #3
+> #4
+> #5
+> #6
+> #7
+> #8
+> #9
+> #10
+> #11
+> #12
+> #13
+> #14
+> 1
+> 2
+> 3
+
+(a) TPA (b) Puppet Attack (c) Enc-Only (d) ShareLock 
+
+Figure 3: Threat scores of the four MCP poisoning attack methods in the security classification task across GPT-5, Claude-Sonnet-4.5 and Gemini-2.5-Flash. A higher score indicates that the model perceives a greater threat in the corresponding hazard category. We follow Llama Guard’s Hazard categories, which can be found in Appendix B. The top three categories with the highest scores are #2: Non-Violent Crimes, #7: Privacy, and #14: Code Interpreter Abuse. 
+
+TABLE 4: Shannon Entropy analysis of MCP tool description components. ShareLock’s payload is effectively diluted when combined with verbose natural language, rendering its en-tropy statistically indistinguishable from benign tools. Tool Description Component Shannon Entropy 
+
+Natural Language ( weather_info ) 4.04 bits/char Metadata( tool_id +checksum ) 5.54 bits/char 
+
+ShareLock(Desc+Metadata) 5.22 bits/char 
+
+Benign Tool with Legitimate Hash 5.02 bits/char 
+
+adaptive defenses, we conducted an empirical analysis using Shan-non Entropy to quantify the statistical distribution of character frequencies within tool metadata. As shown in Table 4, a stan-dard weather_info tool description exhibits low entropy (e.g., 4.04 bits/char). Conversely, isolating the ShareLock payload (i.e., the Base64-encoded checksum and tool_id ) yields a higher entropy of 5.54 bits/char. However, a critical design principle of ShareLock is Entropy Dilution . That is, the cryptographic payload is seamlessly em-bedded within the legitimate natural language description of the compromised tool. This combination effectively dilutes the localized high-entropy spike, resulting in an overall description entropy of 
+
+5.22 bits/char . Crucially, this value is statistically indistinguishable from benign MCP tools that legitimately require high-entropy meta-data (e.g., tools necessitating GitHub commit_sha hashes, which exhibited an entropy of 5.02 bits/char). 
+
+## 5.4 Ablation Study 
+
+Robustness of ShareLock. To validate the robustness and the core threshold mechanism of ShareLock, we performed an ablation study using a (𝑡 = 3, 𝑛 = 5) configuration. In this setup, the adversary compromises a total of 𝑛 = 5 tools, but the malicious payload requires a minimum of 𝑡 = 3 shares to be reconstructed. We then simulated a scenario where an auditor or a system failure disables 5 3 2  
+
+> Number of Available Tools
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Attack Success Rate (ASR) [%]
+> Claude Sonnet 4.5
+> Gemini-2.5-flash
+> DeepSeek-V3.1
+> 532
+> Number of Available Tools
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Task Completion Rate (TCR) [%]
+> Claude Sonnet 4.5
+> Gemini-2.5-flash
+> DeepSeek-V3.1
+
+Figure 4: Ablation study on the robustness of the ShareLock attack with a (𝑡 = 3, 𝑛 = 5) scheme. (Left) The ASR remains high as long as the number of available tools 𝑘 ≥ 𝑡 , but drops to 0% when 𝑘 < 𝑡 , confirming the attack’s robustness. (Right) The TCR largely mirrors the ASR when the deterministic failure of the reconstruction step halts the agent’s workflow. 
+
+a subset of these tools, effectively reducing the number of available tools, denoted as 𝑘 . More details are provided in Appendix E.3. The results are presented in Fig. 4. The experiment showcases three distinct states. First, when all five tools are available ( 𝑘 = 5), the attack operates at its baseline effectiveness. Second, when two tools are disabled ( 𝑘 = 3), the number of available shares precisely meets the threshold ( 𝑘 = 𝑡 ). As shown, the ASR remains high across all models, demonstrating the robustness of our framework against partial degradation. Finally, when three tools are disabled ( 𝑘 = 2), the number of available shares falls below the threshold ( 𝑘 < 𝑡 ). The ASR deterministically drops to 0%, validating the threshold property of the underlying Shamir’s scheme. However, the benign shares remain embedded in the server, awaiting an opportune moment to trigger the attack. 
+
+Impact of Temperature. The temperature governs the random-ness of an LLM’s output, trading between creativity and determin-ism. Since the ShareLock attack relies on a precise sequence of tool invocations, we hypothesized that its success would be sensitive to this parameter. We evaluated both ASR and TCR across a range of temperatures from 0 to 2, with the results depicted in Fig. 5. Our findings on ASR indicate that an optimal temperature range exists Conference’17, July 2017, Washington, DC, USA Liwei Liu, Tianzhu Han, Zijian Liu, Zishu Dong, and Na Ruan 0.0 0.5 1.0 1.5 2.0     
+
+> Temperature
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Attack Success Rate (ASR) [%]
+> Claude Sonnet 4.5
+> Gemini-2.5-flash
+> DeepSeek-V3.1
+> 0.0 0.5 1.0 1.5 2.0
+> Temperature
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Task Completion Rate (TCR) [%]
+> Claude Sonnet 4.5
+> Gemini-2.5-flash
+> DeepSeek-V3.1
+
+Figure 5: Impact of temperature on ShareLock. (Left) ASR peaks at low-to-moderate temperatures, degrading as gen-eration randomness increases. (Right) TCR trends vary by model. Robust models (e.g., Claude) maintain high task com-pletion despite attack failures, whereas others experience complete workflow collapse. TPA Puppet Encode-Only ShareLock 
+
+> 0
+> 10000
+> 20000
+> 30000
+> 40000
+> Total Token Consumption
+> Token Consumption Overhead Across Attack Strategies
+> Normal Task Execution
+> Gemini-2.5-Flash
+> DeepSeek-V3.1
+> Qwen3-235B-A22B-thinking
+
+Figure 6: Token consumption overhead incurred by different poisoning strategies. The baseline token cost for normal user task execution is depicted by the gray hatched area. Overlaid colored segments illustrate the overhead imposed by the attacks. 
+
+for maximizing the attack’s efficacy, typically between 0.5 and 1.0. As the temperature increases beyond this, the ASR for most models declines sharply. The heightened randomness manifests as a higher incidence of execution failures. For models like DeepSeek-V3.1 and Gemini-2.5-flash, the TCR plummets at high temperatures, closely tracking the ASR. We observed that their failures are often cata-strophic: the models begin to generate nonsensical outputs or the execution sequence halts entirely. In stark contrast, Claude-Sonnet-4.5 maintains a high TCR even as its ASR fluctuates. Its primary failure mode at high temperatures is not a catastrophic crash, but rather a localized step-forgetting, where it specifically omits the final, malicious action of the attack sequence. Because the rest of the workflow remains coherent, the model proceeds to complete the user’s primary task, effectively failing the attack without interrupt-ing the service. This underscores a crucial interplay: the success of toolchain attacks is governed not only by agent configurations but also by the model’s intrinsic stability. 
+
+Token Consumption and Detection Implications. To more com-prehensively evaluate the impact of different MCP tool-poisoning strategies on agent systems, we collect and analyze the token con-sumption observed during experiments, as illustrated in Figure 6. The results show that all poisoning attack strategies exacerbate to-ken consumption to varying degrees. The inherent cause lies in the additional task planning and tool invocation overhead incurred by executing the attacker’s injected objectives. Both the Encode-Only Attack and our proposed ShareLock framework introduce further decoding or reconstruction steps, which contribute to higher token usage. This additional token consumption exhibits a dual effect in practice. On the one hand, it imposes extra property damages on users; on the other hand, abnormal token usage may alert vigilant users, promting them to audit all connected MCP servers more carefully. However, it is worth noting that token usage monitor-ing is inherently delayed considering the difficulty of actual token consumption prediction. By the time anomalies are noticed, the attacker’s objective may already have been achieved. Moreover, anomaly detection based on token consumption is difficult to gen-eralize to more complex task scenarios, where the incremental overhead become negligible. 
+
+## 6 Discussion and Limitations 
+
+Prompt Engineering. Though ShareLock achieves comparable attack performance as single-tool attack, it may lead to different con-clusions due to prompt engineering technique. Because ShareLock’s workflow involves decoding and reconstruction steps, it lengthens the attack chain and any mistake in each step will cause the failure of malicious instruction. A significant insight of ShareLock is to conceal the attack within a system initialization workflow by em-bedding a reconstruction trigger in the EnvSetup tool’s description or returns. By augmenting this trigger with error-retry logic, we improve the attack’s robustness as mentioned in the comparison of ShareLock and baselines. However, this prompt-engineering pro-cess still partially relies on manual efforts. Developing optimization strategies to automate prompt optimization based on execution feedback presents an important open challenge. 
+
+More Complex Agent Systems. In fact, due to differences in the architecture and access control policies of advanced agent in the real world, the attack performance of ShareLock attacks may vary or even fail. For instance, some agents which adopt strict access control or fine-grained interaction strategy, are forced to ask for user consent when potentially dangerous actions are going to be executed, which may expose the attack behavior. However, overly strict access control policies may substantially sacrifice user convenience. For users who lack safety awareness, which account for the majority in most cases, they may opt for the auto-approval option for tool invocation, thus introducing a new trade-off between convenience and security. 
+
+## 7 Conclusion 
+
+Aiming at a more stealthy and robust attack scheme against MCP ecosystem, we introduce ShareLock, a stealthy and robust multi-tool poisoning attack framework. Leveraging Shamir’s threshold scheme with encoding-based obfuscation, ShareLock effectively hides malicious prompts within tool descriptions across multiple tools, with information-theoretic secrecy and resilience against moderate vetting. Our work highlights the significance of moder-ate vetting assumption for more realistic attack and challenges of balancing concealment and robustness in MCP poisoning attack, ShareLock: A Stealthy Multi-Tool Threshold Poisoning Attack Against MCP Conference’17, July 2017, Washington, DC, USA 
+
+especially in multi-tool environments. Extensive experiments show that existing models remain vulnerable to ShareLock, underscoring the need for stronger security measures and further research into multi-tool poisoning detection and defenses. 
+
+## References 
+
+[1] Meta AI. 2024. Prompt Guard 86M Model. https://huggingface.co/meta-llama/ Prompt-Guard-86M. [2] Anthropic. 2025. Introduction to Model Context Protocol. https:// modelcontextprotocol.io/introduction [3] CSA. 2025. Agentic ai threat modeling framework: Maestro. https: //cloudsecurityalliance.org/blog/2025/02/06/agentic-ai-threat-modeling-framework-maestro Online. [4] Kazem Faghih, Wenxiao Wang, Yize Cheng, Siddhant Bharti, Gaurang Sriramanan, Sriram Balasubramanian, Parsa Hosseini, and Soheil Feizi. 2025. Tool Preferences in Agentic LLMs are Unreliable. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing . 20965–20980. [5] Mohamed Amine Ferrag, Norbert Tihanyi, Djallel Hamouda, Leandros Maglaras, Abderrahmane Lakas, and Merouane Debbah. 2025. From prompt injections to protocol exploits: Threats in LLM-powered AI agents workflows. ICT Express 
+
+(2025). [6] GoogleCloud. 2025. Prompt engineering: overview and guide. https://cloud. google.com/discover/what-is-prompt-engineering? [7] Kai Greshake, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, Thorsten Holz, and Mario Fritz. 2023. Not what you’ve signed up for: Compromising real-world llm-integrated applications with indirect prompt injection. In Proceedings of the 16th ACM workshop on artificial intelligence and security . 79–90. [8] Yongjian Guo, Puzhuo Liu, Wanlun Ma, Zehang Deng, Xiaogang Zhu, Peng Di, Xi Xiao, and Sheng Wen. 2025. Systematic analysis of mcp security. arXiv preprint arXiv:2508.12538 (2025). [9] John Halloran. 2025. MCP Safety Training: Learning to Refuse Falsely Be-nign MCP Exploits using Improved Preference Alignment. arXiv preprint arXiv:2505.23634 (2025). [10] Hakan Inan, Kartikeya Upasani, Jianfeng Chi, Rashi Rungta, Krithika Iyer, Yuning Mao, Michael Tontchev, Qing Hu, Brian Fuller, Davide Testuggine, and Madian Khabsa. 2023. Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations. arXiv preprint arXiv: 2312.06674 (2023). [11] InvariantLabs. 2025. MCP Security Notifications: Tool Poisoning Attacks. https: //invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks Online. [12] Huihao Jing, Haoran Li, Wenbin Hu, Qi Hu, Xu Heli, Tianshu Chu, Peizhao Hu, and Yangqiu Song. 2025. Mcip: Protecting mcp safety via model contextual integrity protocol. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing . 1177–1194. [13] Sonu Kumar, Anubhav Girdhar, Ritesh Patil, and Divyansh Tripathi. 2025. Mcp guardian: A security-first layer for safeguarding mcp-based ai system. arXiv preprint arXiv:2504.12757 (2025). [14] Songze Li, Jiameng Cheng, Yiming Li, Xiaojun Jia, and Dacheng Tao. 2026. Odysseus: Jailbreaking Commercial Multimodal LLM-integrated Systems via Dual Steganography. In Proceedings of the 33rd Annual Network and Distributed System Security Symposium (NDSS) .[15] Huawei Lin, Yingjie Lao, Tong Geng, Tan Yu, and Weijie Zhao. 2025. Uniguardian: A unified defense for detecting prompt injection, backdoor attacks and adversarial attacks in large language models. arXiv preprint arXiv:2502.13141 (2025). [16] Yupei Liu, Yuqi Jia, Runpeng Geng, Jinyuan Jia, and Neil Zhenqiang Gong. 2024. Formalizing and benchmarking prompt injection attacks and defenses. In 33rd USENIX Security Symposium (USENIX Security 24) . 1831–1847. [17] Yupei Liu, Yuqi Jia, Jinyuan Jia, Dawn Song, and Neil Zhenqiang Gong. 2025. Datasentinel: A game-theoretic detection of prompt injection attacks. In 2025 IEEE Symposium on Security and Privacy (SP) . IEEE, 2190–2208. [18] Xingjun Ma, Yifeng Gao, Yixu Wang, Ruofan Wang, Xin Wang, Ye Sun, Yifan Ding, Hengyuan Xu, Yunhao Chen, Yunhan Zhao, et al . 2026. Safety at scale: A comprehensive survey of large model and agent safety. Foundations and Trends in Privacy and Security 8, 3-4 (2026), 1–240. [19] Yingning Ma. 2025. Realsafe: Quantifying safety risks of language agents in real-world. In Proceedings of the 31st International Conference on Computational Linguistics . 9586–9617. [20] Vineeth Sai Narajala and Idan Habler. 2025. Enterprise-grade security for the model context protocol (mcp): Frameworks and mitigation strategies. arXiv preprint arXiv:2504.08623 (2025). [21] OpenAI et al . 2023. GPT-4 Technical Report. arXiv:2303.08774 [cs.CL]. doi:10. 48550/arXiv.2303.08774 [22] Chetan Pathade. 2025. Red teaming the mind of the machine: A systematic evaluation of prompt injection and jailbreak vulnerabilities in llms. arXiv preprint arXiv:2505.04806 (2025). [23] Brandon Radosevich and John Halloran. 2025. Mcp safety audit: Llms with the model context protocol allow major security exploits. arXiv preprint arXiv:2504.03767 (2025). [24] Adi Shamir. 1979. How to share a secret. Commun. ACM 22, 11 (1979), 612–613. [25] Haoran Shi, Hongwei Yao, Shuo Shao, Shaopeng Jiao, Ziqi Peng, Zhan Qin, and Cong Wang. 2025. Quantifying Conversation Drift in MCP via Latent Polytope. 
+
+arXiv preprint arXiv:2508.06418 (2025). [26] Smithery.ai. 2025. Introduction to Smithery. https://smithery.ai/docs [27] Hao Song, Yiming Shen, Wenxuan Luo, Leixin Guo, Ting Chen, Jiashui Wang, Beibei Li, Xiaosong Zhang, and Jiachi Chen. 2025. Beyond the protocol: Un-veiling attack vectors in the model context protocol ecosystem. arXiv preprint arXiv:2506.02040 (2025). [28] Zihan Wang, Rui Zhang, Yu Liu, Wenshu Fan, Wenbo Jiang, Qingchuan Zhao, Hongwei Li, and Guowen Xu. 2026. Mpma: Preference manipulation attack against model context protocol. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 40. 35838–35846. [29] Alexander Wei, Nika Haghtalab, and Jacob Steinhardt. 2023. Jailbroken: How Does LLM Safety Training Fail?. In Advances in Neural Information Processing Systems , Vol. 36. 80079–80110. [30] Yuchong Xie, Mingyu Luo, Zesen Liu, Zhixiang Zhang, Kaikai Zhang, Yu Liu, Zongjie Li, Ping Chen, Shuai Wang, and Dongdong She. 2025. Red-Teaming Coding Agents from a Tool-Invocation Perspective: An Empirical Security As-sessment. arXiv preprint arXiv:2509.05755 (2025). [31] Wenpeng Xing, Zhonghao Qi, Yupeng Qin, Yilin Li, Caini Chang, Jiahui Yu, Changting Lin, Zhenzhen Xie, and Meng Han. 2025. MCP-Guard: A Defense Framework for Model Context Protocol Integrity in Large Language Model Applications. arXiv preprint arXiv:2508.10991 (2025). [32] Junjie Xiong, Changjia Zhu, Shuhang Lin, Chong Zhang, Yongfeng Zhang, Yao Liu, and Lingyao Li. 2025. Invisible Prompts, Visible Threats: Malicious Font Injection in External Resources for Large Language Models. arXiv preprint arXiv:2505.16957 (2025). [33] Shuli Zhao, Qinsheng Hou, Zihan Zhan, Yanhao Wang, Yuchong Xie, Yu Guo, Libo Chen, Shenghong Li, and Zhi Xue. 2025. Mind Your Server: A Systematic Study of Parasitic Toolchain Attacks on the MCP Ecosystem. arXiv preprint arXiv:2509.06572 (2025). 
+
+## A Ethical Considerations 
+
+All MCP poisoning attack scenarios evaluated in this work were executed solely on the authors’ personal accounts. No experiments targeted external users nor resulted in any adverse impact on other parties. On the contrary, our work aims to alert the broader MCP research and development community, thereby contributing to the creation of a more secure and resilient MCP ecosystem. 
+
+## B Generative AI Usage 
+
+LLMs were used for editorial purposes and query generation in the experiment in this manuscript, and all generated content was reviewed by the authors to ensure accuracy and originality. The authors are fully responsible for all technical content, analyses, and claims presented in this paper. All ideas, methodologies, and exper-imental findings were independently developed. The authors also considered potential reproducibility issues associated with closed-source LLMs and provide necessary details in the experimental section and appendix. 
+
+## C Information-Theoretic Secrecy Proof of ShareLock 
+
+Let F𝑝 be a finite field of prime order 𝑝 , sufficiently large to represent the numeric encoding of the adversarial prompt. Denote the secret as 𝑆 ∈ F𝑝 . The adversary’s shares are generated using a random polynomial of degree at most 𝑡 − 1:
+
+𝑓 (𝑥 ) = 𝑆 + 𝑎 1𝑥 + 𝑎 2𝑥 2 + · · · + 𝑎 𝑡 −1𝑥 𝑡 −1 (3) where coefficients 𝑎 1, . . . , 𝑎 𝑡 −1 are independently and uniformly sampled from F𝑝 . For 𝑛 publicly known and distinct evaluation Conference’17, July 2017, Washington, DC, USA Liwei Liu, Tianzhu Han, Zijian Liu, Zishu Dong, and Na Ruan 
+
+points 𝑥 1, . . . , 𝑥 𝑛 ∈ F𝑝 \ { 0}, the 𝑖 -th share is given by 𝑠ℎ𝑎𝑟𝑒 𝑖 =
+
+(𝑥 𝑖 , 𝑦 𝑖 ), where 𝑦 𝑖 = 𝑓 (𝑥 𝑖 ).We consider an auditor who obtains an arbitrary subset of shares R ⊂ { 1, . . . , 𝑛 } with size 𝑟 < 𝑡 .
+
+Lemma 1 (Counting Lemma) . For any fixed subset of 𝑟 < 𝑡 shares 
+
+{( 𝑥 𝑖 , 𝑦 𝑖 )} 𝑖 ∈ R and any candidate secret 𝑠 ∈ F𝑝 , there exist exactly 
+
+𝑝 𝑡 −1−𝑟 distinct polynomials 𝑓 of degree at most 𝑡 −1 satisfying 𝑓 (0) =
+
+𝑠 and 𝑓 (𝑥 𝑖 ) = 𝑦 𝑖 for all 𝑖 ∈ R .
+
+Proof. The polynomial 𝑓 has 𝑡 unknown coefficients (the con-stant term and 𝑡 − 1 higher-order terms). Fixing the constant term 
+
+𝑓 (0) = 𝑠 and imposing 𝑟 linear constraints from the 𝑟 observed shares leaves 𝑡 − 1 − 𝑟 degrees of freedom. Over F𝑝 , each free co-efficient may take 𝑝 possible values, resulting in exactly 𝑝 𝑡 −1−𝑟 
+
+possible polynomials satisfying the given constraints. □
+
+Lemma 2 (Information-Theoretic Secrecy) . Let 𝑆 denote the secret and let 𝑌 R denote the random variable corresponding to the 𝑟 (< 𝑡 )
+
+observed shares (including their 𝑥 𝑖 ). Then, 
+
+𝐼 (𝑆 ; 𝑌 R ) = 0 (4) 
+
+i.e., the mutual information between 𝑆 and the observed shares is zero. Equivalently, 
+
+𝐻 (𝑆 | 𝑌 R ) = 𝐻 (𝑆 ) (5) 
+
+Hence, fewer than 𝑡 shares reveal no information about the secret. 
+
+Proof. From Lemma 1, for any fixed observation 𝑌 R and any possible secret 𝑠 ∈ F𝑝 , there are exactly 𝑝 𝑡 −1−𝑟 polynomials con-sistent with both the observed shares and the condition 𝑓 (0) = 𝑠 .
+
+𝑝 𝑡 −1−𝑟 is constant and independent of the value of 𝑠 .Because the coefficients 𝑎 1, . . . , 𝑎 𝑡 −1 are sampled independently and uniformly, each of these consistent polynomials is chosen with equal probability. Thus, conditioned on the observed shares, the posterior distribution of 𝑆 remains uniform. 
+
+Pr [𝑆 = 𝑠 | 𝑌 R ] = Pr [𝑆 = 𝑠 ] = 1
+
+𝑝 , ∀𝑠 ∈ F𝑝 (6) Consequently, 𝐻 (𝑆 | 𝑌 R ) = 𝐻 (𝑆 ), i.e., 𝐼 (𝑆 ; 𝑌 R ) = 0. □
+
+Since the encoding function is bijective, the random variables 
+
+𝑁 adv and 𝑃 adv have a one-to-one correspondence. The information-theoretic independence result in Lemma 2 therefore carries over directly: 
+
+𝐼 (𝑃 adv ; 𝑌 R ) = 𝐼 (𝑁 adv ; 𝑌 R ) = 0 (7) 
+
+## D Experimental details of Safety Classification Task D.1 System Prompt for Zero-Shot Detection 
+
+Safety classification tasks represent an important application of fine-tuning large language models, as exemplified by systems such as Llama Guard and Qwen3 Guard. By fine-tuning on pretrained LLMs, a Guard model can output a safety label for a given prompt or response according to a predefined security policy, and additionally list the hazard categories that are violated (e.g., safe or unsafe, with some works including extra labels for controversial content). Inspired by Llama Guard, we guide mainstream LLMs to perform the safety classification task through carefully designed system prompts, and assign scores based on the assessed threat level. Figure 7 provides a brief example of a safety classification task. 
+
+Figure 7: Example of safety classification. 
+
+## D.2 Hazard Category Standard 
+
+In the safety classification task, we follow the 14 hazard categories used in Llama Guard, as shown in the Table 5. It is important to note that during the design of the hazard taxonomy, Llama Guard extended the MLCommons hazard taxonomy by adding the cate-gory of potential code interpreter abuse during tool calls. However, due to the camouflage and the black-box nature of ShareLock’s tool implementation, it is difficult for reviewers to detect whether code interpreter abuse is involved simply from the tool descriptions. This also explains why ShareLock is able to successfully deceive even powerful LLMs like GPT-5. TABLE 5: Hazard categories in safety classification Hazard categories 
+
+#1: Violent Crimes #2: Non-Violent Crimes #3: Sex-Related Crimes #4: Child Sexual Exploitation #5: Defamation #6: Specialized Advice #7: Privacy #8: Intellectual Property #9: Indiscriminate Weapons #10: Hate #11: Suicide & Self-Harm #12: Sexual Content #13: Elections #14: Code Interpreter Abuse 
+
+## E Experimental Details of Single-Tool Baselines E.1 Implementation and Comparison 
+
+To provide a fair and rigorous comparative analysis, we clarify the operational mechanics of the baseline methods evaluated in ShareLock: A Stealthy Multi-Tool Threshold Poisoning Attack Against MCP Conference’17, July 2017, Washington, DC, USA 
+
+our study. First, it is crucial to emphasize that the term single-tool strategy denotes that the malicious payload is injected entirely into the metadata (e.g., tool description) of a single compromised tool ,regardless of how many subsequent tools the agent might invoke after the attack is triggered. 
+
+• Tool Poisoning Attack (TPA): TPA represents the most straightforward direct poisoning strategy. It embeds mali-cious instructions as plaintext directly into the description of a tool that is highly relevant to the user’s primary task. By manipulating a frequently utilized tool, the attacker forces the agent into anomalous behavior during routine execution. In our experiments, we implemented TPA by appending the plaintext malicious prompt directly into the metadata of a task-critical tool (e.g., the weather_info tool in the Travel Assistant scenario). 
+
+• Puppet Attack: Puppet Attack operates as an indirect ma-nipulation strategy. Instead of tampering with the task-relevant tools directly, the attacker poisons the description of a sep-arate, adversary-controlled tool to exert influence over the execution of other benign tools. The essence of Puppet At-tack lies in exploiting cross-server privilege abuse caused by inadequate context isolation. Because the attacker only needs to control a peripheral tool rather than a core appli-cation tool, its attack conditions are often easier to satisfy in real-world deployments. In our setup, the payload was in-jected into an isolated, attacker-provided tool(e.g. EnvSetup ), aiming to hijack the agent’s broader workflow. 
+
+• Encode-Only Attack: Inspired by encoding-based seman-tic obfuscation techniques common in traditional prompt injection research, we implemented an Encode-Only base-line tailored for the MCP ecosystem. In this setup, the mali-cious instructions are encoded (e.g., via ASCII/Base64) and injected into the description of a task-relevant tool (e.g., 
+
+weather_info ). The injected description explicitly instructs the agent to decode the payload and execute the resulting commands prior to fulfilling the user’s request. To ensure a fair comparison and mitigate execution failures stemming from the LLM’s inherent decoding inaccuracies across dif-ferent models, we provided a dedicated Decoder tool within the environment. This ensures that any drop in the Encode-Only Attack Success Rate (ASR) is attributable to the model’s safety alignment rejecting the attack logic, rather than mere mechanical failure in string decoding. 
+
+## E.2 JSON Schema Blueprints of Poisoned Tools 
+
+we present the JSON schema blueprints (following the standard MCP tool definition format) exposed to the LLM agent below. These examples illustrate the fundamental differences between the three single-tool baselines and our proposed ShareLock framework within the Travel Assistant scenario. 
+
+1. TPA (Direct Injection) 
+
+The unencoded malicious payload is blatantly exposed in the target tool’s description. 
+
+2. Puppet Attack (Indirect Hijacking) 
+
+A benign-looking target tool is manipulated by a payload injected into a separate, attacker-controlled tool (e.g., EnvSetup ). 
+
+Figure 8: Poisoned Tool Example of TPA. 
+
+Figure 9: Poisoned Tool Example of Puppet Attack. 3. Encode-Only Attack (Semantic Obfuscation) 
+
+The payload is obfuscated via ASCII, requiring the agent to perform explicit decoding. 
+
+Figure 10: Poisoned Tool Example of Enc-Only Attack. 4. ShareLock 
+
+The malicious payload is fragmented and cryptographically dis-guised as standard metadata ( checksum ), accompanied by a plausi-ble compliance policy to trigger the reconstruction silently. 
+
+## E.3 Ablation Study Settings and Observations 
+
+To maximize the evaluation coverage of state-of-the-art LLMs while maintaining computational resource efficiency, we integrated Claude-Sonnet-4.5 as the backend agent model specifically for the ablation experiments. To ensure a controlled comparison, all metrics and Conference’17, July 2017, Washington, DC, USA Liwei Liu, Tianzhu Han, Zijian Liu, Zishu Dong, and Na Ruan 
+
+Figure 11: Trigger Tool Example of ShareLock. 
+
+Figure 12: Disguised Tool Example of ShareLock. 
+
+behavioral analyses reported in this section are derived uniformly from Scenario I: Travel Assistant .Our empirical results demonstrate that ShareLock remains highly effective even against the Claude model family, which is industry-renowned for its rigorous safety alignment and stringent refusal policies. A critical observation from this ablation study is the severe discrepancy between static security vetting and dynamic execution. As detailed in our Safety Classification tests, Claude successfully flagged the isolated trigger tool as Unsafe . However, during the actual multi-step task execution, where no explicit system prompt actively anchors the model’s defensive attention to the trigger tool, Claude’s intrinsic safety guardrails completely overlooked the la-tent runtime threat. This highlights a fundamental vulnerability in current agent architectures: relying solely on intrinsic model align-ment is insufficient. Without explicit attention guidance, highly aligned models fail to generalize their static safety recognition to dynamic, multi-tool orchestration, rendering them susceptible to distributed poisoning attacks like ShareLock. 
+
+## F Failure Case Study of ShareLock 
+
+To better reveal the underlying mechanisms and limitations of ShareLock, we conducted an in-depth analysis of the failure cases encountered during our experiments. 
+
+• Tool Invocation Failures. ShareLock inherently relies on a precise sequence of tool invocations across the MCP client, server, and the LLM. If an intermediate tool is invoked with erroneous parameters or fails unexpectedly, the entire at-tack chain breaks, especially if the agent lacks robust error-handling or retry logic. While this fragility is common in any Tool Poisoning Attack (TPA), it is magnified in a multi-tool scenario. However, as demonstrated by the high ASRs in our main results, attackers can largely mitigate this by employ-ing defensive prompt engineering within the tool returns to guide the agent through potential errors. 
+
+• Time Anxiety. In several instances, through analyzing the inference section of the model, we found that the agent ex-hibited a behavior termed Time Anxiety . When the model infers that immediate fulfillment of the user’s primary re-quest is paramount, it may actively bypass the seemingly auxiliary initialization procedures (i.e., the reconstruction trigger). This behavior inadvertently shrinks the time win-dow required for covert payload reconstruction. This high-lights a fascinating practical trade-off. That is, aggressive model optimization for lower latency can incidentally miti-gate multi-step toolchain attacks. Conversely, security work-flows that introduce mandatory delays or additional steps may unintentionally expand the attack surface. 
+
+• Fine-Grained Interaction. In cases where the attack failed safely, the model often defaulted to a fine-grained interaction strategy. Rather than executing the reconstructed payload autonomously, the highly-aligned agent explicitly paused to ask the user for confirmation (e.g., “Do you authorize modi-fying the API_KEY file before proceeding?” ). This human-in-the-loop intervention immediately exposes the attacker’s intent. While such fine-grained interaction significantly bol-sters system security and thwarts ShareLock, it does so at the direct expense of agent autonomy and user convenience, representing a fundamental tension in modern agent design.

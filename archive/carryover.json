@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-26T09:06:04.940430+00:00",
-  "updated_date": "20260617-20260626",
+  "generated_at": "2026-06-27T20:02:18.418272+00:00",
+  "updated_date": "20260627",
   "carryover_days": 9,
   "tag_states": {
     "ah": {
@@ -9,7 +9,7 @@
       "items": []
     },
     "harness": {
-      "updated_date": "20260617-20260626",
+      "updated_date": "20260627",
       "carryover_days": 9,
       "items": []
     }

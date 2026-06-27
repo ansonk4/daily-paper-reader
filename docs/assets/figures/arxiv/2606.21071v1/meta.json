@@ -1,14 +1,15 @@
 {
   "version": 2,
-  "extractor": "pymupdf-images",
+  "extractor": "papercropper",
   "figures": [
     {
       "url": "assets/figures/arxiv/2606.21071v1/fig-001.webp",
       "caption": "",
-      "page": 7,
+      "page": 0,
       "index": 1,
-      "width": 1697,
-      "height": 927
+      "width": 1686,
+      "height": 933,
+      "label": "Figure"
     }
   ]
 }

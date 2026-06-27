@@ -1,0 +1,509 @@
+Title: Whose Agent Are You? Multi-Layer Fingerprinting and Attribution of Autonomous Web Agents
+
+URL Source: https://arxiv.org/pdf/2606.20910v1
+
+Published Time: Tue, 23 Jun 2026 00:21:30 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+# Whose Agent Are You? Multi-Layer Fingerprinting and Attribution of Autonomous Web Agents 
+
+Dayeon Kang 
+
+UMass Amherst dayeonkang@umass.edu 
+
+Hyejun Jeong 
+
+UMass Amherst hjeong@umass.edu 
+
+Jade Sheffey 
+
+UMass Amherst jsheffey@cs.umass.edu 
+
+Pubali Datta 
+
+UMass Amherst pdatta@umass.edu 
+
+Amir Houmansadr 
+
+UMass Amherst amir@cs.umass.edu 
+
+Abstract —As AI web agents proliferate, combining large lan-guage models with autonomous, browser-level control, indis-criminate content scraping by web agents has emerged as a privacy and security challenge. Existing defenses, such as 
+
+robots.txt and active bot-blocking, are insufficient, as they are widely violated and easily circumvented. In this work, we demonstrate that AI web agents can be effectively distinguished from humans and traditional crawlers using a multi-layer finger-print based on both network layer characteristics (e.g., TLS, HTTP) and browser interaction behavior. We implement this mechanism as a programmatic logging framework that can be deployed on a live, instrumented domain. By analyzing six prominent agent frameworks (AutoGen, Browser Use, Claude, Gemini, Operator, and Skyvern), we uncover latent structural differences in how these systems as-semble HTTP requests, establish TLS/HTTP connections, and execute autonomous browser actions. Feeding these multi-layer features into a decision tree classifier, our framework achieves high-fidelity identification (97% accuracy), successfully isolat-ing distinct agent architectures and differentiating agent traffic from both human browsing baselines and legacy crawlers. Our findings demonstrate that cross-layer agent tracking provides a robust, evasion-resistant strategy for content protection and web security policy enforcement. 
+
+## 1. Introduction 
+
+Beyond the passive text generation capabilities of earlier language models, Large Language Models (LLMs) have evolved into active agents capable of independently navigat-ing the Internet, interacting with webpage elements through clicks and form submissions, and completing complex tasks on behalf of users. As LLM-powered web agents are in-creasingly deployed in production systems [1], an emerging concern is their scraping of protected content without au-thorization. This shift from passive to active AI has fueled rapid AI adoption from both industries and individuals [2]. Website operators have long relied on the robots.txt 
+
+file (RFC 9309 [3]) to signal to crawlers which pages should and should not be accessed. However, recent work [4], [5], [6] has documented widespread robots.txt violations by LLM bots, and Cloudflare has observed Perplexity bypass-ing these directives altogether by impersonating legitimate users through user-agent header spoofing [7]. Websites have responded with active countermeasures, such as serving CAPTCHAs or misleading content to detected bots [8], and routing traffic through reverse proxies like Cloudflare. Yet these approaches carry significant limitations: active blocking is inherently binary, cannot replace robots.txt 
+
+across all crawler types, and is adopted by only 2% of the top 10K websites [6]. Neither mechanism offers a complete solution. What is needed is a more fundamental capability: the ability to reliably identify and attribute AI agents through their behavior. Various fingerprinting research studies have focused on identifying targets from the traces users leave when access-ing or browsing websites. Website fingerprinting works [9], [10], [11] analyzes ingress and egress traffic timing and burst patterns to infer which websites a user visits, while browser fingerprinting [12], [13], [14] detects bots by collecting device and browser attributes such as browser type and version, operating system, screen resolution, and installed fonts. Behavioral fingerprinting [15], [16], [17], [18], [19], [20] extends this further by capturing biometric signals — keystroke dynamics, mouse movement, and navigation habits — to identify individual users. AI web agents occupy a unique position in this landscape: they are autonomous bots that browse the web, interact with page components, and complete tasks based on their own decisions, yet they use real browsers that generate browser and behavioral traces like human users. Due to the characteristics of web agents different from both traditional bots and humans, we apply and transform behavioral and browsing fingerprinting methods suitable to distinguish different agent systems from one another. Building on recent attention to detecting AI agents from network traffic [21], we adopt and extend web-site fingerprinting methods—including temporal distribution analysis—to the server-side agent identification problem. In this work, we measure and characterize a diverse set of AI web agents by fingerprinting their behavior across multiple network layers (TLS, HTTP) and through browser-level interaction patterns. Inspired by some web agents [22] that parse web pages based on screenshots through visual cues, and others [23], [24] that do so by rendering an HTML file, we design five scenarios to capture agents’ UX behavior: (1) submitting input and clicking a fake or legitimate button, (2) scrolling through the page about the 
+
+> arXiv:2606.20910v1 [cs.CR] 18 Jun 2026
+
+argument, clicking the button, and seeing a counterargument appear, (3) hovering over a button embedded in a panel, (4) answering a short question via a button that uses the wrong answer’s ID instead of displayed text, and (5) interacting with a button that produces delayed feedback. These scenar-ios are deployed on a live website, which we have operated and instrumented fully under our control since April 15th. Our logging infrastructure, hosted on AWS EC2, cap-tures every incoming packet’s IP address, timestamp, TLS parameters, and HTTP headers, while the front-end records user interactions (e.g., clicks, inputs, scrolls, and mouse movements) at 1 ms resolution. To generate agent traces, we issue prompts that direct each agent to explore the site and make autonomous decisions (see Figure 8 in Appendix A). We evaluate agents across a range of architectures: GPT-5-mini as a backbone for three open-source frameworks (AutoGen [24], Skyvern [22], and BrowserUse [23]), GPT-5.5 with extended effort for the OpenAI agent [25], and computer-use agents from Claude [26] and Gemini [27]. As a baseline comparison, we collect human- and tra-ditional crawler-generated (Nutch [28], Heritrix [29], and Scrapy [30]) traces under the same experimental instructions as the agents. With this dataset in hand, we isolate traces by prompt issuance time, trial, and agent type, and then analyze each agent’s unique features across multiple layers from the network traffic temporal patterns, TLS records, and HTTP requests to behavioral patterns when interacting with web components. By analyzing agents’ traces across four analyt-ical dimensions, we discovered that temporal patterns of re-quests enable evident identification among different agents, and AI-assembled HTTP headers contain bot-indicative sig-nals, such as Sec-Fetch rule violations or 100% headless Chrome usage. AutoGen and Browser Use have distinct network-level features; they contain bot-indicative signals in different HTTP header fields—User Agent inconsistency ap-pears in AutoGen, and Sec-Fetch logic violation appears in Browser Use. Skyvern is uniquely isolated only with TL-S/H2 fingerprints due to its different number of TLS exten-sions and stream-5 priority weight. From the network layer level analysis, Gemini and Claude show almost identical packet configuration strategies, but they are identifiable via slightly different event profiles and web browsing behavior caused by their decision-making and interacting strategies. On the contrary, TLS, HTTP, and behavioral features are not able to fully distinguish Operator, but temporal features sup-port its discrimination. Four different cross-layer features are complementary when distinguishing different agents more robustly. The distinctive characteristics we identify across agents inform a feature extraction pipeline spanning all observed layers; these features are then aggregated as inputs to a decision tree classifier designed to uncover latent behavioral signatures that distinguish one agent from another. With the simple classifier, the combination of four features identifies agent types with 97% accuracy. For real-time agent identifi-cation as the requests are incoming, network-level features outperform in the early stage before behavioral signals are fully captured, and behavioral features supplement the dis-criminability afterwards. After three requests are received, the classifier can detect which agent, crawler, or human is browsing the website with more than 60% accuracy. Our contributions are summarized as follows:  
+
+> •
+
+We present a comprehensive methodology for distin-guishing the underlying structural differences of AI web agents using features collected across multiple lay-ers, including request timing patterns, TLS fingerprints, HTTP headers, and browser interaction behaviors.  
+
+> •
+
+We build and deploy an instrumented website with five controlled UX scenarios and collect traces from six AI web agents, humans, and traditional crawlers, producing a dataset that enables systematic analysis of agent behavior in realistic web interactions.  
+
+> •
+
+We show that AI web agents exhibit distinctive behav-ioral signatures, enabling accurate identification (97%) of agent types, human, and legacy crawlers. 
+
+## 2. Background & Related Work 
+
+2.1. AI Agents 
+
+AI agents extend LLMs beyond passive text genera-tion into systems that can pursue goals through iterative interaction with external environments. At the center of an agent is a backbone LLM, or a set of LLMs, that serves as the agent’s decision-making core [31]. Specifically, the LLM is embedded in a perception-action loop: given a user instruction, the agent observes the current state, reasons about the next step, selects an action, executes that action through tools or interfaces, and incorporates the feedback into subsequent decisions [24], [32], [33]. Agents are often categorized by the environments they operate in and the tasks they support. Web agents, including AutoGen [24], Browser Use [23], Skyvern [22], and OpenAI Operator [25], browse websites and perform online tasks through screenshots or actions such as searching, clicking, scrolling, and form filling. Computer-Use Agents (CUAs), such as OmniTool [34], Claude’s CUA [26], and Gemini’s CUA [27], interact with the computer GUI via mouse and keyboard to automate desktop tasks. Coding agents, such as SWE-Agent [35], Cursor [36], OpenAI Codex [37], Claude Code [38], and Devin [39], write, debug, and refactor code by editing files, running commands, and incorporating exe-cution feedback. Research agents, such as GPT Researcher [40], OpenAI’s Deep Research [41], and Gemini’s Deep Research [42], coordinate retrieval, browsing, and synthesis across multiple information sources. Although these cate-gories are not mutually exclusive, they illustrate the diversity of agentic systems and the range of execution traces they produce. We focus on web agents in this work. 
+
+2.2. Different Types of Web Agents 
+
+We distinguish web agents by how LLMs are used for browser automation: how the agent reads the webpage, parses page content into a model-consumable representation, identifies actionable elements, and selects the next browser action [43]. In this context, “reading” and “understanding” a webpage refer to the agent’s perception pipeline, where ren-dered pixels, HTML/DOM structure, accessibility metadata, or parsed UI elements are converted into an observation that is fed to the LLM [44]. This distinction matters because different designs make page information available to the model at different times. For example, a vision-based agent may need to scroll and re-observe before it can select a button below the current viewport, whereas a DOM- or accessibility-tree-based agent may consider the same button earlier if the serialized page representation includes off-screen elements. For hybrid agents, we classify them by their primary parsing logic. 
+
+Vision-Based Web Agents. Vision-based web agents read webpages primarily through rendered screenshots and se-lect actions through visual grounding. They act through mouse and keyboard operations such as clicking, typing, and scrolling. For example, OpenAI Operator is powered by the CUA, which combines GPT-4o’s visual capabilities with reasoning and interacts with webpages through browser actions [25], [45]. Similarly, Claude’s and Gemini’s CUAs expose screenshots to the model and execute generated mouse or keyboard actions in the browser or desktop en-vironment [26], [27]. Skyvern is also vision-first: its public description emphasizes using screenshots, computer vision, and LLM reasoning to identify webpage elements such as buttons, forms, links, and tables, rather than relying on brit-tle DOM selectors [44]. These agents approximate human-visible browsing because their observations are grounded in rendered screen content. 
+
+DOM-Based Web Agents. DOM-based web agents read webpages through structured page representations such as HTML, DOM trees, or browser state. Instead of relying primarily on visual screenshots, these agents parse the un-derlying page structure and choose actions that are executed through browser automation. For example, Browser Use navigates webpages through Chromium via CDP, parses HTML, and repeatedly queries an LLM to decide the next action [23]. This representation can make textual and struc-tural page content easier for the model to process, but it can also change the agent’s information boundary by exposing content that may be hidden, off-screen, or visually de-emphasized to human users. 
+
+Accessibility-Tree-Based Web Agents. Accessibility-tree-based agents read webpages through semantic roles, la-bels, and element identifiers rather than raw pixels or the full DOM. The accessibility tree provides a compact, interaction-oriented representation of the page that preserves elements such as buttons, text boxes, links, headings, and form fields. AutoGen’s WebSurfer is a representative ex-ample: in Magentic-One, WebSurfer operates a Chromium browser and relies on the browser accessibility tree together with a set of marks that prompt it to perform webpage actions [24]. This interface gives the model a structured semantic view of the page and can ground actions to inter-actable elements, while abstracting away some visual layout and styling information. 
+
+2.3. Client Fingerprinting 
+
+Network-Level Fingerprinting. Network-level finger-printing identifies a client’s networking stack by character-izing metadata from packets sent by the client at various layers. Hus´ ak et al. first showed that clients can be passively identified from the cipher suite lists offered in their SSL/TLS handshakes, building a dictionary that maps handshake pa-rameters to client types [46]. This approach was later pop-ularized by JA3, which hashes the ClientHello version, cipher suites, extensions, and elliptic-curve parameters into a compact, shareable fingerprint [47]; it was also refined by JA4+, which sorts the extension list so that fingerprints remain stable under Chrome’s ClientHello extension randomization [48]. Frolov et al. [49] measured TLS fin-gerprintability across billions of real-world connections and released the utls library for parsing and mimicking ar-bitrary ClientHello messages, while Anderson et al. showed that the mapping from TLS fingerprint to application is many-to-one [50], motivating the fusion of additional signal layers. Above TLS, Akamai researchers demonstrated that HTTP/2 clients can be passively fingerprinted from their connection preludes, i.e., SETTINGS frame values, the initial WINDOW_UPDATE increment, PRIORITY frames, and pseudo-header order [51]; we adopt this fingerprint format in our measurement framework (§3). These signals underpin server-side bot detection: Li et al. exposed large-scale bot activity claiming browser User-Agents while being built on simple HTTP libraries, flagged through inconsisten-cies between the advertised User-Agent and the observed TLS handshake [52]. Recent preprints have begun to apply network-level fingerprinting to AI-driven clients: Jarad and Bicakci detect malicious bots from JA4 handshake features, but only as a binary bot-versus-human decision [53], and AgentPrint identifies LLM-based agents from encrypted traffic timing and volume patterns observed on the user– agent link [54]. In contrast, we perform multi-class attribu-tion of specific web agents from the server side, fusing TLS, HTTP/2, header, and timing fingerprints with browser-level behavioral signals. 
+
+Behavioral Fingerprinting. Behavioral fingerprinting iden-tifies users by capturing habitual patterns of how users inter-act with web content. Previous works [15], [16], [17], [18], [19], [20] have focused on low-level interaction signals, such as keystroke dynamics and mouse movement, as individual identification features. Extended works investigate broader navigation habits, including page visit sequences, dwell times, and scrolling behavior, showing that browsing style alone can be an identifier. Behavioral fingerprints have tra-ditionally been regarded as requiring long-term observation, typically over 24 hours, to accumulate sufficient signal for reliable identification [15], [16], [17], [55], [56]. Crichton et al. [57] provide a large-scale analysis of behavioral fingerprinting over 150,000 users across two years and find that it is highly unique and temporally stable, evolving slowly over months. They demonstrate that a user loses 78–85% of anonymity within the first 60 seconds of a new browsing session. Furthermore, they show that combin-ing behavioral and browser fingerprinting outperforms either method individually, achieving an F1 score of 0.869 across 100,000 users. As an attempt to use the behavioral fingerprinting method in detecting AI web agents, Wang et al. [58] analyze the typing, scrolling, and mouse behavior of agents. They also show that combining behavioral and browser finger-printing outperforms either approach alone, which is consis-tent with the findings of Crichton et al. However, this work adopts existing browser fingerprinting as a complement to behavioral signals, without accounting for the fundamentally different nature of AI agents as LLM-controlled autonomous systems. Our work proposes an agent-specific multi-layer fingerprinting framework that targets the unique structural properties of agent systems. 
+
+## 3. MARK: Multi-layer Agent fingerprinting framewoRK 
+
+We present MARK, a multi-layer agent fingerprinting framework that passively records and analyzes traces left by web agents at four protocol levels: request timing, TLS, HTTP, and in-browser behavior. As Figure 1 illustrates, MARK operates at the website end without requiring any client-side instrumentation, records traces, and extracts fea-ture vectors from four levels that feed into an agent iden-tification classifier. Identifying agents with a classifier is addressed in Section 6. 
+
+3.1. UX Task and Webpage Design 
+
+Different web agents interact with webpages differently. Motivated by this observation, we design five user-web inter-action scenarios that can surface discrepancies in how agents perceive and interact with webpages. We focus on how web agents access implicit or hidden information and interact with webpages spatially (e.g., mouse movements, clicks, scrolls) or temporally (e.g., timing delays, responsiveness). 
+
+Scenario 1 targets agents’ ability to distinguish func-tional from non-functional UI elements. We create three pages, each with an input field and a button next to it. Two pages (i.e., v1 and v2) have the exact same layout and the same text button label (i.e., submit), but only one success-fully submits the input. The third page (v3) uses a button label with an icon instead of text with a correct submission target. Scenario 2 probes whether agents retain contextual state across interactions. A scrollable panel appears at the center of the page, with a clickable button at the bottom of the panel. Upon clicking the button, another passage ap-pears. Scenario 3 examines hover-dependent interaction. A clickable button appears only when the user’s mouse cursor hovers over the containing panel. This tests whether agents discover the button through mouse movement or access it directly from the underlying HTML without hovering. 
+
+Scenario 4 introduces a semantic mismatch. A common-sense quiz presents answer buttons whose HTML label IDs do not match their visible text. It tests whether agents select answers based on the visible button text or the underlying HTML labels. Scenario 5 measures temporal adaptability by introducing a randomized delay of 1,500–3,000 ms between a button click and the appearance of a confirmation popup. This scenario distinguishes agents that wait for feedback from those that proceed without it. 
+
+3.2. Trace Logging System 
+
+The testbed is hosted at the registered domain on an AWS EC2 instance and runs as a single Go service that terminates TLS on port 443 (with a Let’s Encrypt certifi-cate [59]). The service simultaneously captures three layers of fingerprint information for every visit: TLS, HTTP, and in-browser behavior. We build on the fingerproxy library so that the raw ClientHello record and the negotiated connec-tion state are exposed to our handlers. We record TLS connection states, compute fingerprint hashes, and re-parse the ClientHello through utls . ClientHello 
+
+fields preserve sufficient detail to reconstruct the hashes and to detect client-library substitutions that would col-lide under a single hash. To log the HTTP/2 con-nections, we extract the Akamai-style fingerprint [51] from the prelude and additionally log the request meta-data for HTTP/1.1 and HTTP/2. We record per-request server-side latency from the request and response times-tamps. All entries are appended as JSONL into a daily-rotated requests-YYYY-MM-DD.jsonl file. Each sce-nario page loads a lightweight script, logger.js , that subscribes to event profiles. For mousemove , it is throttled at 16 ms to cap payload size at the 60 Hz refresh rate while still resolving sub-second cursor trajectories. Each event is tagged with a wall-clock timestamp computed from performance.now() for sub-millisecond preci-sion. Scenario pages also emit named application events through a small window.logEvent API, which lets us align in-browser actions with the scenario-specific ground truth. The detailed recorded entries of three layers are summarized in Table 1. A key design choice is that the logger issues 
+
+no mid-session HTTP requests . Events are buffered in memory and flushed only at end-of-page (beforeunload /pagehide ), when the tab becomes hidden, or when the buffer exceeds 5,000 events, in each case via navigator.sendBeacon . This avoids contaminating the TLS and HTTP/2 traces with telemetry-induced requests that would otherwise be indistinguishable from agent-driven traffic and would skew per-page request counts. Each flush carries an incrementing sequence number and a shared session identifier, so the server reassembles multi-flush sessions on the receiving end. The server’s 
+
+/collect endpoint persists each batch verbatim into a daily interactions-YYYY-MM-DD.jsonl file, keeping the behavior log structurally parallel to the request log and joinable by source IP, session identifier, and timestamp during analysis. 4. Fingerprinting 1. Agent Configuration 3. Feature Extraction    
+
+> Agents
+> Instruction Prompt
+> Visit 7 URLs and perform one
+> short natural interaction using
+> synthetic input.
+> Proprietary Agents
+> (w. native computer -use model)
+> Open -Source Agents
+> GPT -5-mini
+> 2. UX Task Execution & Trace Logging
+> S1: Functional UI testing
+> Submit input/click buttons with
+> varied designs
+> S2: Contextual State Retention
+> Navigate scrollable panels and
+> verify state consistency
+> S4: ID/Label Mismatch
+> Interact with buttons where
+> labels differ from DOM IDs
+> S5: Temporal Adaptability
+> Respond to feedback delays of
+> 1,500 --3,000ms
+> S3: Hover -Trigger Interaction
+> Trigger hidden button appear via
+> mouse -over actions
+> uxbehaviorsuite.com
+> Trace Segmentation
+> by timestamps
+> Raw Logs
+> Attributing
+> outputs
+> Human /
+> crawler /
+> agent
+> Fingerprinting
+> classifier
+> TLS Layer
+> ClientHello fingerprint
+> •ClientHello + Connection
+> • JA4, ALPN, SNI
+> • ciphers, extensions, groups
+> • handshake timing
+> HTTP Layer
+> HTTP/2 / Request fingerprint
+> • SETTINGS, WINDOW_UPDATE
+> • pseudo -header/header order
+> • headers, body digest, latency
+> • request timing
+> Behavior Layer
+> Client -side event traces
+> • Mouse move, keyboard, scroll
+> • App -specific events
+> • Interaction timing
+> Labeled
+> feature vectors
+
+Figure 1: Overview of MARK. Our Multi-layer Agent fingerprinting framewo RK (MARK) consists of four stages: (1) configuring agents with a common web-interaction instruction, (2) collecting raw network and client-side traces as each agent visits URLs and performs controlled UX tasks, (3) extracting TLS, HTTP, and behavioral features from the segmented traces, and (4) using the resulting feature vectors to attribute traces to humans, crawlers, or web agents. TABLE 1: Logged fields for fingerprint configuration across three layers.                                                  
+
+> Layer Category Fields TLS Connection Negotiated version, cipher suite, ALPN, SNI Fingerprint hashes JA3 [47], JA4 [48] ClientHello fields Offered cipher suites, TLS extensions, supported groups, EC point formats, signature schemes, supported TLS versions
+> HTTP HTTP/2 prelude SETTINGS frame values ( HEADER_TABLE_SIZE ,ENABLE_PUSH ,MAX_CONCURRENT_STREAMS ,
+> INITIAL_WINDOW_SIZE ,MAX_FRAME_SIZE ,MAX_HEADER_LIST_SIZE ), WINDOW_UPDATE increment, pseudo-header order ( :method ,:scheme ,:authority ,:path )Request metadata Method, path, protocol, header order, body size, SHA-256 body digest, server-side latency Automation headers User-Agent ,Sec-Ch-Ua* ,Sec-Fetch-* ,Accept-* ,Referer ,Cookie
+> Behavior Keyboard & Mouse events keydown ,keyup ,mousemove ,mousedown ,mouseup ,click ,dblclick ,contextmenu
+> Input & focus input ,touchstart ,touchend ,change ,focus ,blur ,selectionchange
+> Page events scroll ,resize ,load ,beforeunload ,pagehide ,visibilitychange
+> Application events Correct/incorrect submission, hover-reveal trigger, delayed-popup arrival Event metadata Wall-clock timestamp, per-tab session ID, CSS-selector target descriptor
+
+3.3. Feature Extraction 
+
+After the request and event traces are collected, we segregate them based on the timestamps of agent browsing. Before feature extraction, sendBeacon traffic emitted by the browser-side logger is removed from request records to preserve only accessing agent-generated traffic. From each trace, we extract four feature vectors from different extractors independently. Temporal features are derived from the timestamp se-quence of HTTP requests. The extractor calculates the Inter-Request Interval (IRI) distribution (mean, standard devia-tion, and median) and request rate in Hz. Since the variance of the request rate differs by agent, the Coefficient of Variation (CV) of the request rate is computed after all traces of the same agent are aggregated. Additionally, the extractor captures page dwell times and subresource burst patterns. In total, 9 temporal feature vectors reflect the agent’s request pacing strategy. The TLS extractor parses each record from requests and computes twelve feature groups (29 features in total). Post-Quantum key exchange algorithms are captured as a fraction of all used key exchange methods, and JA4 fin-gerprints are decoded into multiple fields as boolean: the cipher count and extension count from the JA4 A segment. HTTP/2 PRIORITY frame data is parsed via the Akamai H2 fingerprint format, extracting the WINDOW_UPDATE size, pseudo-header order, initial window size, and the priority weight of stream 3 and stream 5, which encodes Chrome’s fetch priority logic. GREASE usage across cipher suites, curve groups, and supported versions is recorded, and the JA3 fingerprint is also captured. The HTTP header extractor operates at request level, enumerating seven feature groups (total 35 features): a hash of the navigation header ordering sequence, the Sec-Fetch-* rule violation, client coherence be-tween Sec-Ch-Ua and the User-Agent header field, per-header presence flags for standard browser headers, 
+
+User-Agent family, OS, and version parsed from the UA string, Priority header urgency value and its correctness according to the request role (navigate, subresource, or async fetch), and the non-standard custom header names. At the trace level, these per-request signals are aggregated as rates into scalar and string values. From the separately stored user event log, the behavioral extractor captures browser events triggered by user actions (i.e., clicks, keydowns, mouse movements, scrolls, inputs, and navigation). Features are consist of ten groups, total 108: session-level counts and event rates, inter-event interval distribution statistics, event-type ratios (e.g., mousemove-to-keydown ratio), timing and reaction features including input latency and key hold duration, mouse-move behavior (i.e., total trajectory length, click coordination, and click targets), keyboard input behavior (i.e., Enter key ratio, special-key usage (e.g., Control, Alt, Command, Function, Shift) us-age, and key diversity), scroll depth and count, page-level structure including dwell times and a marking of which scenario pages were visited, task completion signals from application-level events, and navigation style measured by tab-click transitions between pages. Additionally, the extrac-tor computes per-page and per-event-type proportions. 
+
+## 4. Measurement Setup 
+
+With our framework, MARK, we measure AI web agent traces systematically across multiple layers to perform a comprehensive analysis of collected fingerprints. 
+
+4.1. Task Execution Prompt for Agents 
+
+We run the same task execution prompt for each agent. The prompt asks the agent to visit seven target webpages in a fixed order, perform one short and natural interaction on each page, and then immediately proceed to the next page. We design the prompt to avoid common execution failures, such as stalling on a single page, asking the user for clarification, or merely describing the page without inter-acting with it. To keep traces comparable across agents, the prompt also instructs agents to use synthetic inputs, avoid real personal information, and complete each page after one meaningful interaction sequence. Figure 8 in Appendix A shows the full task instruction. 
+
+4.2. Agents and Backbone Models 
+
+We measure web-agent behavior by running each agent on the same controlled browser-interaction task with ashared instruction prompt. For all open-source agents, we use GPT-5-mini as the backbone model for AutoGen, Browser-use, and Skyvern. For proprietary agents, we use each system’s native computer-use model: GPT-5.5 
+
+with extended thinking mode for the OpenAI agent, 
+
+computer-use-2025-11-24 for the Claude agent, and 
+
+gemini-2.5-computer-use-preview-10-2025 
+
+for the Gemini agent. We keep the backbone model fixed to fingerprint agents, not models, while treating proprietary systems as bundled agent-model implementations. Since web-agent trajectories are inherently noisy and non-deterministic [60], we run each agent 30 times to AutoGen  
+
+> Browser Use
+> Claude
+> Gemini
+> Operator
+> Skyvern
+> Agents
+> 10
+> 20
+> 30
+> Inter-Request-Intervals (s)
+> Mean Std
+
+(a) Inter-Request-Intervals AutoGen   
+
+> Browser Use
+> Claude
+> Gemini
+> Operator
+> Skyvern
+> Agents
+> 0
+> 5
+> 10
+> 15
+> Inter-Event-Intervals (s)
+> Mean Std
+
+(b) Inter-Event-Intervals 
+
+Figure 2: Comparison of request timing (Inter-Request-Intervals and Inter-Event-Intervals). A similar tendency between IRI and IEI indicates the pacing strategies of agents. capture consistent behavioral patterns in page inspection, action selection, timing, and interaction order. We use these repeated traces to support more generalizable comparisons across agents, even for consistent and systemic browsing actions of web agents in the downstream fingerprinting analysis. When agents access the test-bed website through the registered domain name and conduct the tasks, our fingerprinting framework, MARK, records finger-prints generated from three different layers: TLS, HTTP, and browser interaction level. Two files are stored on the deployed server: requests-YYYY-MM-DD.jsonl ,which contains incoming TLS and HTTP traffic, and 
+
+interactions-YYYY-MM-DD.jsonl , which records user-generated interaction events at the frontend. 
+
+## 5. Attributions of Web Agent Fingerprinting 
+
+We analyze multi-layer fingerprints collected from six AI web agents to identify which features are discriminative for the agent. Across three levels—request-level temporal distributions, network-layer protocol signals, and browser interaction behavior—we characterize what makes each agent distinct and assess which feature space is sufficient to isolate agents. 
+
+5.1. Requests-Level Fingerprints 
+
+Borrowing from traditional website fingerprinting meth-ods that analyze the temporal distribution of network traffic packets, we examine temporal distributions at the HTTPS request level, including Inter-Request Intervals (IRI) and request rate. As shown in Figure 2a, AutoGen and Skyvern exhibit larger IRIs, whereas Claude and Gemini show shorter IRIs, indicating that shorter IRI agents perform decision-making and website exploration more quickly. Al-though Claude, Gemini, and Operator have not publicly disclosed their underlying agent architectures, Claude is widely believed to be vision-based [61], Gemini to use a hybrid vision-and-DOM approach [62], and Operator to be primarily vision-based while evolving toward a hybrid design [63], [64]. However, the substantial IRI difference AutoGen Operator Browser Use Skyvern Gemini Claude 
+
+> Agents
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Request Rate (Hz)
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> Coefficient of Variation (CV)
+> CV
+
+Figure 3: Comparison results of the request rate sent by the agent and its Coefficient of Variation. This feature shows the stability and pacing of each agent. between Claude and Skyvern, which are considered vision-based agents, implies that the agent type does not strongly determine IRI behavior. We also analyze Inter-Event In-tervals (IEI), derived from the timing of web component interactions, as illustrated in Figure 2b. Overall, the tendency of IEI is similar to IRI, with the notable exception of Skyvern. The consistent intervals indicate that the agent regulates the pacing according to its strategy. Another distinguishing characteristic of agent systems is the request rate. Figure 3 shows that AutoGen and Skyvern, Operator and Browser Use, and Gemini and Claude each overlap substantially, forming three clusters. The additional feature, Coefficient of Variation (CV), provides stability of request patterns to differentiate agents within the same cluster. Claude, which has the lowest CV, consistently per-forms tasks across trials, whereas AutoGen exhibits high variability, likely because its request rate is influenced by task complexity. The temporal distributions of IRI, IEI, and request rate reveal that slower and highly variable agents emulate human-like processing between actions, and faster, more consistent agents employ more efficient models or operate with more aggressive execution loops. These observations suggest that request-level temporal distributions are influenced more by the design of the agent system than by the underlying agent type itself. In particular, the temporal features, reflecting the agent’s pacing strategy, may drift depending on the task or website. Motivated by this, we next investigate more stable features that are less sensitive to task variation, including TLS and HTTP header characteristics. 
+
+Finding 1. Claude behaves most consistently but sends requests quickly, while AutoGen exhibits high variability with long interacting intervals. AutoGen and Skyvern exhibit human-like pacing from a tem-poral perspective. 
+
+5.2. Protocol-Level Fingerprints 
+
+TLS/H2 fingerprint. First, we analyze the TLS/H2 fin-gerprint of incoming traffic from the website end. We focus on three configurations: Post-Quantum key exchange, JA4, and HTTP/2 settings. When the user’s browser connects to a server over TLS 1.3, the browser exchanges the key with a post-quantum algorithm in addition to the classical algorithm. Kyber768 is an experimental quantum-resistant cryptographic algorithm, standardized by NIST. Chrome has shifted from it to MLKEM768 (or X25519MLKEM768), which is the finalized NIST standard, beginning with Chrome 131 [65] (November, 2024). In Table 2, AutoGen and Browser Use have a mix of older and newer Chrome sessions, and Claude and Gemini use almost pure newer Chrome. While JA3 varies with the user and configurations, JA4 is more stable across sessions and relies on normalized categories and behavioral traits. Analyzing the JA4 string, we detect that only Skyvern has 17 extensions, whereas the other agents have 16, when considering the majority of JA4 fingerprints. From the first section of the JA4 fingerprint, the Operator has 39% of H2 sessions start with t13d2812h2 
+
+(28 extensions), the dominant non-Chrome pattern in the United States. Since t13d2812 specifically means Fire-fox, based on the known fact that Firefox advertises 28 TLS extensions while Chrome advertises 15–16, we infer that 39% of the Operator traffic uses Firefox, whereas other web agents do not. Investigating the third section of the JA4 fingerprints (i.e., JA4 c hashes), the dominant hashes of four agents, except for Skyvern, are the same as 
+
+d8a2da3f94cd .
+
+Finding 2. Operator is the only agent showing notable Firefox usage. About 39% of Operator’s HTTP/2 sessions match Firefox JA4 fingerprints, while all other agents appear almost Chrome-based. This makes Operator easily distinguishable. The dominant values of window update for flow control and pseudo-header order in the Akamai H2 fingerprint for-mat are consistent between agents. However, the weight of stream 5 and its percentage in traffic are unique. HTTP/2 multiplexes multiple requests over a single TCP connection as streams. Each stream gets an odd ID assigned sequentially by the client: the first request is stream 1, the second is stream 3, the third is stream 5, and so on. The original HTTP/2 spec (RFC 7540 [66]) included a priority tree mechanism where each stream could declare a dependency on another stream and a relative weight (1–256). With the weight, the browser informs the server which HTTP requests are more important and allocates more connection resources. Chrome implements this as a specific priority tree, and it sends at connection start via PRIORITY frames. Weight 256, the maximum, means Chrome is telling the server to treat that stream as the highest priority relative to other streams. Weight 220, which appears in Browser Use and Operator, suggests a slightly different Chrome build or OS-level scheduler configuration. Weight 110 dominates in Skyvern, consistent with different browser or automation tool usage, inferred from the 17 JA4 extensions. In recent TABLE 2: TLS/H2 fingerprint across six AI web agents. Skyvern is uniquely identifiable by its 17 TLS extensions, distinct JA4 c hash, and stream-5 weight of 110. Window update and pseudo-header order are identical across six agents and indicate no discriminative power.                                                      
+
+> PQ Key Exchange (% of H2) JA4 HTTP/2 Settings Agent Kyber768 MLKEM768 Firefox JA4 (%) Ext count JA4 c hash (dominant) AK window update AK pseudo order Stream-5 weight
+> AutoGen 36% 67% 0% 16 d8a2da3f94cd 15,663,105 m,a,s,p 256 (96%) Browser Use 36% 69% 0% 16 d8a2da3f94cd 15,663,105 m,a,s,p 220 (100%) Claude 0% 100% 0% 16 d8a2da3f94cd 15,663,105 m,a,s,p 256 (100%) Gemini 1% 100% 0% 16 d8a2da3f94cd 15,663,105 m,a,s,p 256 (97%) Operator 3% 56% 39% 16 d8a2da3f94cd 15,663,105 m,a,s,p 220 (86%) Skyvern 12% 95% 0% 17 b6f405a00624 15,663,105 m,a,s,p 110 (54%)
+
+Chrome versions, most PRIORITY frame transmission has been discontinued as RFC 9218 [67] (HTTP/2 Extensible Priority) discontinues the previous priority tree due to the preference for a simpler header-based method. However, the agent still contains priority frames, and certain weights con-sistently applied for each agent make them distinguishable. 
+
+Finding 3. Skyvern has a uniquely identifiable TL-S/H2 fingerprint. It is the only agent with 17 TLS extensions, a different dominant JA4 c hash, and a distinct stream-5 priority weight of 110. 
+
+HTTP header fingerprint. Next, we analyze the HTTP request headers that web agents sent (Table 3). In the HTTP 
+
+User-Agent header, the browser family is inconsistent in agents, but Browser Use, Claude, and Gemini consistently have headless Chrome in the User-Agent header. We additionally investigate the Sec-Ch-Ua header. Interest-ingly, Browser Use has HeadlessChrome value as a UA family with Sec-Ch-Ua: "Not;A=Brand";v="24", "Chromium";v="128"" , which is coherent as Chrome, but not consistent. Also, 99% of AutoGen requests contain HeadlessChrome, but the dominant value of the UA family is Edge. The significant incoherence of User-Agent and 
+
+Sec-Ch-Ua is a unique characteristic of web agents. AutoGen, Claude, and Gemini HTTP headers show strong headless and automation bot-indicative behav-ior because nearly all headers of HTTP requests omit 
+
+Accept-Language and unset Sec-Fetch-Site .Notably, Browser Use is the most uniquely identifi-able agent due to the impossible Sec-Fetch semantics. Browser Use superficially mimics human browsing, omit-ting HeadlessChrome in Sec-Ch-Ua and including 100% of Accept-Language , while violating fetch metadata semantics. We discover that the request’s Sec-Fetch-* 
+
+headers (Mode, Dest, Site, User) in Browser Use and Oper-ator have mismatched values that a real-world user accessing through the browser would not have. Sec-Fetch-Mode 
+
+represents how the request was initiated (navigate, no-cors, cors, same-origin), Sec-Fetch-Dest represents what the request is for (document, script, image, empty, etc.), 
+
+Sec-Fetch-Site represents the relationship to origin (same-origin, cross-site, none), and Sec-Fetch-User 
+
+represents whether it was a user gesture ( ?1 only for navi-gation clicks). We flag a request as a logic violation when its Sec-Fetch-* headers contain semantically impossible combinations that no real browser would produce. Specif-ically, a violation occurs when the Sec-Fetch-Mode 
+
+and Sec-Fetch-Dest pair is unknown or invalid, when the Sec-Fetch-Site value does not match the re-quest context—for example, a (no-cors, image) sub-resource request carrying Sec-Fetch-Site: none is impossible because embedded image loads always orig-inate from within a page. Additional violations occur when a Sec-Fetch-Mode: navigate request omits 
+
+Sec-Fetch-User: ?1 despite navigations always being user-initiated, and when a CORS fetch request carries a non-empty Sec-Fetch-Dest value rather than empty , which is what real browsers normally send for XHR/fetch requests. 
+
+Finding 4. Browser Use does not follow the 
+
+Sec-Fetch rule in 100% of HTTP requests, which is highly suspicious behavior as a bot and human browsing behavior does not show. In real browsers with human access, the header or-der is deterministic. However, some automatic frameworks break header order stability because headers are assembled dynamically or middleware injects fields asynchronously. Remarkably, we observe that every AI web agent has high variability in the navigation header order, which implies that the agent dynamically reorders headers based on inferred user intent and adapts available actions to the current task context as part of the reasoning system. Operator and Skyvern introduce non-standard headers 
+
+signature and signature-agent , and sec-gpc ,respectively. These custom headers are a strong fingerprint feature because they are easy to detect at the server side and directly expose the agent identity. Except for the custom header and high random header ordering, the HTTP request header of Skyvern is the closest to human browsing. AI web agents are increasingly accurately mimicking human browsing HTTP semantics to evade bot detection, but still leak automatic AI bot-specific fingerprints through cross-header inconsistencies: Sec-Fetch rule violations and high dynamic header ordering behavior. TABLE 3: HTTP-header fingerprint across six AI web agents. HTTP-header discriminates agents via non-human browsing signals. Red indicates anomalous or bot-indicative behavior, and * indicates inconsistent value across traces.                                                              
+
+> Feature AutoGen Browser Use Claude Gemini Operator Skyvern
+> UA family (mode) edge* headless-chrome headless-chrome headless-chrome chrome* chrome* HeadlessChrome in Sec-Ch-Ua (%) 99 0100 100 84
+> Accept-Language present (%) 1100 0092 96
+> Sec-Fetch-Site always none (%) 92 100 100 100 97 19
+> Sec-Fetch logic violation (%) 0100 0041 0UA vs. Sec-CH-UA incoherence (%) 100 00036Unique nav. header orderings 196/197 209/210 210/210 208/210 170/175 225/226 Non-standard headers none none none none signature sec-gpc signature-agent
+
+Finding 5. AutoGen, Claude, and Gemini are strongly headless and exhibit bot-indicative behavior, while Operator and Skyvern show near-real-browser behavior with realistic HTTP header formatting. 
+
+Finding 6. Claude and Gemini are nearly indistin-guishable in network-layer fingerprints. We could assume that they share the identical back-end system. 
+
+5.3. Behavior-Level Fingerprints S1-v1 S1-v2 S1-v3 S2 S3 S4 S5 
+
+> Page
+> 0
+> 500
+> 1000
+> 1500
+> 2000
+> Mouse trajectory length (px)  AutoGen
+> Browser Use
+> Claude
+> Gemini
+> Operator
+> Skyvern
+
+Figure 4: Mean and standard deviation values of mouse trajectory length. It implies agent type and strategy for human-mimicking behavior. Assuming that different types of agents affect decision-making and web-browsing strategies, and that these dif-ferences would be reflected in web component interaction behavior, we analyze behavioral features from short web component interaction logs at the website end. Interest-ingly, in all 30 trials, Claude, Gemini, and Skyvern skipped Scenario 5, a delayed feedback of button click. Claude, Gemini, and Skyvern are all plan-first (Plan-and-Execute) agents that enumerate the URL list before beginning execu-tion. Scenario 5, last in the navigation, was thus the most susceptible to being dropped, while AutoGen, Browser Use, and Operator are closer to reactive step-by-step executors. We track the agent’s mouse coordination with a 1 ms in-terval and calculate the total mouse trajectory length for each web component interaction scenario (Figure 4). Notably, Skyvern (vision-based agent) shows much longer mouse trajectory lengths compared to other agents, consistently mimicking human browsing behavior at the network layer as well. Whereas Browser Use, a DOM-based agent, does not show the mouse movement in all scenarios. Although the difference is not noticeably obvious, Skyvern, Operator, Gemini, and AutoGen show a similar tendency in mouse movement length across seven scenarios. We further analyze user behavior at a page- and session-level, and it enables the systematic identification of distinct behavioral profiles. In Figure 5, each cell represents the proportion of a given event type within the total event count recorded for each agent on a specific page. Event types and pages were selected by cross-user variance to show features with meaningful discriminatory power. AutoGen exhibits uniformly low proportions across all event types and all pages. Mouse-move, keydown, and input proportions remain near zero on the three subscribe pages, and only minimal mouse-move activity is detectable on the pages S2–S4. It shows AutoGen’s passive browsing behavior. However, Browser Use, Claude, and Gemini show similar aspects in event profile per page, with similarly high keydown and input proportions on S1 pages and negligible activity on S2-S4. The primary observable difference between Browser Use and Claude is a marginally higher mouse-move proportion for Claude on the S2 and S3 pages. Given the near-identical event proportions on the subscribe (S1) pages, Figure 5 provides insufficient resolution to reliably distinguish these two agents. But Gemini is distinguishable from Browser Use and Claude in the heatmap by the elevated magnitude of keydown proportions on the subscribe (S1) pages. Operator is the only agent to record non-zero keydown proportions on the S2-S4 pages, where all other agents record exactly zero. Skyvern is characterized by the highest mouse-move proportions across all pages. Despite moderate keydown and input proportions on the subscribe pages, the dominant mouse movement across all pages differentiates Skyvern from all others. mousemove                                                                                                            
+
+> keydown
+> input
+> mousemove
+> keydown
+> input
+> mousemove
+> keydown
+> input
+> mousemove
+> keydown
+> input
+> mousemove
+> keydown
+> input
+> mousemove
+> keydown
+> input
+> AutoGen
+> Browser Use
+> Claude
+> Gemini
+> Operator
+> Skyvern
+> 0.07 0.07 0.05 0.07 0.05 0.05 0.07 0.04 0.04 0.10 0.00 0.00 0.17 0.00 0.00 0.10 0.00 0.00
+> 0.01 0.20 0.22 0.01 0.20 0.22 0.01 0.20 0.22 0.07 0.00 0.00 0.10 0.00 0.00 0.10 0.00 0.00
+> 0.02 0.21 0.21 0.02 0.21 0.21 0.02 0.21 0.21 0.15 0.00 0.00 0.18 0.00 0.00 0.09 0.00 0.00
+> 0.01 0.23 0.19 0.02 0.22 0.18 0.01 0.23 0.19 0.13 0.00 0.00 0.17 0.00 0.00 0.10 0.00 0.00
+> 0.05 0.16 0.13 0.05 0.17 0.13 0.04 0.17 0.13 0.08 0.02 0.00 0.14 0.05 0.00 0.11 0.06 0.00
+> 0.12 0.13 0.14 0.17 0.12 0.13 0.21 0.10 0.11 0.33 0.00 0.00 0.44 0.00 0.00 0.40 0.00 0.00
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> Event proportion
+> S1_v1 S1_v2 S1_v3 S2 S3 S4
+
+Figure 5: Web component interaction proportion for each web agent on different pages. The event profile proportion suggests a web content exploration strategy of agents, and it is different for agents even though the network packet structures are identical. (S5 webpage is skipped because Claude, Gemini, and Skyvern have no record for it.) 0 20 40 60 80 100 120 
+
+Keydowns/Session 
+
+0
+
+200 
+
+400 
+
+600 
+
+800 
+
+1000 
+
+1200 
+
+1400  
+
+> Mouse moves/Session
+> AutoGen Browser Use
+> Claude
+> Gemini
+> Operator
+> Skyvern
+> AutoGen
+> Browser Use
+> Claude
+> Gemini
+> Operator
+> Skyvern
+
+Figure 6: The key downs and mouse movements per session clustered regions across agents. Agents generally use keyboard controls rather than mouse movements, except for Skyvern, which presents human-like behavior. 
+
+Finding 7. Skyvern exhibits a uniquely human-like interaction signature. As a vision-based agent, Skyvern generates substantially longer mouse trajec-tories and the highest mouse-move activity across pages, making it the most behaviorally distinct agent. Focusing on the two most common events, mouse-move and keydown, we scattered each agent’s session as a point in a two-dimensional space in Figure 6. The cluster of Au-toGen is tight and consistently low on both axes, indicating a passive interaction style. Browser Use and Claude form adjacent clusters characterized by high keydown counts and low mouse-move counts. Notably, Claude exhibits lower within-session variance than Browser Use, particularly along the mouse-move axis, suggesting a more consistent interac-tion pattern. Despite adjacency in the scatter space, the two agents are slightly separable on the basis of cluster disper-sion rather than cluster position. Gemini has the heaviest typing among all agents, while partially overlapping with Browser Use and Claude, and is generally distinguishable by the rightward extent of its cluster. Since the high variance of the Operator, it is the most difficult to isolate in a two-dimensional cluster alone. The high dispersion of the Oper-ator’s cluster indicates behavioral inconsistency across ses-sions, possibly reflecting task engagement or interruptions during interaction. Although Skyvern exhibits a moderate keydown count, its mouse-move count is extreme, and its range is far beyond the main cluster of other agents. Integrating all behavioral features observed from the webpage side, we complementarily analyze each agent from a different perspective. With a coarse-grained, session-level keydown and mouse-move interaction, AutoGen and Skyvern are isolated, and Browser Use, Claude, and Gemini are partially separable. The fine-grained page-level event profile presents typing behavior that slightly distinguishes Gemini from Browser Use and Claude and identifies the Operator through its keyboard activity. As a supplementary behavioral feature, the mouse trajectory length discriminates between Browser Use and Claude, which are almost indis-tinguishable in two event profile analyses. 
+
+Finding 8. Behavioral telemetry can distinguish agents when network fingerprints are similar. Claude and Gemini exhibit almost identical network fin-gerprints, but they are separable through subtle be-havioral signals: Gemini performs the most typing and Claude shows the most consistent low-variance behavior. 6. Fingerprint-Based Agent Identification in Practice 
+
+As we showed in Section 5, our cross-layer fingerprints can distinguish different AI web agents. Using these ob-served fingerprint characterizations, we design a decision tree classifier to identify the accessing user, including agents, humans, and traditional crawlers, with collected traces in practice. 
+
+6.1. Baseline Data Collection 
+
+Human-generated Traces. To obtain a human baseline, we recruit 30 human participants and log their interactions with the same web interaction suite used for agents. After participants consent, we give them three instructions before they begin the task. First, some pages (i.e., the three different versions of our scenario 1) include an email input field, designed to make the subscription button scenario more realistic than a standalone button. Participants are told that they can enter either a real or a fake email address, and that the input will not be submitted, registered, or used to subscribe them to anything. This clarification is necessary because some participants are otherwise reluctant to enter any information into an unfamiliar newsletter form. Second, participants are instructed not to revisit pages they have already visited. This mirrors the agent protocol, in which each agent is prompted to visit the seven URLs sequentially and interact with each page once. We do not ask agents to retry until they succeed because our goal is to collect behavioral traces from a first-pass interaction, rather than to measure whether the agent can complete a fixed page-specific task. A retry-until-success protocol would re-quire defining success criteria for each page in advance, which would turn the experiment into a task-completion benchmark and make the traces less reflective of natural interaction behavior. Applying the same one-pass constraint to human participants, therefore, makes the human and agent traces procedurally comparable. Third, after completing all seven interactions, partici-pants are asked to close the browser tab, giving each session a clear endpoint and preventing post-task behavior from being included in the trace. When participants are ready to begin, we direct them to visit the testbed. We record the interaction trace, including the start and end times of each session, and monitor whether participants adhere to the interaction protocol. 
+
+Crawler-generated Traces. To contrast AI agents against conventional automated clients, we collect a baseline from three widely used traditional web crawlers, chosen for their distinct network stacks: Scrapy 2.14.1 (Python/Twisted, built on pyOpenSSL/OpenSSL), Heritrix 3.15.0 (the Internet Archive’s archival crawler, Java 17/JSSE), and 
+
+Apache Nutch 1.22 (Java, using its OkHttp-based HTTP protocol plugin over JSSE). These span the dominant TLS and HTTP client libraries used by non-browser automation, so that any signal shared across them is characteristic of legacy crawlers in general rather than of a single imple-mentation. Each crawler is pointed at the same instrumented testbed, seeded at the site root, and left to traverse the site us-ing its standard link-following behavior while honoring 
+
+robots.txt , under the tool’s default fetch configuration. Mirroring the 30-trial protocol used for the agents, we execute 30 independent crawl sessions per crawler. Because the testbed is a live domain that also receives background scanner traffic and all of our crawl traffic egresses from a single IP, we run the sessions strictly one at a time and sequentially, separated by a fixed idle gap so that no two crawl windows overlap. We attribute the server-side records of each session using its wall-clock UTC window and cross-check that every attributed record originates from our single measurement egress IP; across all 90 sessions, this yields clean, non-overlapping attribution with no foreign-IP contamination. The resulting traces are request-only. Unlike the AI agents, none of the crawlers executes JavaScript, so 
+
+logger.js never fires, and they emit no interaction (be-havioral) telemetry. All three communicate exclusively over HTTP/1.0 or HTTP/1.1 and never negotiate HTTP/2, leav-ing the Akamai HTTP/2 fingerprint empty. Each crawler nonetheless presents a stable, distinct TLS fingerprint that is constant across all 30 of its sessions—a single JA3 hash for Scrapy and Nutch, while Heritrix consistently emits two distinct JSSE ClientHello s—giving us a deterministic, non-LLM reference point against which the agent and hu-man fingerprints are compared. 
+
+6.2. Agent Identification 
+
+With the collected traces from six AI web agents, humans, and three web crawlers, we extract four feature vectors from four different layers as in Section 3.3. To verify that features provide sufficient evidence to identify agents/humans/crawlers, we design a classifier. 
+
+Preprocessing. Before feeding features into a classifier, we preprocess extracted features into a fully numeric form with trial-level feature matrices for a decision tree-based classifier. Temporal, TLS, and behavioral features are al-ready numeric, so we remove zero-variance columns whose values are constant across all trials and replace missing values for some trials with the median value. Since the HTTP header features contain the names of non-standard headers, we perform multi-hot encoding of the custom headers before dropping zero-variance values. In addition to the numeric format feature preprocessing strategy, missing values of Sec-Fetch-Site , Sec-Fetch-Mode , User-Agent family, and User-Agent OS are substituted with un-known, and missing values of Priority header become zero. Finally, agent labels are integer-encoded for each preprocessed feature, and labels are uniformly shared across feature vectors. 
+
+Decision Tree Classifier. We selected an Extra Trees (Extremely Randomized Trees) as a classifier, which is an ensemble of fully randomized decision trees with faster training and performs well when features have varying scales. Considering the feature configuration—the mix of numeric and encoded categorical features, and the moderate size of the dataset—Extra Trees is well-suited, and the extracted features have the ability to identify the agent without a sophisticated deep learning model. We train an Extra Trees classifier separately on each of the five feature sets: temporal, TLS/H2, HTTP header, behavioral, and four combined features. All models are trained with 200 estimators and a fixed random seed for reproducibility. To obtain unbiased performance estimates, we apply cross-validation. In each of the 30 folds, all feature vector rows are used as the test set once, and the model is trained on the remaining 29 trials of each agent. After cross-validation, a final Extra Trees classifier is trained on all feature vector rows for each feature type. With the trained models, we evaluate and report the classifier’s agent identification performance from various angles, as well as the detection of human and legacy crawlers at the same time. 
+
+6.3. Identification Results 
+
+TABLE 4: Cross-validation results of Extra Trees classi-fier by feature type. Temporal feature with fully observed traces identifies agents with 100% accuracy.                         
+
+> Feature Type Accuracy Precision Recall F1 Temporal 1.000 1.000 1.000 1.000 HTTP 0.820 0.803 0.820 0.799 TLS 0.747 0.723 0.747 0.725 Behavioral 0.876 0.874 0.876 0.875 Combined 0.971 0.972 0.971 0.971
+
+TABLE 5: Per-agent F1 score by feature type. Four features supplement the identification of agents/human-s/crawlers. (We omitted behavioral features of crawlers be-cause they vary by JavaScript implementation)                                                        
+
+> Agent Temporal HTTP TLS Behavioral Combined AutoGen 1.000 0.968 0.618 0.918 0.968 Browser Use 1.000 0.812 0.818 0.721 0.967 Claude 1.000 0.602 0.562 1.000 1.000 Gemini 1.000 0.105 0.000 0.967 0.984 Operator 1.000 0.654 0.630 0.621 0.912 Skyvern 1.000 0.897 0.935 0.915 0.967 Human 1.000 0.952 0.691 0.984 1.000 Heritrix 1.000 1.000 1.000 ––Nutch 1.000 1.000 1.000 ––Scrapy 1.000 1.000 1.000 ––
+
+We classify feature vectors of AI web agents, hu-mans, and crawlers using the Extra Trees classifier. Since the crawlers do not interact with web components using JavaScript and depend on the script designed by develop-ers, behavioral features are omitted. We also skipped the combined feature set of crawlers for a fair comparison. 
+
+6.3.1. Full-Trial Identification Performance. Table 4presents cross-validation results for each feature vector set, averaging the evaluation results of 30 folds. Notably, the temporal feature, widely used in traditional website fin-gerprinting, shows 100% accuracy, indicating that request timing alone is sufficient to separate every agent if the full traces are given. While this result confirms that temporal distributions are highly distinctive, it should be interpreted carefully: pacing behavior may be sensitive to task com-plexity, network conditions, and model updates, and may not generalize to unseen tasks or agent versions. TLS features are the weakest fingerprint to identify agents (F1 = 0.725). As in Table 5, Gemini achieves a 0.000 F1 score, confirming it is indistinguishable from Claude at the TLS layer. Skyvern (0.935) and Browser Use (0.818) are relatively well-separated by their distinct TLS extension counts and stream-5 priority weights. Aligning with the earlier finding that Claude and Gemini share nearly identical network-layer fingerprints in Sec-tion 5, Gemini shows notable failures in classification (0.105). However, AutoGen (0.968) and Skyvern (0.897) are almost immediately distinguished by HTTP headers. As human browsing generates stable HTTP headers unlike bot-generated headers, human browsing behavior is also easy to identify (0.952). Traditional crawlers are the most easily distinguishable targets only with network layer features due to their fundamental packet configuration difference from browser-based agents. Across request, HTTP, and TLS lay-ers, crawlers are identified with a 100% F1 score. Behavioral features perform well, especially on Claude (1.000), Gemini (0.967), and Human (0.984). Although Claude and Gemini are indistinguishable with the network layer feature, behavioral features can differentiate them. From this finding, we can assume that Claude and Gemini adopt different web content browsing and decision-making strategies while they share the same network packet as-sembling backbone system. However, Operator (0.621) and Browser Use (0.721) are harder to isolate behaviorally, consistent with the observation that Operator exhibits high variance across sessions. Agents are not fully identifiable through a single feature set. The combined feature set recovers high performance (0.971), demonstrating that the four features are comple-mentary . Claude and Human reach 1.000, and even Gemini, which does not have unique features at the network level, rises to 0.984. Operator remains the most challenging to identify (0.912), reflecting its behavioral inconsistency and varied browser usage in HTTP header fingerprint. These results confirm that no single feature layer is sufficient for robust identification of all agent entities, but their combi-nation yields a highly accurate classification across various browsing subjects. 
+
+6.3.2. Early-Request Identification for Real-Time De-ployment. We evaluate the classifier to confirm that it is deployable on the web content hosting server side to protect the content from AI web agents (Figure 7). Notably, tempo-ral features perform poorly throughout the entire observation window, showing a near-zero macro F1 score after the first few requests. This is in contrast to the successful full-5 10 15 20 25 30 
+
+> Requests seen
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Macro F1 (%)
+> Temporal
+> HTTP
+> TLS
+> Behavioral
+> Combined
+
+Figure 7: Agent identification performance comparison as the number of requests seen at the website end. 
+
+Protocol-level fingerprints preserve more than 60% agent discrimination after 3 requests are received, and behavioral replenishes the performance after signals are accumulated. trial results reported in Table 4 and reveals a limitation: temporal features such as inter-request intervals and request rate require a sufficient volume of requests to obtain a stable distribution estimation. With real-time incoming requests, the temporal features are unreliable and unsuitable for early-stage identification despite their discriminative power. TLS and HTTP features both achieve higher performance compared to the behavioral features, which is expected, as only limited event signals are captured in the first few requests. The earlier stabilization of HTTP relative to TLS is because HTTP header fingerprints are observable on every request, whereas informative TLS signals such as stream-5 priority weights require multiple concurrent connections for a reliable decision. As the agent’s browsing behavior is accumulated, the behavioral features increase the accuracy more steeply than the TLS and HTTP features. Complementing multiple features with each other throughout the user browsing sessions— HTTP and TLS perform well in the early stage, and behavioral features are powerful in the mid-stage discrimination —the combined features identify the browsing subject more than 60% macro F1 score of the time after three requests are received. Figure 7 demonstrates that reliable identification is possi-ble before full requests are observed, leveraging multiple cross-layer features. To protect web content from agents, the website owner can serve the content selectively after identifying the browsing agent by placing a non-sensitive webpage as a gate. 
+
+## 7. Limitations 
+
+We demonstrate that AI web agents leave distinctive traces across request timing, TLS, HTTP, and behavioral layers, enabling reliable classification with features com-bined from multiple layers. However, our framework has a limitation due to its feature-based identification. As we observed, Claude and Gemini agents are indistinguishable because they present almost identical TLS and HTTP fin-gerprints. If two agents use a fully identical back-end system and decision-making process, both of which shape behav-ioral signals, our framework will classify them as the same system. More broadly, our framework cannot identify an agent that perfectly mimics human browsing behavior and network traces. Our testbed is a controlled environment with ambiguous tasks, such as identical email address submission pages and a mismatch of button ID and displayed text, to induce hesitance and page dwell time. Based on the amount of collected web component interaction events and website de-sign, behavioral fingerprint accuracy may differ. In addition, the temporal features may shift under different task types, website structures, or prompt formulations. Since AI web agents are evolving rapidly for efficient and fast task completion, along with underlying LLM mod-els, our classifier’s performance may degrade over time as agent behavior changes. Ongoing feature and classifier updates will be necessary as new models are released. 
+
+## 8. Conclusion 
+
+In this work, we present multi-layer fingerprinting for identifying AI web agents to protect against increasing indiscriminate content scraping that existing defenses, such as robots.txt and active bot-blocking, fail to prevent. We empirically measure and analyze the agents’ finger-prints across request timing, TLS, HTTP, and the behavioral layer from six agent frameworks accessing our deployed live testbed. Our analysis reveals that AI web agents leave structurally distinctive fingerprints at each layer, and no single feature is sufficient for agent identification. We feed the extracted features to the Extra Trees classifier, and it achieves 97% accuracy in classifying agents, crawlers, and humans for the combination of all features. The results demonstrate that cross-layer fingerprinting provides a robust and evasion-resistant strategy for distinguishing agent traffic, with each feature layer complementing the others. 
+
+## Ethics Considerations 
+
+In our study, we collected human-generated traces, in-cluding network traffic and web component interaction event logs, to compare with AI web agent-generated traces as a baseline. Our university’s Institutional Review Board (IRB) determined our human subjects experiment protocol as a review exemption. Participation was voluntary, and partic-ipants were informed about the study’s purpose and the data being collected before participating. To protect the participants’ privacy, we used the authors’ personal laptop over a Wi-Fi connection to prevent participants’ IP and MAC addresses from being logged by our deployed server. We asked the participants to use fake information and did not collect, store, or process any participant PII (Personally Identifiable Information). Artifact Availability 
+
+Our multi-layer fingerprinting framework for AI web agents, including the designed UX testbed and trace logging system, is available at: https://github.com/SPIN-UMass/A I-agent-fingerprint 
+
+## References 
+
+[1] I. Pohrebniyak, “150+ ai agents statistics: What business leaders are betting on in 2026,” https://masterofcode.com/blog/ai-agent-statistics, 2026, [Accessed 02-05-2026]. [2] J. Yang, “Who’s adopting ai agents—and what they’re actually doing with them,” https://www.library.hbs.edu/working-knowledge/whos-a dopting-ai-agents-and-what-theyre-actually-doing-with-them, 2026, [Accessed 12-06-2026]. [3] M. Koster, G. Illyes, H. Zeller, and L. Sassman, “Robots Exclusion Protocol,” RFC 9309, Sep. 2022. [Online]. Available: https://www.rfc-editor.org/info/rfc9309 [4] J. Cui, M. Zha, X. Wang, and X. Liao, “The odyssey of robots.txt governance: Measuring convention implications of web bots in Large Language Model services,” in Proceedings of the 2025 ACM SIGSAC Conference on Computer and Communications Security , ser. CCS ’25. New York, NY, USA: Association for Computing Machinery, 2025, p. 21–35. [Online]. Available: https://doi.org/10.1145/3719027.3765063 [5] T. Kim, K. Bock, C. Luo, A. Liswood, C. Poroslay, and E. Wenger, “Scrapers selectively respect robots.txt directives: Evidence from a large-scale empirical study,” in Proceedings of the 2025 ACM Internet Measurement Conference , ser. IMC ’25. New York, NY, USA: Association for Computing Machinery, 2025, p. 541–557. [Online]. Available: https://doi.org/10.1145/3730567.3764471 [6] E. Liu, E. Luo, S. Shan, G. M. Voelker, B. Y. Zhao, and S. Savage, “Somesite i used to crawl: Awareness, agency and efficacy in protecting content creators from AI crawlers,” in Proceedings of the 2025 ACM Internet Measurement Conference , ser. IMC ’25. New York, NY, USA: Association for Computing Machinery, 2025, p. 78–99. [Online]. Available: https://doi.org/10.1145/3730567.3732913 [7] G. Corral, V. Singhal, B. Mitchell, and R. Tatoris, “Perplexity is using stealth, undeclared crawlers to evade website no-crawl directives — blog.cloudflare.com,” https://blog.cloudflare.com/perplexity-is-using -stealth-undeclared-crawlers-to-evade-website-no-crawl-directives/, 2025, [Accessed 21-04-2026]. [8] R. Tatoris, H. Saxena, and L. Miglietti, “Trapping misbehaving bots in an AI Labyrinth — blog.cloudflare.com,” https://blog.cloudflare.c om/ai-labyrinth/, 2025, [Accessed 02-05-2026]. [9] Q. Sun, D. R. Simon, Y.-M. Wang, W. Russell, V. N. Padmanabhan, and L. Qiu, “Statistical identification of encrypted web browsing traf-fic,” in Proceedings 2002 IEEE Symposium on Security and Privacy .IEEE, 2002, pp. 19–30. [10] A. Panchenko, F. Lanze, J. Pennekamp, T. Engel, A. Zinnen, M. Henze, and K. Wehrle, “Website fingerprinting at internet scale.” in NDSS , vol. 1, 2016, p. 23477. [11] J. Hayes and G. Danezis, “k-fingerprinting: A robust scalable web-site fingerprinting technique,” in 25th USENIX Security Symposium (USENIX Security 16) , 2016, pp. 1187–1203. [12] A. Vastel, P. Laperdrix, W. Rudametkin, and R. Rouvoy, “Fp-stalker: Tracking browser fingerprint evolutions,” in 2018 IEEE Symposium on Security and Privacy (SP) . IEEE, 2018, pp. 728–741. [13] P. Eckersley, “How unique is your web browser?” in Interna-tional Symposium on Privacy Enhancing Technologies Symposium .Springer, 2010, pp. 1–18. [14] G. Pugliese, C. Riess, F. Gassmann, and Z. Benenson, “Long-term observation on browser fingerprinting: Users’ trackability and per-spective,” Proceedings on Privacy Enhancing Technologies , 2020. [15] C. Banse, D. Herrmann, and H. Federrath, “Tracking users on the internet with behavioral patterns: Evaluation of its practical feasibil-ity,” in IFIP International Information Security Conference . Springer, 2012, pp. 235–248. [16] X. Gu, M. Yang, C. Shi, Z. Ling, and J. Luo, “A novel attack to track users based on the behavior patterns,” Concurrency and Computation: Practice and Experience , vol. 29, no. 6, p. e3891, 2017. [17] D. Herrmann, C. Banse, and H. Federrath, “Behavior-based track-ing: Exploiting characteristic patterns in dns traffic,” Computers & Security , vol. 39, pp. 17–33, 2013. [18] Y. C. Yang, “Web user behavioral profiling for user identification,” 
+
+Decision Support Systems , vol. 49, no. 3, pp. 261–271, 2010. [19] H. Obendorf, H. Weinreich, E. Herder, and M. Mayer, “Web page revisitation revisited: implications of a long-term click-stream study of browser usage,” in Proceedings of the SIGCHI conference on Human factors in computing systems , 2007, pp. 597–606. [20] C. Deußer, S. Passmann, and T. Strufe, “Browsing unicity: On the limits of anonymizing web tracking data,” in 2020 IEEE Symposium on Security and Privacy (SP) . IEEE, 2020, pp. 777–790. [21] Fingerprint, “Fingerprint Launches Automation Intelligence API and AI Assistant Detection, Delivering the Industry’s Most Complete View of AI Traffic,” https://www.businesswire.com/news/home/2 0260601158287/en/Fingerprint-Launches-Automation-Intelligenc e-API-and-AI-Assistant-Detection-Delivering-the-Industrys-Most-C omplete-View-of-AI-Traffic, 2026, [Accessed 11-06-2026]. [22] Skyvern-AI, “Skyvern: Automate browser-based workflows with AI,” https://github.com/Skyvern-AI/skyvern, 2026, accessed: 2026-05-01. [23] M. M¨ uller and G. ˇ Zuniˇ c, “Browser Use: Enable AI to control your browser,” https://github.com/browser-use/browser-use, 2024. [24] Q. Wu, G. Bansal, J. Zhang, Y. Wu, B. Li, E. Zhu, L. Jiang, X. Zhang, S. Zhang, J. Liu, A. H. Awadallah, R. W. White, D. Burger, and C. Wang, “AutoGen: Enabling next-gen LLM applications via multi-agent conversations,” in COLM , 2024. [25] OpenAI, “Introducing Operator,” https://openai.com/index/introduci ng-operator/, Jan. 2025, accessed: 2026-05-01. [26] Anthropic, “Computer use tool,” https://platform.claude.com/docs/e n/agents-and-tools/tool-use/computer-use-tool, 2026, claude API documentation. Accessed: 2026-05-01. [27] Google, “Computer use,” https://ai.google.dev/gemini-api/docs/comp uter-use, 2026, gemini API documentation. Last updated: 2026-04-28. Accessed: 2026-05-01. [28] A. N. P. M. Committee, “Apache Nutch,” https://nutch.apache.org/, [Accessed 11-06-2026]. [29] internetarchive/heritrix3, “Heritrix,” https://github.com/internetarchi ve/heritrix3, [Accessed 11-06-2026]. [30] Scrapy, “Scrapy — open source web scraping framework for Python,” https://www.scrapy.org/, [Accessed 11-06-2026]. [31] J. Bazinska, M. Mathys, F. Casucci, M. Rojas-Carulla, X. Davies, A. Souly, and N. Pfister, “Breaking agent backbones: Evaluating the security of backbone LLMs in AI agents,” in The Fourteenth International Conference on Learning Representations , 2026. [32] S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. Narasimhan, and Y. Cao, “ReAct: Synergizing reasoning and acting in language models,” in 
+
+ICLR , 2023. [33] G. Wang, Y. Xie, Y. Jiang, A. Mandlekar, C. Xiao, Y. Zhu, L. Fan, and A. Anandkumar, “Voyager: An open-ended embodied agent with Large Language Models,” Transactions on Machine Learning Research , 2024. [Online]. Available: https://openreview.net/forum?i d=ehfRiF0R3a [34] Microsoft, “OmniTool: Computer use with OmniParser,” https://gith ub.com/microsoft/OmniParser/blob/master/omnitool/readme.md, 2025, accessed: 2026-05-01. [35] J. Yang, C. E. Jimenez, A. Wettig, K. Lieret, S. Yao, K. R. Narasimhan, and O. Press, “SWE-agent: Agent-computer interfaces enable automated software engineering,” in NeurIPS , 2024, pp. 50 528–50 652. [Online]. Available: https://arxiv.org/abs/2405.15793 [36] Cursor, “Build software with AI agents,” https://cursor.com/product, 2026, accessed: 2026-05-01. [37] OpenAI, “Codex,” https://developers.openai.com/codex, 2026, openAI Developers documentation. Accessed: 2026-05-01. [38] Anthropic, “Claude Code overview,” https://code.claude.com/docs/en/ overview, 2026, claude Code documentation. Accessed: 2026-05-01. [39] Cognition, “Introducing devin, the first AI software engineer,” https: //cognition.ai/blog/introducing-devin, Mar. 2024, accessed: 2026-05-01. [40] A. Elovic, “GPT researcher,” code repository: https://github.com/ass afelovic/gpt-researcher. [Online]. Available: https://gptr.dev [41] OpenAI, “Introducing Deep Research,” https://openai.com/index/int roducing-deep-research/, 2025. [42] Google, “Gemini Deep Research — your personal research assistant,” https://gemini.google/overview/deep-research/, 2025, accessed: 2025-07-16. [43] A. St¨ ockl and J. Nitu, “Are AI agents interacting with online ads?” 
+
+arXiv preprint arXiv:2504.07112 , 2025. [44] S. Singh, “How Skyvern reads and understands the web,” https://ww w.skyvern.com/blog/how-skyvern-reads-and-understands-the-web/, Jul. 2025, accessed: 2026-05-01. [45] OpenAI, “Computer-using agent,” https://openai.com/index/compute r-using-agent/, Jan. 2025, accessed: 2026-05-01. [46] M. Hus´ ak, M. ˇ Cerm´ ak, T. Jirs´ ık, and P. ˇ Celeda, “HTTPS traffic anal-ysis and client identification using passive SSL/TLS fingerprinting,” 
+
+EURASIP Journal on Information Security , vol. 2016, p. 6, 2016. [47] J. Althouse, J. Atkinson, and J. Atkins, “TLS fingerprinting with JA3 and JA3S,” Salesforce Engineering Blog, Jan. 2019, https://engineer ing.salesforce.com/tls-fingerprinting-with-ja3-and-ja3s-247362855 967/. [48] J. Althouse, “JA4+ network fingerprinting,” FoxIO Blog, Sep. 2023, https://foxio.io/blog/ja4-network-fingerprinting. [49] S. Frolov and E. Wustrow, “The use of TLS in censorship circum-vention,” in Proceedings of the 26th Annual Network and Distributed System Security Symposium (NDSS) . Internet Society, 2019. [50] B. Anderson and D. A. McGrew, “TLS beyond the browser: Combin-ing end host and network data to understand application behavior,” in Proceedings of the Internet Measurement Conference (IMC ’19) .ACM, 2019, pp. 379–392. [51] O. Segal, A. Fridman, and E. Shuster, “Passive fingerprinting of HTTP/2 clients,” Akamai Technologies White Paper, 2017, presented at Black Hat Europe 2017. https://www.blackhat.com/docs/eu-17/ma terials/eu-17-Shuster-Passive-Fingerprinting-Of-HTTP2-Clients-wp. pdf. [52] X. Li, B. Amin Azad, A. Rahmati, and N. Nikiforakis, “Good bot, bad bot: Characterizing automated browsing activity,” in 2021 IEEE Symposium on Security and Privacy (SP) . IEEE, 2021, pp. 1589– 1605. [53] G. Jarad and K. Bicakci, “When handshakes tell the truth: Detecting web bad bots via TLS fingerprints,” 2026. [Online]. Available: https://arxiv.org/abs/2602.09606 [54] Y. Zhang, X. Deng, Z. Gu, Y. Chen, K. Xu, Q. Li, and J. Wu, “Exposing LLM user privacy via traffic fingerprint analysis: Astudy of privacy risks in LLM agent interactions,” 2025. [Online]. Available: https://arxiv.org/abs/2510.07176 [55] M. Kirchler, D. Herrmann, J. Lindemann, and M. Kloft, “Tracked without a trace: linking sessions of users by unsupervised learning of patterns in their dns traffic,” in Proceedings of the 2016 ACM workshop on artificial intelligence and security , 2016, pp. 23–34. [56] L. Vassio, D. Giordano, M. Trevisan, M. Mellia, and A. P. C. da Silva, “Users’ fingerprinting techniques from tcp traffic,” in Proceedings of the Workshop on Big Data Analytics and Machine Learning for Data Communication Networks , 2017, pp. 49–54. [57] K. Crichton, L. F. Cranor, and N. Christin, “Rethinking fingerprinting: An assessment of behavior-based methods at scale and implications for web tracking,” Proceedings on Privacy Enhancing Technologies ,2025. [58] E. Wang, Z. Shafiq, and Y. Vekaria, “Fp-agent: Fingerprinting ai browsing agents,” 2026. [Online]. Available: https://arxiv.org/abs/26 05.01247 [59] L. Encrypt, “About Let’s Encrypt,” https://letsencrypt.org/about/, 2021, [Accessed 11-06-2026]. [60] D. Akkil, M. Allaham, A. Raj, T. Abuelsaad, and R. Kokku, “Emer-gence WebVoyager: Toward consistent and transparent evaluation of (Web) Agents in the wild,” arXiv preprint arXiv:2603.29020 , 2026. [61] M. Team, “What Is Claude Code Computer Use? How to Control Your Desktop with AI — mindstudio.ai,” https://www.mindstudio.a i/blog/what-is-claude-code-computer-use, 2026, [Accessed 12-06-2026]. [62] SiderAI, “How Gemini 2.5 Computer Use Lets AI Control Web Interfaces (Safely and Smartly),” https://sider.ai/blog/ai-tools/how -gemini-2 5-computer-use-lets-ai-control-web-interfaces-safely-and -smartly, 2025, [Accessed 12-06-2026]. [63] OpenAI, “Introducing Operator,” https://openai.com/index/introduci ng-operator/, Jan. 2025, [Accessed 11-06-2026]. [64] I. Raman, “Openai operator explained: How ai agents actually control the web,” https://anchorbrowser.io/blog/how-openai-operator-works -with-ai-agents, [Accessed 12-06-2026]. [65] D. Adrian, D. Benjamin, B. Beck, and D. O’Brien, “A new path for kyber on the web,” https://security.googleblog.com/2024/09/a-new-p ath-for-kyber-on-web.html, 2024, [Accessed 12-06-2026]. [66] M. Belshe, R. Peon, and M. Thomson, “Hypertext Transfer Protocol Version 2 (HTTP/2),” RFC 7540, May 2015, obsoleted by RFC 9113. [Accessed 27-05-2026]. [Online]. Available: https: //www.rfc-editor.org/info/rfc7540 [67] K. Oku and L. Pardue, “Extensible Prioritization Scheme for HTTP,” RFC 9218, Jun. 2022, [Accessed 27-05-2026]. [Online]. Available: https://www.rfc-editor.org/info/rfc9218 
+
+## Appendix A. Measurement Setup for Agents 
+
+Figure 8 shows the task execution prompt for fingerprint measurement of web agents as discussed in Section 4.1. 
+
+## Appendix B. User Behavior Testbed Experiments 
+
+Figures 9 to 15 illustrate the actual deployed UX sce-narios as we addressed in Section 3.1. Task Instruction for Autonomous Web Interaction 
+
+You are an autonomous web interaction agent participating in a browser-behavior study. Your task is to visit each target URL exactly once, interact with each page in the way you judge most natural, and then move on to the next URL. The goal is to observe your natural web interaction behavior. Do not follow a page-type-specific script. Use your own judgment to decide what the page is asking for and what short interaction sequence is appropriate. Target URLs, in order: 1. https://<testbed domain>/subscribe-v1.html 2. https://<testbed domain>/subscribe-v2.html 3. https://<testbed domain>/subscribe-v3.html 4. https://<testbed domain>/s2-scroll-gate.html 5. https://<testbed domain>/s3-hover-reveal.html 6. https://<testbed domain>/s4-dom-mismatch.html 7. https://<testbed domain>/s5-delayed-feedback.html For each target URL: 1. Navigate directly to the exact URL. 2. Once the page loads, inspect the page and decide what a reasonable user would naturally do. 3. Perform one short natural interaction sequence. - A sequence may contain multiple low-level browser actions if they naturally belong together. - For example, typing into a field and pressing a nearby submit button may count as one sequence. - Choose synthetic input values yourself. - Do not use real personal information. - Do not ask the user what value to enter. 4. After you perform any meaningful page interaction sequence, the current URL is considered complete. Immediately navigate directly to the next target URL. 5. If you are unsure what to do next, do not ask the user. Instead, navigate directly to the next unvisited target URL. 6. Do not retry, do not optimize, and do not attempt alternative strategies on the same page. After all 7 URLs have been visited, return a concise page-by-page summary. Important: - Never ask the user what to do next. - Never ask for confirmation. - Never wait for additional instructions. - Act naturally, but keep moving. - Your job is not to fully solve each page. - Your job is to create one natural interaction trace per page and proceed. 
+
+Figure 8: Task instruction for autonomous web interaction. It guides the agent to sequentially visit each target URL, inspect the page, perform one natural interaction with synthetic inputs, and immediately proceed to the next page. Figure 9: Scenario 1, version 1. 
+
+Figure 10: Scenario 1, version 2. 
+
+Figure 11: Scenario 1, version 3. 
+
+Figure 12: Scenario 2. 
+
+Figure 13: Scenario 3. 
+
+Figure 14: Scenario 4. Figure 15: Scenario 5.

@@ -1,0 +1,842 @@
+Title: Safe to Check, Unsafe to Use: Relinking at the Compression Boundary of LLM Agents
+
+URL Source: https://arxiv.org/pdf/2606.21732v1
+
+Published Time: Tue, 23 Jun 2026 01:19:06 GMT
+
+Number of Pages: 25
+
+Markdown Content:
+# Safe to Check, Unsafe to Use: Relinking at the Compression Boundary of LLM Agents 
+
+## Zesen Liu, Zihan Zhang, and Dongdong She †
+
+## The Hong Kong University of Science and Technology 
+
+Abstract 
+
+Summarization-based prompt compression is increasingly used by LLM agents to shorten long, distributed prompt contexts. This compression step changes the security boundary of the agent pipeline: front-end filters inspect the pre-compression prompt input, while the backend agent acts on a newly generated compressed prompt context. We identify a new compression-boundary vulnerability, relinking , in which the compressor acts as a confused deputy: it summarizes distributed, locally benign fragments into a complete and malicious backend-actionable instruction. Unlike prompt injection that inserts a malicious and complete payload into the context, relinking does not inject any explicitly malicious payload. We show that relinking is an endogenous vulnerability of the summarization-based prompt compressor. The attention mechanism makes separated fragments jointly available, pre-training makes compatible fragments plausible to connect, and post-training compression preferences favor summarizing them as a compact backend-actionable instruction rather than preserving them as separate fragments. We formalize the attacker-induced form as adversarial relinking , where the adversary plants only benign fragments into the context, and the compressor performs relinking to synthesize the malicious instruction. Furthermore, we present Relink, an automated tool that leverages a relink domain-specific language (DSL) and a three-stage pipeline to split a malicious payload into benign fragments within the prompt context, while ensuring the complete malicious payload is absent before compression. Across four long-context agent benchmarks, Relink achieves 86.9% Relink Rate and Backend Action Rate, compared with 17.0% for paired clean-split controls. Mechanism probes, generalization experiments, ablations, and case studies on OpenClaw and Claude Code establish the vulnerability across compression rates, summarization prompts, compressors, backend models, design choices, and realistic agents. We further evaluate 11 representative defenses and find that none reliably captures adversarial relinking . We therefore propose Keyed Binding Reassembly Audit (KBRA), a compression-boundary defense that reduces residual Backend Action Rate to 0.0% while preserving benign utility. 
+
+# 1 Introduction 
+
+Modern LLM agents operate as long-horizon pipelines that accumulate user instructions, retrieved documents, tool outputs, memory entries, and intermediate execution traces before deciding what to do next [ 4, 18 , 20 , 52 , 57 ]. As these contexts exceed practical token budgets, deployed agent systems increasingly rely on prompt compression to produce shorter backend inputs, as seen in industrial coding and agent platforms such as Claude Code, Codex, Cursor, and OpenClaw [ 1, 10 , 39 , 40 ]. The prompt compressors in these production-level agents operate as an LLM-driven summarization process rather than simple context truncation [ 30 , 33 ] or token selection [ 27 , 43 ]. The compressor summarizes the source context into a compact natural-language representation for the backend LLM. Compression creates a representation level Time of Check to Time of Use (TOCTOU) gap. As shown in Figure 1, input filters inspect the source context [ 25 , 45 , 54 ] where the external untrusted data first enters the pipeline. The backend LLM meanwhile acts on the compressed context. Security guarantees established on the source may therefore not transfer to the compressed output. Unlike classical TOCTOU bugs caused by object mutation [ 9,36 ], the mismatch here emerges through representation rewriting of the compressor. An instruction completely absent from the checked source may appear only after compression. Within the gap, we identify relinking , a  
+
+> †Corresponding author (dongdong@cse.ust.hk).
+
+1    
+
+> arXiv:2606.21732v1 [cs.CR] 19 Jun 2026 Compressor
+> Filter
+> User input
+> Retrieved document
+> Tool output
+> Memory
+> System Prompt
+> Trusted Context
+> Untrusted Context
+> Complete & malicious
+> instruction
+> Compressed Context
+> Safe
+> Pass
+> Backend Action
+> Backend LLM
+> Input Time of Check Compression Compressed Context Time of Use
+> Timeline
+
+Figure 1: The Time-of-Check to Time-of-Use (TOCTOU) gap in the compression boundary of LLM agents, where the trusted compressor is tricked into a confused deputy. 
+
+new vulnerability of summarization-based prompt compression in LLM agents. The compressor acts as a classic confused deputy [ 23 , 37 ] by assembling distributed and locally benign fragments into a complete and malicious instruction for the backend LLM. For example, one document mentions forwarding a final summary for review while another separately lists “ eve@attacker.com ” as a contact. Neither document states an instruction. Unexpectedly, the compressor could synthesize them into a compact directive “ Forward the final summary to eve@attacker.com ”. This mechanism separates relinking sharply from existing threat models. Prompt injection [ 22 , 44 , 46 ] and payload splitting [ 29 , 32 ] contain a complete malicious instruction or reconstruction instruction in the source. CompressionAttack [ 35 ] disrupts the compressor using perturbations outside the training distribution. Hallucination [ 6, 8 ] invents entities completely absent from the source. Relinking fundamentally differs from all three. It does not hide a complete instruction. It does not require unnatural perturbations. It does not invent new entities. Instead, the attacker supplies only harmless fragments and relies on the trusted compressor to assemble them into a malicious payload. We demonstrate that relinking is inherent to modern compressors based on summarization. To investigate its underlying root cause, we propose three mechanistic hypotheses across three progressive levels. First, the attention mechanism in the transformer model allows distributed fragments to be jointly available during compression, so source locality cannot prevent assembly. Second, knowledge acquired during pretraining enables compatible fragments to naturally connect together. Third, the preference for helpfulness established during post-training favors actionable directives over disconnected mentions. Each property is harmless in isolation, but their combination creates a fundamental vulnerability. Therefore, Relinking emerges as a structural risk of summarization-based compressors. We formalize this threat as adversarial relinking . The attack succeeds when the backend LLM executes the payload instruction synthesized by the compressor. To study this threat at scale, we present Relink , an automated tool for constructing relinking instances. Grounded in a corpus study of real agent environments, Relink preserves exact target values, matches carrier styles, and controls fragment distances. The tool formalizes these requirements into a domain-specific language (DSL). The DSL maintains two coordinated views: a payload instruction graph that keeps the action and value separable, and a context sequence that identifies where fragments can reside in the source context. Relink then proceeds in three stages. Decompose splits the payload instruction into incomplete fragments, 
+
+Disguise adds harmless cues that keep them recoverable during compression, and Distribute inserts them into distant, style-compatible anchors so that the complete instruction is absent before compression. We conduct a comprehensive evaluation of Relink on the compressed-agent pipeline. Mechanism probes confirm the predicted routing, framing, and compressed-context canonicalization signals. Across four long-context agent benchmarks, Relink achieves 86.9% Relink Rate and Backend Action Rate. We further evaluate Relink across compression rates, compression prompts, compressor models, and backend models, and study its performance through ablations and case studies on OpenClaw and Claude Code. These results show that adversarial relinking 
+
+is introduced by the compression stage and persists across model, prompt, budget, and workflow choices. Finally, we evaluate 11 representative defenses and find that none reliably blocks adversarial relinking . We further propose KBRA, a compression boundary audit-based defense that checks whether post-compression instructions are already supported by the source context, reducing residual Backend Action Rate to 0.0% while preserving benign utility. Our 2main contributions are as follows: 
+
+• We identify relinking as a new and inherent vulnerability introduced by summarization-based prompt compression. 
+
+• We propose three mechanistic hypotheses to explain why relinking emerges, and formalize the attacker-induced form as adversarial relinking .
+
+• We design Relink , a tool to construct adversarial relinking automatically and release it in https://github .com/zsLiu2003/relink .
+
+• We conduct a comprehensive evaluation for Relink across the mechanism testing, efficiency, generalization, ablation study, and two case studies in OpenClaw and Claude Code. 
+
+• We demonstrate that representative defenses fail to capture adversarial relinking reliably, and propose KBRA as an audit-based defense at the compression boundary. 
+
+# 2 System Model and Position 
+
+## 2.1 System Model of Agentic Compression 
+
+As LLM agents tackle long-horizon tasks, their context window rapidly fills with heterogeneous data, including trusted system context (e.g., system prompt and memory base) and untrusted external context (e.g., retrieved web pages or user emails). Because simple context truncation [ 30 , 33 ] or token selection [ 27 , 28 , 43 ] would drop critical architectural constraints and state history, modern production systems universally adopt summarization-based compression to compress the prompt context. Major real-world agents all integrate summarization-based compression modules into their frameworks. Claude Code supports auto-compaction and /compact [1 ], Codex CLI exposes /compact [ 39 ], Cursor documents /compress and automatic summarization when the context window saturates [ 10 ], and LangChain provides SummarizationMiddleware for compressing prior conversation history [ 31 ]. These agents or agent frameworks use an LLM to summarize agent context, preserving semantic intent while significantly reducing LLM resource consumption in token cost and inference latency. Formally, given the agent’s source context H, a summarization prompt q, and a token budget β, the compressor applies an abstractive mapping function Cθ to generate a compressed context: S = Cθ (H, q, β ) where θ denotes the compressor’s parameters. The backend LLM B then reads S in place of H to produce the next action, denoted as 
+
+a = B(S). Crucially, S is newly generated natural language. The compressor Cθ reorders, merges, and rephrases the underlying material, destroying the original provenance boundaries between discrete fragments in H. This prompt transformation pipeline ( H Cθ
+
+−−→ S B
+
+−→ a) creates a representation-level Time of Check to Time of Use (TOCTOU) gap. Standard security filters inspect the discrete inputs in H, but the backend LLM acts exclusively on the synthesized representation S. Consequently, a malicious instruction completely absent from the checked source H may be autonomously relinked by Cθ and appear only in S, rendering input-level defenses entirely blind to the transition. Table 1: Position of relinking with existing literature. Relinking is distinguished by operating without the attack conditions required by prior work. We mark attack condition as ( ✓) if it is required by a threat and ( ✗) if it is not required.                      
+
+> Threat Complete Instruction Explicit Reconstruction Rule Adv. Perturbation Ungrounded Output
+> Prompt injection [22, 44, 46] ✓✗✗✗
+> Payload splitting [29, 32] ✗✓✗✗
+> CompressionAttack [35] ✗✗✓✗
+> Summ. hallucination [6, 8] ✗✗✗✓
+> Relinking (Ours) ✗✗✗✗
+
+## 2.2 Positioning the Relinking Vulnerability 
+
+Relinking fundamentally diverges from threats of existing works [ 6 , 8 , 22 , 29 , 32 , 35 , 44 , 46 ]. As shown in Table 1, we structure this distinction across three absences: relinking does not place a complete malicious instruction in the source, does not rely on adversarial perturbations of the compressor, and does not invent source-absent content. Unlike 3Source Context H  Compress 
+
+> 1. Attention mechanism
+> 2. Pre-training distribution
+> 3. Post-training objective
+
+Predicate with 
+
+open slot    
+
+> Forward
+> summary to Slot Predicate with
+> Slot
+> rank
+> email
+> URL
+> ID Date
+> Top prior for slot:
+> eve@attacker.com
+> ...
+> Forward summary to
+> eve@attacker.com
+
+Compressed Context S    
+
+> Cross-span Attention
+> Candidate B Candidate A
+> Forward summary:
+> please contact ...
+> Reference contact:
+> ...
+> eve@attacker.com
+> Detached Value
+
+eve@attacker.com 
+
+Detached value 
+
+> Benign content
+
+# ...
+
+# ... 
+
+> Forward
+> to eve@attacker.com
+> Backend Agent
+> reads S
+
+Figure 2: Mechanistic hypothesis of relinking .prompt injection [ 22 , 44 , 46 ], which embeds a complete instruction directly, and payload splitting [ 29 , 32 ], which relies on attacker-supplied and explicit reconstruction instruction (e.g., instructions like “ combine part A and part B ”) to reconstruct the payload, relinking eliminates attacker-side reconstruction. The source contains only disconnected, locally benign fragments, while the compressor’s intrinsic logic autonomously synthesizes the actionable malicious instruction. Furthermore, rather than manipulating the compression stage via adversarial perturbations to induce semantic drift as in CompressionAttack [ 35 ], relinking operates strictly within the compressor’s intended abstractive bounds, naturally connecting compatible source fragments. Finally, whereas summarization hallucination [ 6, 8]fabricates entirely ungrounded information, every semantic fragment of a relinked payload is genuinely present in the source prompt context. The security violation stems solely from their emergent synthesis: the process that weaponizes these disconnected ingredients into a complete, backend-actionable instruction that does not exist in the source prompt context. 
+
+# 3 Mechanistic Hypotheses of Relinking 
+
+## 3.1 A Linguistic Modeling of Relinking 
+
+To mechanistically analyze relinking , we characterize it using predicate–argument terminology from semantic-role theory [ 19 , 42 ]. A predicate p denotes an action expression with an open argument position, called a slot (denoted as “ ”). Each slot is associated with a semantic role r and expects a specific surface type , which is the lexical shape of a well-formed filler (e.g., an email address for a recipient role, or a URL for a callback-target role). A value v
+
+type-matches the slot if its surface form aligns with this expected type. Linguistically, a complete instruction is formed by binding a predicate to a type-matching argument value. Formally, we denote this completed form as p[v], or 
+
+p[r ← v] when the role must be explicit. In the relinking setting, the source context contains a predicate p⋆ (e.g., “forward the summary to ”) with an open slot of role r⋆, alongside a detached, type-matching value v⋆ located elsewhere in the text. Crucially, the source never explicitly connects them to form a complete instruction. Relinking occurs when the compression model actively combines this detached action ( p⋆) and value ( v⋆), synthesizing the completed instruction p⋆[v⋆] into the compressed context S.43.2 Attention: Cross-Fragment Binding 
+
+Hypothesis 1. Self-attention is content-addressable across the entire source context, allowing a detached predicate and a type-matching value from different locations to bind together during compression. 
+
+In the transformer architecture of the compression model, the self-attention mechanism performs content-addressable retrieval over all positions in the pre-compression prompt input [ 50 ]. This enables a predicate p⋆ and a value v⋆ to be bound by an attention head even when they are spatially distant. Concretely, for a query at position i and a key at position j, the attention weight is computed as: αij = exp( q⊤      
+
+> ikj/√d)
+> P
+> j′exp( q⊤
+> ikj′/√d)
+
+, where qi = WQhi, k j = WK hj ,
+
+and the output at position i is P 
+
+> j
+
+αij WV hj . Because the weight αij depends primarily on the content vectors hi
+
+and hj , the positions i and j can easily lie in entirely different documents within the source context. In our setting, an unfilled predicate in the source context H produces the query qi. Simultaneously, a fragment in another document carrying a detached, type-matched value v⋆ produces a key kj that yields a large attention score q⊤ 
+
+> i
+
+kj . Consequently, the attention head writes the value’s information ( WV hj ) into the residual stream at the predicate’s position i. This process is fundamentally similar to the mechanisms behind induction heads [ 38 ] and cross-position information movement [ 17 ], but applied here to a query and key drawn from disjoint documents. This formulation yields a testable 
+
+necessity claim. If these cross-document attention heads carry the binding, then disabling the top identified heads should suppress the synthesized binding and reduce the rate at which the completed instruction p⋆[v⋆] appears in the compressed context S. Conversely, if relinking remains invariant to their removal, the availability hypothesis is falsified. 
+
+## 3.3 Pre-training: Typed Slot Priors 
+
+Hypothesis 2. Pre-training introduces a typed-slot prior that conditions on surface type alone: a value that type-matches a predicate’s open slot is a high-probability completion, regardless of which document supplies it. 
+
+Each argument slot has a characteristic surface type [ 5, 16 , 21 ], such as a forwarding predicate takes an email address, a lookup predicate an identifier, a scheduling predicate a datetime, a fetching predicate a URL. Language-modeling pre-training encodes this slot–type structure in the next-token distribution: conditioned on a predicate with an open slot, the highest-probability completions are values that type-match the slot. This is what makes 
+
+relinking attacker-controllable. Exploiting the typed-slot prior, a type-matching value placed anywhere in H becomes a top-ranked completion for that slot, independent of which document contributed the predicate. When several type-matching candidates coexist in H, the prior distributes probability mass among them, and an attacker can raise the selection probability of a particular value through its salience, its proximity to the predicate, or its repetition across fragments. The prior conditions on surface type alone and does not depend on any cross-document provenance. This yields a controllable prediction. Holding the value’s textual exposure fixed, only type-matched values could gain probability as role-fillers, whereas a type-mismatched control of equal salience and exposure should receive no such boost. If the probability boost is instead driven by mere exposure rather than type-compatibility, the typed-slot prior hypothesis is falsified. 
+
+## 3.4 Post-training: Helpfulness Preference 
+
+Hypothesis 3. Post-training rewards helpfulness : annotators prefer summaries assembling task-relevant bindings over separated fragments. This pressures the compressor to merge a predicate and its argument in S.
+
+During the post-training phase, instruction tuning and RLHF optimize the compressor against pairwise preferences collected from human annotators along the helpful–honest–harmless axes [ 2 , 3, 41 ], with helpfulness specified as completing the requested task “as concisely and efficiently as possible” [2 ]. Summarization has been a canonical RLHF target [49], so compressor-shaped policies inherit this preference directly. Helpfulness induces a preference asymmetry on bindings. Given a source in which a predicate with an open slot and a candidate filler appear in separate sentences, a faithful summary may preserve this separation. A helpful summary resolves the binding into a single sentence, sparing the reader an inference step. Human annotators systematically prefer the latter, and reward models fit this preference, which is a tendency consistent with documented RLHF 5artifacts such as length bias [ 48 ] and the preference for confident, self-contained answers [ 47 ]. When the binding is inferable from the source, the two outputs are information-theoretically equivalent for a reader who performs the binding, but not for a helpfulness-optimized reward model. The compressor therefore collapses the predicate and the filler into one sentence in S, even when H keeps them apart. This preference transfers beyond inferable bindings: the compressor’s only signal for whether a candidate binding is legitimate is the typed-slot prior of Section 3.3, which conditions on surface type and carries no information about provenance. The helpfulness pressure therefore resolves type-compatible bindings indiscriminately, whether or not H entails them. This collapse is content-agnostic: it occurs even when the synthesized sentence is itself a malicious instruction. Because this asymmetry is installed by post-training rather than by the language-modeling objective, it makes a sharp prediction. The base checkpoint of a model should preserve separated fragments where its instruction-tuned / RLHF counterpart canonicalizes them into a single handoff sentence. This commitment step is the decisive bottleneck. If base and post-trained checkpoints canonicalize compatible bindings at the same rate, the commitment hypothesis is falsified. 
+
+Inherent Vulnerability. The composition of three properties in modern compressors produces relinking . The attention architecture allows for a cross-document binding, where content-addressable retrieval links a predicate in one document to a type-matching value in another. The pre-training distribution ranks this binding as a top-probability completion through its typed-slot prior. The post-training objective outputs the binding as a single sentence in S,rewarded as a helpful resolution. These three properties do not merely co-occur but interlock. The provenance-blind prior is the only legitimacy signal available to the model, and the post-training objective acts on exactly this signal, so the drive to resolve bindings inherits the prior’s blindness to the source of its ingredients. Each property is benign in isolation and useful by design. However, their composition makes relinking an inherent vulnerability of modern compressors, an issue that emerges directly from the same objectives that make them useful. 
+
+# 4 Adversarial Relinking 
+
+Definition. The prompt context of a compression-enabled agent is an ordered source trajectory H = ( e1, . . . , e n),where each item ei may be a user message, retrieved document, tool response, memory entry, or intermediate execution trace. Recall the payload instruction τ = ( p, r, v, κ ) from Section 3: p is a backend agent action (e.g., a tool call, state update, memory write, or sink choice), v is a value, r is the role v fills with respect to p (e.g., the recipient of a send, or the target of a write), and κ collects optional authorization, provenance, or state conditions. The defining property of τ is the binding v → r for p. The action p alone has an open role and is not actionable, while a value v
+
+alone does not select an action. The instruction τ becomes complete and backend-actionable only when the context asserts that “ v fills r of p”. Relinking occurs when compression establishes this binding in S even if no fragment of H
+
+previously did so. p exposes role r and v fills it [5, 16, 19, 21, 42]. 
+
+Indicators. We use four indicators to track τ = ( p, r, v, κ ) across the pipeline. These indicators partition the pipeline into source-side state ( Ground , Support ), compression-stage rewrite ( Express ), and backend-stage action ( Act ). 1) Ground: Ground( H, τ ) = 1 means H contains the ingredients of τ : which is a fragment exposing predicate p with role r open and another fragment providing value v. No fragment asserts the binding between them. 
+
+2) Support: Support( H, τ ) = 1 means H asserts the binding: some fragment of H states that v fills role r of p.
+
+3) Express: Express( S, τ ) = 1 means the compressed context S asserts the binding with directive force: the completed instruction τ appears, as an actionable statement, in the context the backend will read. 
+
+4) Act: Act( a, τ ) = 1 means the backend’s response a carries out the instruction τ .
+
+Relinking. Given H, a compressor Cθ , a summarization prompt qc, and a budget β, let S = Cθ (H, q c, β ) and let a
+
+denote the backend response produced from S. Compression exhibits relinking for a candidate instruction τ when 
+
+Ground( H, τ ) = 1 , Support( H, τ ) = 0 , Express( S, τ ) = 1 : τ is grounded in H, no fragment of H asserts the binding of τ , and yet S expresses it. The relinking is backend-actionable when additionally Act( a, τ ) = 1 .
+
+Adversarial Relinking. Relinking becomes adversarial when at least one component of the relinked instruction (predicate p⋆, role r⋆, value v⋆, or a constraint in κ⋆) is contributed by an attacker-influenced fragment of H. We denote such a target instruction as τ ⋆. The attacker writes no complete instructions anywhere. Instead, the compressor forms the binding. Real-world agent defenses inspect either the source H, before compression, or the compressed context S and backend response a, after compression. The binding of τ ⋆ is invisible to both inspection points: in 
+
+H it does not yet exist ( Support( H, τ ⋆) = 0 ), and in S it is indistinguishable from a faithful summary, since every ingredient it composes is source-attested. 
+
+Input-Side Impact. Input filters detect explicit malicious instructions. However, under relinking (Support( H, τ ⋆) = 
+
+60), the source H contains only separated, locally benign ingredients. Even coarser, window-level inspection does not help: a window that happens to contain both ingredients observes only their co-occurrence, not an assertion of the binding. Defenses fail because the malicious payload does not yet exist. The attacker thereby achieves payload smuggling : the complete instruction τ ⋆, which would be rejected if presented verbatim, evades inspection and is assembled solely by the compressor. 
+
+Output-Side Impact. Output verifiers deployed in agent pipelines typically perform entity- or span-level grounding: they check that instruction components are attested in the source. Under relinking (Ground( H, τ ⋆) = 1 ), every component of τ ⋆ is indeed present; only their relational binding is fabricated. Because such grounding operates below relational structure, the compressed instruction appears faithful. Entailment-based faithfulness checks could in principle test the binding itself, but over long, multi-document contexts they must already tolerate the benign bridging inferences that make abstractive summarization useful, leaving a fabricated, type-plausible binding inside their acceptance region. The attacker thereby achieves payload action : the backend executes τ ⋆ seamlessly, as downstream checks are satisfied by the individually valid ingredients. 
+
+Attack Success. Adversarial relinking succeeds at the compression stage when Express( S, τ ⋆) = 1 , bypassing input-side defenses, and at the backend stage when additionally Act( a, τ ⋆) = 1 , bypassing output-side defenses and realizing the binding in behavior. 
+
+# 5 Threat Model 
+
+Attack Vector. The target system is the compressed-agent pipeline. The source trajectory can be divided as 
+
+H = Htrust ∪ Huntrust : Htrust collects system prompts, agent configuration, trusted memory, and tool schemas. 
+
+Huntrust collects low-authority artifacts that enter the trajectory through external channels (e.g., user content, retrieved documents, issue comments, tool observations). The attack surface is exactly Huntrust . The defender observes the public pipeline boundary: the pre-compression source H, the compressed context S = Cθ (H, q c, β ),and the backend agent action a = B(S). It has no built-in mechanism to compare bindings expressed in S against bindings supported in H.
+
+Attacker Capability. The adversary is black-box . It cannot modify Htrust , the compressor Cθ or its prompt 
+
+qc, the budget β, the backend LLM B, or any tool implementation. Its only action is to plant attacker-controlled payload fragments into the untrusted channel, replacing Huntrust with an attacker-shaped eHuntrust , producing 
+
+Hadv = Htrust ∪ eHuntrust . The attacker is assumed to have only application-level knowledge of the deployment to choose a plausible payload instruction τ ⋆ = ( p⋆, r ⋆, v ⋆, κ ⋆). To keep the attack attributable to the compression boundary rather than to a conventional injection site, the attacker prefers constructions Hadv in which (i) one fragment exposes predicate p⋆ with role r⋆ open and another fragment provides value v⋆, but no fragment of Hadv 
+
+asserts the binding v⋆ → r⋆ of p⋆, i.e., Support( Hadv , τ ⋆) = 0 ; (ii) no fragment carries an explicit cue telling the compressor or backend how to combine p⋆, r ⋆, v ⋆ into τ ⋆; and (iii) each fragment matches the role, style, and format of the artifact in which it sits. These are properties the attacker tends to satisfy to force the binding to be formed by the compressor itself, not prerequisites for Hadv to count as an attack. 
+
+Attacker Goal. Attack success is measured at the two stages that the compression boundary separates. 
+
+1) Compression-stage success ( payload relink ) requires Express( Sadv , τ ⋆) = 1 , S adv = Cθ (Hadv , q c, β ), so that the binding formed by the compressor yields a complete, backend-actionable instruction τ ⋆ in the context the backend reads. 
+
+2) Backend-stage success ( payload action ) further requires Act( aadv , τ ⋆) = 1 , a adv = B(Sadv ), so that the backend instantiates p⋆ with v⋆ in role r⋆. When Hadv follows the preferences as discussed in Section 5, attaining either stage attributes the binding of τ ⋆ to the compression boundary. It is not locally stated anywhere in Hadv , nor is its assembly explicitly cued by the attacker. 
+
+# 6 Methodology 
+
+We propose Relink , an automated construction that, given an untrusted context Huntrust and a payload instruction 
+
+τ ⋆, returns an adversarial eHuntrust realizing τ ⋆. Building such a construction faces two challenges. First, it is unclear 
+
+which transformations of Huntrust actually realize τ ⋆. Without a principled basis, one falls back on ad-hoc edits guided by intuition. Second, the same transformations must apply uniformly across heterogeneous (Huntrust , τ ⋆)
+
+pairs that differ in topic, structure, and length, yet no existing abstraction exposes the handles such transformations 7need to operate on. Relink addresses the first challenge empirically, by grounding its operators in a corpus of relink patterns collected from real agentic scenarios in Section 6.1, and the second by abstraction, exposing each pattern as a typed operation in a small DSL over τ ⋆ and Huntrust in Section 6.2. Based on the DSL, we design a three-stage pipeline: Decompose (Section 6.3) isolates the fragments that support the correct binding, Disguise (Section 6.4) rewrites them to neutralize that support, and Distribute (Section 6.5) inserts payload fragments that ground τ ⋆.0 10 20 30 40 50          
+
+> Share (%)
+> Line ID
+> Quoted
+> Order ID
+> Other
+> Account ID
+> Email
+> 5.9
+> 7.2
+> 8.4
+> 8.8
+> 25.9
+> 45.8
+> IR: ARG / VALUE
+> (a) Target value type
+> 010 20 30
+> Share (%)
+> List/log
+> Record/KV
+> JSON-like
+> Prose
+> Heading
+> 12.3
+> 16.6
+> 18.5
+> 23.3
+> 29.2
+> IR: ANCHOR / FRAGMENT
+> (b) Carrier span style
+> 020 40 60 80 100
+> Local action/value co-occurrence (%)
+> MetaTool
+> API-Bank
+> τ2-bench traj.
+> APIGen-MT
+> FISC-long
+> InjecAgent
+> SWE-agent
+> WorkArena
+> ToolSandbox
+> τ2-bench tasks
+> Mind2Web
+> 1.6
+> 6.4
+> 12.1
+> 22.2
+> 22.3
+> 79.0
+> 80.0
+> 89.6
+> 90.7
+> 99.7
+> 100.0 low locality high locality
+> IR: LOCALITY
+> (c) Action/value locality across corpora
+
+Figure 3: Corpus signals motivating Relink ’s construction representation. Panels (a)–(c) show target-value types, carrier-span styles, and local action/value co-occurrence, motivating exact-value preservation, style-aware carriers, and explicit locality control. 
+
+## 6.1 Corpus-Grounded Representation 
+
+To enforce the source-side indicators on real contexts, we analyzed 11 diverse agentic corpora (Figure 3). The study reveals three structural requirements for operating on Huntrust . The construction must preserve exact target values (v⋆) verbatim. It must model the heterogeneous styles of carrier spans (e.g., JSON, prose, lists). Finally, it must explicitly control fragment locality since action-value proximity varies widely across workflows. These empirical requirements map directly onto two coordinated representations: 
+
+Coordinated representations. The instruction-graph view captures the payload τ ⋆ by isolating the action ( p⋆), argument ( v⋆), and conditions into ACT , VALUE , and CONSTRAINT nodes, connected by a binding edge ( r⋆). This explicit structure allows subsequent stages to sever the binding while preserving the essential ingredients. Concurrently, the context-sequence view models a low-authority carrier e ∈ Huntrust as an ordered sequence of 
+
+ANCHOR s Le (e.g., paragraphs or records). This sequence enables precise, locality-aware placement of the severed fragments across the heterogeneous source document. 
+
+## 6.2 DSL Instantiation 
+
+Given a payload instruction τ ⋆, a carrier item e ∈ Huntrust , and optional metadata M , the instantiation procedure populates the instruction graph G⋆ and the context sequence Le. Here e is the low-authority context into which 
+
+Relink may place fragments (e.g., a retrieved page, email, issue comment, or tool observation), and M supplies optional structured information such as backend schemas, oracle target fields, and artifact type; when M is unavailable, the procedure falls back on deterministic recognizers and local surface cues. The interface is extractor-agnostic: benchmark fields, schemas, recognizers, parsers, or constrained LLM extractors may populate the DSL as long as they emit the required nodes, edges, and anchor fields. Our evaluation uses deterministic extraction rules from the benchmark construction pipeline. 8ACT  VALUE  
+
+> CC
+> C
+> a1
+
+Stage1: Decompose  Stage2: Disguise 
+
+> CUE
+
+Stage3: Distribute 
+
+Payload Instruction Graph  Context Sequence         
+
+> 0000... 01
+> One-hot projection
+> CUE CUE
+> aia2ajam
+
+Inputs                        
+
+> Untrusted
+> Context
+> Payload
+> Instruction binding edge
+> CC
+> ACT VALUE
+> binding
+> edge
+> ACT
+> ACT VALUE
+> VALUE
+> ACT VALUE
+> anchor sequence
+> ... ... ...
+> 00010... 100
+> Placement Mask
+> Anchor Selection
+> CUE CUE
+> ACT VALUE
+> aiaj
+> a1a2aiajam
+> ... ... ...
+
+Adversarial Context Figure 4: Relink constructs an adversarial untrusted context by removing the payload binding, adding non-binding role cues, and distributing the separated action/value fragments into selected anchors so that τ ⋆ is grounded but unsupported before compression. 
+
+Instantiating the instruction graph. When structured fields are available, the procedure reads p⋆, r⋆, v⋆, and κ⋆
+
+directly. Otherwise it first identifies v⋆ via schema fields, oracle fields, or value recognizers (emails, URLs, identifiers, quoted values, dates, file paths, configuration keys), then masks v⋆ from the target text and normalizes the remainder into p⋆; conditions in κ⋆ attach as CONSTRAINT s. This keeps the action head and exact value in separate graph objects, leaving the binding edge to be severed later in Decompose. 
+
+Instantiating the context sequence. The DSL supports various context formats, such as tool outputs, list items, and JSON fields. In our evaluation, each paragraph of e becomes an ANCHOR . Any finer internal structure is stored as anchor metadata. We infer the fragment style from its surface form and determine its local role using keywords and structural features. If v⋆ already exists in e, the VALUE node saves its anchor location. Otherwise, later stages generate v⋆ as a new fragment. Next, the procedure calculates the distances between anchors in Le to provide locality signals. Finally, the populated G⋆ and Le serve as inputs for the three attack construction stages. 
+
+## 6.3 Decompose: Binding-Edge Pruning 
+
+The first stage of the Relink construction translates the attacker’s goal into a structural graph operation. Following the formalization in Section 4, the objective of Decompose is to ensure the payload is grounded ( Ground (H, τ ⋆) = 1 )but strictly unsupported ( Support (H, τ ⋆) = 0 ) before compression. It achieves this by severing the explicit connection between the action and its exact argument, dismantling the target instruction graph G⋆ into disconnected, seemingly benign subgraphs. Specifically, let e⋆b = ⟨ACT (p⋆), VALUE (v⋆), r ⋆⟩ denote critical binding edge of target instruction. Decompose deletes exactly this edge and partitions the remaining graph into two distinct components: 
+
+1) Action ( Gp): This subgraph retains the action node ACT (p⋆) but completely removes the target value v⋆. The semantic role r⋆ is preserved as an exposed, unfilled slot (e.g., an action to “Transfer money to [Payee]” ). 
+
+2) Value ( Gv ): This subgraph retains the value node VALUE (v⋆) and its surface type. It is tagged with the role label 
+
+r⋆ to indicate which slot it is meant to fill (e.g., a standalone record stating “Eve is a Payee” ), but it strictly omits any reference to the action p⋆.During this partition, any qualifying constraints ( κ⋆) are routed to the specific subgraph whose node they modify. Constraints that inherently span across the deleted binding edge are dropped. This meticulous routing ensures that neither Gp nor Gv inadvertently leaks the complete malicious payload instruction, satisfying the input-side evasion 9requirement. 
+
+## 6.4 Disguise: Cue-Constrained Role Instantiation 
+
+Disguise operates on Gp and Gv . The binding edge is gone, but r⋆ survives on both sides. Disguise turns this abstract role label into a carrier-realizable cue, which is a discrete role handle that makes the two sides relation-compatible under compression without reinstating the binding itself. Based on the corpus study in Section 6.1, we get the cue set C,which is a finite set of non-binding role-handle coordinates, covering same-workflow, reference-role, carrier-context, schema-hint, and batch-context cues. Each cue c ∈ C is represented by a one-hot coordinate χ(c) ∈ { 0, 1}|C| . A valid coordinate must be compatible with the role r⋆, the surface type of v⋆, and the carrier sequence Le. Coordinates that directly express the missing binding fall outside this valid space. Disguise projects the preserved role into this cue space: r⋆ C
+
+7−−−−→ 
+
+> Le, v ⋆
+
+χ(c⋆). The projection instantiates r⋆ as a carrier-local role handle rather than as a binding statement. On the predicate side, c⋆ realizes the open slot associated with p⋆. On the value side, the same c⋆ realizes the typed role associated with v⋆. Disguise then attaches the activated cue coordinate to both subgraphs, Gp, G v 7 −→ bGp, bGv . The partition remains intact: bGp still carries p⋆ with the open slot r⋆, and bGv still carries v⋆ with its surface type. The only cross-side commonality is the shared one-hot role handle χ(c⋆). Thus, Disguise adds role recoverability, not binding support. 
+
+## 6.5 Distribute: Masked Anchor Projection 
+
+Distribute realizes the two disguised subgraphs in the ordered carrier sequence Le = ( a1, . . . , a m). Its core operation is not free-form rewriting, but a masked projection from graph fragments to carrier coordinates. The predicate side and the value side must be placed at two distinct coordinates of Le, while the resulting source must still keep the binding unsupported before compression. Distribute first constructs a binary placement mask Me ∈ { 0, 1}m×m.An entry Me[i, j ] = 1 means that the ordered coordinate pair (ai, a j ) can realize bGp and bGv , respectively, without collapsing them into a locally supported binding. Entries on the diagonal are always zero, since the two sides cannot be placed in the same anchor. The mask also removes placements that cannot realize the two sides in the carrier, or that would locally instantiate the binding p⋆[r⋆ ← v⋆]. The insertion coordinate is then obtained by a deterministic projection over the active mask entries: (i⋆, j ⋆) = πins (Me, L e, bGp, bGv , c ⋆). The projection πins selects one active coordinate pair that is consistent with the carrier order and the projected cue c⋆. This separates the core methodology from implementation-specific scoring. The method requires an active, carrier-valid, and source-separated coordinate pair. The specific tie-breaking rule is not part of the attack definition. Finally, Distribute renders the two subgraphs at the selected coordinates: x⋆p = Render( bGp, a i⋆ ), x ⋆v =Render( bGv , a j⋆ ). The rendered fragments are inserted into the corresponding anchors, and the carrier is linearized into ee. The adversarial untrusted trajectory is obtained by replacing e with ee in Huntrust . Thus, Distribute grounds the two ingredients in the source as separated carrier-local fragments. 
+
+# 7 Evaluation 
+
+We evaluate the performance of Relink by answering the following research questions (RQs): 
+
+• RQ1 (Mechanism Evidence): Are the three relinking hypotheses supported or falsified by model-side probes? 
+
+• RQ2 (Effectiveness): Can Relink relink distributed fragments and induce backend actions? 
+
+• RQ3 (Generalization): How do compression and agent settings affect Relink success? 
+
+• RQ4 (Ablation Study): What makes Relink effective beyond simple split-fragment exposure? 
+
+• RQ5 (Practicality): How does Relink manifest in realistic agent workflows? 
+
+## 7.1 Experimental Setup 
+
+Benchmarks. We evaluate Relink on four benchmark-derived long-context agent settings: ❶ AgentDojo [ 15 ], ❷
+
+ASB [ 56 ], ❸ InjecAgent [ 55 ], and ❹ τ 2-bench [ 7 ]. These benchmarks cover personal assistants, multi-domain agent workflows, injection-oriented agent environments, and customer-service agents. To match the compressed-agent 10 threat model, we reconstruct each setting so that each sample contains a clean long carrier, a concrete backend-relevant target action, an exact target argument, and enough distance for distributed fragment placement. This filtering removes short, leaky, or non-actionable rows before evaluation. The final evaluation set contains 619 samples, as summarized in Table 2. Detailed construction is reported in Appendix A. Table 2: Benchmark-derived evaluation sets used.                 
+
+> Benchmark Number Scenarios Target Arguments
+> AgentDojo 30 banking, workspace, Slack, travel email, IBAN, URL, quoted value, password, date range, hotel name ASB 188 system, finance, medical, legal, education, e-commerce, search, counseling account identifier InjecAgent 200 data stealing, direct harm account identifier, email, URL, quoted value
+> τ2-bench 201 airline, retail, telecom account, line, order, reservation identifiers
+
+Metrics. ❶ Relink Rate (RR): Let Si be the compressed context for data entry i. We count relinking as successful iff 
+
+Si satisfies the benchmark action predicate for p⋆i and contains the type-matched value v⋆i under deterministic exact-argument matching: RR = 1
+
+> N
+
+P 
+
+> i
+
+1[ActionMatch( Si, p ⋆i ) ∧ ExactArg( Si, v ⋆i )] . RR is measured on the compressed handoff before backend execution. ❷ Backend Action Rate (BAR) measures whether the backend model emits or accepts the target action with the correct target argument using the benchmark-provided metric. 
+
+Pipeline settings. In the default setting, all main experiments use the same compressed-agent pipeline. We use Gemma-4-31B-it as the default compression model and backend model and apply the agent handoff summariza-tion prompt, which asks the model to summarize the source context for a backend assistant while preserving facts, constraints, entities, and follow-up items needed for the next decision. The default compression rate is set to 0.6 to maintain the utility of the compressed context. 
+
+## 7.2 RQ1: Mechanism Evidence of Relink ¢attn > 0              
+
+> cross-fragment binding
+> ¢log P > 0
+> typed-slot prior
+> ¢util >0
+> helpfulness preference
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Positive-gap rate (%)
+> 100.0
+> 90.0
+> 60.0
+> 100.0 94.7 94.1
+> 98.0 94.0 93.5
+> 100.0 97.5
+> 41.8
+> 99.4 95.2
+> 75.3
+> AgentDojo ASB InjecAgent ¿2-Bench Overall
+
+Figure 5: RQ1 mechanism probes on benchmark-derived contexts. Bars report the positive-gap rate for each probe. RQ1 tests the three mechanisms from Section 3. For each source context, we construct a matched pair: a compatible input D+ = [ a1, p, a 2, v, . . . , a m] and a role-broken control D− = [ a1, p ctrl , a 2, v, . . . , a m]. The control 
+
+pctrl preserves the properties of the predicate fragment p but breaks role compatibility with the detached value v.This isolates relational plausibility from mere value exposure. Figure 5 summarizes the results. 
+
+Hypothesis 1: Cross-fragment binding. We compute the attention gap over the respective token spans: ∆attn =Attn( Rv → Rp) − Attn( Rv → Rpctrl ). Results show that ∆attn is positive on 99.4% of samples ( p < 10 −27 ). Due to causal masking, this binding signal flows exclusively in the Rv → Rp direction. Falsification: Ablating the top 
+
+Rv → Rp heads suppresses completed-instruction synthesis, confirming the signal is active. However, random ablations are equally disruptive, indicating that cross-fragment availability is broadly distributed rather than localized to specific heads, detailed results in Appendix B. 
+
+Hypothesis 2: Typed-slot priors. We compute the probability gap: ∆log P = Score( v | a1, p, a 2: m) − Score( v |
+
+a1, p ctrl , a 2: m). Results show ∆log P is positive on 95.2% of samples. A compatible predicate makes the detached value a more probable completion. Falsification: A dedicated diagnostic confirms this boost stems strictly from predicate–argument compatibility (the typed-slot prior), not shallow textual exposure (Appendix B.3). 
+
+Hypothesis 3: Helpfulness preference. We compute the utility gap between synthesizing a completed instruction 
+
+p[v] (yrel ) and preserving separated fragments ( ysep ): ∆util = Score( yrel | D+) − Score( ysep | D+). ∆util is positive 11 on 75.3% of samples. Unlike the ubiquitous availability and plausibility signals, this stage is selective : the preference is strong on ASB and InjecAgent (above 93%) but weak on τ 2-Bench (41.8%), where task structure resists actionable handoffs. Falsification: We test if post-training installs this selective commitment using a strict criterion: crediting a model only if it prefers compatible bindings and rejects mismatched controls. The Gemma-4-31B-it satisfies this on 81.6% of samples, while its base checkpoint reaches only 15.7% (Appendix B.5). The base model indiscriminately binds mismatched controls, confirming post-training as the locus of selective preference. This layered structure explains why defenses must intervene at the compression boundary, rather than assuming fragment separation guarantees safety. 
+
+Result 1. Model-side probes validate all three mechanistic hypotheses. 
+
+## 7.3 RQ2: Effectiveness of Relink 
+
+RQ2 evaluates whether Relink turns source-separated action/value fragments into complete instruction and backend actions. For each benchmark-derived sample, we construct a matched clean-split control and a Relink input with the same carrier context, target action, target value, insertion positions, compressor, and backend model. The clean-split control exposes the same action-side and value-side fragments, but does not apply cue selection or carrier-compatible realization. The paired comparison is therefore B(Cθ (Datk )) against B(Cθ (Dctrl )) , which isolates the effect of 
+
+Relink beyond value exposure, distance, and splitting alone. Table 3: RQ2 effectiveness under the default compressed-agent pipeline. Clean-split and Relink use matched carriers, targets, insertion positions, compressor, and backend. ∆ reports the Relink –clean-split BAR gap.                                  
+
+> Benchmark Clean-split Relink ∆
+> RR BAR RR BAR BAR
+> AgentDojo 9.5% 9.5% 90.5% 90.5% 81.0 pp ASB 1.1% 1.1% 100.0% 100.0% 98.9 pp
+> InjecAgent 47.5% 47.5% 98.0% 98.0% 50.5 pp
+> τ2-bench 2.5% 2.5% 63.2% 63.2% 60.7 pp
+> Overall 17.0% 17.0% 86.9% 86.9% 69.9 pp
+
+Results. As shown in Table 3, Relink increases overall RR and BAR from 17.0% to 86.9%. It is effective across heterogeneous settings, reaching 90.5% on AgentDojo, 100.0% on ASB, and 98.0% on InjecAgent. The high clean-split rate on InjecAgent (47.5%) shows that some injection-oriented contexts already encourage background relinking , but 
+
+Relink still nearly saturates success, indicating that relation-guided construction adds substantial signal beyond raw fragment exposure. 
+
+τ 2-bench is the hardest setting: Relink reaches 63.2%, well above the 2.5% clean-split baseline but lower than other benchmarks. This suggests that customer-service workflows impose a stronger task, state, or provenance structure, making the compressor less likely to canonicalize separated fragments into an actionable handoff state. Thus, relinking is not automatic co-occurrence; it depends on whether compression treats the missing relation as a useful state. 
+
+Comparison with payload splitting. We further compare Relink with split-style prompt attacks in Figure 6, including variable reconstruction [ 29 ], semantic decomposition and reconstruction [ 32 ], and context partitioning [ 34 ]. We use Filter Pass as a lightweight source-side admissibility diagnostic: a source passes only if it is both split-valid and assembly-free, which checks whether the baseline satisfies the pre-compression constraint in our threat model. Reconstruction-based split baselines achieve high backend action rates, but fail Filter Pass because they explicitly specify how fragments should be reassembled. Clean-split and random-split controls largely satisfy the source-side constraint but are much weaker after compression. Relink is the only setting that combines source-side admissibility with high post-compression backend action, showing that the missing binding is created by compression rather than supplied by attacker-side reconstruction logic. 12 0% 50% 100%   
+
+> Filter Pass rate
+> 0%
+> 50%
+> 100%
+> Backend Action Rate
+> high BAR
+> low pass
+> target
+> region
+> high pass
+> low BAR
+> Partition
+> Variable
+> Semantic
+> Random
+> Clean
+> Relink
+> Weak controls Prior splits Relink
+
+Figure 6: Source-side admissibility and post-compression backend action rate for Relink and split-style baselines under the default compressed-agent pipeline. 
+
+Result 2. Relink raises RR and BAR to 86.9% (from 17.0%). Unlike reconstruction baselines, it simultaneously preserves source admissibility and high backend execution. 
+
+## 7.4 RQ3: Generalization of Relink 0.3 0.6 0.8 
+
+Compression rate 
+
+0
+
+25 
+
+50 
+
+75 
+
+100 
+
+> Success rate (%)
+
+15.9 14.0 15.8 
+
+87.7 89.5 91.2 
+
+Clean-split Relink 
+
+Figure 7: Effect of compression rate on Relink success. Relink remains high across rates 0.3–0.8, while the clean-split control stays low, showing that relinking is not tied to a particular compression budget. RQ3 diagnoses which pipeline factors affect Relink after the default RQ2 setting. We vary the compression rate, compression prompt, compression model, and backend model one at a time. For compression-model changes, the backend model is fixed; for backend-model changes, the compressed context is fixed using the default compressor. This separates whether the target binding is formed during compression from whether the backend acts on it. Due to resource constraints, we use a fixed 180-sample diagnostic subset drawn from the same filtered pool as RQ2: all 30 AgentDojo samples and 50 examples each from ASB, InjecAgent, and τ 2-bench. This preserves benchmark coverage while keeping the multi-configuration study tractable. 13 Table 4: Generalization of Relink across different compression prompts. The table reports the Relink Rate (RR) and Backend Action Rate (BAR) across four benchmarks.                                              
+
+> Compression Prompt AgentDojo ASB InjecAgent τ2-bench Overall RR BAR RR BAR RR BAR RR BAR RR BAR
+> General 52.4% 52.4% 16.0% 16.0% 76.0% 76.0% 2.0% 2.0% 33.9% 33.9%
+> Agent handoff 89.5% 89.5% 100.0% 100.0% 98.0% 98.0% 70.0% 70.0% 89.5% 89.5%
+> Coverage 100.0% 100.0% 100.0% 100.0% 100.0% 100.0% 8.0% 8.0% 73.1% 73.1% Safety-aware 76.2% 76.2% 96.0% 96.0% 58.0% 58.0% 12.0% 12.0% 57.9% 57.9%
+
+Table 5: Generalization of Relink across different compression models. The table reports the Relink Rate (RR) and Backend Action Rate (BAR) across four benchmarks.                                                               
+
+> Compression Model AgentDojo ASB InjecAgent τ2-bench Overall RR BAR RR BAR RR BAR RR BAR RR BAR
+> Gemma-4-31B-it 90.5% 90.5% 100.0% 100.0% 98.0% 98.0% 70.0% 70.0% 89.5% 89.5%
+> GPT-OSS-20B 47.6% 47.6% 96.0% 96.0% 64.0% 64.0% 2.0% 2.0% 53.5% 53.5% Qwen3.6-27B 76.2% 76.2% 100.0% 100.0% 88.0% 88.0% 20.0% 20.0% 70.2% 70.2% Qwen3.5-9B 9.5% 9.5% 96.0% 96.0% 54.0% 54.0% 14.0% 14.0% 49.1% 49.1% Qwen3.5-4B 52.4% 52.4% 100.0% 100.0% 72.0% 72.0% 6.1% 6.1% 58.8% 58.8% GPT-4o-mini 47.6% 47.6% 80.0% 80.0% 26.0% 26.0% 0.0% 0.0% 36.8% 36.8%
+
+Table 6: Generalization of Relink across different backend models. The table reports the downstream Backend Action Rate (BAR) across four benchmarks.                                                 
+
+> Backend Model AgentDojo ASB InjecAgent τ2-bench Overall
+> Gemma-4-31B-it 90.5% 100.0% 98.0% 70.0% 89.5% ↓0.0pp
+> DeepSeek-v4-flash 76.2% 36.0% 84.0% 36.0% 55.0% ↓34 .5pp
+> Qwen3.6-max-preview 76.2% 92.0% 90.0% 62.0% 80.7% ↓8.8pp
+> Claude-opus-4-7 38.1% 60.0% 76.0% 74.0% 66.1% ↓23 .4pp
+> GPT-5.5 23.8% 70.0% 78.0% 34.0% 56.1% ↓33 .4pp
+> Gemini-3.5-flash 19.0% 64.0% 48.0% 0.0% 35.1% ↓54 .4pp
+
+Impact of compression rate. Figure 7 shows that budget is not the decisive factor. Even when the compressed context becomes shorter, Relink remains high and the clean-split control remains low. This suggests that relinking 
+
+does not require verbose preservation of both fragments; once the compressor keeps enough task-relevant material, it can still express the target binding. 
+
+Impact of compression prompt. Table 4 shows that prompt wording is the largest source of variation. Agent-handoff prompts are the most vulnerable because they ask the compressor to preserve facts, entities, constraints, and follow-up items for downstream use. In contrast, general summary and safety-aware prompts reduce success, but do not eliminate it. The key finding is that asking for backend-useful summaries increases the chance that separated source fragments become a complete target instruction in the compressed context. 
+
+Impact of compression model. Table 5 shows that model choice changes the strength, but not the existence, of 
+
+relinking . Some compressors have a higher clean-split baseline, indicating a stronger tendency to form bindings from exposed fragments even without the full Relink construction. However, all tested compressors remain more vulnerable under Relink than under the clean-split control, showing that the failure is not specific to one compressor. 
+
+Impact of backend model. Table 6 shows that backend models mainly affect whether an already expressed target instruction is carried out. Since the compressed context is fixed in this sweep, differences in BAR reflect backend interpretation rather than compression-stage formation. This confirms that the central transition is still the appearance of the target binding in the compressed context; backend choice only changes how often that binding becomes an 14 action. 
+
+Result 3. Relink generalizes across compression rates, prompts, and models, indicating adversarial relinking is an inherent vulnerability, not a configuration artifact. 
+
+## 7.5 RQ4: Ablation Study of Relink 
+
+RQ4 ablates role cues, cue compatibility, carrier-aware placement, and carrier-style realization to test whether 
+
+Relink relies on construction-specific signals beyond exposing separated action/value fragments. The experiment is conducted with 180 data entries used in RQ3. Table 7: Ablation study of Relink . Each cell reports the Backend Action Rate (BAR). Subscripts indicate absolute percentage-point difference from Full RELINK configuration under the same benchmark and compression setting.                                                                         
+
+> Variant AgentDojo ASB InjecAgent τ2-bench Overall
+> Full Relink 90.5% 100.0% 98.0% 70.0% 89.5%
+> No cue 33.3% ↓57 .2pp 100.0% ↓0.0pp 98.0% ↓0.0pp 64.0% ↓6.0pp 80.7% ↓8.8pp
+> Mismatched cue 100.0% ↑9.5pp 100.0% ↓0.0pp 98.0% ↓0.0pp 2.0% ↓68 .0pp 70.8% ↓18 .7pp
+> Distance-only insert 85.7% ↓4.8pp 100.0% ↓0.0pp 98.0% ↓0.0pp 62.0% ↓8.0pp 86.5% ↓3.0pp
+> Generic realization 47.6% ↓42 .9pp 100.0% ↓0.0pp 90.0% ↓8.0pp 90.0% ↑20 .0pp 87.7% ↓1.8pp
+
+Results. Table 7 shows the full construction reaches 89.5% BAR. Removing cues lowers BAR to 80.7% and mismatched cues to 70.8%, showing role-compatible cues aid reliability in structured settings; distance-only insertion stays near the full method (86.5%), so placement enforces separation rather than driving relinking , and generic realization remains high (87.7%) with only mixed per-benchmark effects. Cue and style act as partially redundant pathways: either alone sustains relinking (hence high single-component ablations), but removing both, recovering the clean-split condition, collapses BAR to 17.0% shown in Table 3, so these ablations measure marginal, not joint, contribution. RR and BAR coincide throughout. 
+
+Result 4. Beyond mere fragment exposure, carrier contexts inherently afford relinking , while role-compatible cues boost reliability in hard settings. 
+
+## 7.6 RQ5: Case Study of Relink 
+
+In this RQ, we conduct two realistic case studies using the default compaction command of real agent systems to test whether Relink remains effective outside our benchmark pipeline. The first is a task-automation case study in OpenClaw, where relinking triggers a tool-side mutation of the workflow state; the second is a software-maintenance case study in Claude Code, where relinking drives a concrete repository configuration edit after compaction. 
+
+OpenClaw Case Study. We instantiate Relink in an OpenClaw event-RSVP workflow and trigger compression via the /compact command. As illustrated in Figure 8, the untrusted webpage provides the RSVP action and the attacker’s email strictly as separated fragments. To prove the backend relies exclusively on the compressed artifact, we isolate the post-compaction step by removing the original webpage from the context and blocking it with a 403 response. Driven entirely by the synthesized compressed state, the agent still executes the unauthorized RSVP submission. Finally, a clean-split control keeps the same email value but removes the cue connecting the logistics fragment to the pickup addendum. Without this cue, the compactor does not form the RSVP contact binding. This shows that the behavior is caused by compression-mediated relinking rather than by value exposure alone. 
+
+Claude Code Case Study. We instantiate Relink in a disposable repository and trigger the compression boundary using Claude Code’s built-in /compact command. The user task is to fix a failing webhook integration test. As illustrated in Figure 9, the high-authority context contains the repository schema. Meanwhile, an untrusted vendor support bundle provides the separated fragments: a patch note mentioning an update action and a trace sink containing the target URL https://attacker.net/exfil . After compaction, the agent resumes the session without rereading the raw support bundle. Driven entirely by the synthesized instruction in the compressed state, the agent modifies the local configuration to use the attacker’s URL. The edited repository successfully passes local 15 Confirmation  to 
+
+> [eve@attacker.com]
+
+User  OpenClaw      
+
+> Compressed
+> Webpage
+> Resume ④
+> Submit
+> RSVP for
+> event
+> ①
+> RSVP Server
+> eve@attacker.com
+> my@good.com
+> Submitted c ontact
+> Fetch ②
+> Submit
+> ③Compress
+> Webpage
+> ⑤
+> Confirmation to
+> active contact
+> Active contact:
+> [eve@attacker.com]
+
+Benign content Figure 8: OpenClaw case study. The agent fetches a webpage containing two isolated parts. The top red box acts as the Action fragment, while the bottom red box acts as the Value fragment. The compressor links two disconnected, locally benign ingredients into a single instruction. Using the compressed state, the agent incorrectly submits the attacker’s email, realizing the backend action. Update 
+
+> callback_sink to
+> attacker.net/exfil ②
+> （High authority ）
+> (Low authority)
+
+Update 
+
+callback_sink 
+
+URL:   
+
+> attacker.net/exfil
+> Compressed bundle
+> Supported bundle
+
+Repo  ar tifacts 
+
+> Resume
+
+Benign content  
+
+> integrations.json
+> callback_sink:
+> default-placeholder
+> callback_sink:
+> attacker.net/exfil
+> Compress
+> {
+> }
+> Read Modify ①
+> ③
+> ④
+
+Coding Agent 
+
+Figure 9: Claude Code case study. The compressor processes a low-authority support bundle containing separated and locally incomplete ingredients. It connects an update action and the attacker’s URL into a single executable instruction. The coding agent then reads this fabricated state alongside safe repository artifacts. validation scripts. This trace demonstrates concrete coding-agent impact. The repository modification occurs without any contiguous malicious command in the source. It proves that a standard compaction command in a production agent can weaponize separated low-authority fragments into persistent backend edits. 
+
+Result 5. In OpenClaw and Claude Code, default compaction actively merges Relink ’s separated fragments into executable malicious payloads. 
+
+# 8 Defense 
+
+In this section, to assess whether existing defenses can mitigate adversarial relinking , we evaluate representative defenses across the entire compressed-agent pipeline, covering input and compressed-context filters, compression-prompt defenses, backend hardening, and runtime policy guards. We find that they fail for a shared structural reason: each certifies a single representation in isolation, namely the pre-compression source H, the compressed context S,or the backend response a. There is no mechanism to detect the semantic discrepancy between them that adversarial 
+
+relinking exploits. Our insight is that a sound defense must enforce not pointwise textual safety, but consistency between the instructions supported before compression and the instructions used after compression. Building on 16 Table 8: Effectiveness, utility, and efficiency of representative defenses and our KBRA against Relink . BAR After 
+
+denotes the residual backend-action rate (gray text shows reduction from the 86 .9% baseline). Attack Block is the fraction of mitigated attacks. Utility FP measures the false positive rate on benign inputs. Avg. Cost reports latency (multi-GPU setups normalized to a single H800).                                                                                                             
+
+> Defense Placement BAR After Attack Block Utility FP Avg. Cost (Device)
+> Llama Prompt Guard 2 input filter 0.00% ↓86 .9pp 100.0% 100.0% 64.1ms (1 H800) ProtectAI DeBERTa-v2 input filter 84.4% ↓2.5pp 2.8% 14.5% 53.6ms (1 H800) ShieldGemma-2B input filter 84.6% ↓2.3pp 2.6% 1.5% 67.5ms (1 H800) ShieldGemma-9B input filter 54.9% ↓32 .0pp 36.8% 61.0% 126.1ms (1 H800) Sandwich prompting compression prompt 59.6% ↓27 .3pp 31.4% n/a –Delimiter prompting compression prompt 49.7% ↓37 .2pp 42.8% n/a –BIPIA reminder compression prompt 41.5% ↓45 .4pp 52.3% n/a –PromptLocate sanitizer source sanitizer 86.9% ↓0.0pp 0.0% 97.9% 1.66s (1 H800-norm.) AttnTrace sanitizer source sanitizer 16.6% ↓70 .3pp 80.9% 78.4% 6.56s (1 H800-norm.) SecAlign backend backend model 39.7% ↓47 .2pp 54.3% n/a n/a
+> CaMeL runtime policy 79.0% ↓7.9pp 9.1% 2.70% 2.55ms (CPU)
+> KBRA-exact (compressed) compression transition audit 0.0% ↓86 .9pp 100.0% 36.3% 7.70ms (CPU)
+> KBRA-semantic (compressed) compression transition audit 0.2% ↓86 .7pp 99.8% 34.6% 24.0ms (CPU)
+> KBRA-exact (backend) backend transition audit 0.0% ↓86 .9pp 100.0% 9.20% 12.5ms (CPU)
+> KBRA-semantic (backend) backend transition audit 0.3% ↓86 .6pp 99.6% 0.93% 69.9ms (CPU)
+
+this insight, we propose KBRA, a transition-level audit that verifies that every post-compression instruction has a source-supported predecessor. 
+
+## 8.1 Existing Defenses 
+
+Defense placements. We evaluate the representative defense mechanisms for five main deployment points in the compressed-agent pipeline. ① Input filters , applied to H or S: Llama Prompt Guard 2 [ 13 ], ProtectAI DeBERTa-v2 [ 45 ], and ShieldGemma [ 54 ]. ② Compression-prompt defenses , which modify the summarization prompt qc to discourage 
+
+adversarial relinking : BIPIA-style reminders [ 53 ], sandwich prompting [ 15 ], and delimiter prompting [ 15 ]. ③ Source sanitizers , which localize and remove attacker-attributed spans from H before compression: PromptLocate [ 26 ] and AttnTrace [51]. ④ Backend hardening : SecAlign [12]. ⑤ Runtime policy guards : CaMeL [14]. 
+
+Evaluation protocol. We measure each defense under the same compressed-agent setting as Section 7, on Relink -generated attacks satisfying Act( aadv , τ ⋆) = 1 without defense, and report four metrics: bar after (residual Backend Action Rate), attack block (fraction of attacks removed), utility fp (fraction of benign inputs flagged or rejected), and avg. time (defense-stage overhead). 
+
+Security-utility tradeoff of existing defenses. Table 8 reveals that existing defenses suffer from a severe security-utility tradeoff. No existing defense reduces bar after to zero without rendering the agent unusable. At one extreme, Llama Prompt Guard 2 eliminates residual backend actions entirely but rejects 100% of benign inputs. At the other extreme, defenses that preserve utility (e.g., ShieldGemma-2B at 1.5% utility fp , CaMeL at 2.7% ) leave bar after 
+
+above 79% . The strongest attack reduction without total utility loss comes from AttnTrace ( 16 .6% bar after ) and SecAlign ( 39 .7% ), yet AttnTrace incurs an unacceptable 78 .4% utility fp .
+
+Why isolated placements fail on Relink . This tradeoff is the unavoidable consequence of certifying H, S, or a in isolation. Input filters and source sanitizers inspect Hadv before the compressor assembles the fragments; because the target instruction τ ⋆ is unsupported, every fragment looks locally benign. Conversely, compressed-context and runtime guards inspect Sadv or aadv without knowing the source constraints; since every ingredient of τ ⋆ is source-attested, the post-compression text appears as a faithful summary. No single-representation defense observes the H → S transition that adversarial relinking exploits. 
+
+## 8.2 KBRA 
+
+The analysis above identifies the missing relation that a compression-boundary defense must enforce: a backend-actionable binding after compression must be licensed by the pre-compression source. KBRA enforces this relation by 17 reducing binding authorization to a normal-form membership test. It runs as a three-stage pipeline, extract , project ,
+
+match , and fails closed whenever a binding cannot be extracted. 
+
+Boundary Invariant & Threat Mitigation. Using the indicators from Section 4, let Tsup (H) be the set of bindings supported by the source, and Taud (S, a ) be the bindings expressed in the compressed context or backend action. KBRA enforces the invariant: Taud (S, a ) ⊆ T sup (H). KBRA realizes this through a locality requirement : (p, r, v ) ∈ T sup (H)
+
+only if a single source segment jointly asserts p, r, and v—computed from segment boundaries alone, with no knowledge of any attack. Relink violates this by construction : it splits p⋆ and v⋆ across segments ( Support( Hadv , τ ⋆) = 0 ), so no single segment licenses the binding and τ ⋆ /∈ T sup (Hadv ). This holds regardless of provenance labels : even an oracle that marks every segment as fully authoritative finds no single segment that yields the complete binding, so provenance is defense-in-depth atop locality, not the mechanism that defeats relinking .
+
+The KBRA Pipeline. KBRA operationalizes this invariant through a three-step audit across the compression boundary: 1) Extract: A local, provenance-aware extractor E recovers (predicate , role , value ) bindings from both the licenseable source Hlic and the post-compression representation (either the compressed handoff text S or the structured backend proposal a). Here Hlic is the channel-labeled source and provenance is the ingestion channel only; E never learns that a segment is attacker-controlled, and split-fragment attacks are neutralized by the locality requirement, detached mentions across segments do not form a binding, not by the provenance label. 
+
+2) Project: To handle paraphrasing and formatting differences, extracted bindings are deterministically mapped to a space of typed canonical keys K via a projection function Φ. Any ill-formed or unlicenseable binding maps to ⊥
+
+(undefined). This yields a source key set KH and a post-side key set Ka. Full normalizer details are in Appendix C.1. 
+
+3) Match: KBRA authorizes the action only if Ka ⊆ K H . We implement two matchers: Exact (strict canonical-key equality) and Semantic (guarded similarity that tolerates paraphrased predicates but enforces exact equality for operational values like dates and quantities). 
+
+Theoretical Guarantees. By reducing authorization to canonical-key membership, KBRA provides bounded security guarantees. Let ϵcol be the collision error (the probability that an unsupported action accidentally maps to a valid source key) and ϵsep be the separation error (the probability that a benign action fails to match its true source witness). Under fail-closed dispatch, the residual backend action rate for relinked attacks is strictly bounded by 
+
+BAR KBRA ≤ ϵcol . The false-reject rate for benign actions is bounded by m ϵ sep (where m is the number of required bindings), plus an extraction miss term if auditing free-text handoffs. We provide formal definitions and proofs in Appendix C.2. 
+
+Limitations. KBRA protects the compression boundary, not the entire agent stack. If Hlic already licenses a malicious action (e.g., direct prompt injection), KBRA accepts it and must rely on standard input filters. Additionally, the configuration artifacts defining E and Φ (tool schemas, entity aliases) are security-critical and must be audited. We analyze white-box adaptive adversaries against KBRA in Appendix C.3. 
+
+Results. KBRA successfully neutralizes Relink without sacrificing utility. Across all configurations, KBRA reduces the bar after to near-zero ( 0.0% to 0.3% ). Furthermore, the KBRA-semantic (backend) variant achieves this optimal security while incurring only a 0.93% utility fp , significantly outperforming all baseline defenses. The results also validate our theoretical bounds (Appendix C.2): auditing at the backend avoids the extraction miss penalty (ϵpost ) associated with free-text compressed handoffs, dropping the false positive rate from 34 .6% (compressed audit) to 0.93% (backend audit). Finally, KBRA is highly efficient, requiring only 7–70 ms on a CPU, avoiding the heavy GPU overhead of LLM-based sanitizers. 
+
+Result 6. By auditing H → S, KBRA breaks the security-utility tradeoff, reducing backend actions to near-zero while preserving utility. 
+
+# 9 Related Work 
+
+Prompt Compression. Prompt compression methods reduce context length, latency, and inference cost while preserving downstream utility [ 27 , 28 , 43 ]. Most work evaluates compression by task accuracy, information retention, or semantic similarity. Our setting is narrower: summarization-based compaction in long-horizon agents, where an LLM rewrites a heterogeneous source trajectory into the handoff from which the backend continues planning, tool use, or memory update. This makes compression a security boundary rather than only an efficiency layer. Summarization faithfulness work studies unsupported generated content [ 6 , 8 ], and CompressionAttack studies adversarial perturbations that induce semantic drift during compression [ 35 ]. Relinking differs from both: the handoff 18 may contain only source-attested action/value fragments and arise from ordinary summarization, yet express a new action–value binding that is not supported in the source. 
+
+Agent Vulnerabilities and Attacks. Prompt injection and prompt hacking show that LLM applications can be induced to follow attacker-provided instructions [ 22 , 44 , 46 ]. Agent settings amplify this risk because model outputs can trigger tool calls, state updates, data access, or workflow decisions [ 15 , 55 , 56 ]. Closest to our construction are payload splitting [ 29 , 32 ], which distribute adversarial content across the source to evade direct detection or enable later reconstruction. Relinking differs on the source-side object: the source does not state the target task as a complete instruction, nor does it specify how to reconstruct it. It only contains separated action/value fragments, while the compressor creates the missing binding in the handoff. 
+
+Agent Defenses. LLM-agent defenses include input filters, guard models, safety prompts, instruction hierarchy, structured separation, and runtime policy enforcement [ 11 , 12 , 14 , 25 , 45 , 54 ]. These defenses usually certify one representation at a time: the source input, generated output, backend action, or runtime permission. Localization and traceback methods such as PromptLocate, AttnTrace, and Attention Tracker identify suspicious or influential source spans [24, 26, 51]. These methods are complementary, but relinking is a transition-level failure: before compression, no malicious binding exists in the source; after compression, the handoff can appear grounded because its action/value fragments are source-attested. Our defense therefore audits whether each backend-facing binding in the handoff is licensed by a corresponding binding in the source, rather than scanning either representation in isolation. 
+
+# 10 Conclusion 
+
+We identified relinking , a vulnerability where prompt compressors merge harmless fragments into malicious instruc-tions. Our tool Relink exploits this flaw to trigger unauthorized actions across LLM agents, evading existing defenses that ignore the compression boundary. Our boundary audit, KBRA, neutralizes the threat, showing that future agent designs must treat prompt compression as a critical security boundary. 
+
+# References 
+
+[1] Anthropic. Compaction. https://platform.claude.com/docs/en/build-with-claude/ compaction , 2026. Claude API Docs. Accessed: May 23, 2026. [2] Amanda Askell, Yuntao Bai, Anna Chen, Dawn Drain, Deep Ganguli, Tom Henighan, Andy Jones, Nicholas Joseph, Ben Mann, Nova DasSarma, et al. A general language assistant as a laboratory for alignment. arXiv preprint arXiv:2112.00861 , 2021. [3] Yuntao Bai, Andy Jones, Kamal Ndousse, Amanda Askell, Anna Chen, Nova DasSarma, Dawn Drain, Stanislav Fort, Deep Ganguli, Tom Henighan, et al. Training a helpful and harmless assistant with reinforcement learning from human feedback. arXiv preprint arXiv:2204.05862 , 2022. [4] Bowen Baker, Ingmar Kanitscheider, Todor Markov, Yi Wu, Glenn Powell, Bob McGrew, and Igor Mordatch. Emergent tool use from multi-agent autocurricula. In International conference on learning representations , 2019. [5] Collin F Baker, Charles J Fillmore, and John B Lowe. The berkeley framenet project. In COLING 1998 Volume 1: The 17th International Conference on Computational Linguistics , 1998. [6] Forrest Bao, Miaoran Li, Renyi Qu, Ge Luo, Erana Wan, Yujia Tang, Weisi Fan, Manveer Singh Tamber, Suleman Kazi, Vivek Sourabh, et al. Faithbench: A diverse hallucination benchmark for summarization by modern llms. In Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 2: Short Papers) , pages 448–461, 2025. [7] Victor Barres, Honghua Dong, Soham Ray, Xujie Si, and Karthik Narasimhan. τ 2-bench: Evaluating conversa-tional agents in a dual-control environment. arXiv preprint arXiv:2506.07982 , 2025. [8] Catarina G Belem, Pouya Pezeshkpour, Hayate Iso, Seiji Maekawa, Nikita Bhutani, and Estevam Hruschka. From single to multi: How llms hallucinate in multi-document summarization. In Findings of the Association for Computational Linguistics: NAACL 2025 , pages 5276–5309, 2025. 19 [9] Matt Bishop, Michael Dilger, et al. Checking for race conditions in file accesses. Computing systems , 2(2):131–152, 1996. [10] Aaron Chan, Ahmed Shalaby, Alexander Wettig, Aman Sanger, Andrew Zhai, Anurag Ajay, Ashvin Nair, Charlie Snell, Chen Lu, Chen Shen, et al. Composer 2 technical report. arXiv e-prints , pages arXiv–2603, 2026. [11] Sizhe Chen, Julien Piet, Chawin Sitawarin, and David Wagner. {StruQ }: Defending against prompt injection with structured queries. In 34th USENIX Security Symposium (USENIX Security 25) , pages 2383–2400, 2025. [12] Sizhe Chen, Arman Zharmagambetov, David Wagner, and Chuan Guo. Meta secalign: A secure foundation llm against prompt injection attacks. arXiv preprint arXiv:2507.02735 , 2025. [13] Sahana Chennabasappa, Cyrus Nikolaidis, Daniel Song, David Molnar, Stephanie Ding, Shengye Wan, Spencer Whitman, Lauren Deason, Nicholas Doucette, Abraham Montilla, et al. Llamafirewall: An open source guardrail system for building secure ai agents. arXiv preprint arXiv:2505.03574 , 2025. [14] Edoardo Debenedetti, Ilia Shumailov, Tianqi Fan, Jamie Hayes, Nicholas Carlini, Daniel Fabian, Christoph Kern, Chongyang Shi, Andreas Terzis, and Florian Tram `er. Defeating prompt injections by design. arXiv preprint arXiv:2503.18813 , 2025. [15] Edoardo Debenedetti, Jie Zhang, Mislav Balunovic, Luca Beurer-Kellner, Marc Fischer, and Florian Tram `er. Agentdojo: A dynamic environment to evaluate prompt injection attacks and defenses for llm agents. Advances in Neural Information Processing Systems , 37:82895–82920, 2024. [16] David Dowty. Thematic proto-roles and argument selection. language , 67(3):547–619, 1991. [17] Nelson Elhage, Neel Nanda, Catherine Olsson, Tom Henighan, Nicholas Joseph, Ben Mann, Amanda Askell, Yuntao Bai, Anna Chen, Tom Conerly, et al. A mathematical framework for transformer circuits. Transformer Circuits Thread , 1(1):12, 2021. [18] Mohamed Amine Ferrag, Norbert Tihanyi, and Merouane Debbah. From llm reasoning to autonomous ai agents: A comprehensive review. arXiv preprint arXiv:2504.19678 , 2025. [19] Charles J Fillmore. The case for case reopened. In Grammatical relations , pages 59–81. Brill, 1977. [20] Zorik Gekhman, Nadav Oved, Orgad Keller, Idan Szpektor, and Roi Reichart. On the robustness of dialogue history representation in conversational question answering: a comprehensive study and a new prompt-based method. Transactions of the Association for Computational Linguistics , 11:351–366, 2023. [21] Daniel Gildea and Dan Jurafsky. Automatic labeling of semantic roles. Computational linguistics , 28(3):245–288, 2002. [22] Kai Greshake, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, Thorsten Holz, and Mario Fritz. Not what you’ve signed up for: Compromising real-world llm-integrated applications with indirect prompt injection. In 
+
+Proceedings of the 16th ACM workshop on artificial intelligence and security , pages 79–90, 2023. [23] Norm Hardy. The confused deputy: (or why capabilities might have been invented). ACM SIGOPS Operating Systems Review , 22(4):36–38, 1988. [24] Kuo-Han Hung, Ching-Yun Ko, Ambrish Rawat, I-Hsin Chung, Winston H Hsu, and Pin-Yu Chen. Attention tracker: Detecting prompt injection attacks in llms. In Findings of the Association for Computational Linguistics: NAACL 2025 , pages 2309–2322, 2025. [25] Hakan Inan, Kartikeya Upasani, Jianfeng Chi, Rashi Rungta, Krithika Iyer, Yuning Mao, Michael Tontchev, Qing Hu, Brian Fuller, Davide Testuggine, et al. Llama guard: Llm-based input-output safeguard for human-ai conversations. arXiv preprint arXiv:2312.06674 , 2023. [26] Yuqi Jia, Yupei Liu, Zedian Shao, Jinyuan Jia, and Neil Gong. Promptlocate: Localizing prompt injection attacks. 
+
+arXiv preprint arXiv:2510.12252 , 2025. 20 [27] Huiqiang Jiang, Qianhui Wu, Chin-Yew Lin, Yuqing Yang, and Lili Qiu. Llmlingua: Compressing prompts for accelerated inference of large language models. In Proceedings of the 2023 conference on empirical methods in natural language processing , pages 13358–13376, 2023. [28] Huiqiang Jiang, Qianhui Wu, Xufang Luo, Dongsheng Li, Chin-Yew Lin, Yuqing Yang, and Lili Qiu. Longllmlingua: Accelerating and enhancing llms in long context scenarios via prompt compression. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 1658–1677, 2024. [29] Daniel Kang, Xuechen Li, Ion Stoica, Carlos Guestrin, Matei Zaharia, and Tatsunori Hashimoto. Exploiting programmatic behavior of llms: Dual-use through standard security attacks. In 2024 IEEE security and privacy workshops (SPW) , pages 132–143. IEEE, 2024. [30] Minki Kang, Wei-Ning Chen, Dongge Han, Huseyin A Inan, Lukas Wutschitz, Yanzhi Chen, Robert Sim, and Saravan Rajmohan. Acon: Optimizing context compression for long-horizon llm agents. arXiv preprint arXiv:2510.00615 , 2025. [31] LangChain. ConversationSummaryMemory — langchain. https://reference.langchain.com/py thon/langchain-classic/memory/summary/ConversationSummaryMemory . Accessed: 2026-06-12. [32] Xirui Li, Ruochen Wang, Minhao Cheng, Tianyi Zhou, and Cho-Jui Hsieh. Drattack: Prompt decomposition and reconstruction makes powerful llms jailbreakers. In Findings of the Association for Computational Linguistics: EMNLP 2024 , pages 13891–13913, 2024. [33] Jiaqing Liang, Jinyi Han, Weijia Li, Xinyi Wang, Zhoujia Zhang, Zishang Jiang, Ying Liao, Tingyun Li, Ying Huang, Hao Shen, et al. Genericagent: A token-efficient self-evolving llm agent via contextual information density maximization (v1. 0). arXiv preprint arXiv:2604.17091 , 2026. [34] Yi Liu, Gelei Deng, Yuekang Li, Kailong Wang, Zihao Wang, Xiaofeng Wang, Tianwei Zhang, Yepang Liu, Haoyu Wang, Yan Zheng, et al. Prompt injection attack against llm-integrated applications. arXiv preprint arXiv:2306.05499 , 2023. [35] Zesen Liu, Zhixiang Zhang, Yuchong Xie, and Dongdong She. Compressionattack: Exploiting prompt compres-sion as a new attack surface in llm-powered agents. arXiv preprint arXiv:2510.22963 , 2025. [36] Taxonomy Mappings. Cwe-367: Time-of-check time-of-use (toctou) race condition. CWE Version 1.8 , page 443, 2010. [37] MITRE Corporation. CWE-441: Unintended Proxy or Intermediary (‘Confused Deputy’). https://cwe.mi tre.org/data/definitions/441.html . Common Weakness Enumeration, Version 4.20. Accessed: 2026-06-12. [38] Catherine Olsson, Nelson Elhage, Neel Nanda, Nicholas Joseph, Nova DasSarma, Tom Henighan, Ben Mann, Amanda Askell, Yuntao Bai, Anna Chen, et al. In-context learning and induction heads. arXiv preprint arXiv:2209.11895 , 2022. [39] OpenAI. Compaction. https://developers.openai.com/api/docs/guides/compaction ,2026. OpenAI API Docs. Accessed: May 23, 2026. [40] OpenClaw. Compaction. https://docs.openclaw.ai/concepts/compaction , 2026. Open-Claw Docs. Accessed: May 24, 2026. [41] Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, et al. Training language models to follow instructions with human feedback. Advances in neural information processing systems , 35:27730–27744, 2022. [42] Martha Palmer, Daniel Gildea, and Paul Kingsbury. The proposition bank: An annotated corpus of semantic roles. Computational linguistics , 31(1):71–106, 2005. 21 [43] Zhuoshi Pan, Qianhui Wu, Huiqiang Jiang, Menglin Xia, Xufang Luo, Jue Zhang, Qingwei Lin, Victor R ¨uhle, Yuqing Yang, Chin-Yew Lin, et al. Llmlingua-2: Data distillation for efficient and faithful task-agnostic prompt compression. In Findings of the Association for Computational Linguistics: ACL 2024 , pages 963–981, 2024. [44] F ´abio Perez and Ian Ribeiro. Ignore previous prompt: Attack techniques for language models. arXiv preprint arXiv:2211.09527 , 2022. [45] ProtectAI.com. Fine-tuned deberta-v3-base for prompt injection detection, 2024. [46] Sander Schulhoff, Jeremy Pinto, Anaum Khan, Louis-Fran c¸ois Bouchard, Chenglei Si, Svetlina Anati, Valen Tagliabue, Anson Kost, Christopher Carnahan, and Jordan Lee Boyd-Graber. Ignore this title and hackaprompt: Exposing systemic vulnerabilities of llms through a global prompt hacking competition. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing , pages 4945–4977, 2023. [47] Mrinank Sharma, Meg Tong, Tomek Korbak, David Duvenaud, Amanda Askell, Sam Bowman, Esin Durmus, Zac Hatfield-Dodds, Scott Johnston, Shauna Kravec, et al. Towards understanding sycophancy in language models. In International Conference on Learning Representations , volume 2024, pages 110–144, 2024. [48] Prasann Singhal, Tanya Goyal, Jiacheng Xu, and Greg Durrett. A long way to go: Investigating length correlations in rlhf. arXiv preprint arXiv:2310.03716 , 2023. [49] Nisan Stiennon, Long Ouyang, Jeffrey Wu, Daniel Ziegler, Ryan Lowe, Chelsea Voss, Alec Radford, Dario Amodei, and Paul F Christiano. Learning to summarize with human feedback. Advances in neural information processing systems , 33:3008–3021, 2020. [50] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information processing systems , 30, 2017. [51] Yanting Wang, Runpeng Geng, Ying Chen, and Jinyuan Jia. Attntrace: Attention-based context traceback for long-context llms. arXiv preprint arXiv:2508.03793 , 2025. [52] Georg W ¨olflein, Dyke Ferber, Daniel Truhn, Ognjen Arandjelovic, and Jakob Nikolas Kather. Llm agents making agent tools. In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 26092–26130, 2025. [53] Jingwei Yi, Yueqi Xie, Bin Zhu, Emre Kiciman, Guangzhong Sun, Xing Xie, and Fangzhao Wu. Benchmarking and defending against indirect prompt injection attacks on large language models. In Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V. 1 , pages 1809–1820, 2025. [54] Wenjun Zeng, Yuchi Liu, Ryan Mullins, Ludovic Peran, Joe Fernandez, Hamza Harkous, Karthik Narasimhan, Drew Proud, Piyush Kumar, Bhaktipriya Radharapu, et al. Shieldgemma: Generative ai content moderation based on gemma. arXiv preprint arXiv:2407.21772 , 2024. [55] Qiusi Zhan, Zhixiang Liang, Zifan Ying, and Daniel Kang. Injecagent: Benchmarking indirect prompt injections in tool-integrated large language model agents. In Findings of the Association for Computational Linguistics: ACL 2024 , pages 10471–10506, 2024. [56] Hanrong Zhang, Jingyuan Huang, Kai Mei, Yifei Yao, Zhenting Wang, Chenlu Zhan, Hongwei Wang, and Yongfeng Zhang. Agent security bench (asb): Formalizing and benchmarking attacks and defenses in llm-based agents. In International Conference on Learning Representations , volume 2025, pages 35331–35366, 2025. [57] Shengyao Zhuang, Xueguang Ma, Bevan Koopman, Jimmy Lin, and Guido Zuccon. Promptreps: Prompting large language models to generate dense and sparse representations for zero-shot document retrieval. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , pages 4375–4391, 2024. 22 A Benchmark Construction 
+
+Goal and filtering. We adapt existing agent benchmarks to the compressed-agent threat model. A usable sample needs four components: a clean long carrier context, a benchmark-derived backend-relevant target action, an exact target argument, and enough textual distance to place the action-side and value-side fragments separately. For each benchmark we keep only rows whose objective maps to a concrete backend action and that expose an exact target argument (account id, email, URL, file path, order id, line id, or reservation id). We drop rows whose clean carrier already contains the complete target instruction or leaks the exact value in a locally actionable form, and rows whose carrier is too short for distributed fragment placement under the same constraints used by Relink .
+
+Final set. The final evaluation set contains 619 benchmark-derived samples: 30 from AgentDojo, 188 from ASB, 200 from InjecAgent, and 201 from τ 2-Bench. Each row stores its clean carrier, source benchmark, scenario metadata, benchmark-derived target action, exact target argument, and entity type, so the same Relink construction and evaluation pipeline applies across all benchmarks. AgentDojo/ASB rows are reconstructed into long clean-agent packets with concrete backend targets; InjecAgent rows pair backend-actionable objectives with benign carriers; 
+
+τ 2-Bench rows are kept as task-preserving customer-service carriers without LLM summarization. 
+
+# B RQ1 Falsification Results 
+
+## B.1 Attention-Routing Statistics 
+
+∆attn on the Gemma-4-31B-it attention-feasible subset ( 163 samples). All per-benchmark 95% bootstrap CIs lie strictly above zero. Table 9: ∆attn statistics. Overall: sign-test p = 2 .8×10 −47 , Wilcoxon p = 1 .7×10 −28 .                              
+
+> Source Rows Pos. Mean 95% CI
+> AgentDojo 13 100 .0% 0.000411 [0 .000256 ,0.000676]
+> ASB 50 100 .0% 0.001620 [0 .001516 ,0.001718]
+> InjecAgent 50 98 .0% 0.001311 [0 .001121 ,0.001505]
+> τ2-bench 50 100 .0% 0.001117 [0 .001048 ,0.001186]
+> Overall 163 99 .4% 0.001275 —
+
+## B.2 Routing Direction and Long-Context Validation 
+
+Due to causal masking the binding signal flows exclusively in the Rv → Rp direction (reverse direction zero on all valid rows). Gemma-4-31B-it full-attention extraction OOMs on the longest AgentDojo/ τ 2-bench contexts ( 231 rows at 8 H800 GPUs), which are measurement failures, not negative samples; a Qwen3.5-4B probe under the identical construction confirms one-way routing on 96 .7% /100% of these long contexts. 
+
+## B.3 Type-Mismatch Diagnostic (Framing) 
+
+Stricter test of Insight 2: compatible vs. type-mismatched construction at equal exposure (full 619 -sample set). A positive paired difference means type compatibility, not exposure, drives the framing boost. 
+
+## B.4 Head-Ablation Sweep (Routing Necessity) 
+
+Top-k vs. count-matched random ablation (balanced 120 -sample subset, Qwen3.5-4B). Top-64 reduces the canonicalization-utility gap ( 0.397 → 0.079 , routing not inert), but count-matched Random-64 reduces it more (to −0.131 ), so the dependence is broad, not localized to top heads. 23 Table 10: Type-mismatch paired difference (match − mismatch).                          
+
+> Source Rows Match Mismatch Diff.
+> AgentDojo 30 −0.005 −0.343 +0 .338
+> ASB 188 −0.535 −0.977 +0 .441
+> InjecAgent 200 0.164 0.127 +0 .037
+> τ2-bench 201 −0.113 −0.007 −0.105
+> Overall 619 −0.146 −0.275 +0 .128
+
+## B.5 Base-vs-Instruct Canonicalization 
+
+Strict discriminative test for Insight 3. RCG is the relation-compatible gain (raw − control); RSR its positive rate; Strict credits only samples that commit to the compatible binding and reject the type-mismatched control. The instruct −base Strict gap is 65 .9 pp; the base model’s positive control mean shows it commits to incompatible bindings indiscriminately. Table 11: Discriminative canonicalization, Gemma-4-31B (base) vs. Gemma-4-31B-it.                      
+
+> Model Raw Raw +Ctrl Ctrl +RCG RSR Strict
+> Gemma-4-31B(base) 0.326 98 .9% 0.139 90 .5% 0.187 88 .4% 15 .7%
+> Gemma-4-31B-it 0.440 91 .6% −0.969 10 .8% 1.408 94 .5% 81 .6%
+
+# C KBRA Details 
+
+This appendix gives the canonical projection, typed normalizers, and formal bounds for the KBRA defense (Section 8.2). 
+
+## C.1 Canonical Projection and Typed Normalizers 
+
+Typed canonical projection (Φ) . The projection Φ : Σ ∗ → K ∪ {⊥} parses an extracted binding σ into predicate, role, value, value type t, and provenance, and returns a canonical key Φ( σ) = enc( κp, r, t, κ v , κ π ) only when every component is defined by a frozen normalizer; otherwise Φ( σ) = ⊥. The projection is deterministic, typed, idempotent, and threshold-free, and ⊥ matches nothing (including itself), so uncertainty becomes denial rather than authorization. The source and post key sets are KH = {Φ( σ) : σ ∈ E(Hlic ), Φ( σ)̸ = ⊥} and the analogous Ka on the post side. The typed value normalizers are summarized in Table 12; predicate and role normalizers follow the same rule (schema names are canonical, source-side phrases must map through frozen tables, unknown/incompatible phrases return ⊥). 
+
+## C.2 Formal Security and Utility Bounds 
+
+Let ≡ denote true binding equivalence. 
+
+Definition 1 (Collision Error) . The probability that an unsupported action binding σa accidentally collides with a licenseable source key: ϵcol = sup A:Lic=0 Pr[ ∃σH ∈ E(Hlic ) : Φ( σa) = Φ( σH )̸ = ⊥, σ a̸ ≡ σH ].
+
+Definition 2 (Separation Error) . The probability that a benign action and its true source witness fail to meet at the same canonical key: ϵsep = Pr σ≡σH [Φ( σ)̸ = Φ( σH ) ∨ ⊥ ∈ { Φ( σ), Φ( σH )}].
+
+Definition 3 (Extraction Miss Error) . ϵpost is the probability that E fails to recover a true post-compression binding from the free-text compressed handoff. 
+
+Boundary authorization bound. Assume backend actions are structured, so every executed argument binding is read from the runtime schema (no post-side extraction miss). For an unsupported relinked action the dispatcher accepts only if Φ( σa) ∈ K H ; since the action is unsupported, any acceptance implies a collision, so the residual 24 Table 12: KBRA typed normalizers. Each normalizer emits a canonical key or ⊥.       
+
+> Type Canonicalization Rejects
+> num Parse as an exact decimal or rational; strip separators and leading zeros; normalize sign. Malformed numbers, approximate quantities, or values requiring rounding.
+> qty Parse magnitude and unit; convert through a frozen unit table to a canonical dimensioned representation. Unknown units, ambiguous units, or dimension mismatch with the declared role.
+> date Parse absolute instants or intervals at schema-declared granularity; encode in ISO-8601. Relative, unanchored, or ambiguous dates.
+> entity Map a surface form to a canonical entity id through a frozen alias table. Unknown aliases or multiple possible entity ids.
+> strid Apply Unicode NFKC; apply schema-declared case folding and whites-pace folding; compare opaque identifiers byte-exact after normaliza-tion. Malformed identifiers or values incompatible with the schema role.
+
+backend action rate is bounded by safety, BAR KBRA ≤ ϵcol . For a benign action requiring at most m bindings, a false reject occurs if any binding pair is separated by Φ or maps to ⊥; by the union bound, Pr[reject | benign] ≤ m ϵ sep .
+
+Compressed-source asymmetry. Auditing the compressed handoff directly relies on free-text post-side extraction. Because KBRA fails closed, an extraction miss ( ϵpost ) yields a rejection, never an authorization, so the safety bound is unchanged ( BAR KBRA ≤ ϵcol ), while the utility bound degrades to Pr[reject | benign] ≤ m ϵ sep + ϵpost . This is the tradeoff: the compressed source audits earlier but pays ϵpost in benign utility relative to the structured backend proposal. (Only a free-text, fail-open deployment would move ϵpost into safety; our evaluation never does this.) The exact and semantic matchers and the four evaluated modes share this bound and are detailed in the released artifact. 
+
+## C.3 Adaptive Adversaries against KBRA 
+
+We grant the adversary full white-box knowledge of KBRA—the invariant, the projection Φ, the typed normalizers and alias table, and the channel-to-authority mapping—and let it shape any low-authority segment of Huntrust . Two strategies follow from KBRA’s two acknowledged soft spots. 
+
+A1: Single-segment authorized binding. The adversary collapses p⋆, r⋆, v⋆ into one low-authority segment, making the binding locally supported ( Support = 1 ) so it passes the locality requirement. This abandons relinking :
+
+τ ⋆ now appears verbatim in Hadv , the attack is no longer attributable to the compression boundary, and it reduces to the direct-injection case KBRA defers to standard input filters. A1 trades success for detectability —the complete payload exists in H before compression, where input-level defenses operate. KBRA does not claim to block A1; it makes the compression boundary no longer exploitable, forcing the adversary back to a representation prior defenses cover. 
+
+A2: Entity-collision. The adversary keeps the binding split but crafts a value engineered to collide, under the 
+
+semantic matcher, with a legitimate source key—exploiting the residual ϵcol bounded in Appendix C.2. The locality argument is unaffected: under the exact matcher no collision is admitted and residual BAR is 0.0% (Table 8); under the semantic matcher the residual is upper-bounded by ϵcol and matches the 0.2% –0.3% in Table 8. This residual shrinks monotonically as the frozen alias table is expanded, isolating the leakage to a single auditable artifact rather than to the locality mechanism that defeats relinking .25

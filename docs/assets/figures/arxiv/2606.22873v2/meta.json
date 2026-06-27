@@ -1,78 +1,60 @@
 {
   "version": 2,
-  "extractor": "pymupdf-images",
+  "extractor": "papercropper",
   "figures": [
     {
       "url": "assets/figures/arxiv/2606.22873v2/fig-001.webp",
       "caption": "",
-      "page": 1,
+      "page": 0,
       "index": 1,
-      "width": 1090,
-      "height": 1003
+      "width": 1522,
+      "height": 886,
+      "label": "Figure"
     },
     {
       "url": "assets/figures/arxiv/2606.22873v2/fig-002.webp",
       "caption": "",
-      "page": 1,
+      "page": 0,
       "index": 2,
-      "width": 800,
-      "height": 343
+      "width": 1676,
+      "height": 618,
+      "label": "Figure"
     },
     {
       "url": "assets/figures/arxiv/2606.22873v2/fig-003.webp",
       "caption": "",
-      "page": 3,
+      "page": 0,
       "index": 3,
-      "width": 545,
-      "height": 502
+      "width": 1648,
+      "height": 926,
+      "label": "Figure"
     },
     {
       "url": "assets/figures/arxiv/2606.22873v2/fig-004.webp",
       "caption": "",
-      "page": 5,
+      "page": 0,
       "index": 4,
-      "width": 380,
-      "height": 1008
+      "width": 1691,
+      "height": 540,
+      "label": "Figure"
     },
     {
       "url": "assets/figures/arxiv/2606.22873v2/fig-005.webp",
       "caption": "",
-      "page": 5,
+      "page": 0,
       "index": 5,
-      "width": 394,
-      "height": 554
+      "width": 967,
+      "height": 972,
+      "label": "Figure"
     },
     {
       "url": "assets/figures/arxiv/2606.22873v2/fig-006.webp",
       "caption": "",
-      "page": 5,
+      "page": 0,
       "index": 6,
-      "width": 537,
-      "height": 540
-    },
-    {
-      "url": "assets/figures/arxiv/2606.22873v2/fig-007.webp",
-      "caption": "",
-      "page": 12,
-      "index": 7,
-      "width": 1113,
-      "height": 790
-    },
-    {
-      "url": "assets/figures/arxiv/2606.22873v2/fig-008.webp",
-      "caption": "",
-      "page": 25,
-      "index": 8,
-      "width": 2158,
-      "height": 2245
-    },
-    {
-      "url": "assets/figures/arxiv/2606.22873v2/fig-009.webp",
-      "caption": "",
-      "page": 30,
-      "index": 9,
-      "width": 444,
-      "height": 440
+      "width": 1560,
+      "height": 508,
+      "label": "Figure"
     }
   ]
 }

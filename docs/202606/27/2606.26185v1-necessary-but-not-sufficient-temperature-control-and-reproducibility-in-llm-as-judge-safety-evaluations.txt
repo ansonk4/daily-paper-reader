@@ -1,0 +1,158 @@
+Title: Necessary but Not Sufficient: Temperature Control and Reproducibility in LLM-as-Judge Safety Evaluations
+
+URL Source: https://arxiv.org/pdf/2606.26185v1
+
+Published Time: Fri, 26 Jun 2026 00:05:14 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# Necessary but Not Sufficient: Temperature Control and Reproducibility in LLM-as-Judge Safety Evaluations 
+
+Hiroki Tamba ∗
+
+Tamba Research Academy ORCID: 0009-0004-7635-0741 June 2026 
+
+Abstract 
+
+LLM-as-judge (“grader”) components are now standard in evaluation harnesses, including safety evaluations where a pass/fail verdict may gate downstream deployment decisions. A widespread assumption is that setting the grader’s sampling temperature to 0 makes grading deterministic. We test this assumption against a real safety-evaluation codebase (Japan AISI’s open-source aisev ) and show it fails on two levels. First , the harness invokes its grader without setting temperature or seed ; the underlying provider silently applies its default of 1.0, so items near the decision boundary flip pass/fail across identical runs (per-item disagreement up to ∼50% over 20 runs). Second , pinning temperature=0 reduces but does not eliminate flips: across 690 API calls spanning two providers, three model tiers, and five sampling configurations, 1–2 of 7 borderline items remain non-reproducible even under forced greedy decoding ( top_k=1 ). Claude Opus 4.7/4.8 has since deprecated temperature 
+
+entirely, rendering the primary mitigation inapplicable to newer model generations. These findings expose a structural gap: evaluation harnesses that report single-run verdicts without variance or grader-disagreement metrics can present noise as a safety property. We release a reproduction harness (690 calls, 7 conditions) and recommend that harnesses treat grader disagreement as a first-class health metric alongside the scores themselves. 
+
+# 1 Introduction 
+
+Modern evaluation pipelines increasingly replace human raters with an LLM “judge” that reads a model transcript and a rubric and returns a verdict. This pattern, often called LLM-as-judge, is scalable and convenient, but it inherits a property practitioners often overlook: the judge is itself a stochastic model. If the same transcript is graded differently across runs, benchmark scores lose reproducibility, regression signals are confounded by grader noise, and any threshold-based gate built on top inherits that noise. In safety evaluations the failure mode is sharper: a pass/fail verdict may determine whether a model clears a red-team assessment, whether a guardrail is deemed adequate, or what a public report says about coverage. If that verdict is effectively a coin flip on borderline items, the evaluation reports noise as a safety property. The standard mitigation is “set temperature to 0.” This paper asks two questions: 1. Is the mitigation applied? We trace the grader call path in a real, deployed safety-evaluation harness and show it is not: the grader runs unseeded at temperature 1.0 by silent default. 
+
+> ∗Corresponding author: contact@tamba-research.academy
+
+1
+
+> arXiv:2606.26185v1 [cs.LG] 24 Jun 2026
+
+2. Is the mitigation sufficient? Even when temperature=0 is explicitly set, we measure persistent non-determinism across two providers, three model tiers, and five sampling config-urations, including forced greedy decoding ( top_k=1 ). 
+
+Contributions. (i) We document a concrete grader-configuration gap in an operational safety-evaluation harness, tracing the causal chain from code to API default. (ii) We provide a con-trolled empirical study (690 API calls, 7 conditions) showing that temperature control is neces-sary but not sufficient for grader reproducibility, and that alternative sampling knobs ( top_p ,
+
+top_k ) do not close the gap. (iii) We report that sampling-parameter control is being actively deprecated by at least one major provider (Claude Opus 4.7/4.8), narrowing the design space for reproducibility mitigations. (iv) We document a transmission-layer risk: the OpenAI SDK’s endpoint-compatible ecosystem lets grader calls traverse provider and jurisdictional boundaries without any record in the evaluation artifact (§5.3). (v) We release a reproduction harness with raw outputs archived on Zenodo [Tamba, 2026]. 
+
+Origin. This work generalises a finding first reported as Japan-AISI/aisev issue #25 [Japan AISI, 2026]. The upstream framework (UK AISI’s Inspect) has since merged a related fix (PR #4170). 
+
+# 2 Background 
+
+LLM-as-judge. The pattern of using one LLM to evaluate another’s output is now widespread in both capability and safety benchmarks [Zheng et al., 2023]. Most reliability research focuses on systematic biases—position bias, verbosity bias, self-preference [Wang et al., 2023]—that persist across runs. The concern here is orthogonal: run-to-run non-determinism, where the same judge returns different verdicts for an identical (transcript, rubric) pair. A debiased judge can still be irreproducible; a perfectly reproducible judge can still be biased. 
+
+Sources of non-determinism. At temperature > 0 , the token-sampling step is an in-tentional source of randomness. At temperature=0 , production LLM serving is still generally not bit-reproducible. Recent analysis attributes this to batch-size-dependent floating-point re-ductions, mixture-of-experts routing variability, and provider-side load balancing across non-identical replicas [He et al., 2025]. Our empirical results are consistent with this account. 
+
+Inconsistency and evaluator bias. Recent work has begun to characterise LLM evaluators as inconsistent and biased across multiple dimensions [Stureborg et al., 2024], and to study how LLM-assisted evaluation can be aligned with human preferences [Shankar et al., 2024]. Our contribution is complementary: we isolate the infrastructure -level source of inconsistency (the serving stack) from the model -level source (the weights and training). 
+
+# 3 Case Study: Grader Configuration in aisev 
+
+aisev is Japan AISI’s open-source evaluation environment (Apache-2.0; all references to commit 
+
+e0604d1 , the main branch at 2026-04-16). Tracing the grader call: 1. scorer_provider.py calls model_graded_qa(model="openai/gpt-4o") without temperature ,
+
+seed , or GenerateConfig .2. The call propagates into Inspect AI’s GenerateConfig with temperature=None , seed=None .3. The OpenAI provider omits None values from the API request; OpenAI’s default is temper-ature 1.0. 4. Net effect: the grader runs unseeded at full sampling noise. Nothing in the harness signals this to the user. A separate code path ( scoring_datasets.py:74 ) sets temperature=0.7 for paraphrase gen-eration, a distinct subsystem marked as unimplemented at the time of writing. The grader itself has no temperature or seed control. 24 Empirical Study 
+
+4.1 Method 
+
+We construct a fixed set of 7 question/answer pairs designed to probe the grader’s decision boundary. Each item is deliberately crafted to be borderline: neither clearly correct nor clearly incorrect under the rubric, maximising the chance of exposing latent stochasticity. This is an 
+
+adversarial stress test , not a random sample from aisev ’s evaluation corpus; the goal is to demonstrate the existence and persistence of non-determinism under controlled conditions, not to estimate its base rate across all items. The grading prompt and grade-extraction regex mirror 
+
+aisev ’s implementation verbatim. Each item is graded under two baseline configurations: (a) harness default ( temperature 
+
+and seed unset; N =20 runs per item) and (b) explicit temperature=0 (N =10 ). We then extend to 5 additional conditions (total: 690 API calls across 7 conditions). 
+
+4.2 Results 
+
+Baseline: OpenAI gpt-4o grader (Table 1). Three regimes emerge: Table 1: Per-item disagreement under default and temperature=0 (OpenAI gpt-4o ).                     
+
+> Item Default ( N= 20) temp = 0 ( N= 10) Regime 1, 2, 3 stable stable stable item 4 11 I / 9 C 6 I / 4 C strong split
+> item 5 19 I / 1 C stable rare item 6 12 C / 8 I 9 C / 1 I strong split
+> item 7 19 C / 1 I stable rare
+
+Under the default configuration, 4/7 items are non-reproducible (2 strong, 2 rare). Pinning 
+
+temperature=0 stabilises the two rare items but leaves the two strong items unstable: necessary but not sufficient .
+
+Statistical caveat. At N =10 , individual split ratios carry wide confidence intervals (e.g., item 4’s 6:4 split yields p=0 .377 under a one-sided binomial test). Our claim is not a precise disagreement rate but a qualitative finding ( non-zero disagreement persists after temperature pinning ) that is robust across items, providers, and parameter sweeps (Table 2). 
+
+Cross-provider and cross-parameter sweep (Table 2). We extend the study with 490 ad-ditional API calls across 5 conditions. Table 2: Sampling parameter sweep (all with temperature=0 ; N =10 per item per condition).                               
+
+> Condition Model top_p / top_k Non-repro Unstable baseline gpt-4o — / — 2/7 4, 6 + top_p=0.1 gpt-4o 0.1 / — 2/7 4, 6 + top_p=0.5 gpt-4o 0.5 / — 2/7 4, 6 baseline Sonnet 4.6 — / — 1/7 6baseline Haiku 4.5 — / — 1/7 6+ top_k=1 Sonnet 4.6 — / 1 1/7 6—Opus 4.8 ERROR : temp deprecated
+
+Four findings emerge from the sweep: 
+
+F1: top_p does not mitigate. Restricting the nucleus to 0.1 does not change which items flip or how often; all three OpenAI conditions produce the same 2/7 pattern on the same items. 
+
+F2: Forced greedy decoding ( top_k=1 ) does not eliminate flips. On Sonnet 4.6, selecting only the highest-probability token still yields 1/7 non-reproducibility (item 6: 8 I / 2 C). 3This is evidence that the non-determinism originates before the sampling step, in the forward pass itself. 
+
+F3: The effect is model-tier-independent. Both Sonnet 4.6 and Haiku 4.5 flip the same item at the same rate. 
+
+F4: Sampling control is being removed. Claude Opus 4.7 and 4.8 reject temperature 
+
+values in [0 , 1) with HTTP 400; top_p and top_k are also deprecated on these models. 1 The primary recommendation (“set temperature to 0”) is already inapplicable to these models, and no alternative sampling-side knob exists. 
+
+# 5 Discussion 
+
+5.1 From benchmark noise to governance risk 
+
+For capability benchmarks, grader noise inflates variance and can change rankings of closely-spaced models, an inconvenience that averages out with larger test sets. For safety evaluations the failure mode is qualitatively different: a pass/fail verdict near the boundary may gate a deployment decision, a red-team sign-off, or a regulatory claim. A verdict that is a coin flip does not average; it is a single bit that either clears or blocks. If that bit is dominated by grader noise rather than the model’s actual behaviour, the evaluation is conferring legitimacy it has not earned. This creates a reflexivity problem. Japan AISI’s evaluation framework itself operationalises robustness as a criterion (e.g., Guideline G8-10: “confirm at the development stage that outputs remain within a fixed range for identical inputs”). When the evaluation instrument fails this criterion on its own boundary items, it cannot credibly impose it on the systems it evaluates. The evaluator must meet its own standards, or explicitly disclose where it does not. 
+
+5.2 The deprecation trajectory 
+
+Finding F4 carries forward-looking significance. If providers continue to deprecate user-facing sampling parameters, as is rational when reasoning-trace models manage their own temperature internally, the entire class of “pin the knobs” mitigations becomes unavailable. The only robust mitigation that survives this trajectory is statistical: run epochs > 1 and report variance. Har-nesses that do not surface grader-disagreement as a metric will have no way to flag this noise, regardless of how they configure the grader call. 
+
+5.3 The API compatibility layer as a transmission risk 
+
+As a de facto standard for LLM API calls, the OpenAI Python SDK shapes grader infrastructure across the ecosystem. Its base_url parameter enables a single-line configuration change to route requests, including grader calls, to any OpenAI-compatible endpoint. Several major providers now expose such endpoints: Alibaba Cloud’s DashScope ( dashscope-intl.aliyuncs.com/compatible-mode/v1 
+
+DeepSeek ( api.deepseek.com ), and others. Anthropic’s own developer tool (Claude Code) is officially listed as a supported client on Alibaba Cloud’s Model Studio documentation, and en-terprise API gateway vendors publish tutorials that route Claude CLI traffic through DashScope as a standard integration [Kong Inc., 2026]. Beyond substitution, the routing layer is a documented attack surface. A measurement study of 428 commodity LLM proxy routers found 9 actively injecting malicious code into responses and 17 exfiltrating credentials, with the routers’ application-layer position (TLS termination on the client side, new upstream connection to the provider) making such tampering structurally      
+
+> 1Independent verification: E. B. Nicolaysen, https://gist.github.com/avalyset/ 59a81e2961d45d4ba76de56d592b1110 .
+
+4available [Liu et al., 2026]. The transmission risk is therefore not hypothetical: the same archi-tectural feature that enables provider substitution also enables a class of supply-chain attacks on the evaluation harness itself. What results is an evaluation-provenance gap. When a harness uses the OpenAI SDK, the model identifier in the API request (e.g., gpt-4o ) need not match the model that actually executes the grading once the base URL has been swapped. The evaluation report records the requested model name, not the infrastructure that served it. Because non-determinism is already provider-dependent (Table 2), an ambiguous provider renders the entire provenance chain of evaluation results uninterpretable; the sampling-parameter problem from §4 is merely the inner layer. There is also an export-control inversion. Existing US frameworks for governing AI diffusion, most prominently the AI Diffusion Framework analysed by Heim [2025], structure the chain of control as chips → compute → model weights, and do not extend to the API/inference layer. Model weights are subject to jurisdiction-specific export restrictions, but the API format com-patibility means that evaluation data (including the transcripts being graded, which may contain red-team prompts and model outputs from safety assessments) flows freely to any compatible endpoint with no equivalent control. A safety evaluation intended for a US-hosted provider can land on infrastructure in a jurisdiction with different data-protection and national-security regimes through a one-line configuration change. More specifically, what flows is not merely data but evaluation methodology —red-team prompts, elicited failure modes, and jailbreak vec-tors that the harness is designed to surface; their movement across compatibility-layer endpoints makes this an evaluation-infrastructure security question, not solely a data-governance one. 
+
+Bracketing capability against execution 
+
+The argument above describes capability . We can bracket how much of this capability is currently being exercised against a small, monitored surface. Over an 11-day window (2026-06-11 to 2026-06-21; 3,461 logged requests), a Cloudflare Worker-based request tracker on one independent research domain recorded five accesses from Alibaba-ecosystem ASNs (AS45102 Alibaba Cloud Singapore; AS37963 Aliyun Computing). All five fell on a single day (2026-06-12) with none in the subsequent nine days, used stealth user-agents ( Go-http-client/1.1 ; a stock Chrome 92 string), targeted the site root only, and triggered no honeypot or PDF retrieval, patterns in-consistent with corpus-ingestion crawling. A four-request cluster across four seconds from four distinct IPs further indicated multi-tenant VM access rather than a declared training crawler. In parallel, direct probing of qwen-plus via the DashScope OpenAI-compatible endpoint across six framings of the researcher’s published concepts returned no evidence of corpus ingestion; a leading-prompt framing produced a confabulated research record in a domain orthogonal to the author’s actual work. We therefore observe capability established, execution not yet observed on this surface in this window. This separation is precisely why preemptive policy attention to the API/inference layer is warranted, given that existing export-control frameworks [Heim, 2025] do not extend to it. During the same 11-day window, a commercial SEO crawler (SemrushBot, AS209366) ac-cessed the site’s TDM (Text and Data Mining) compliance endpoint ( /.well-known/tdmrep.json )in immediate sequence after robots.txt , demonstrating that protocol compliance infrastructure is both deployed and trivially accessible on this surface. No declared AI training crawler accessed any TDM endpoint during the observation period. The contrast suggests that non-compliance with machine-readable opt-out protocols by Tier 1 AI vendors reflects an incentive gap rather than a capability gap: the same robots.txt infrastructure these vendors already parse can direct them to TDM metadata, yet none follow the pointer. Mitigation M5 (log effective grader configuration) partially addresses this: recording the resolved API endpoint alongside the model identifier would at least make the routing visible in the evaluation artifact. None of the harnesses we examined log the base URL or perform 5endpoint provenance verification. 
+
+5.4 Limitations 
+
+The 7-item protocol is an adversarial stress test, not a representative sample. We demonstrate that non-determinism can persist, not that it typically does at a particular rate across all evalu-ation items. Estimating the base rate would require access to a large, representative evaluation corpus and is left as future work. Sample sizes ( N =10 –20 ) are sufficient for qualitative detection but too small for precise per-item disagreement estimates. We report confidence intervals where relevant and do not overclaim. The empirical observation in §5.3 carries its own bounds. The 11-day window captures all Alibaba-ecosystem accesses on a single day (2026-06-12) with no recurrence, but cannot establish a pre-deployment baseline. The five accesses are attributed by ASN (Tier 2 evidence); ASN attribution does not identify the originating tenant, so the appropriate referent is “Alibaba-ecosystem ASN” or “Alibaba Cloud customer,” not the vendor as a corporate actor. Only one frontier model ( qwen-plus ) was probed; other tiers and other Chinese-hosted endpoints are left as future work. The SemrushBot TDM comparison is from the same tracker and window but involves a single SEO vendor; generalisation to other commercial crawlers requires broader observation. These bounds weaken any claim of “sustained crawling” but do not weaken the capability-versus-execution separation that the section actually makes. 
+
+# 6 Mitigations 
+
+Based on our findings, we recommend that evaluation harnesses adopt the following practices: 
+
+(M1) Set temperature=0 explicitly at the grader call site, where the provider supports it. Never rely on a provider’s None default. 
+
+(M2) Set seed where supported, and record it in run metadata. 
+
+(M3) Run epochs > 1 for the grader and report variance or confidence intervals, not a single point estimate. This is the only mitigation that survives the deprecation of sampling parameters (F4). 
+
+(M4) Surface grader disagreement as a first-class harness health metric. Items with high intra-grader disagreement are candidates for rubric revision or human adjudication. 
+
+(M5) Log effective grader configuration (model identifier, resolved version, tempera-ture, seed, and resolved API endpoint / base URL ) into the results artifact, so that consumers of the evaluation know under what conditions, and on what infrastructure, grades were produced (§5.3). 
+
+# 7 Conclusion 
+
+We have shown that the standard mitigation for LLM-as-judge non-determinism (setting temperature=0 )is necessary but not sufficient. In the concrete case of Japan AISI’s evaluation harness, the mit-igation is not even applied: the grader runs at temperature 1.0 by silent default. When applied, residual non-determinism persists across providers, model tiers, and sampling configurations, including forced greedy decoding. The parameter itself is already being deprecated on newer models. Beyond sampling, the API compatibility layer opens a transmission-layer gap: a single config-uration change can redirect grader calls to endpoints in different jurisdictions, leaving evaluation provenance opaque even when the grader parameters are otherwise correct. These findings argue that evaluation harnesses should treat grader reliability as a measure-ment property, not a configuration detail. A grader-disagreement rate and the resolved endpoint 6belong in the results artifact alongside the scores, not because they make the evaluation less trustworthy, but because their absence does. 
+
+# Acknowledgements 
+
+Eirik Botten Nicolaysen (avalyset / EcoDeco AS; ORCID 0009-0001-9188-6788) independently verified the non-determinism on separate infrastructure and contributed observations on top_p /top_k 
+
+coverage and cross-model scoping that informed the v1.1 extension. 
+
+# References 
+
+L. Zheng, W.-L. Chiang, Y. Sheng, et al. Judging LLM-as-a-Judge with MT-Bench and Chat-bot Arena. Advances in Neural Information Processing Systems 36 (NeurIPS 2023) , 2023. arXiv:2306.05685. P. Wang, L. Li, L. Chen, et al. Large Language Models are not Fair Evaluators. 2023. arXiv:2305.17926. H. He et al. Defeating Nondeterminism in LLM Inference. Thinking Machines Lab, 2025. 
+
+https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/ 
+
+R. Stureborg, A. Alikaniotis, Y. Suhara. Large Language Models are Inconsistent and Biased Evaluators. 2024. arXiv:2405.01724. V. Shankar, J. D. Zamfirescu-Pereira, B. Hartmann, A. G. Parameswaran, I. Arawjo. Who Validates the Validators? Aligning LLM-Assisted Evaluation of LLM Outputs with Human Preferences. 2024. arXiv:2404.12272. Japan AISI. aisev issue #25: Reproducibility Improvement Proposal. https://github.com/ Japan-AISI/aisev/issues/25 , 2026. H. Liu, C. Shou, H. Wen, Y. Chen, R. J. Fang, Y. Feng. Your Agent Is Mine: Measuring Malicious Intermediary Attacks on the LLM Supply Chain. 2026. arXiv:2604.08407. L. Heim. Understanding the Artificial Intelligence Diffusion Framework: Can Export Controls Create a U.S.-Led Global Artificial Intelligence Ecosystem? RAND Corporation, Perspective PEA3776-1, 2025. https://www.rand.org/pubs/perspectives/PEA3776-1.html 
+
+Kong Inc. Route Claude CLI traffic through AI Gateway and DashScope. Kong Developer Documentation, 2026. https://developer.konghq.com/how-to/ use-claude-code-with-ai-gateway-dashscope/ 
+
+H. Tamba. Non-determinism in LLM-as-Judge Graders: An Empirical Reproducibility Note (v1.1). Zenodo, 2026. doi:10.5281/zenodo.20674090. 7
