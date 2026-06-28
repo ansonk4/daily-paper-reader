@@ -1,0 +1,946 @@
+Title: A Deterministic Control Plane for LLM Coding Agents
+
+URL Source: https://arxiv.org/pdf/2606.26924v1
+
+Published Time: Fri, 26 Jun 2026 01:24:19 GMT
+
+Number of Pages: 45
+
+Markdown Content:
+# A Deterministic Control Plane for LLM Coding Agents 
+
+## Padmaraj Madatha \ Happiest Minds Technologies (AIP Centre of Excellence) June 2026 
+
+Abstract 
+
+LLM coding harnesses grant agents broad file and shell access, yet the configuration layer that steers them-rules files, agent definitions, IDE-specific markdown-is largely unmanaged. A prevalence study of 10,008 public GitHub repositories ( n=6,145 agent config files) establishes one ro-bust headline finding: agent configurations propagate as undeclared shared components -10.1% of tracked paths are exact duplicates across independent repositories (fork-adjusted; measured by SHA-256, threshold-independent), and 75.5% of clone pairs cross organisational boundaries. Two further patterns are indicative rather than definitive: configurations are rarely revised (a 58% single-commit majority; the gap narrows but persists after age-normalisation-0.4 versus 0.6 commits/month against CI/CD workflows in the same repos), and they rarely declare permis-sion boundaries (<1% of agent configs versus 33% of Actions workflows, on a fragile parser with n=31 true positives). A fourth gap-unbounded execution without enforced traceability-is not observable from static con-fig files; a fifth-expertise locked to harness dialects -is only partially visible in the corpus but is structurally evident from incompatible config formats across tools. We propose a deterministic control plane above the harness (not replacing it) that maps one-to-one to these gaps. Rel(AI)Build ,our reference implementation, treats agent definitions as a managed supply chain (SHA-256 content addressing, HMAC-stamped lockfiles, hash-chained audit logs) to counter undeclared propagation; enforces tiered permissions and attack-derived blocklists before LLM invocation where configs declare none; gates feature work through a phase state machine with requirement →file →test traceability to bound execution; compiles a single canonical definition to seven IDE targets to port expertise across dialects; and detects prompt drift via Jaccard similarity. Conformance tests on injected violations confirm each mechanism enforces its stated invariant; developer outcomes remain future work. 
+
+Determinism applies to install-time gates, blocklists, and phase-state transitions; trace linkage is cooperative and auditable post-hoc, not pre-execution enforced. Governance of this layer must be deterministic and tool-agnostic -not delegated to further 
+
+1
+
+> arXiv:2606.26924v1 [cs.SE] 25 Jun 2026 LLM orchestration.
+
+## 1. Introduction 
+
+1.1 The thin governance surface 
+
+Modern LLM coding harnesses combine a capable execution loop - codebase in-dexing, semantic retrieval, MCP tools, and multi-turn file/shell actions - with a comparatively thin governance surface : organisations typically express policy through natural-language configuration files ( CLAUDE.md , .cursor/rules , Copi-lot instructions, AGENTS.md ) that are injected into context alongside retrieved code and task input. That low-friction authoring model drove adoption, but it leaves agent definitions largely unmanaged at enterprise scale. However, that thin governance surface becomes a liability in regulated, multi-developer, multi-repository organisations - even as harness runtimes grow more capable at retrieving and acting on code. Three structural gaps recur: 1. The configuration is unmanaged software. A .cursorrules file that encodes hard-won architectural conventions is copy-pasted between repos-itories, edited inconsistently, and trusted without provenance. Codebase indexing and semantic retrieval improve what the agent knows about the repository , but they provide no supply-chain guarantees for the rules files themselves. There is no notion of this is the approved version , this file has not been tampered with , or who changed it and when . Yet this file directly steers an agent with write and execute access. Recent literature demonstrates that LLMs frequently hallucinate software packages, and attackers actively weaponise these hallucinations via typosquatting [Vul-can Cyber, 2024, Lanyado et al., 2024]. The configuration that shapes an agent’s dependency suggestions requires at least the same supply-chain rigour currently applied to standard software dependencies. 2. Execution is unbounded. Bare harnesses impose no process. There is no enforced requirement →implementation →test trace, no mandatory review checkpoint, and - critically - no hard cap on self-correction loops. Recent empirical work on LLM code debugging shows effectiveness decays sharply within 2–3 attempts [Anonymous, 2025]; standards for generative and agentic AI emphasise proportional human oversight, bounded auton-omy, and escalation when systems act on a user’s behalf [NIST, 2024, OWASP, 2025, Barrett et al., 2026]. 3. Expertise does not port. Each harness has its own configuration di-alect, tool-permission syntax, and file layout (Table 2). An organisation that standardises on more than one tool - common, since different teams prefer different IDEs - must re-author and re-maintain the same expertise multiple times. A prevalence study (§7) quantifies the observable proxies for Gaps 1 and 3 in public repositories (Table 1b); Gap 2 is a process-layer risk that static config 2analysis cannot measure and motivates §4.5 independently. The robust headline finding is widespread exact-duplicate propagation ( 10.1% fork-adjusted; 75.5% cross-organisation); two indicative proxies - shallow version-control depth (58% single-commit) and near-absence of declared permission boundaries (<1% of agent config files) - point the same direction but are weaker (age-confounded and parser-fragile respectively). Full statistics, confidence intervals, and age-normalised rates are in §7.2 and Figures 8–9. config rules     
+
+> broad authority
+> broad authority
+> suggests
+> no controls
+> Ungoverned by the harness
+> Config integrity /
+> provenance? Permission scope? Process / traceability? Prompt drift? Dangerous commands?
+> Developer / Org
+> Harness Agent Code index / retrieval
+> MCP · tools · memory
+> Files
+> Shell
+> Dependencies
+
+Figure 1. The thin-governance gap. Runtime augmentation (indexing, tools, MCP) improves execution, but the harness provides no governance over five risk surfaces (red). These ungoverned risks sit adjacent to the harness - present but unaddressed - motivating the deterministic control plane in §3. 
+
+1.2 Thesis 
+
+Our thesis is deliberately narrow. Role-based access control (RBAC), sandbox-ing, and orchestration are established paradigms; we do not claim them as novel. Instead: 
+
+The configuration-and-process layer that surrounds an LLM coding agent can be treated as a managed software supply chain, governed deterministically and independently of the underlying harness or model , addressing critical in-tegrity, traceability, and portability risks that the harness alone does not. 
+
+The word deterministic is load-bearing. Every governance mechanism we pro-pose is implemented in ordinary, testable code (hashing, regex matching, a state machine, set arithmetic), not delegated to an LLM. A non-deterministic component cannot serve as a trustworthy control for another non-deterministic component. 
+
+1.3 Contributions 
+
+We propose a control plane architecture and detail its reference implementation, offering five architectural contributions: 1. A supply-chain architecture for agent definitions (§4.1, §5): content addressing (SHA-256), HMAC-stamped lockfiles for acciden-3tal/automated corruption detection, append-only hash-chained audit logs, install-time integrity gates, and an agent-configuration SBOM mapping to NTIA minimum elements [NTIA, 2021] (EO 14028 [The White House, 2021], SLSA Build Level 2 [Google and others, 2023]). 2. A deterministic pre-execution guardrail system (§4.2, §4.3): tier-based permissions bound to the agent definition’s supply chain and enforced prior to LLM invocation, alongside an attack-derived command/path blocklist deployed as IDE runtime hooks (Claude Code 
+
+PreToolUse , Cursor beforeShellExecution ) and a post-delegation 
+
+scan-diff gate (§4.5). 3. A tokenisation-normalisation pipeline and drift detection mech-anism (§4.4) measuring cosmetic prompt edits as an operational risk sur-face using Jaccard similarity [Sclar et al., 2023] - a detection mechanism, not a validated behavioural predictor (§9.1). 4. A deterministic phase-gated lifecycle (§4.5) whose state ma-chine enforces process invariants (ordering, mandatory delegation, requirement →file →test traceability) and blocks execution upon violation. 5. A define-once / compile-to-many transformer (§4.6) portable across seven IDE targets, with a governance-preservation argument (Appendix B). 
+
+Determinism scope (not a contribution): Pre-execution controls (install gates, blocklists, phase-state transitions) are deterministic; requirement →file →test linkage depends on cooperative agent invocation of trace-update and is au-dited post-hoc, not LLM-enforced (§4.5 trust boundary). Empirical activities - implementation conformance testing (§6), prevalence mea-surement (§7), and a DRIFT-detection vignette (Appendix D) - are reported separately and are not listed as architectural contributions. 
+
+Table 1. Evidence mapping (what each section establishes). 
+
+Claim Evidence today Not claimed Supply chain, guardrails, drift, phases, compile §6 conformance tests (injected violations, N=10/15/20) Outcome superiority Governance gap exists §7 prevalence (duplicates, depth, age-normalised rates) Rel(AI)Build deployment impact Mechanism illustration Appendix D DRIFT vignette (N=1, disclaimers) Comparative effectiveness 
+
+Table 1b. Structural gaps (§1.1) → prevalence proxies (§7). 
+
+4Structural gap Observable in corpus? Proxy metric §7 finding 
+
+Gap 1: Config is unmanaged software Yes Exact-duplicate propagation; commit depth; credential patterns 10.1% fork-adjusted duplicates; 58% single-commit files; 3.18% credential hits 
+
+Gap 2: 
+
+Execution is unbounded No (process not in config files) - Architectural motivation only; not measured by §7 
+
+Gap 3: 
+
+Expertise does not port Partially Multi-dialect tracked paths; permission-syntax absence <1% permission declarations; six config dialects in corpus The evidence reported is preliminary, characteristic of early-stage SE research contributions; a controlled developer study (§9.2) is required before claiming productivity outcomes. 
+
+## 2. Background and Related Work 
+
+The landscape of AI coding tools has evolved rapidly. Our architecture sits within this ecosystem but serves a distinct, complementary purpose. 
+
+2.1 LLM coding harnesses 
+
+Cursor, Claude Code, GitHub Copilot, OpenAI Codex CLI, and Windsurf pro-vide editor- or CLI-integrated agents with file and shell tools, steered by per-project configurations. They differ in native context augmentation, context scoping, and dialect (Table 2) but share the thin governance interface of §1.1. Projects such as Aider [Gauthier, 2024] follow a similar per-project configuration pattern. They are the substrate our architecture runs on; we do not reimplement their model inference, codebase indexing, or native editing loops. 
+
+Table 2. Configuration surface of common harnesses (approximate; formats evolve rapidly). 
+
+5Harness Config file(s) Tool-permission syntax Context scoping Native context augmenta-tion Runtime enforce-ment Cursor .cursor/rules/*.mdc implicit glob / file Codebase index, @
+
+retrieval, rules globs, MCP Implicit scoping + 
+
+beforeShellExecution 
+
+hook Claude Code 
+
+CLAUDE.md ,
+
+.claude/agents/* 
+
+comma string project Project memory, subagents, MCP, tool hooks Session-start tool allowlist + 
+
+PreToolUse 
+
+hooks Copilot (VS Code) 
+
+*.agent.md ,instruc-tions YAML array file / PR Workspace indexing, agent tools, in-structions None at config layer Aider .aider.conf.yml ,conven-tions - project Repo map / git context Shell access; no config-layer enforce-ment Codex root 
+
+AGENTS.md 
+
+- file File-scoped context None Windsurf .windsurfrules - file Repo-aware Cascade context None 
+
+2.2 Orchestration frameworks and Autonomous Agents 
+
+Frameworks like LangGraph , CrewAI , and AutoGen [Wu et al., 2023] orches-trate multiple LLM “roles” through complex graphs and conversation patterns. Similarly, Devin , SWE-Agent [Yang et al., 2024], and OpenHands [Wang et al., 2024] (formerly OpenDevin) provide standalone, autonomous environ-ments focused on resolving software issues end-to-end. Benchmark harnesses such as AgentBench [Liu et al., 2024] provide standardised evaluation environ-ments for autonomous agent capabilities. Our architecture differs fundamentally in its goal. We are not proposing a new graph-based communication protocol for agents, nor are we building a 6standalone autonomous sandbox. Instead, we propose a governance overlay 
+
+for existing IDE-integrated harnesses. Since 2023, adoption has shifted toward editor-integrated agents (Cursor, Claude Code, Copilot) with per-project con-figuration files rather than standalone multi-agent sandboxes; our architecture targets that deployment model. Where frameworks like CrewAI focus on the 
+
+dynamic coordination of agents, our architecture focuses on the deterministic supply-chain security, integrity, and traceability of the prompts and permissions that define those agents. 
+
+2.3 Agent Observability and Governance 
+
+Tools such as AgentOps and OpenTelemetry integrations for LLMs provide essential runtime observability (tracking token counts, tracing API calls, logging errors). Guardrails AI [Guardrails AI, 2024] and NeMo Guardrails [Rebe-dea et al., 2023] (NVIDIA) validate LLM outputs at inference time - comple-mentary to, but distinct from, our focus on the configuration-and-process layer. Amershi et al. [Amershi et al., 2019] establish software-engineering process gov-ernance as a first-class concern for ML systems; we apply the same principle upstream to agent definitions. Our architecture focuses on preventative, pre-execution governance : install-time permission checking and state-machine gates that block out-of-policy configurations before the LLM can invoke them. Model providers publish governance frameworks at the capability and deploy-ment layer - Anthropic’s Responsible Scaling Policy and agent safety levels [Anthropic, 2023], OpenAI’s Preparedness Framework [OpenAI, 2023] - which tier model capabilities and deployment gates rather than governing canonical agent-definition supply chains or phase traceability. Recent empirical work on IDE-integrated coding agents characterises the runtime prompt-injection attack surface: Liu et al. [Liu et al., 2025] report high attack-success rates on Cursor and GitHub Copilot when external repository content is poisoned, complement-ing our focus on deterministic controls at the configuration-and-process layer upstream of invocation. NIST AI RMF 1.0 [NIST, 2023] and the 2024 Generative AI Profile [NIST, 2024] predate widespread tool-using IDE agents; NIST CAISI launched the AI Agent Standards Initiative (February 2026) to address identity, authoriza-tion, monitoring, and interoperability for agents [NIST CAISI, 2026]. Berkeley CLTC’s AI Risk-Management Standards Profile for GPAI and Foun-dation Models (v1.2, 2026) extends the RMF four-function model with levers relevant to increasingly agentic systems - human oversight, containment, and accountability for delegated action [Barrett et al., 2026]. Rel(AI)Build imple-ments configuration-and-process controls complementary to these emerging profiles: it does not duplicate runtime observability (AgentOps, OpenTeleme-try) or output guardrails (Guardrails AI, NeMo Guardrails). 72.4 Software supply-chain security and LLMs 
+
+The intersection of supply chains and LLMs is an emerging threat vector. Re-search has shown that AI-recommended packages are frequently hallucinated [Vulcan Cyber, 2024], and adversaries actively weaponise these hallucinations [Lanyado et al., 2024]. Ohm et al. [Ohm et al., 2020] taxonomise open-source supply-chain attacks, while Ladisa et al. [Ladisa et al., 2023] extend this taxon-omy to cover novel attack vectors including dependency confusion and CI/CD script injection. Zahan et al. [Zahan et al., 2022] empirically characterise weak links in the npm ecosystem specifically, finding that a small number of highly-connected packages represent disproportionate systemic risk - a structural ob-servation that applies equally to widely-shared agent configuration templates. Standards bodies are responding: The NIST AI RMF [NIST, 2023] and its 
+
+Generative AI Profile [NIST, 2024] emphasise human oversight, proportional governance, and risk mapping for generative systems; the OWASP Top 10 for LLM Applications [OWASP, 2025] highlights excessive agency and supply-chain vulnerabilities more directly for tool-using agents. NIST’s preliminary 
+
+Cyber AI Profile (IR 8596, 2025) maps CSF 2.0 cybersecurity functions to AI-specific risks including agentic threat surfaces [NIST, 2025]. The SLSA framework [Google and others, 2023] and Sigstore [Newman et al., 2022] pro-vide supply-chain integrity standards for conventional software artifacts. Clas-sic open-source supply chain incidents - event-stream (2018), Codecov (2021), ua-parser-js (2021), and xz-utils (CVE-2024-3094) [Ohm et al., 2020] - moti-vate concrete guardrails (§4.3). Table 4 blocklist entries instantiate Ladisa et al. [Ladisa et al., 2023] attack classes - particularly confused-deputy (T6) and workspace-trust / CI script injection (T7) - at the agent-configuration layer. Our contribution extends supply-chain security upstream to the agent configurations themselves. 
+
+2.5 Prefix caching and prompt stability 
+
+Prefix/KV-cache reuse is a high-leverage LLM-serving optimisation [Gim et al., 2024]; provider prompt caching (e.g., Anthropic, OpenAI) rewards stable prompt prefixes. Separately, literature demonstrates that LLMs are highly sensitive to spurious formatting variations [Sclar et al., 2023, Mishra et al., 2022, Lu et al., 2022], where cosmetic formatting differences change BPE token sequences and push inputs off-distribution. Our architecture structures content to prioritize static elements for prefix caching (§4.6) and formalizes formatting drift measurement against a baseline (§4.4). 
+
+2.6 Capability-based security and least-privilege enforcement 
+
+Least-privilege and capability-based security - from seccomp profiles [Drewry and Ormandy, 2012] to object-capability systems [Miller, 2006] [Saltzer and Schroeder, 1975, Dennis and Van Horn, 1966] - enforce fine-grained allowlists at the system boundary. Our permission tier model (§4.2) applies this lineage 8to agent definitions as compile-time errors on the canonical definition, not as per-API-call runtime exceptions. 
+
+2.7 Configuration management and infrastructure as code 
+
+Infrastructure-as-code [Humble and Farley, 2010, Morris, 2016] and configuration-management lineage [Turnbull and McCune, 2008] treat ex-ecutable configuration as versionable, testable software; Rahman et al. [Rahman et al., 2021] show security smells persist when change-control disci-pline is absent. Our architecture extends this principle to agent definitions via a canonical registry, content hashing, and a per-target policy compiler. 
+
+2.8 Stage-gate models and formal workflow verification 
+
+Cooper’s stage-gate model [Cooper, 1990] and formal workflow verification -from Petri nets [Murata, 1989] and process algebras [Hoare, 1978] [van der Aalst, 2000] - motivate mandatory review checkpoints. Our phase-gated lifecycle (§4.5) instantiates these as a deterministic state machine whose gates block progression until invariants are satisfied. 
+
+2.9 Tamper-evident logging and provenance 
+
+Hash-chained tamper-evident logging [Haber and Stornetta, 1991] - a construc-tion familiar from append-only ledger designs [Nakamoto, 2008] - deployed at scale in Certificate Transparency [Laurie et al., 2013] - enables retrospective audit without trusting the log server. Our append-only audit log (§4.1) applies the same construction locally. 
+
+2.10 Reference currency 
+
+Foundational citations (least-privilege, stage-gate, tamper-evident logging) are intentional anchors for established paradigms. Fast-moving LLM and agent-harness references are bounded to our corpus snapshot date (June 2026); Table 2 notes that harness configuration formats evolve rapidly. 
+
+## 3. System Architecture 
+
+The proposed control plane architecture operates in three distinct planes. Our reference implementation, Rel(AI)Build, instantiates these planes in Node.js. • Authoring & Distribution Plane - A canonical registry of agents, skills, knowledge shards, profiles, and workflows, secured with content hashes. A CLI and an MCP server expose install, search, compose, and governance operations. • Compilation Plane - A transformer that normalises a canonical Mark-down+YAML definition and emits IDE-native files for diverse targets, 9explicitly ordering static content first to optimize for prompt-cache effi-ciency. • Runtime-Governance Plane - Deterministic helpers (CLI scripts and/or MCP tools) that the in-IDE agent calls to advance phase state, record delegations, and update the requirement →file →test trace. This plane enforces permissions and command/path blocklists at install-time and pre-tool-use. Authoring & Distribution define once · content-addressed 
+
+Compilation define once → deploy everywhere 
+
+Runtime Governance deterministic — code, not an LLM 
+
+Substrate unchanged — harness & model      
+
+> Canonical Registry
+> agents · skills · knowledge · profiles · workflows
+> checksums.json
+> SHA-256 per resource
+> CLI / MCP server
+> install · search · govern
+> verify
+> Tokenisation Normaliser
+> stable tokenisation
+> Prompt-cache Ordering
+> static content first
+> Platform Transformer
+> →7 IDE formats
+> install-time gates · CLI runtime helpers · MCP / CLI Tiered Permission Enforcement Command / Path Blocklist HMAC-stamped Lockfile Append-only Hashed Audit Log Phase-State Machine + Gates AC Traceability + spec_hash Tokenisation Drift Detector Harness: Cursor · Claude Code · Copilot · Codex · Windsurf · OpenCode · Kiro LLM: Claude · GPT · Gemini
+> emit MCP / CLI
+> Deterministic governance code (control plane) Unchanged substrate — harness & model MCP / CLI interface (runtime)
+
+Figure 2. The deterministic control plane architecture. Four horizontal layers - Authoring & Distribution, Compilation, Runtime Governance (teal), and the unchanged harness/model substrate (grey) - sit above one another. Every gov-ernance component is deterministic code, not an LLM prompt; the harness and model are unmodified. 
+
+3.1 The Five Resource Pillars 
+
+The architecture relies on five distinct resource types, separating concerns that bare configuration files typically conflate: • Agents - who : Role-scoped actors with a system prompt, a declared tool allowlist, a permission tier, glob scoping, and a model-profile reference. • Skills - how : Reusable, parameterised task recipes an agent invokes for a sub-task. • Knowledge shards - what to know : Pre-distilled patterns, anti-patterns, and conventions, loaded just-in-time via an index rather than bulk-injected. • Profiles - standing context : Always-apply, stack-specific rules. 10 • Workflows - when : Multi-step task templates executed by an orchestra-tor. 
+
+3.2 Reference Implementation 
+
+The reference implementation, Rel(AI)Build, is written in Node.js. The trans-formation, permission enforcement, auditing, drift calculation, and state ma-chine transition logic exist as isolated, independently testable modules shared between the relaibuild CLI and an MCP server. This module boundary is deliberate: the CLI is the authoritative governance path (it can run in any CI en-vironment), while the MCP server exposes the same operations in-IDE without requiring terminal approval. A continuous integration validator runs structural checks (tier membership, tool validity, supply-chain policy coverage) on every registry change. The isolation of each mechanism into a named module means that the SHA-256 integrity gate, the HMAC stamp, the state machine, and the Jaccard calculator are each independently auditable and replaceable. 
+
+3.3 Runtime Artifacts 
+
+The control plane persists governance state in deterministic files under 
+
+docs/{ticket}/ and at the project root: Artifact Purpose Written by 
+
+phase-state.json Phase lifecycle, delegations, security-scan receipts, HITL pauses 
+
+workflow-state 
+
+CLI/MCP 
+
+trace.json AC → files → tests linkage, spec_hash trace-update 
+
+CLI/MCP 
+
+spec.md Content-addressed requirements (hashed at approval) spec-author / human 
+
+handoff.md Delegation receipts between agents 
+
+write-handoff 
+
+CLI/MCP Lockfile (per-project) Installed resources + HMAC stamp 
+
+relaibuild install 
+
+Audit log (JSONL) Hash-chained mutation history CLI/MCP mutations Subsequent sections reference these artifacts by name; §4.5 and Appendix C detail phase-state transitions. 11 4. Governance Mechanisms 
+
+This section outlines the deterministic mechanisms. We describe the what and 
+
+why , providing pseudocode to clarify the structural invariants. 
+
+4.1 Agent definitions as a managed supply chain Content addressing. Every registry resource possesses a SHA-256 hash. The installation process recomputes the hash of fetched content and aborts on mis-match - mimicking the integrity model of a package lockfile, applied to prompts. This mitigates context poisoning (T3, §5). 
+
+Tamper-evident lockfile. A per-project lockfile records installed resources, targets, and origins. On write, it is stamped with an HMAC-SHA256 over the serialised content. By default, using a machine-local key derived from the lock-file path, this provides detection of accidental or automated corruption 
+
+(merge conflicts, accidental edits) - not cryptographic authentication against an adversarial process running as the same user, who can read the key and forge a valid stamp. Deployments requiring strong authentication can substitute an or-ganisational signing key (Sigstore-grade) without altering the mechanism; that upgrade path is not yet implemented in the reference build. 
+
+Append-only, hash-chained audit log. CLI mutations append a JSONL record {timestamp, action, user, cwd, details} to a local audit log, with each line carrying a SHA-256 hash of its own content. A verifier recomputes every line’s hash to report tampering, yielding a provenance trail. 
+
+verify_audit(log): for each line i: {_hash, rest} = parse(line) if sha256(serialize(rest))[:16] != _hash: report TAMPERED(i) 
+
+12 IDE files Audit log (hash-chained) Lockfile (HMAC) relaibuild CLI Registry (+checksums.json)     
+
+> IDE files Audit log (hash-chained) Lockfile (HMAC) relaibuild CLI Registry (+checksums.json)
+> alt [credential pattern found]
+> [scan clean]
+> alt [hash mismatch]
+> [verified]
+> fetch resource
+> content + expected SHA-256
+> recompute SHA-256
+> ⛔abort install (context-poisoning blocked)
+> credential scan (13 patterns)
+> ⛔abort install (credential leakage blocked)
+> write transformed files
+> stamp HMAC over lock data
+> append {action,user,ts,details}+SHA-256
+
+Figure 3. The agent-definition install pipeline. Three independent integrity stores (checksum, lockfile, audit log) provide content integrity, tamper-evidence, and provenance respectively. Two sequential abort gates - hash mismatch and credential-pattern detection - each independently block installation, providing defense-in-depth against context poisoning and credential leakage. 
+
+4.2 Deterministic permission model 
+
+Every agent is assigned a single tier that defines a strict allowlist of tools (Table 3). While the concept of RBAC is standard, our architecture enforces this deterministically as errors at install/transform time (fail-closed), ensuring a misconfigured agent never reaches the IDE execution context. 
+
+Table 3. Permission tiers (least → most privileged). 
+
+Tier Intent Tools (summary) MCP Shell readonly exploration, review read/glob/grep/search allowlisted only no scribe scoped writers (scanner, docs) read + write/edit 
+
+within declared paths 
+
+no no operations git/CI/deploy read/write/edit/bash/git declared only yes 13 Tier Intent Tools (summary) MCP Shell specialist coding/analysis read/write/edit/bash/glob/grep declared only yes orchestrator top-level coordination unrestricted yes yes 
+
+Scoped writes with traversal defence. The enforcement logic normalises the path (collapsing ./.. ), checks the prefix, and explicitly rejects any residual 
+
+.. segments to prevent directory traversal. 
+
+validateWritePath(agent, path): if tier(agent) != scribe: return p = normalize(strip_root(path)) # collapse . and .. if ".." in segments(p): throw TRAVERSAL if not any(p startswith allowed for agent): throw OUT_OF_SCOPE 
+
+Agent-level hard constraints. Beyond tier allowlists, canonical agent defini-tions embed MUST NOT rules in the system prompt that hold regardless of task input. The git-ops operations agent - which has shell access - explicitly for-bids git config , writes to .git/config or .git/hooks/ , and core.hooksPath 
+
+manipulation, and requires branch commands to run as separate steps rather than && -chained one-liners. These constraints address workspace-trust attacks (T7, §5) in which poisoned instructions in an untrusted repository attempt to redirect git hooks for remote code execution. 
+
+4.3 Attack-derived command and path blocklists 
+
+The architecture utilizes regular expressions to block shell commands and write targets associated with documented software supply-chain attacks [Ohm et al., 2020]. These blocks apply to all tiers, including orchestrators. Each pattern traces to a specific incident profile: 
+
+Table 4. Blocklist patterns ↔ originating incident. 
+
+Pattern (id) Technique blocked Incident Class 
+
+npx-autoconfirm /
+
+npm-exec-autoconfirm npx -y auto-confirm payload delivery CI/CD script hijack 
+
+git-sha-fetch ,
+
+pip-git-sha 
+
+install from arbitrary commit SHA Dependency pivot 
+
+pipe-to-sh curl … | bash payload delivery Codecov (2021) 
+
+detached-spawn spawn(…, {detached:true}) 
+
+self-daemonisation ua-parser-js (2021) 14 Pattern (id) Technique blocked Incident Class persistence paths writes to cron , systemd ,XDG autostart 
+
+xz-utils (CVE-2024-3094) 
+
+git-config-global /
+
+git-config-system git config --global /
+
+--system writes Workspace trust / hook injection 
+
+git-hookspath core.hooksPath 
+
+manipulation (redirects git hooks) Workspace trust / hook injection 
+
+git-config-file-write direct .git/config 
+
+access Workspace trust / hook injection On relaibuild install , the reference implementation copies security-scan.js 
+
+into the destination project’s IDE-specific scripts directory (e.g. .cursor/scripts/ ,
+
+.claude/scripts/ ) and wires it into runtime hooks that screen commands 
+
+before execution: • Claude Code: PreToolUse hooks in .claude/settings.json -
+
+pre-write (file content) and pre-exec (every Bash call). • Cursor: a beforeShellExecution entry in .cursor/hooks.json 
+
+(failClosed: true ) invoking .cursor/hooks/security-pre-exec-scan.sh ,which calls security-scan.js --mode pre-exec .A second layer runs after coding-agent delegations: orchestrators invoke 
+
+scan-diff (Step N.2b), checking only added lines in the git diff. The result is persisted to phase-state.json (§3.3); the phase state machine refuses 
+
+end-phase until securityScan.status is clean when delegations occurred (§4.5). Phases without file-writing delegations are exempt. 
+
+4.4 Tokenisation normalisation and drift detection Normalisation. Before compilation, the Markdown body (excluding code fences or frontmatter) is canonicalised: CRLF →LF, trailing-whitespace strip-ping, leading tabs →spaces, and blank-line collapse. This stabilises the BPE token sequence across platforms to mitigate model sensitivity to formatting [Sclar et al., 2023]. 
+
+Metric choice: Jaccard similarity. We fingerprint each agent body as a set of normalised word tokens and measure drift against a stored baseline us-ing Jaccard similarity [Broder, 1997]. The choice of Jaccard over alternatives warrants justification. Edit distance (Levenshtein) and cosine-over-TF-IDF are character- or frequency-weighted measures ill-suited to governance: a single in-jected flag such as --no-verify costs exactly one edit step in Levenshtein yet represents a semantically critical change, whereas Jaccard set arithmetic treats the presence or absence of any token as a structural signal regardless of position or frequency. This property - detecting token presence/absence independent of position - matches the adversarial model of a targeted prompt-injection attack, 15 in which an attacker typically adds a small number of semantically critical to-kens to an otherwise legitimate prompt rather than reorganising the entire text. Levenshtein’s positional and frequency blindness would systematically under-count such attacks; Jaccard’s set model does not. MinHash approximation of Jaccard is appropriate for near-duplicate detection at corpus scale; at per-file granularity, exact Jaccard is O(n) and imposes no accuracy penalty. The gap between word-level Jaccard and BPE-token-sequence divergence is in-tentional. BPE tokenisation is provider- and version-specific; word-level to-kenisation is deterministic, portable, and auditable. Jaccard operates on sets, making it insensitive to argument order and whitespace layout - exactly the cos-metic variations that §4.4 normalisation already handles. The metric therefore measures lexical content change independently of BPE implementation details, and the normalisation step preceding compilation ensures that formatting noise does not inflate the measured drift. 
+
+𝐽 (𝐴, 𝐵) = |𝐴 ∩ 𝐵| |𝐴 ∪ 𝐵| , risk =⎧{⎨{⎩
+
+LOW 𝐽 ≥ 0.80 
+
+MEDIUM 0.60 ≤ 𝐽 < 0.80 
+
+HIGH 𝐽 < 0.60 
+
+Threshold defaults. The boundaries (0.60, 0.80) are operating defaults pend-ing calibration (§9.1) , not empirically validated against behavioural-change met-rics. They were chosen for operational triage: at J = 0.80, roughly one word in five differs from the baseline - the volume of a targeted single-instruction edit; at J = 0.60, two words in five differ - approaching a structural rewrite. The predicted correlation between HIGH drift and measurable behavioural change is deferred to §9.1. The same Jaccard metric family (default threshold 0.80) is used in the corpus near-clone analysis of §7; exact-duplicate propagation ( 10.1% 
+
+fork-adjusted; 18.75% raw) uses SHA-256 and is threshold-independent. 
+
+Table 5. Near-clone detection at default threshold (config-file corpus, Jaccard token sets). 
+
+Threshold pair (LOW/MED boundary) Near-duplicate pairs Notes 0.60 / 0.80 (default) 32,677 Template pairs: 52,833; cross-org rate: 75.51% (§7) Sensitivity at other threshold pairs is deferred to corpus completion (§9.3). Headline exact-duplicate claims ( 10.1% fork-adjusted primary; 18.75% raw) use SHA-256 and are threshold-independent. Threshold sensitivity against agent behavioural change is not empirically validated; see §8 and §9.1. 16 0.0 0.2 0.4 0.6 0.8 1.0   
+
+> Jaccard similarity to baseline (0 = fully diverged, 1 = identical)
+> HIGH
+> J < 0.60
+> CI block / alert
+> MEDIUM
+> 0.60-0.79
+> flag for review
+> LOW
+> J >= 0.80
+> nominal
+> J = 0.60 J = 0.80
+> baseline = last human-reviewed prompt
+
+Figure 4. Conceptual illustration of tokenisation drift risk zones. Thresholds shown (J < 0.60 = HIGH, 0.60–0.79 = MEDIUM, ≥ 0.80 = LOW) are operating defaults pending calibration (§9.1). The §7 corpus study uses J ≥ 0.80 for near-clone detection. Baseline is the last human-reviewed version. A HIGH result triggers a CI-failing signal requiring human review. 
+
+Table 5b. Illustrative Jaccard sensitivity to targeted token injec-tion (no behavioural validation; thresholds are operating defaults per §9.1). 
+
+Model: baseline prompt of n unique word tokens; attacker injects k new tokens not present in the baseline; (J = n/(n+k)). Baseline length n \ injected tokens k 1 3 5 10 50 0.980 0.943 0.909 0.833 100 0.990 0.971 0.952 0.909 200 0.995 0.985 0.976 0.952 A single-token injection into a 100-token baseline yields (J ￿0.99) - above the LOW threshold ( ≥0.80) and therefore not flagged as drift. The HIGH-risk zone (<0.60) requires substantially larger lexical edits (roughly ≥40% new tokens relative to baseline length under this additive model), motivating why drift detection targets multi-token or structural prompt changes rather than isolated flag tokens alone. 
+
+4.5 Deterministic phase-gated lifecycle with hard invariants 
+
+Feature work is structured into a bounded, sequential pipeline with manda-tory human-in-the-loop (HITL) gates and a hard 3-iteration cap on auto-fix loops [Anonymous, 2025, NIST, 2024, Barrett et al., 2026]. State persists to 
+
+phase-state.json (§3.3), enabling exact resumption. 1
+
+Crucially, a deterministic state machine enforces invariants and blocks on violation :
+
+> 1
+
+Phase numbering (0, 1, 3, 4, 5, 7, 8) is non-contiguous by design: phases 2 and 6 are reserved for future specialist sub-workflows without renumbering deployed systems. 
+
+17 • Ordering invariant. Starting phase n (>1) fails unless phase n−1
+
+recorded an end timestamp. • End-without-start invariant. Ending a phase that never started fails. • Delegation receipts. Ending a phase can require named receipts (DELEGATION GATE FAILURE ), preventing an orchestrator from silently bypassing specialist delegation. • Mandatory review gate. For critical tiers, phase 0 cannot close unless a spec-reviewer delegation is recorded. • Post-delegation security scan gate. When file-writing dele-gations were recorded for phase n, ending the phase fails unless 
+
+phase_n.securityScan.status == clean (or no delegations occurred -pure HITL/planning phases are exempt). This enforces orchestrator Step N.2b at the CLI/MCP layer, not only in protocol text. 
+
+end_phase(n): if not metrics[n].start_ts: fail END_WITHOUT_START if required_delegations not ⊆ recorded[n]: fail DELEGATION_GATE if n==0 and tier ∈{M,L} and 'spec-reviewer' ∉ recorded[0]: fail REVIEW_GATE if delegations[n] ≠ ∅ and securityScan[n].status ≠ clean: fail SECURITY_SCAN_GATE commit(end_ts, active = total − hitl_pause) 
+
+Because these checks are hard-coded in the control plane, they cannot be by-passed via persuasive LLM prompting. 
+
+Rejection and rollback mechanics. The forward invariants above are only half the story; HITL rejection paths are equally deterministic. When a human reviewer rejects at a HITL gate (e.g., Phase 5 Review), the state machine records the rejection in the append-only audit log as a HITL_REJECTED event with a timestamp and reviewer identifier, and leaves the preceding phase’s end_ts 
+
+intact but marks it as pending re-entry . The rejected work item returns to the start of the phase that was just reviewed - the state machine does not revert further back (e.g., a failed Phase 5 Review does not revert to Phase 3 Implementation). The 3-iteration cap on auto-fix loops is scoped to a single phase entry: a rollback from Phase 5 back into Phase 4 resets the Phase 4 counter to zero, because the reviewer’s rejection constitutes a new mandate. All backward transitions - rejection events and re-entries - are appended to the audit log using the same append-only, hash-chained format as forward transitions, ensuring a complete and tamper-evident history of the full lifecycle including rework cycles. 18 end-phase 
+
+pass 
+
+✗ DELEGATION GATE 
+
+FAILURE 
+
+approved 
+
+✗ rejected 
+
+end-phase 
+
+approved 
+
+✗ rejected 
+
+end-phase 
+
+approved 
+
+✗ rejected 
+
+end-phase 
+
+approved 
+
+✗ rejected 
+
+Phase 0 · Spec 
+
+Phase 1 · Design 
+
+Phase 3 · Implement 
+
+Phase 4 · Test (≤3 fix iters) 
+
+Phase 5 · Review (≤3) 
+
+Phase 7 · Security 
+
+Phase 8 · Finalize 
+
+🔒  GATE — spec-reviewer 
+
+receipt? (M/L tiers) 
+
+ǁ HITL-1 — human review 
+
+ǁ HITL-2 — human review 
+
+ǁ HITL-3 — human review 
+
+ǁ HITL-4 — human review Figure 5. The deterministic phase-gated lifecycle. Four HITL gates (pause bars) enforce mandatory human review; gate-failure back-edges (dashed, red) refuse advancement until invariants are satisfied. Three hard invariants hold throughout: (1) phase n cannot start until phase n −1 has ended, (2) ending a phase that never started is blocked, and (3) auto-fix loops are capped at three 
+
+19 iterations before escalating to a human. Phase numbering is non-contiguous 2.
+
+Lifecycle design rationale The eight-phase decomposition is not arbitrary: it maps Cooper’s stage-gate model [Cooper, 1990] onto software-engineering arti-fact boundaries already used in the reference orchestrators ( PHASE_NAMES in the workflow state machine - Spec, Design, Implementation, Test, Review, Security, Finalize). Phases 2 (Foundation & Scaffolding) and 6 (Static Code Analysis) are reserved slots for specialist sub-workflows that can be activated without renumbering deployed phase-state.json files. Four HITL gates correspond to spec approval (after Phase 0), design approval (after Phase 1), pre-release review (after Phase 7), and final merge (after Phase 8) - not to arbitrary process overhead (Figure 5 maps Cooper gates to Rel(AI)Build phases). We do not claim that eight phases are uniquely optimal - a five-phase or twelve-phase decomposition could enforce similar invariants. What the reference im-plementation requires is bounded recursion (3-iteration cap), mandatory delegation receipts , and hard-coded gate predicates (Appendix C sum-mary) - properties that a thinner process cannot enforce deterministically. The default cap of three iterations is an operating default , not a claim of universal optimality: empirical work on LLM code debugging shows effectiveness decays sharply within 2–3 attempts [Anonymous, 2025], and governance standards re-quire human escalation when autonomous action fails [NIST, 2024, Barrett et al., 2026]. Deployments may override the default via PACK_MAX_ITERATIONS (range 1–5). Phase-gate overhead is unmeasured (§9.2); necessity is argued from process invariants, not from productivity data. 
+
+Requirement →file →test traceability. A companion trace.json (§3.3) records, per acceptance criterion (AC), the implementing files, performed tasks, verifying tests, and status. The specification is content-hashed at approval. Companion checks verify that every AC maps to code and tests, designing the system to flag any files changed outside of AC scopes as detectable scope creep. 
+
+Trust boundary: cooperative trace linkage File-to-AC linkage is estab-lished through explicit agent declaration : when a coding agent implements or touches a file for a given AC, it calls the trace-update CLI command (or equiv-alent MCP tool) with the AC identifier and the file path, which appends the mapping to the trace record for that phase. This is not inferred from git history; it requires the agent to invoke the trace tool during implementation. The spec-drift check then computes the set of all files changed in the working tree (via git diff against the phase-start commit) and flags any file that does not appear in any AC’s registered file list. This creates a determinism boundary central to the architecture’s honesty: trace linkage depends on the agent’s cooperative invocation of the trace tool. A  
+
+> 2Phase numbering (0, 1, 3, 4, 5, 7, 8) is non-contiguous by design: phases 2 and 6 are reserved for future specialist sub-workflows without renumbering deployed systems.
+
+20 misconfigured, prompt-injected, or non-compliant agent that edits files without calling trace-update will have its changes surface as scope-creep warnings at the next drift check - detectable but not preventable before the edit lands. In a threat model where the same LLM can be steered by injected instructions, relying on that agent to faithfully call trace-update is an honor-system com-ponent inside an otherwise deterministic control plane. The control plane’s response is auditability and detection, not pre-execution file-scope enforcement. A DRIFT-detection vignette (Appendix D) shows the dominant trace gap is 
+
+implementation without test trace - code implementing an AC exists but no verifying test is registered (AC-018) - precisely the failure mode this linkage is designed to surface. not in any AC       
+
+> spec.md
+> spec_hash SHA-256
+> AC-001
+> AC-002
+> files: a.ts, b.ts
+> tests: a.test.ts ✓verified
+> files: c.ts
+> tests: — ✗pending
+> changed file z.ts ⚠spec-drift: scope creep
+
+Figure 6. Requirement →file →test traceability. Each acceptance criterion (AC) in the content-addressed spec maps to implementing files and verifying tests; a verified AC is green, an unverified AC is amber. A file changed outside any AC scope surfaces as a spec-drift warning (red), making scope creep de-tectable automatically. File-to-AC linkage requires cooperative agent invocation of trace-update (§4.5 trust boundary). 
+
+4.6 Define once, compile to many targets 
+
+A single canonical definition is compiled - after normalisation and static-content-first ordering - into specific formats for Cursor, Claude Code, VS Code, Codex, Windsurf, OpenCode, and Kiro. The research question is whether compilation 
+
+preserves governance properties across heterogeneous formats. We argue that because the compiler is a pure function of the canonical definition D, tier checks and traversal defence run before compilation, and the HMAC stamp references 
+
+D’s content hash rather than per-target output, every target that faithfully encodes D’s permission declarations inherits the governance property by con-struction (conditional property-preservation argument in Appendix B). Whether 21 each harness’s runtime enforcement of the emitted permissions is equivalent is harness-specific (Table 2) and outside this architecture’s compile-time scope. 
+
+IDE substrate enforcement disparities. To be explicit about this gap: the control plane guarantees that the canonical definition correctly declares its per-missions , not that the target harness will enforce them identically at runtime. The targets span a wide enforcement spectrum. Claude Code is the most ex-plicit: it parses the comma-separated tool allowlist at session start and rejects invocations outside the declared set, and runs PreToolUse security hooks on every write and shell invocation. Cursor enforces tool access implicitly through glob-scoped rule application and MCP server configuration, and - on install -deploys a beforeShellExecution hook that fail-closes on dangerous shell com-mands (§4.3), partially closing the runtime gap for the highest-risk tool class even though Cursor has no compile-time tool allowlist check on the agent file itself. Several targets - Codex, Windsurf, OpenCode, and Kiro - have little or no runtime permission enforcement at the agent-definition level; the compiled output correctly declares the intent, but the harness does not actively block out-of-scope tool use. This disparity is a known limitation (§8) and a primary motivation for the pre-execution governance model: the control plane’s checks run before the harness has a chance to not enforce them. 
+
+## 5. Threat Model 
+
+We adopt an attacker model where an adversary can influence (a) untrusted task inputs (tickets, code comments), (b) the shared agent-system directory via Pull Requests, (c) dependency suggestions, and/or (d) untrusted workspace con-tent - e.g. a developer opens a cloned third-party repository whose AGENTS.md ,
+
+.cursor/rules , or source comments contain embedded instructions aimed at agents with shell access. We map the architectural mitigations to the OWASP guidelines. 
+
+Table 6. Threats and deterministic mitigations. 
+
+Threat OWASP mapping Primary deterministic mitigation (§) Residual Risk T1 Prompt injection LLM01 HITL review gates + AC-scope flagging (§4.5); boundary markers Medium 22 Threat OWASP mapping Primary deterministic mitigation (§) Residual Risk T2 Privilege escalation LLM06 Fail-closed tier allowlists; scoped writes + traversal defence (§4.2) Low T3 Context poisoning LLM03 / Supply Chain SHA-256 integrity + HMAC lockfile + audit log (§4.1) Low–Med T4 Credential leakage LLM02 / LLM06 13-pattern scanner on reads/writes; OS-keychain retrieval Low T5 Uncontrolled recursion LLM06 3-iteration cap; bounded delegation depth; sequential phases (§4.5) Low T6 Confused deputy Supply Chain Attack-derived command/path blocklist; package-manager wrappers (§4.3) Low–Med T7 Workspace trust / git hook injection LLM01 / LLM06 git-ops hard constraints (no 
+
+git config , no 
+
+core.hooksPath ); pre-exec blocklist + IDE runtime hooks (§4.3); HITL branch confirmation; post-delegation 
+
+scan-diff gate (§4.5) Low–Med 
+
+Residual Risk Note: Prompt injection (T1) remains Medium . A highly so-phisticated, AC-compliant injection might pass automated scope checks, rely-ing entirely on the human HITL gate. Context poisoning (T3) is Low–Medium :SHA-256 integrity is strong, but the default HMAC lockfile detects acciden-tal corruption only - not adversarial forgery by a same-user process (§4.1, §8). 23 Workspace trust (T7) remains Low–Medium : runtime hooks and agent con-straints block the most direct git config / core.hooksPath path, but instruc-tions in an untrusted workspace can still influence model behaviour at runtime; developers should treat cloned third-party repositories as untrusted workspaces. The architecture does not claim to solve prompt injection; it aims to bound the blast radius deterministically. also: ordering invariants 
+
+bound blast radius 
+
+also: tampered definition 
+
+prevents privilege tamper 
+
+also: scan-diff gate 
+
+on end-phase 
+
+also: HITL branch 
+
+confirmation 
+
+T1 · Prompt Injection 
+
+(LLM01) 
+
+T2 · Privilege Escalation 
+
+(LLM06) 
+
+T3 · Context Poisoning 
+
+(LLM03 / Supply Chain) 
+
+T4 · Credential Leakage 
+
+(LLM02) 
+
+T5 · Uncontrolled Recursion 
+
+(LLM06) 
+
+T6 · Confused Deputy 
+
+(Supply Chain) 
+
+T7 · Workspace Trust 
+
+(Git Hook Injection) 
+
+HITL Review Gates 
+
++ AC-scope flagging 
+
+§4.5 
+
+SHA-256 Install Gate 
+
++ HMAC Lockfile 
+
++ Hash-chained Audit 
+
+§4.1 
+
+Fail-closed Tier Allowlists 
+
++ Traversal Defence 
+
+§4.2 
+
+13-pattern Credential 
+
+Scanner 
+
++ OS Keychain Retrieval 
+
+§4.3 
+
+3-iteration Cap 
+
++ Phase State Machine 
+
+§4.5 
+
+Attack-derived 
+
+Command/Path Blocklist 
+
+§4.3 
+
+Pre-exec Runtime Hooks 
+
++ git-ops Constraints 
+
+§4.2, §4.3 
+
+24 Figure 7. Threat → deterministic control mapping. Seven identified threats (red, left) each have a primary deterministic control (teal, right); T-numbers correspond to Table 6. Cross-links (dashed) show defense-in-depth: the Phase State Machine (§4.5) also bounds the blast radius of prompt injection (T1) via ordering invariants and enforces the post-delegation security scan for T7; SHA-256 supply-chain integrity (§4.1) also prevents privilege escalation via tampered definitions (T2). Residual risks for T1 and T7 are noted in Table 6. 
+
+5.1 Compliance and Supply-Chain Framing 
+
+The NIST AI RMF 1.0 [NIST, 2023] organises AI risk governance across GOVERN, MAP, MEASURE, and MANAGE. Table 7 maps each function to Rel(AI)Build mechanisms; the 2024 GenAI Profile [NIST, 2024] and emerging agentic-AI extensions [Barrett et al., 2026, NIST CAISI, 2026] provide adjacent risk vocabulary but do not prescribe agent-definition supply-chain or phase-traceability controls - the gap this architecture addresses. Sub-function detail aligns with AI RMF 1.0 and the GenAI Profile per [Madatha, 2026b]. Organisa-tions mapping controls to ISO/IEC 27001 [ISO/IEC, 2022] will find sub-function detail in [Madatha, 2026b]. Executive Order 14028 [The White House, 2021] and the NTIA minimum SBOM elements [NTIA, 2021] were developed for conven-tional software artifacts; to our knowledge, no prior work has proposed treating agent configurations as SBOM-subject artifacts. The measured rate of exact-duplicate configuration propagation ( 10.1% fork-adjusted; 18.75% raw; 702 cross-organisation exact clusters, §7) demonstrates that agent configs already circulate as undeclared shared components - the failure mode SBOM mandates were designed to surface. 
+
+Table 7. Top-level NIST AI RMF function alignment. Function names from NIST AI 100-1 (2023) [NIST, 2023]. 
+
+AI RMF Function Core Requirement Rel(AI)Build Mechanism GOVERN Establish policies, accountability structures, and organisational practices for AI risk Five-tier permission model (§4.2); delegation receipts and HITL gates; append-only audit log (§4.1) MAP Identify, characterise, and prioritise AI-specific risks in context Threat model (Table 6); attack-derived blocklist (§4.3); five ungoverned risk surfaces (§1.1) 25 AI RMF Function Core Requirement Rel(AI)Build Mechanism MEASURE Develop and apply metrics to monitor and quantify AI risk indicators Jaccard drift detector with operating defaults pending calibration (§4.4); AC trace coverage (§4.5); hash-chain verifier (§4.1) MANAGE Prioritise and implement risk responses; track residual risk Phase-gated lifecycle (§4.5); fail-closed permission enforcement (§4.2); 3-iteration escalation cap 
+
+Table 8. Agent Configuration SBOM: NTIA Minimum Elements →
+
+Rel(AI)Build equivalent. 
+
+NTIA SBOM Element Traditional Software Rel(AI)Build Agent Manifest Supplier name Package publisher Registry owner; agent author metadata in frontmatter Component name Package / library name Agent identifier ( id field in canonical frontmatter) Version of the component Semantic version string Content-addressed SHA-256 hash of the canonical definition Dependency relationships Transitive require /
+
+import graph 
+
+skills , knowledge ,
+
+profiles references in agent frontmatter Cryptographic hash SHA-256 of the binary artifact SHA-256 of the canonical definition at install time (checksums.json )Unique identifier PURL / CPE string Registry-qualified agent ID concatenated with content hash Timestamp Build or release timestamp Append-only audit log entry timestamp per install or update event 26 The checksums.json registry, HMAC-stamped lockfile, and append-only audit log provide integrity and provenance properties equivalent to CycloneDX/SPDX evidence fields; SPDX/CycloneDX serialisation is a near-term target. The archi-tecture aligns with SLSA Build Level 2 [Google and others, 2023]: versioned canonical registry, scripted deterministic transformer, and version-controlled pipeline. 
+
+## 6. Implementation Conformance Testing 
+
+§6 answers does the mechanism reject bad inputs? - enforcement-property tests on the reference registry corpus using injected violations. This is implementa-tion conformance testing , not an evaluation of developer outcomes or field effectiveness. §7 quantifies the public-repository governance gap that motivates the architecture. A DRIFT-detection vignette on a real API build (N=1, gov-erned arm only) is provided in Appendix D; it does not constitute a comparative evaluation. 
+
+6.1 Conformance Corpus and Methodology 
+
+§6 tests mechanism invariants on the reference registry corpus. §7 provides the empirical prevalence measurement. The conformance corpus consisted of 237 canonical agent definitions drawn from the reference registry, spanning 14 technology stacks (Angular, React, Next.js, Vue, React-Native/Expo, Node/Express, Java/Spring Boot, .NET ASP.NET Core, .NET WPF/MVVM, Python, PHP, SST, Salesforce, and API-testing) compiled across 7 target IDE formats (Cursor, Claude Code, VS Code/Copilot, Codex, Windsurf, OpenCode, Kiro). Simulated policy violations were generated by three methods: (a) modifying resource content on disk after checksum record-ing to simulate registry tampering; (b) adding disallowed tool declarations to 
+
+scribe and readonly agent frontmatter to simulate misconfiguration; and (c) constructing representative shell command strings and file paths matching the patterns in Table 4 to confirm blocklist coverage. These tests were executed against the reference implementation’s published CLI and MCP server. The test corpus and reproduction scripts are included in the artifact appendix. 
+
+6.2 Conformance results 
+
+All 237 canonical definitions compiled cleanly across the 7 target formats with no schema violations. Each injected violation was caught by its corresponding gate: all 10 integrity-tampering cases aborted at the SHA-256 install gate, all 15 
+
+over-privileged tool declarations failed compilation under fail-closed tier checks, and all 20 synthetic blocklist strings triggered their controls. We stress what these numbers do and do not mean: they are conformance checks confirming that hand-written detectors match inputs constructed to be detected, and that a hash check detects a changed hash. They carry no information about field 27 effectiveness or developer outcomes (§8, §9.2); we report them only to estab-lish that each mechanism enforces its stated invariant. For completeness, the gate behaviours exercised are: modifying any downloaded resource aborts at the SHA-256 install gate (editing the lockfile triggers a hash-mismatch warning on next read); a scribe /readonly agent declaring a shell tool is a fatal compila-tion error; validateWritePath rejects ../ -masked paths inside an allowed pre-fix; and the state machine raises PHASE ORDER VIOLATION , DELEGATION GATE FAILURE , and SECURITY SCAN GATE on out-of-order, receipt-less, or unscanned transitions. 
+
+## 7. Empirical Prevalence Study 
+
+Sample adequacy: ADEQUATE - N=10,008 repositories analysed across 9,357 distinct organisations meet the target of 10,000; confi-dence intervals are narrow enough to support the directional claims below. Dataset and reproduction scripts are published as a compan-ion artifact [Madatha, 2026a]. To ground the qualitative claims of §1.1, we conducted a preliminary empirical prevalence study of publicly accessible GitHub repositories. The study does not evaluate Rel(AI)Build; it measures the governance gap that the architecture is designed to address. 
+
+7.1 Corpus and methodology 
+
+Full reproduction parameters are in Appendix A and [Madatha, 2026a]. Sum-mary: 
+
+Discovery. Repositories were assembled via a custom GitHub corpus analysis pipeline [Madatha, 2026a] using a seed list built from GitHub Search API queries stratified by star-count quartiles (Q1: 0–10 stars; Q2: 11–100; Q3: 101–1,000; Q4: >1,000), each requiring at least one tracked configuration path and pushed:>2024-01-01 . Representative query templates: filename:CLAUDE.md stars:0..10 , filename:.cursorrules stars:11..100 , path:.github/workflows stars:101..1000 , filename:copilot-instructions.md stars:>1000 . The seed list was deduplicated by owner/repo full name. Fork metadata ( isFork , parentFullName ) was backfilled for 8,988/10,008 completed repos via the GitHub REST API ( enrich-fork-metadata ; 653 fork repos identified). 
+
+Tracked paths. .github/workflows/*.yml , .github/copilot-instructions.md ,
+
+.cursor/rules/** , .cursorrules , .claude/** , and CLAUDE.md . Files shorter than 100 bytes were excluded as empty stubs. 
+
+Corpus snapshot. We analysed 10,008 repositories (373 failed ingestion; 3.59% ingestion failure rate), 33,620 files, and 6,145 AI agent configuration files across 9,357 organisations. Only 8.45% of repos (846/10,008) contain at least one AI agent config; 49.0% contain CI/CD workflows. Agent-governance claims use 28 file-level metrics as the primary lens (§7.2); repo-level rows in Table 10 are supplementary. 
+
+Ingestion failures. Of 373 failed repositories, per-repo failure logs were not persisted in the rendered report; failure characterisation is aggregate only. Failures are attributed to GitHub API rate limits, repository unavailability (404/archived), and clone timeouts during enrichment. See Appendix A. 
+
+Measurements. 
+
+• Version-control depth: lifetime commit count per configuration file. Files with ≤1 commit are classified as unmanaged .• Clone propagation: SHA-256 exact-duplicate groups (threshold-independent) with fork-adjusted variants excluding groups where fewer than two non-fork repositories share a hash; near-duplicate pairs (Jaccard ≥ 0.80 default; Table 5). • Credential exposure: the same 13-pattern regex scanner used at install time in §4.3 (metadata only; secret values never stored). • Permission scope: regex extraction of declared tool allowlists and GitHub Actions permissions blocks. Parser false positives on agent-config for-mats were manually excluded (6 of 19 raw matches); a full Rahman-style validation sample is deferred to corpus completion (§9.3). 
+
+Maintenance categories. Dormant: no commit in 18 months or zero lifetime commits. Lightly maintained: 1–5 lifetime commits and not dormant. Actively maintained: ≥6 lifetime commits and not dormant. 
+
+7.2 Results Table 10. Prevalence study results. File-level rows are primary for version-control depth; repo-level rows are supplementary. Measurement Finding 95% CI / notes [file-level] AI agent config files with exactly 1 commit 58.45% (3,592/6,145 files) 57.22% – 59.68% [file-level] AI agent config files with ≤2commits 74.26% (4,563/6,145 files) 73.15% – 75.33% [file-level] Median commit count per AI agent config file 1 IQR: 1–3 ( n=6,145) [file-level] Median commits/month per AI agent config (file-age normalized) 0.4 IQR: 0.2–1; median file age 4 mo ( n=6,145) 29 Measurement Finding 95% CI / notes [file-level] Median commits/month per CI/CD workflow (file-age normalized) 0.6 IQR: 0.21–1.2; median file age 17 mo (n=24,436) [cohort ≥2024-01-01] AI agent configs - median commits/month 0.4 n=6,144; median file age 4 mo [cohort ≥2024-01-01] CI/CD workflows -median commits/month 0.75 n=15,852; median file age 8 mo [file-level] CI/CD workflow files with ≤2commits 24.31% (5,940/24,436 files) 23.77% – 24.85% Config files - exact duplicates across ≥2repos (raw, incl. forks) 1,619 content groups; 5,733 file instances (18.75%) 18.31% – 19.19% of tracked config paths (n≈30,581) Config files - exact duplicates (fork-adjusted) 425 content groups; 3,075 file instances (10.06% )excludes groups with <2 non-fork repos; 653 fork repos in corpus (no separate CI reported) Config-file clone pairs (cross-org share) 75.51% cross-org (66,839/88,517 pairs) 21,678 within-org / 66,839 cross-org Duplicate clusters spanning ≥2organisations 540 near/template; 702 exact across 9,357 organisations Repos with ≥1credential pattern in configuration files 3.18% (318/10,008; ~1 in 31; lower-bound estimate) 2.85% – 3.54%; regex-only; manual validation deferred (§9.3) CI/CD workflow files declaring explicit permission scopes 33.39% (8,158/24,436 files) file-level coverage [file-level] AI agent config files declaring explicit permission scopes (indicative) 31 true positives; 6 parser false positives excluded coverage 0.5% (31/6,145); true coverage ≈ 0% [repo-level, supplementary] Repos with ≤1 commit to an AI agent config file 5.47% (547/10,008) 5.04% – 5.93% 
+
+Table 11. Version-control depth by file category. 
+
+30 Category Files Median (IQR) Exactly 1 commit ≤2 commits AI agent configs 6,145 1 (1–3) 58.45% 74.26% GitHub Actions workflows 24,436 7 (3–20) 14.07% 24.31% Copilot instructions 261 2 (1–5) 34.48% 54.02% Cursor rules 443 1 (1–2) 62.75% 76.30% Claude config 5,441 1 (1–2) 59.25% 75.06% 
+
+Permission scope coverage by category (formerly Table 12): AI agent configs 31 TP / 6,145 (0.5%); GitHub Actions 8,158 / 24,436 (33.39%); Claude config 28 TP / 5,441 (0.51%); Cursor rules 2 / 443 (0.45%); Copilot instructions 1 / 261 (0.38%). Agent-config permission figures are indicative (parser n=31 TP). 0 commits 
+
+> 1 commit
+> 2 5 commits
+> 6 10 commits
+> 11 20 commits
+> 21+ commits
+> Lifetime commit count per file
+> 0%
+> 10%
+> 20%
+> 30%
+> 40%
+> 50%
+> 60%
+> Share of files (%)
+> Version-control depth: AI agent configs vs CI/CD workflows
+> AI agent configs (n=6,145)
+> GitHub Actions workflows (n=24,436)
+
+Figure 8. Raw lifetime version-control depth by file category. AI agent configs concentrate at one commit (58.5%); CI/CD workflows show deeper history (median 7 commits). Age-normalised rates that bound the artifact-age confound are in §7.2.1 / Figure 9. Source: report.json ,
+
+paperStudy.versionControlDepthByCategory .
+
+7.2.1 Age-normalized version-control rate Raw commit counts confound file maturity: agent-configuration paths are younger (median first-commit age 4
+
+months for AI configs vs 17 months for Actions; 66.5% of agent-config files are younger than 6 months vs 22.5% for Actions). We therefore report commits per month = lifetime commit count ÷ max(file age in months, 1), measured from first commit to report generation. 
+
+Table 11. Age-normalized version-control rate by file category. 
+
+31 Category Files Median file age (mo, IQR) Median commits/month (IQR) AI agent configs 6,145 4 (2–6) 0.4 (0.2–1) GitHub Actions workflows 24,436 17 (6–40) 0.6 (0.21–1.2) Copilot instructions 261 - -Cursor rules 443 - -Claude config 5,441 - -
+
+Copilot, Cursor, and Claude rows omitted when n is small relative to aggregate claims; full category breakdown in [Madatha, 2026a]. 
+
+Cohort-matched subset (files first committed ≥ 2024-01-01) , aligned with discovery filter pushed:>2024-01-01 ): AI agent configs retain median 0.4 
+
+commits/month ( n=6,144); Actions workflows 0.75 commits/month ( n=15,852; median file age 8 months). The age confound explains part of the raw depth gap (Figure 8) but does not eliminate it - Actions workflows in the same repositories still revise more frequently per month of existence. AI configs  
+
+> n=6,145
+> Actions
+> n=24,436
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> Median commits / month
+> 0.4
+> 0.6
+> All files
+> AI configs
+> n=6,144
+> Actions
+> n=15,852
+> 0.4
+> 0.75
+> Cohort: first commit 2024-01-01
+> Age-normalized version-control rate: AI agent configs vs CI/CD workflows
+
+Figure 9. Median commits/month by category. Left panel: all files; right panel: cohort with first commit ≥ 2024-01-01. Source: report.json ,
+
+paperStudy.versionControlRateByCategory and cohortMatchedVersionControl .
+
+Maintenance posture. Among AI agent configs, 89.7% are lightly main-tained (1–5 commits) and only 10.24% actively maintained ( ≥6 commits). GitHub Actions workflows in the same corpus are 53.36% actively maintained 32 - consistent with both raw depth (Figure 8) and age-normalised rates (Figure 9). 
+
+7.3 Interpretation 
+
+§7 confirms Gap 1 and partially supports Gap 3 (Table 1b) through public-repository proxies. Gap 2 is a process-layer risk that static config analysis cannot measure; it motivates §4.5 phase gates independently of the prevalence study. 
+
+Clone propagation is the most SHA-256-robust headline for Gap 1: 10.1% 
+
+of tracked configuration paths (fork-adjusted; 425 content groups) and 18.75% 
+
+raw (1,619 groups) appear as exact duplicates across repositories; 75.5% of clone pairs cross organisational boundaries - agent configs circulate as unde-clared shared components, the failure mode SBOM requirements were designed to surface. 
+
+Version-control immaturity is also substantial: a 58% majority of agent con-figs are committed once and never revised (median = 1 commit); age-normalised rates remain lower than Actions in the same corpus (§7.2.1), even after bound-ing the artifact-age confound. Nearly 90% of agent configs fall into the lightly-maintained category versus 53.4% actively maintained for Actions workflows. 
+
+Permission and credential findings are indicative (Gap 3). Declared per-mission boundaries appear on fewer than 1% of agent config files (31 true pos-itives / 6,145; parser fragile) versus 33% on Actions workflows - evidence that harness-specific permission syntax is rarely used even when available. Credential patterns appear in ~1 in 31 repositories (lower-bound regex estimate). These support the architectural emphasis on deterministic pre-execution guardrails (§4.2, §4.3) rather than post-hoc observability alone, but should not be weighted equally with duplicate-propagation and depth metrics. 
+
+7.4 Limitations of the study 
+
+• Sample size: 10,008 repositories analysed, meeting the 10,000-repository target (§9.3); adequacy is adequate. • Fork metadata and duplicate rates: Fork flags were backfilled for 8,988/10,008 completed repos (fork metadata unavailable for the remain-ing 1,020). Headline exact-duplicate prevalence uses a fork-adjusted 
+
+rate ( 10.1% ; groups requiring ≥2 non-fork repositories) with the raw 
+
+rate ( 18.75% , including fork-network copies) reported alongside. Cross-organisation clone-pair rate (75.5%) and cluster counts (702 exact clus-ters ≥2 orgs) are computed on raw pairs and not fork-filtered. Resid-ual fork ambiguity may remain where forks share content under different 
+
+owner/repo names without a recorded parent link [Kalliamvakou et al., 2014]. • Selection bias: the corpus comprises public repositories discovered through configuration-file presence; findings characterise the “already 33 adopted AI agents” population, not all of GitHub. • Credential scanner: regex-only detection; reported prevalence is a lower-bound estimate with possible false positives; manual validation sample deferred to §9.3. • Artifact-age confound: Agent-configuration file types are younger than GitHub Actions workflows (median first-commit age 4 vs 17 months; §7.2.1). Raw commit-depth comparisons (Figure 8) understate Actions’ maturity advantage. §7.2.1 reports commits-per-month and a cohort-matched subset (first commit ≥ 2024-01-01) to bound this confound; a residual rate gap remains after normalization. • Permission parser: agent-config formats lack standardised permission syntax; 6 of 37 raw matches ( ≈16% FP rate on raw matches) were manu-ally excluded; with only 31 true positives, a few additional FPs or missed TPs would materially shift the <1% headline - treat as indicative .• No causal claims: prevalence does not establish that weak governance causes incidents, nor does it evaluate Rel(AI)Build deployment outcomes - the DRIFT vignette in Appendix D demonstrates detection behaviour only; full controlled developer outcomes remain §9.2. 
+
+## 8. Limitations 
+
+We state the following architectural limitations explicitly to scope the contribu-tions of this paper. Empirical study limitations are in §7.4. 
+
+Prompt injection is not solved. The HITL gates and AC-scope checks reduce, but do not eliminate, the risk of prompt injection. A sufficiently well-crafted malicious instruction that mimics a legitimate acceptance criterion may pass automated scope checks. The human review gate remains the primary backstop. 
+
+Local integrity, not adversarial signing. The supply-chain controls (SHA-256 integrity, HMAC lockfile, audit log) protect against accidental corruption and automated tampering in a shared repository. The default HMAC uses a machine-local key: any process running as the same user can read the key and forge a valid stamp. These controls do not defend against an adversary with direct, privileged access to the developer’s local machine, nor do they provide Sigstore-grade cryptographic authentication without an organisational signing key (future work). 
+
+Cooperative trace linkage (determinism boundary). Traceability (§4.5) depends on the agent cooperatively invoking trace-update ; a prompt-injected or non-compliant agent can edit files without registering AC linkage. The control plane detects such gaps at the next spec-drift check but cannot prevent the edits - see §4.5 trust boundary. 
+
+Workspace trust boundary. Integrity controls in §4.1 protect this project’s 34 installed agent definitions from tampering. They do not protect against in-structions embedded in a different , untrusted workspace - e.g. a cloned third-party repository whose AGENTS.md or .cursor/rules attempt to steer an oper-ations agent toward git config manipulation (T7). Runtime pre-exec hooks and git-ops hard constraints reduce but do not eliminate this risk; developers should avoid running agents with Bash/Git access inside unreviewed third-party workspaces. 
+
+Does not validate semantic correctness of generated code. The archi-tecture governs the process and configuration layer, not the LLM’s outputs. It cannot verify that generated code is logically correct, functionally complete, or free of subtle bugs beyond what the testing and review phases surface. 
+
+Does not secure model-provider infrastructure. Controls operate at the harness and agent-definition layer. The confidentiality and integrity of commu-nications with LLM provider APIs (Anthropic, OpenAI, Google) are outside this architecture’s scope. 
+
+Conformance testing focuses on enforcement properties, not devel-oper productivity outcomes. The results in §6 demonstrate that the deter-ministic mechanisms enforce their invariants as designed on injected violations. Appendix D illustrates DRIFT detection on a single governed build (N=1) with-out supporting effectiveness claims; statistical inference on developer productiv-ity outcomes requires the controlled study in §9.2. 
+
+Jaccard drift thresholds are operating defaults pending calibra-tion. The 0.60/0.80 boundaries in §4.4 are not empirically validated against behavioural-change metrics; sensitivity analysis is deferred to §9.1. 
+
+Blocklists require active maintenance. The command and path blocklists in §4.3 are grounded in known incidents and are therefore bounded by what has been publicly documented. Novel attack variants, including those targeting ecosystems not yet represented in Table 4, are not covered until patterns are added. 
+
+Runtime permission enforcement varies by substrate. The control plane guarantees that the canonical agent definition correctly declares its permission tier and tool allowlist, and that this declaration is faithfully translated into the target’s native syntax. It does not guarantee equivalent runtime enforcement across all harnesses. As noted in §4.6, Claude Code enforces the tool allowlist at session start; Cursor enforces access implicitly through scoping rules; and several targets (Codex, Windsurf, OpenCode, Kiro) impose no tool-level run-time enforcement. Organisations requiring uniform runtime enforcement should audit their chosen harness’s enforcement model independently. 
+
+## 9. Future Work 
+
+While the architectural mechanisms (hashing, blocking, state machine enforce-ment) are verified through conformance testing (§6) and the motivating gov-35 ernance gap is quantified (§7), measuring the real-world impact of the control plane requires further empirical studies. 
+
+9.1 Drift vs. behaviour correlation 
+
+Does a HIGH tokenisation drift (Jaccard < 0.60) reliably predict a statistically significant change in agent task success rates? A controlled experiment using SWE-bench [Yang et al., 2024] or a comparable agent evaluation benchmark would apply measured Jaccard drift to the system prompt and measure the resulting change in task-completion rate. A monotonic relationship between drift bucket and performance delta would validate the operational significance of the 0.60 and 0.80 thresholds. 
+
+9.2 Developer study: overhead vs. benefit 
+
+Appendix D provides a DRIFT-detection vignette on a single governed build (N=1) and does not support comparative effectiveness claims. A full con-trolled study requires randomised cohorts with equal N, a standardised harness, pinned environments, and a bare-harness baseline arm. Does the enforcement of AC-traceability and HITL gates measurably reduce scope creep and reviewer-reported defects compared to that baseline, and does the phase-gate overhead offset the time otherwise lost to uncontrolled LLM recursion and rework? Out-come variables include: time-to-merge, number of post-merge bug reports, and self-reported cognitive overhead from the phase gates. 
+
+9.3 Corpus completion 
+
+Expand the prevalence corpus beyond the current N =10,008 repositories (the 10,000-repository target is met) and publish the full dataset, SQLite store, and companion reproduction scripts as arXiv ancillary files [Madatha, 2026a]. Re-apply fork-metadata enrichment on the expanded corpus. Re-run near-clone detection at Jaccard thresholds {0.50, 0.60, 0.70, 0.80, 0.90} to publish multi-threshold sensitivity analysis. Conduct a manual validation sample ( ≥100 matches) on credential-scanner hits to refine the 3.18% exposure estimate. 
+
+## 10. Conclusion 
+
+LLM coding agents steer tools with write and execute authority, yet the con-figuration and process layer that directs them lacks the governance discipline routinely applied to application code and CI/CD pipelines. A prevalence study of 10,008 public repositories (§7) confirms that this thin governance surface is widespread. Its most robust finding is that 10.1% of tracked configuration paths are exact duplicates across independent repositories (fork-adjusted, SHA-256; 75.5% of clone pairs cross organisational boundaries) 36 - agent configs already circulate as undeclared shared components. Agent con-figs are also revised markedly less than CI/CD workflows in the same reposito-ries (an indicative finding that survives, but narrows under, age-normalisation). Rel(AI)Build demonstrates that supply-chain integrity, pre-execution permis-sions, attack-derived blocklists, and phase-gated traceability can be enforced deterministically above any harness - conformance tests on injected violations confirm each mechanism blocks its stated invariant (§6). What remains open is honest scope: cooperative trace linkage and prompt in-jection are detectable but not fully preventable (§4.5, §8). Controlled outcome studies on drift calibration, developer productivity, and corpus expansion (§9.1– 9.3) are required before claiming that these controls improve developer outcomes at scale. 
+
+## Data and Artifact Availability 
+
+The full dataset, SQLite store, analysis pipeline, figures, and article source are archived on Zenodo (DOI: 10.5281/zenodo.20780913) [Ma-datha, 2026a]; a subset is also attached as arXiv ancillary files (anc/ ): 
+
+report.json , organizations.txt , prevalence-report-summary.json ,
+
+ac-trace-table.csv , comparison-report-2-revised.pdf , and the figure-reproduction scripts. The nine paper figures are vector PDFs generated from these sources. Table 13 is self-contained; full per-AC trace rows (Table S1), phase timelines, and attack-vector replay notes are in the companion HTML/PDF report bundled in [Madatha, 2026c]. 
+
+## Appendix A. Prevalence Study Reproduction Parameters 
+
+Pipeline. Custom corpus analysis pipeline: discovery → GitHub REST API enrichment → clone detection → credential scan → permission extraction →
+
+SQLite store → report.json . Reproduction scripts and datasets: [Madatha, 2026a]. 
+
+Discovery seed list. Built from GitHub Search API queries stratified by star-count quartile: Quartile Star range Example query fragment Q1 0–10 filename:CLAUDE.md stars:0..10 pushed:>2024-01-01 
+
+37 Quartile Star range Example query fragment Q2 11–100 filename:.cursorrules stars:11..100 pushed:>2024-01-01 
+
+Q3 101–1,000 path:.github/workflows stars:101..1000 pushed:>2024-01-01 
+
+Q4 >1,000 filename:copilot-instructions.md stars:>1000 pushed:>2024-01-01 
+
+Query strings reflect the stratification design used to build the seed list; exact per-query result counts are in the companion artifact [Madatha, 2026a]. 
+
+Sampling frame. Public GitHub repositories; English-primary README not required; deduplication by owner/repo full name. Fork metadata ( isFork ,
+
+parentFullName ) backfilled via GitHub REST API for 8,988/10,008 completed repos ( enrich-fork-metadata ). 
+
+Ingestion. Analysed N =10,008, meeting the 10,000-repository target (§9.3); 373 failures (3.59%). Failure categories (aggregate): GitHub API rate-limit backoff, repository 404/archived, enrichment timeout. Per-repo failureLog 
+
+was empty in the rendered report - failure characterisation is aggregate only. 
+
+Clone detection. Exact duplicates: SHA-256 content hash (threshold-independent). Fork-adjusted exact duplicates: content groups where ≥2non-fork repositories share a hash (headline 10.1% ; 425 groups, 3,075 instances). 
+
+Raw exact duplicates (including fork-network copies): 18.75% (1,619 groups, 5,733 instances). Near/template duplicates: word-token Jaccard with default threshold 0.80 (Table 5). MinHash/LSH candidate filtering before pairwise Jaccard confirmation. Source: report.json → paperStudy.cloneAnalysis 
+
+(generated 2026-06-18). 
+
+Parser validation. Permission-scope parser: 37 raw matches on agent configs, 6 manually confirmed false positives excluded ( ≈16% FP rate on raw matches; 31 true positives). Credential scanner: regex-only; no systematic manual validation sample yet (deferred to §9.3). 
+
+## Appendix B. Governance-Preservation Compilation Argu-ment (Semi-Formal) 
+
+This appendix states a conditional semi-formal argument , not a mechanised proof. It closes the gap between citing formal workflow methods [van der Aalst, 2000] and asserting compile-time governance preservation. 38 B.1 Definitions 
+
+• D - canonical agent definition (Markdown + YAML frontmatter). • P - governance property: (a) every tool in tools(D) belongs to the al-lowlist for tier(D) ; (b) every path in paths(D) passes traversal defence; (c) the HMAC over the serialised lock record for hash(D) is valid. • T(D) - compiled target output for harness T ∈ {Cursor, Claude Code, VS Code, …}. • faithful_encode(T, D) - target T’s parser recovers the same tool set and write-path set as declared in D (syntax may differ; semantics under 
+
+T’s parser must match). 
+
+B.2 Assumptions 
+
+• A1 (Pure compiler): compile(T, D) is a pure function of D; it does not add or remove tools or paths. • A2 (Pre-compile gate): Tier and traversal checks run on D before any 
+
+T(D) is written; violations abort compilation. • A3 (Faithful encoding): For each supported target T, faithful_encode(T, D) holds for every D that passes A2. 
+
+B.3 Lemmas Lemma 1 (Pre-compile certification). If D satisfies P, then A2 ensures (a) and (b) before compilation begins. 
+
+Lemma 2 (Lock binds to canonical hash). The HMAC stamp references 
+
+hash(D) , not hash(T(D)) ; lock validity is independent of output format. 
+
+B.4 Conditional property-preservation argument 
+
+If A1–A3 hold and D satisfies P, then for every supported target T, T(D) satisfies 
+
+P under the interpretation that (a)–(b) apply to the tool/path sets recovered by T’s parser, and (c) follows from Lemma 2. 
+
+Proof sketch. By Lemma 1, (a)–(b) hold on D before compile. By A1, 
+
+tools(T(D)) = tools(D) and paths(T(D)) = paths(D) as sets. By A3, T’s runtime view matches those sets. By Lemma 2, (c) is unchanged by compilation. 
+
+■
+
+B.5 Runtime caveat 
+
+Whether each harness enforces emitted permissions at runtime is harness-specific (Table 2) and outside compile-time scope (§8). A4 (runtime enforcement equivalence) is explicitly not assumed. Validating A3 (faithful encoding) per target - that the parser-recovered tool and path sets match the canonical declaration - is deferred to the expanded 39 evaluation in §9.2; one-target parser-recovery tests constitute a one-day exercise and are planned. 
+
+## Appendix C. Phase State Machine (Summary) 
+
+The phase-gated lifecycle (§4.5, Figure 5) is implemented as a labeled transition system over phases {0, 1, 3, 4, 5, 7, 8} with four HITL pauses. Table C1 lists the guard predicates enforced before phase advancement; conformance tests in §6.2 exercise these guards with injected violations. 
+
+Table C1. Selected phase transition guards. 
+
+Transition Guard (must hold) Failure code 
+
+start_phase(n) , n > 0 end_ts[n −1] exists PHASE ORDER VIOLATION end_phase(n) start_ts[n] exists END WITHOUT START end_phase(n) required delegations ⊆
+
+recorded[ n]
+
+DELEGATION GATE FAILURE end_phase(0) , tier ∈
+
+{M,L} 
+
+spec-reviewer ∈
+
+recorded[0] 
+
+REVIEW GATE end_phase(n) if file-writing delegations occurred: 
+
+securityScan[n].status = clean SECURITY SCAN GATE end_phase(n) auto-fix iteration count 
+
+≤ 3 per phase entry 3
+
+escalation to HITL Phases 2 and 6 are reserved slots 4. Every transition appends to the hash-chained audit log. Full LTS state/event definitions are in the reference imple-mentation ( workflow-state core); behavioural equivalence is established by conformance tests (§6.2), not formal verification. 
+
+## Appendix D. Illustrative DRIFT-Detection Walkthrough (N=1, mechanism vignette) 
+
+Scope: This appendix demonstrates Phase-8 spec-drift detection on 
+
+one governed build (N=1). It is not a comparative evaluation; arm-level completeness, security replay, and test-count metrics are    
+
+> 3Default cap is 3; overridable via PACK_MAX_ITERATIONS (range 1–5). Rationale: §4.5 life-cycle design.
+> 4Phase numbering (0, 1, 3, 4, 5, 7, 8) is non-contiguous by design: phases 2 and 6 are reserved for future specialist sub-workflows without renumbering deployed systems.
+
+40 out of scope and available only in the companion artifact submitted as arXiv ancillary files [Madatha, 2026c]. We walked through a Task Management API specification - 26 acceptance cri-teria (ACs), FastAPI / SQLAlchemy / Python 3.11+ - using the Rel(AI)Build phase-gated lifecycle ( cursor-relAI arm). A CI-hardened comparator arm (cursor-only ) was run in parallel for internal calibration; its outcomes are not 
+
+reported as evaluation evidence here. This vignette does not replace §6 confor-mance testing and does not support effectiveness claims at scale. 
+
+D.1 Build context 
+
+The governed build scoped CR-1 to core functional ACs; cross-cutting ACs (security headers, CORS, token observability) were tracked for follow-on CR-2. Both arms implement API-key authentication. Full per-AC classification rows are in [Madatha, 2026c], Table S1. 
+
+D.2 DRIFT-detection vignette Table 13. Phase-8 DRIFT detection (governed arm, n=26 ACs). 
+
+Event Observation Phase-8 Guardian review DRIFT on AC-018 - implementation present, test trace missing Merge blocked Yes - Phase-8 exit withheld until trace gap resolved Post-delivery testing audit AC-018 test trace added; 26/26 ACs verified Dominant failure mode Implementation without test trace 
+
+(impl-only), not missing code Phase-8 Guardian DRIFT surfaced AC-018 trace incompleteness before merge -open-loop detection without guaranteed remediation within the delivery window; the gap was closed in a post-delivery testing audit. This illustrates the §4.5 traceability mechanism: the control plane detects incomplete test linkage post-hoc; it does not guarantee the agent registers tests during implementation. 
+
+D.3 Mechanism observations 
+
+• Phase gates detect AC drift before merge - DRIFT on AC-018 blocked finalisation until the trace gap was closed. • Impl-without-test is the dominant trace gap - feature code existed for AC-018 but no verifying test was registered in the trace record at Phase-8 exit. 41 • Definition completeness bounds trace outcomes - CR-2 scoping for cross-cutting ACs shows trace quality depends on canonical spec scope, not gate mechanics alone. Agents optimise for scoped functional ACs; cross-cutting concerns require explicit inclusion in the canonical change request or CI-equivalent enforce-ment - motivating complete canonical definitions and the §4.3 blocklist as a specification-independent baseline. 
+
+D.4 Vignette scope limits 
+
+• N=1; governed arm only in Table 13. • Single IDE harness (Cursor); GitHub Copilot is the AI model within Cur-sor, not the harness. • Comparator arm details, security replay scores, and test-count compar-isons: [Madatha, 2026c] only - not paper claims. • CR-1/CR-2 phased scope means the full 26-AC spec was not completed in a single governed pass. 
+
+Incident sources (Table 4 blocklist / Table 6 threats, §5): event-stream (2018), SolarWinds/SUNBURST (2020), Codecov (2021), ua-parser-js (2021), xz-utils (CVE-2024-3094), Nx Console (2026). 
+
+# References 
+
+Saleema Amershi et al. Software engineering for machine learning: A case study. In IEEE/ACM Intl. Conf. on Software Engineering: Software Engineering in Practice (ICSE-SEIP) , 2019. Anonymous. The debugging decay index: Rethinking debugging strategies for code llms. arXiv preprint arXiv:2506.18403 , 2025. doi: 10.48550/arXiv.2506. 18403. Anthropic. Responsible scaling policy. https://www.anthropic.com/news/ant hropics-responsible-scaling-policy, 2023. Anthony M. Barrett, Jessica Newman, Brandie Nonnecke, Nada Madkour, Dan Hendrycks, Evan R. Murphy, Krystal Jackson, and Deepika Raman. Ai risk-management standards profile for general-purpose ai (gpai) and foundation models, version 1.2. Technical report, UC Berkeley Center for Long-Term Cybersecurity (CLTC), 2026. arXiv:2506.23949; https://cltc.berkeley.edu/ wp-content/uploads/2026/04/Berkeley-GPAI-Profile-v1-2.pdf. Andrei Z. Broder. On the resemblance and containment of documents. In 
+
+Compression and Complexity of Sequences (SEQUENCES) , 1997. Robert G. Cooper. Stage-gate systems: A new tool for managing new products. 
+
+Business Horizons , 33(3):44–54, 1990. 42 Jack B. Dennis and Earl C. Van Horn. Programming semantics for multipro-grammed computations. Communications of the ACM , 9(3):143–155, 1966. Will Drewry and Tavis Ormandy. Minijail and seccomp-bpf. In Linux Security Summit , 2012. Paul Gauthier. Aider: Ai pair programming in your terminal. Open-source project, https://aider.chat/, 2024. In Gim, Guojun Chen, Seung-seob Lee, Nikhil Sarda, Anurag Khandelwal, and Lin Zhong. Prompt cache: Modular attention reuse for low-latency inference. In Proceedings of Machine Learning and Systems (MLSys); arXiv:2311.04934 ,2024. doi: 10.48550/arXiv.2311.04934. Google and others. Supply-chain levels for software artifacts (slsa), v1.0. https: //slsa.dev/, 2023. Guardrails AI. Guardrails: A toolkit for building safe and reliable llm appli-cations. Open-source project, https://github.com/guardrails-ai/guardrails, 2024. Stuart Haber and W. Scott Stornetta. How to time-stamp a digital document. 
+
+Journal of Cryptology , 3(2):99–111, 1991. C. A. R. Hoare. Communicating sequential processes. Communications of the ACM , 21(8):666–677, 1978. Jez Humble and David Farley. Continuous Delivery: Reliable Software Releases Through Build, Test, and Deployment Automation . Addison-Wesley, 2010. ISO/IEC. Iso/iec 27001:2022 information security management systems — re-quirements, 2022. Eirini Kalliamvakou et al. The promises and perils of mining github. In Working Conference on Mining Software Repositories (MSR) , 2014. Piergiorgio Ladisa et al. Taxonomy of attacks on open-source software supply chains. In IEEE Symposium on Security and Privacy (S&P) , 2023. Bar Lanyado et al. Can you trust chatgpt’s package recommendations? Vendor research report (grey literature), 2024. Ben Laurie, Adam Langley, and Emilia Kasper. Certificate transparency. RFC 6962, IETF, 2013. Xiao Liu et al. Agentbench: Evaluating llms as agents. In International Con-ference on Learning Representations (ICLR) , 2024. Yuhao Liu, Yiyang Zhao, Yiyang Lyu, Tianyi Zhang, Haoyu Wang, and David Lo. “your ai, my shell”: Demystifying prompt injection attacks on agentic ai coding editors. arXiv preprint arXiv:2509.22040 , 2025. 43 Yao Lu et al. Fantastically ordered prompts and where to find them: Overcom-ing few-shot prompt order sensitivity. In Annual Meeting of the Association for Computational Linguistics (ACL) , 2022. Padmaraj Madatha. Github agent-configuration prevalence study: Dataset and reproduction scripts. Zenodo (DOI to be assigned) and arXiv ancillary files [Author artifact, not peer-reviewed], 2026a. Padmaraj Madatha. Rel(ai)build enterprise compliance alignment: Sox itgc, iso 27001 annex a, and nist ai rmf sub-function mappings. Happiest Minds Tech-nologies, companion document [Author artifact, not peer-reviewed], 2026b. Padmaraj Madatha. Cursor vs cursor+rel(ai)build illustrative build walk-through. arXiv ancillary files [Author artifact, not peer-reviewed], 2026c. Mark S. Miller. Robust Composition: Towards a Unified Approach to Access Control and Concurrency Control . PhD thesis, Johns Hopkins University, 2006. Swaroop Mishra et al. Reframing instructional prompts to gptk’s language. In 
+
+Findings of the Association for Computational Linguistics (ACL Findings) ,2022. Kief Morris. Infrastructure as Code: Managing Servers in the Cloud . O’Reilly Media, 2016. Tadao Murata. Petri nets: Properties, analysis and applications. Proceedings of the IEEE , 77(4):541–580, 1989. Satoshi Nakamoto. Bitcoin: A peer-to-peer electronic cash system, 2008. Zachary Newman, John Speed Meyers, and Santiago Torres-Arias. Sigstore: Software signing for everybody. In ACM SIGSAC Conference on Computer and Communications Security (CCS) , pages 2353–2367, 2022. doi: 10.1145/ 3548606.3560596. NIST. Artificial intelligence risk management framework (ai rmf 1.0). Technical Report NIST AI 100-1, National Institute of Standards and Technology, 2023. NIST. Artificial intelligence risk management framework: Generative artificial intelligence profile. Technical Report NIST AI 600-1, National Institute of Standards and Technology, 2024. NIST. Cybersecurity framework profile for artificial intelligence (cyber ai pro-file). Technical Report NIST IR 8596 (initial public draft), National Institute of Standards and Technology, 2025. https://csrc.nist.gov/pubs/ir/8596/iprd. NIST CAISI. Ai agent standards initiative. https://www.nist.gov/artificial-intelligence/ai-agent-standards-initiative, 2026. NTIA. The minimum elements for a software bill of materials (sbom). Technical report, U.S. Department of Commerce, National Telecommunications and Information Administration, 2021. 44 Marc Ohm et al. Backstabber’s knife collection: A review of open source soft-ware supply chain attacks. In Detection of Intrusions and Malware, and Vulnerability Assessment (DIMVA) , 2020. OpenAI. Preparedness framework. https://openai.com/index/openai-prepared ness-framework/, 2023. OWASP. Top 10 for large language model applications, 2025. Akond Rahman et al. Security smells in ansible and chef scripts: A replica-tion study. ACM Transactions on Software Engineering and Methodology (TOSEM) , 30(1):1–31, 2021. Traian Rebedea et al. Nemo guardrails: A toolkit for controllable and safe llm applications with programmable rails. arXiv preprint arXiv:2310.10561 ,2023. Jerome H. Saltzer and Michael D. Schroeder. The protection of information in computer systems. Proceedings of the IEEE , 63(9):1278–1308, 1975. Melanie Sclar et al. Quantifying language models’ sensitivity to spurious features in prompt design. arXiv preprint arXiv:2310.11324 , 2023. The White House. Executive order 14028: Improving the nation’s cybersecurity. Federal Register Vol. 86, No. 93, 2021. James Turnbull and Jeffrey McCune. Pulling Strings with Puppet: Configuration Management Made Easy . Apress, 2008. Wil M. P. van der Aalst. Workflow verification: Finding control-flow errors using petri-net-based techniques. In Business Process Management, LNCS 1806 , pages 161–183. 2000. Vulcan Cyber. Ai package hallucination. Vendor research report (grey litera-ture), 2024. Xingyao Wang et al. Openhands: An open platform for ai software developers as generalist agents (formerly opendevin). arXiv preprint arXiv:2407.16741 ,2024. doi: 10.48550/arXiv.2407.16741. Qingyun Wu et al. Autogen: Enabling next-gen llm applications via multi-agent conversation. arXiv preprint arXiv:2308.08155 , 2023. John Yang, Carlos E. Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. Swe-agent: Agent–computer interfaces enable automated software engineering. In Advances in Neural Information Processing Systems (NeurIPS) , volume 37, 2024. Nusrat Zahan et al. What are weak links in the npm supply chain? In 
+
+IEEE/ACM Intl. Conf. on Software Engineering: Software Engineering in Society (ICSE-SEIS) , 2022. 45

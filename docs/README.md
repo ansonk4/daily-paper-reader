@@ -6,62 +6,56 @@
 </div>
 
 ## Daily Report
-- Latest run date: 2026-06-27
-- Run time: 2026-06-27 20:51:04 UTC
+- Latest run date: 2026-06-28
+- Run time: 2026-06-28 20:22:54 UTC
 - Run status: success
-- Total papers: 14
-- Deep reads: 3
+- Total papers: 12
+- Deep reads: 1
 - Quick reads: 11
 
 ### Daily Brief (AI)
-Today's digest covers 14 papers on AI agent harnesses, safety evaluation, and security vulnerabilities in LLM-based systems. The standout deep reads explore building agent harnesses for scientific curation from multimodal sources and an open-source OS-level agent harness for personalized, efficient, and secure interaction. If you're interested in the frontier of AI agent infrastructure, start with the multimodal scientific curation harness paper for a concrete look at how agents can be designed to handle complex, real-world data workflows.
-- Details: [/202606/27/README](/202606/27/README)
+Today's digest covers 12 papers on LLM agent safety, privacy, and harness design, led by a deep-read on AOHP, an open-source OS-level agent harness for personalized and secure interaction. The most compelling themes are cross-module interference in agentic systems and multi-user/multi-party privacy risks, with AOHP standing out as a practical, high-scoring solution. Start with AOHP for a concrete, implementable approach to safer agent deployment, then skim the quick reads to stay current on emerging privacy and interference challenges.
+- Details: [/202606/28/README](/202606/28/README)
 
 ### Deep-Read Paper Tags
-1. [Building Agent Harnesses for Scientific Curation from Multimodal Sources](/202606/27/2606.21005v1-building-agent-harnesses-for-scientific-curation-from-multimodal-sources)  
-   tags: Score: 9.2/10, query:harness
-   evidence: Beaver agent harness with task scaffolding and auditable workflow design
-2. [AOHP: An Open-Source OS-Level Agent Harness for Personalized, Efficient and Secure Interaction](/202606/27/2606.23449v1-aohp-an-open-source-os-level-agent-harness-for-personalized-efficient-and-secure-interaction)  
+1. [AOHP: An Open-Source OS-Level Agent Harness for Personalized, Efficient and Secure Interaction](/202606/28/2606.23449v1-aohp-an-open-source-os-level-agent-harness-for-personalized-efficient-and-secure-interaction)  
    tags: Score: 9.0/10, query:harness
-   evidence: OS-level agent harness architecture with safety and security goals
-3. [Governance Decay: How Context Compaction Silently Erases Safety Constraints in Long-Horizon LLM Agents](/202606/27/2606.22528v1-governance-decay-how-context-compaction-silently-erases-safety-constraints-in-long-horizon-llm-agents)  
-   tags: Score: 8.0/10, query:harness
-   evidence: safety constraint erosion via context compaction
+   evidence: open-source OS-level agent harness for secure interaction
 
 ### Quick-Read Paper Tags
-1. [Necessary but Not Sufficient: Temperature Control and Reproducibility in LLM-as-Judge Safety Evaluations](/202606/27/2606.26185v1-necessary-but-not-sufficient-temperature-control-and-reproducibility-in-llm-as-judge-safety-evaluations)  
-   tags: Score: 7.8/10, query:harness
-   evidence: evaluation harness reproducibility and temperature control
-2. [ShareLock: A Stealthy Multi-Tool Threshold Poisoning Attack Against MCP](/202606/27/2606.27027v1-sharelock-a-stealthy-multi-tool-threshold-poisoning-attack-against-mcp)  
-   tags: Score: 7.8/10, query:harness
-   evidence: multi-tool threshold poisoning attack against MCP agent ecosystem
-3. [AutoSpec: Safety Rule Evolution for LLM Agents via Inductive Logic Programming](/202606/27/2606.24245v1-autospec-safety-rule-evolution-for-llm-agents-via-inductive-logic-programming)  
+1. [Instruction Bleed: Cross-Module Interference in Prompt-Composed Agentic Systems](/202606/28/2606.26356v1-instruction-bleed-cross-module-interference-in-prompt-composed-agentic-systems)  
    tags: Score: 7.6/10, query:harness
-   evidence: AutoSpec framework for evolving LLM agent safety rules via inductive logic programming
-4. [Harness-MU: A Safe, Governed, and Effective Harness for Multi-User LLM Agents](/202606/27/2606.21856v1-harness-mu-a-safe-governed-and-effective-harness-for-multi-user-llm-agents)  
+   evidence: formalizes compositional behavioral leakage as interference between prompt modules sharing context window
+2. [Harness-MU: A Safe, Governed, and Effective Harness for Multi-User LLM Agents](/202606/28/2606.21856v1-harness-mu-a-safe-governed-and-effective-harness-for-multi-user-llm-agents)  
    tags: Score: 7.4/10, query:harness
-   evidence: safe governed harness for multi-user LLM agents
-5. [SingGuard: A Policy-Adaptive Multimodal LLM Guardrail with Dynamic Reasoning](/202606/27/2606.22873v2-singguard-a-policy-adaptive-multimodal-llm-guardrail-with-dynamic-reasoning)  
-   tags: Score: 7.4/10, query:harness
-   evidence: policy-adaptive multimodal guardrail for VLM safety
-6. [Safe to Check, Unsafe to Use: Relinking at the Compression Boundary of LLM Agents](/202606/27/2606.21732v1-safe-to-check-unsafe-to-use-relinking-at-the-compression-boundary-of-llm-agents)  
+   evidence: proposes a multi-user LLM agent harness with governance hooks
+3. [MuPPET: A Benchmark for Contextual Privacy of LLM Assistants in Multi-Party Conversations](/202606/28/2606.23217v1-muppet-a-benchmark-for-contextual-privacy-of-llm-assistants-in-multi-party-conversations)  
    tags: Score: 7.2/10, query:harness
-   evidence: compression-boundary vulnerability in LLM agent pipelines
-7. [Whose Agent Are You? Multi-Layer Fingerprinting and Attribution of Autonomous Web Agents](/202606/27/2606.20910v1-whose-agent-are-you-multi-layer-fingerprinting-and-attribution-of-autonomous-web-agents)  
+   evidence: benchmark for privacy vulnerabilities of LLM agents in multi-party settings
+4. [GUI agent: Guided Exploration of User-Sensitive Screens](/202606/28/2606.25705v1-gui-agent-guided-exploration-of-user-sensitive-screens)  
+   tags: Score: 7.2/10, query:harness
+   evidence: runtime safety handover for GUI agents
+5. [A Deterministic Control Plane for LLM Coding Agents](/202606/28/2606.26924v1-a-deterministic-control-plane-for-llm-coding-agents)  
+   tags: Score: 7.2/10, query:harness
+   evidence: studies LLM coding harness configuration layer and permission boundaries
+6. [The Unfireable Safety Kernel: Execution-Time AI Alignment for AI Agents and Other Escapable AI Systems](/202606/28/2606.26057v1-the-unfireable-safety-kernel-execution-time-ai-alignment-for-ai-agents-and-other-escapable-ai-systems)  
+   tags: Score: 7.0/10, query:harness
+   evidence: architectural safety kernel for execution-time agent control
+7. [Jailbreaking for the Average Jane: Choosing Optimal Jailbreaks via Bandit Algorithms for Automatically Enhanced Queries](/202606/28/2606.26936v1-jailbreaking-for-the-average-jane-choosing-optimal-jailbreaks-via-bandit-algorithms-for-automatically-enhanced-queries)  
    tags: Score: 6.8/10, query:harness
-   evidence: fingerprinting framework for detecting unauthorized autonomous web agents
-8. [Local LLM Agents as Vulnerable Runtimes:A Source-Code Audit of the Agent Runtime Layer](/202606/27/2606.21071v1-local-llm-agents-as-vulnerable-runtimesa-source-code-audit-of-the-agent-runtime-layer)  
-   tags: Score: 6.8/10, query:harness
-   evidence: audits local LLM agent runtime as unexamined safety boundary
-9. [Composing Verifiable Conceptual Models via Building Blocks: Towards Design-Time Verification of Agentic AI Workflows](/202606/27/2606.21565v1-composing-verifiable-conceptual-models-via-building-blocks-towards-design-time-verification-of-agentic-ai-workflows)  
-   tags: Score: 6.8/10, query:harness
-   evidence: design-time verification of agentic workflow architectures
-10. [GUI agent: Guided Exploration of User-Sensitive Screens](/202606/27/2606.25705v1-gui-agent-guided-exploration-of-user-sensitive-screens)  
-   tags: Score: 6.8/10, query:harness
-   evidence: user-sensitive state detection for GUI agent handover
-11. [AgenticOS: An Intent-Oriented Secure Operating System Architecture for Autonomous AI Agents](/202606/27/2606.21129v1-agenticos-an-intent-oriented-secure-operating-system-architecture-for-autonomous-ai-agents)  
-   tags: Score: 6.6/10, query:harness
-   evidence: intent-oriented secure OS architecture constraining agent capabilities
+   evidence: studies how non-experts can learn effective jailbreaks against LLM safeguards
+8. [AgentLens: Interpretable Safety Steering via Mechanistic Subspaces for Multi-Turn Coding Agent](/202606/28/2606.22673v1-agentlens-interpretable-safety-steering-via-mechanistic-subspaces-for-multi-turn-coding-agent)  
+   tags: Score: 6.4/10, query:harness
+   evidence: internal mechanistic safety steering for multi-turn coding agents
+9. [Safety in Self-Evolving LLM Agent Systems: Threats, Amplification, and Case Studies](/202606/28/2606.23075v1-safety-in-self-evolving-llm-agent-systems-threats-amplification-and-case-studies)  
+   tags: Score: 6.4/10, query:harness
+   evidence: systematic security analysis of self-evolving LLM agent systems
+10. [Understanding the (In)Security of Vibe-Coded Applications](/202606/28/2606.23130v2-understanding-the-insecurity-of-vibe-coded-applications)  
+   tags: Score: 6.4/10, query:harness
+   evidence: security study of AI-coded applications
+11. [Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?](/202606/28/2606.23189v1-capable-but-careless-do-computer-use-agents-follow-contextual-integrity)  
+   tags: Score: 6.4/10, query:harness
+   evidence: evaluation harness for computer-use agent privacy failures
 
 
 <div class="dpr-home-promo-card">

@@ -1,0 +1,796 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-28T20:11:43.028785+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 18,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2606.23449v1",
+      "source": "arxiv",
+      "title": "AOHP: An Open-Source OS-Level Agent Harness for Personalized, Efficient and Secure Interaction",
+      "abstract": "AI agents are driving a new software paradigm, with the ability to autonomously call tools, extract information, manage memory, and complete tasks that span applications and data sources. Most existing end-user operating systems, however, are designed for application-centric workflows and offer little native support for AI agents. This mismatch limits the wider adoption of agents and leads to execution overhead and safety risks when running agents on conventional systems. While the concept of agent-native operating systems is emerging, the research community lacks an open testbed to explore the architectural primitives desired for agent-mediated interaction. We present AOHP (Android Open Harness Project), an OS-level agent harness built on the Android Open Source Project (AOSP). The core design principle of AOHP is to treat agents as first-class OS actors, enabling adaptive user interfaces and agent-friendly runtime environments. AOHP preserves the mature Android software and hardware ecosystem while introducing three agent-oriented system mechanisms: personalized service composition, efficient agent interfaces, and secure information flow. Based on preliminary experiments on challenging tasks covering key capabilities of OS agents, AOHP shows clear advantages in task completion (+21.12% completion rate), execution cost (-51.55% token cost), and security-policy compliance.",
+      "authors": [
+        "Shanhui Zhao",
+        "Jiacheng Liu",
+        "Guohong Liu",
+        "Jichao Yan",
+        "Jialei Ye",
+        "Yuhao Yang",
+        "Hao Wen",
+        "Shizuo Tian",
+        "Yizhen Yuan",
+        "Yuxuan Chen",
+        "Yunxin Liu",
+        "Ju Ren",
+        "Ya-Qin Zhang",
+        "Chao Huang",
+        "Yao Guo",
+        "Yuanchun Li"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.OS"
+      ],
+      "published": "2026-06-22T15:02:42+00:00",
+      "link": "https://arxiv.org/pdf/2606.23449v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "open-source OS-level agent harness for secure interaction",
+      "llm_evidence_cn": "open-source OS-level agent harness for secure interaction",
+      "llm_evidence": "open-source OS-level agent harness for secure interaction",
+      "canonical_evidence": "open-source OS-level agent harness for secure interaction",
+      "llm_tldr_en": "AOHP is an open-source OS-level agent harness enabling personalized, efficient, secure AI agent interaction.",
+      "llm_tldr_cn": "This paper introduces AOHP, an open-source OS-level agent harness designed to support personalized, efficient, and secure interaction with AI agents. The work argues that conventional operating systems are application-centric and provide little native support for agents, leading to overhead and safety risks. AOHP offers an open testbed for exploring architectural primitives for agent-mediated interaction at the OS level. The paper outlines the harness design and its abstractions for tool use, memory, and secure execution. By providing a concrete, extensible platform, AOHP directly supports research on agent harness frameworks, safety mechanisms, and secure agent architecture.",
+      "llm_tldr": "AOHP is an open-source OS-level agent harness enabling personalized, efficient, secure AI agent interaction.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 10.0,
+      "author_score": 7.5,
+      "author_rating_explanation": "Both focus authors are affiliated with Tsinghua University and Peking University, both top Chinese AI schools/labs in the 6-8 band, with The University of Hong Kong also listed. These are widely recognized institutions, warranting a score near the top of the 6-8 band.",
+      "author_profiles": [
+        {
+          "name": "Shanhui Zhao",
+          "role": "first_author",
+          "affiliation": "1 Tsinghua University~~~~ 2 Peking University~~~~ 3 The University of Hong Kong",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Yuanchun Li",
+          "role": "last_author",
+          "affiliation": "1 Tsinghua University~~~~ 2 Peking University~~~~ 3 The University of Hong Kong",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.26356v1",
+      "source": "arxiv",
+      "title": "Instruction Bleed: Cross-Module Interference in Prompt-Composed Agentic Systems",
+      "abstract": "Practitioners of prompt-composed agentic systems report a recurring failure mode: editing one prompt module silently shifts the behavior of others despite no shared variable or executable dependency. We formalize this as compositional behavioral leakage (CBL): interference between modules sharing a context window. CBL is enabled by architectural non-isolation: transformer self-attention provides no formal boundary between concatenated modules. We probe CBL on a deployed job-evaluation agent (Claude Sonnet 4.6, 144 trials) through a reusable three-channel protocol that perturbs non-focal modules along volume, content, and form. Only the content channel produces a detectable paired effect (Cohen's d = 0.63, bootstrap 95% CI excluding zero); no recommendation flipped -- a sub-threshold regime invisible to standard QA but compounding across the thousands of decisions a deployed agent makes. CBL is orthogonal to known agent-failure axes (adversarial injection, cognitive degradation, multi-agent fault propagation, privacy leakage). We contribute an operational definition, a reusable protocol, a falsifiable prediction set, and a system-class characterization, establishing cross-module interference measurement as a requirement for prompt-composed agent evaluation.",
+      "authors": [
+        "Ching-Yu Lin",
+        "Yifan Liu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.IR",
+        "cs.MA"
+      ],
+      "published": "2026-06-24T20:09:28+00:00",
+      "link": "https://arxiv.org/pdf/2606.26356v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.6,
+      "llm_evidence_en": "formalizes compositional behavioral leakage as interference between prompt modules sharing context window",
+      "llm_evidence_cn": "formalizes compositional behavioral leakage as interference between prompt modules sharing context window",
+      "llm_evidence": "formalizes compositional behavioral leakage as interference between prompt modules sharing context window",
+      "canonical_evidence": "formalizes compositional behavioral leakage as interference between prompt modules sharing context window",
+      "llm_tldr_en": "Formalizes compositional behavioral leakage in prompt-composed agentic systems, showing architectural non-isolation enables cross-module interference detectable via a three-channel protocol.",
+      "llm_tldr_cn": "This paper formalizes a recurring failure mode in prompt-composed agentic systems where editing one prompt module silently shifts the behavior of others. The authors term this compositional behavioral leakage (CBL), enabled by architectural non-isolation where transformer self-attention provides no formal boundary between concatenated modules. They probe CBL on a deployed job-evaluation agent through a reusable three-channel protocol that perturbs non-focal modules along volume, content, and form. Only the content channel produces a detectable paired effect. The work reveals a structural vulnerability in agent harness architectures that lack module isolation.",
+      "llm_tldr": "Formalizes compositional behavioral leakage in prompt-composed agentic systems, showing architectural non-isolation enables cross-module interference detectable via a three-channel protocol.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness attack vectors and exploitation",
+      "matched_requirement_id": "req-4",
+      "relevance_score": 7.0,
+      "author_score": 8.5,
+      "author_rating_explanation": "University of Illinois Urbana-Champaign is a top US AI school/lab, placing it in the 8-9 band.",
+      "author_profiles": [
+        {
+          "name": "Ching-Yu Lin",
+          "role": "first_author",
+          "affiliation": "University of Illinois Urbana-Champaign, Urbana, IL, USA",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Yifan Liu",
+          "role": "last_author",
+          "affiliation": "University of Illinois Urbana-Champaign, Urbana, IL, USA",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.26936v1",
+      "source": "arxiv",
+      "title": "Jailbreaking for the Average Jane: Choosing Optimal Jailbreaks via Bandit Algorithms for Automatically Enhanced Queries",
+      "abstract": "With a profusion of jailbreaks for LLMs now widely known, a growing concern is that non-expert malicious actors (\"the average Jane\") could elicit actionable responses to malicious requests. In this work, we examine whether this concern is justified. A non-expert malicious actor requires two ingredients for a successful attack: a powerful jailbreak for their target model, acting on an effective malicious query. For the former, we propose a novel attack strategy based on the multi-armed bandit framework. This allows efficient online learning of the optimal jailbreak from a large choice set via noisy exploration on a small number of queries, with subsequent application of the learnt policy on an exploitation set. For the latter, we curate $\\mathrm{FrankensteinBench}$, a safety benchmark of $11,279$ malicious queries drawn from manual curation over $7$ existing benchmarks, along with automated enhancement and generation. Each query is categorized as simple or complex by the technical expertise required to craft it. Our findings confirm the concern. Our bandit-based attack achieves success rates as high as $97\\%$ on average over $15$ SoTA open-weight LLMs. Moreover, adding complexity to queries raises the attack success rate by up to $26\\%$ on average across models -- making it an effective, automatable prompting strategy.",
+      "authors": [
+        "Prarabdh Shukla",
+        "Ritik",
+        "Suhas Rao",
+        "Arpit Agarwal",
+        "Arjun Bhagoji"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-06-25T12:11:28+00:00",
+      "link": "https://arxiv.org/pdf/2606.26936v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.8,
+      "llm_evidence_en": "studies how non-experts can learn effective jailbreaks against LLM safeguards",
+      "llm_evidence_cn": "studies how non-experts can learn effective jailbreaks against LLM safeguards",
+      "llm_evidence": "studies how non-experts can learn effective jailbreaks against LLM safeguards",
+      "canonical_evidence": "studies how non-experts can learn effective jailbreaks against LLM safeguards",
+      "llm_tldr_en": "This paper shows non-expert attackers can use bandit algorithms to discover effective jailbreaks against LLM safety mechanisms.",
+      "llm_tldr_cn": "This paper investigates whether non-expert malicious actors can realistically exploit known jailbreaks to elicit harmful outputs from LLMs, which is central to understanding harness attack surfaces. The authors propose an attack strategy based on multi-armed bandit algorithms that efficiently learns an effective jailbreak from a large candidate set via limited online exploration, then applies the learned policy on malicious queries. The study evaluates how easily non-experts can combine powerful jailbreaks with harmful prompts, highlighting practical risks for deployed safety mechanisms. The findings underscore the need for stronger, adaptive harness defenses and for evaluating vulnerability to realistic low-skill attackers.",
+      "llm_tldr": "This paper shows non-expert attackers can use bandit algorithms to discover effective jailbreaks against LLM safety mechanisms.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness attack vectors and exploitation",
+      "matched_requirement_id": "req-4",
+      "relevance_score": 8.0,
+      "author_score": 5.0,
+      "author_rating_explanation": "Both focus authors are affiliated with the Centre for Machine Intelligence and Data Science at IIT Bombay. Per the scoring rules, India schools fall into the 0-5 bucket and must not receive 6+. Although the last author has a high citation count of 12419 and 49 papers, the institutional affiliation constraint caps the score at 5.",
+      "author_profiles": [
+        {
+          "name": "Prarabdh Shukla",
+          "role": "first_author",
+          "affiliation": "Centre for Machine Intelligence and Data Science, IIT Bombay",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Arjun Bhagoji",
+          "role": "last_author",
+          "affiliation": "Centre for Machine Intelligence and Data Science, IIT Bombay",
+          "citation_count": "12419",
+          "paper_count": "49",
+          "citation_hints": "Semantic Scholar citation_count=12419; Semantic Scholar paper_count=49",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.21856v1",
+      "source": "arxiv",
+      "title": "Harness-MU: A Safe, Governed, and Effective Harness for Multi-User LLM Agents",
+      "abstract": "The increasing deployment of large language model (LLM) agents in collaborative workflows demands robust multi-user, multi-principal interaction mechanisms capable of enforcing access permissions, resolving authoritative conflicts, and preventing unauthorized data disclosure. However, a fundamental mismatch exists between the single-user training paradigm of contemporary LLMs and the hard constraints required for multi-principal governance, rendering probabilistic, prompt-based safeguards vulnerable under multi-turn adversarial interactions.Our key insight is that governance constraints -- who is authorized, what is restricted, and whose instructions take precedence -- are deterministic runtime variables that should be enforced by execution hooks rather than entrusted to the LLM. We present \\textbf{Harness-MU}, the first model-agnostic, zero-tuning infrastructure framework for multi-user LLM agents. By decoupling language generation from safety orchestration, Harness-MU guarantees unbreakable permission boundaries while maximizing compliant demand satisfaction. Across four frontier open-weight and proprietary models on the \\textit{Muses-Bench} benchmark, Harness-MU achieves the goal of privacy preservation across all access-control attacks, outperforming the standard baseline by 0.28--0.39 in utility score and improving instruction-following accuracy by up to 48.9 percentage points. Harness-MU advances the philosophy of \\textit{Harness Engineering}, establishing that systematic infrastructure is essential for solving LLM multi-principal governance challenges. The code and data are available at https://github.com/YuanJrShiuan/Harness-MulUser.",
+      "authors": [
+        "Wangxuan Fan",
+        "Xiaoyu Nie",
+        "Zhongxiang Dai"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-20T03:24:24+00:00",
+      "link": "https://arxiv.org/pdf/2606.21856v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.4,
+      "llm_evidence_en": "proposes a multi-user LLM agent harness with governance hooks",
+      "llm_evidence_cn": "proposes a multi-user LLM agent harness with governance hooks",
+      "llm_evidence": "proposes a multi-user LLM agent harness with governance hooks",
+      "canonical_evidence": "proposes a multi-user LLM agent harness with governance hooks",
+      "llm_tldr_en": "Harness-MU introduces a governed multi-user LLM agent harness that enforces deterministic runtime governance hooks for access control and instruction precedence.",
+      "llm_tldr_cn": "This paper addresses the gap between single-user LLM training and the hard governance constraints required when multiple principals share one agent, where prompt-based safeguards can be bypassed over adversarial multi-turn interactions. The authors propose Harness-MU, a safe and governed harness that treats authorization, restriction, and instruction precedence as deterministic runtime variables enforced by execution hooks rather than relying on probabilistic model behavior. The design embeds multi-user policy enforcement directly into the agent execution stack, aiming to prevent unauthorized data disclosure and conflicting authority in collaborative workflows. The work contributes a concrete harness architecture and governance model for deploying LLM agents more safely in multi-principal settings.",
+      "llm_tldr": "Harness-MU introduces a governed multi-user LLM agent harness that enforces deterministic runtime governance hooks for access control and instruction precedence.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 9.0,
+      "author_score": 5.0,
+      "author_rating_explanation": "Both focus authors are affiliated with The Chinese University of Hong Kong, Shenzhen. Per the scoring rules, CUHK-Shenzhen is distinct from CUHK/Hong Kong and must not receive the top-school boost. It is not listed in the top or mid-tier bands, so it falls into the 0-5 bucket. The first author has only 2 citations and 2 papers, indicating very limited verifiable research output.",
+      "author_profiles": [
+        {
+          "name": "Wangxuan Fan",
+          "role": "first_author",
+          "affiliation": "The Chinese University of Hong Kong, Shenzhen",
+          "citation_count": "2",
+          "paper_count": "2",
+          "citation_hints": "Semantic Scholar citation_count=2; Semantic Scholar paper_count=2",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        },
+        {
+          "name": "Zhongxiang Dai",
+          "role": "last_author",
+          "affiliation": "The Chinese University of Hong Kong, Shenzhen",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.22673v1",
+      "source": "arxiv",
+      "title": "AgentLens: Interpretable Safety Steering via Mechanistic Subspaces for Multi-Turn Coding Agent",
+      "abstract": "Coding agents based on large language models (LLMs) demonstrate remarkable autonomous capabilities, but they also introduce significant safety and misuse risks during multi-turn interactions with external environments. Existing safety mechanisms mainly rely on external guardrails, which have a limited ability to perform fine-grained behavioral control during execution. Meanwhile, recent mechanistic interpretability methods for LLM safety are mostly confined to single-turn or jailbreak-style QA settings, limiting their ability to capture the evolving risk dynamics of multi-turn agent execution. In this paper, we investigate the safety of multi-turn coding agents from an internal perspective. We propose AgentLens (Mechanistic Subspace Intervention and Steering), a white-box defense framework that performs runtime safety detection and representation-level mitigation for coding agents. Unlike conventional agent guardrails, AgentLens detect harmful execution states from step-level hidden representations and mitigate unsafe behavior by intervening in a 10-dimensional subspace within a single layer. To support this research, we introduce the Mechanistic Agent Safety (MAS) benchmark, comprising comprehensively annotated multi-turn execution trajectories across 194 tasks using LLaMA-3.1-8B, Qwen-2.5-7B, and Gemma-2-9B. Extensive experiments show that AgentLens achieves strong safety detection performance, provides preliminary evidence for lookahead risk anticipation, and substantially reduces harmful actions of the coding agent, establishing a foundation for applying mechanistic interpretability to dynamic LLM agent safety. The code is available at: https://github.com/EddyLuo1232/AgentLens",
+      "authors": [
+        "Weidi Luo",
+        "Qiming Zhang",
+        "Yihao Quan",
+        "Mingyu Jin",
+        "Jie Cai",
+        "Chaowei Xiao",
+        "Jingcheng Niu",
+        "Zhen Xiang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.SE"
+      ],
+      "published": "2026-06-21T21:13:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.22673v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.4,
+      "llm_evidence_en": "internal mechanistic safety steering for multi-turn coding agents",
+      "llm_evidence_cn": "internal mechanistic safety steering for multi-turn coding agents",
+      "llm_evidence": "internal mechanistic safety steering for multi-turn coding agents",
+      "canonical_evidence": "internal mechanistic safety steering for multi-turn coding agents",
+      "llm_tldr_en": "AgentLens steers multi-turn coding agent behavior using mechanistic safety subspaces.",
+      "llm_tldr_cn": "This paper studies safety for multi-turn coding agents, where external guardrails offer limited fine-grained behavioral control and mechanistic interpretability methods are mostly confined to single-turn settings. The authors propose AgentLens, which investigates safety from an internal perspective using mechanistic subspaces to steer agent behavior during execution. The method targets evolving risk dynamics in multi-turn agent-environment interactions. By moving beyond external guardrails, the work contributes a design direction for internalized agent safety mechanisms.",
+      "llm_tldr": "AgentLens steers multi-turn coding agent behavior using mechanistic safety subspaces.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness safety mechanisms and practices",
+      "matched_requirement_id": "req-2",
+      "relevance_score": 7.0,
+      "author_score": 5.5,
+      "author_rating_explanation": "The first author is affiliated with University of Georgia and The Ohio State University, both mid-tier US research universities with concrete AI/CS output. The first author has 467 citations and 16 papers per Semantic Scholar, indicating active research. The last author is at University of Georgia. This places the paper in the 5-6 band.",
+      "author_profiles": [
+        {
+          "name": "Weidi Luo",
+          "role": "first_author",
+          "affiliation": "University of Georgia; The Ohio State University",
+          "citation_count": "467",
+          "paper_count": "16",
+          "citation_hints": "Semantic Scholar citation_count=467; Semantic Scholar paper_count=16",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        },
+        {
+          "name": "Zhen Xiang",
+          "role": "last_author",
+          "affiliation": "University of Georgia",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.23217v1",
+      "source": "arxiv",
+      "title": "MuPPET: A Benchmark for Contextual Privacy of LLM Assistants in Multi-Party Conversations",
+      "abstract": "LLM agents are increasingly deployed in multi-party environments, handling sensitive personal data on behalf of individual users, for instance in group chats. When such an agent discloses private information, it reaches every group member at once. This risk is structurally harder to control than in one-to-one settings, as every piece of private information must be appropriate for every recipient in the group. Yet all existing contextual privacy benchmarks consider only single-interlocutor settings, leaving multi-party privacy risks unmeasured. We introduce MuPPET (Multi-Party Privacy Exposure Testing), a benchmark for contextual privacy in multi-party conversations. Our experiments show that models leak substantially more in multi-party settings than one-to-one evaluations suggest. Frontier models are vulnerable, and smaller open-weights models, often preferred for local deployment with sensitive data, even more so. Existing contextual privacy defences offer only partial protection, degrade utility, and do not resolve the underlying party-tracking problem.",
+      "authors": [
+        "Elena Sofia Ruzzetti",
+        "Cornelius Emde",
+        "Sangdoo Yun",
+        "Seong Joon Oh",
+        "Martin Gubri"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-06-22T12:06:21+00:00",
+      "link": "https://arxiv.org/pdf/2606.23217v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.2,
+      "llm_evidence_en": "benchmark for privacy vulnerabilities of LLM agents in multi-party settings",
+      "llm_evidence_cn": "benchmark for privacy vulnerabilities of LLM agents in multi-party settings",
+      "llm_evidence": "benchmark for privacy vulnerabilities of LLM agents in multi-party settings",
+      "canonical_evidence": "benchmark for privacy vulnerabilities of LLM agents in multi-party settings",
+      "llm_tldr_en": "MuPPET benchmarks contextual privacy leakage risks of LLM agents in multi-party conversations.",
+      "llm_tldr_cn": "This paper addresses the under-measured privacy risks that arise when LLM agents operate in multi-party environments, where a single disclosure can reach many recipients at once. The authors introduce MuPPET, a benchmark for evaluating contextual privacy leakage in multi-party conversations, extending beyond the single-interlocutor settings studied by prior work. Experiments using MuPPET show that current models leak substantially more private information in group settings, revealing a significant vulnerability class for deployed agents. The benchmark provides a practical tool for assessing and managing privacy-related harness vulnerabilities before production deployment.",
+      "llm_tldr": "MuPPET benchmarks contextual privacy leakage risks of LLM agents in multi-party conversations.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness vulnerability assessment",
+      "matched_requirement_id": "req-5",
+      "relevance_score": 7.0,
+      "author_score": 7.5,
+      "author_rating_explanation": "Both focus authors list affiliations including the University of Oxford, which is explicitly in the 6-8 top European band, as well as NAVER AI Lab and KAIST AI. The Oxford affiliation is sufficient to place this in the 6-8 band, and the additional presence of recognized industry AI labs supports a score above the band midpoint.",
+      "author_profiles": [
+        {
+          "name": "Elena Sofia Ruzzetti",
+          "role": "first_author",
+          "affiliation": "1 Parameter Lab, 2 University of Rome Tor Vergata, 3 University of Oxford; 4 NAVER AI Lab, 5 KAIST AI",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Martin Gubri",
+          "role": "last_author",
+          "affiliation": "1 Parameter Lab, 2 University of Rome Tor Vergata, 3 University of Oxford; 4 NAVER AI Lab, 5 KAIST AI",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.23075v1",
+      "source": "arxiv",
+      "title": "Safety in Self-Evolving LLM Agent Systems: Threats, Amplification, and Case Studies",
+      "abstract": "Self-evolving LLM agent systems, which autonomously update their model parameters, memory, tools, and architectures, introduce a qualitatively new threat landscape in which adversarial influences become permanently encoded, self-amplify across generations, and propagate through populations without sustained attacker access. We present a systematic security and privacy analysis organized around the Module-Lifecycle Attack Surface (MLAS) matrix, which decomposes the attack surface into five functional modules (Brain, Cognitive Resource, Execution, Self-Design, Collective) $\\times$ five lifecycle stages (Bootstrap, Propose, Evaluate, Commit, Serve). Analysis of the resulting 25 cells reveals that 17 face critical threats for which no effective partial mitigation. We identify seven cross-cutting amplification effects that interact synergistically and cannot be addressed by securing individual modules in isolation. Comparative case studies of two open-source frameworks demonstrate that evolution-native design activates $3.5\\times$ more attack surface cells and achieves a 100% attack persistence rate (40/40 payloads across all CIA+Privacy categories), while co-located security scanners block only 2.5% of attacks. Our findings establish that self-evolution converts every known attack category from session-bounded to lineage-persistent, gives rise to entirely new attack classes, and renders static defenses structurally inadequate, motivating evolution-aware security frameworks and formal verification for self-modifying systems.",
+      "authors": [
+        "Ruixiao Lin",
+        "Xinhao Deng",
+        "Qingming Li",
+        "Jianan Ma",
+        "Yunhao Feng",
+        "Yuqi Qing",
+        "Zhenyuan Li",
+        "Yechao Zhang",
+        "Shiwen Cui",
+        "Changhua Meng",
+        "Tianwei Zhang",
+        "Xingjun Ma",
+        "Qi Li",
+        "Ke Xu",
+        "Shouling Ji"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-22T09:23:50+00:00",
+      "link": "https://arxiv.org/pdf/2606.23075v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.4,
+      "llm_evidence_en": "systematic security analysis of self-evolving LLM agent systems",
+      "llm_evidence_cn": "systematic security analysis of self-evolving LLM agent systems",
+      "llm_evidence": "systematic security analysis of self-evolving LLM agent systems",
+      "canonical_evidence": "systematic security analysis of self-evolving LLM agent systems",
+      "llm_tldr_en": "Systematic security and privacy analysis of self-evolving LLM agent systems using an MLAS matrix.",
+      "llm_tldr_cn": "This paper studies safety and privacy threats in self-evolving LLM agent systems that autonomously update their parameters, memory, tools, and architectures. It introduces the Module-Lifecycle Attack Surface matrix, decomposing the attack surface into five functional modules across five lifecycle stages. Analysis of the resulting cells reveals many critical threats with no effective countermeasures. The paper shows how adversarial influences can become permanently encoded and self-amplify across generations. This work is central to the combined theme of harness safety and attacks, as it systematically characterizes how agent systems can be compromised and propagate harm.",
+      "llm_tldr": "Systematic security and privacy analysis of self-evolving LLM agent systems using an MLAS matrix.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 8.0,
+      "author_score": 4.0,
+      "author_rating_explanation": "Both focus authors have empty affiliations and metadata lookup was unavailable. No verifiable institutional evidence exists, warranting a neutral low score.",
+      "author_profiles": [
+        {
+          "name": "Ruixiao Lin",
+          "role": "first_author",
+          "affiliation": "",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "low",
+          "evidence_source": "metadata lookup unavailable"
+        },
+        {
+          "name": "Shouling Ji",
+          "role": "last_author",
+          "affiliation": "",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "low",
+          "evidence_source": "metadata lookup unavailable"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.25705v1",
+      "source": "arxiv",
+      "title": "GUI agent: Guided Exploration of User-Sensitive Screens",
+      "abstract": "LLM agents are increasingly being used to automate tasks for users within an open GUI environment. They inevitably encounter screens containing user-sensitive information, for which takeover of task execution by the user is highly desirable or even necessary. State-of-the-art LLM-driven agents are usually fine-tuned to complete tasks regardless of the safety implications of their actions. This makes their real-world deployment difficult and adversely affects the reliability. Therefore, it is crucial to identify and categorize user-sensitive states and define user-sensitive queries. This dataset would be to engineers to recognize and request handover to the user in critical scenarios. This short paper develops an explorer agent that systematically explores the query space starting from one demonstrated task to identify queries that, if executed, would lead to user-sensitive states in a GUI environment.",
+      "authors": [
+        "Aradhana Nayak",
+        "Mussadiq Nazeer",
+        "Wang Peng",
+        "Feng Liu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-24T11:18:01+00:00",
+      "link": "https://arxiv.org/pdf/2606.25705v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.2,
+      "llm_evidence_en": "runtime safety handover for GUI agents",
+      "llm_evidence_cn": "runtime safety handover for GUI agents",
+      "llm_evidence": "runtime safety handover for GUI agents",
+      "canonical_evidence": "runtime safety handover for GUI agents",
+      "llm_tldr_en": "Proposes an explorer agent that identifies user-sensitive GUI states so LLM agents can request human handover instead of acting unsafely.",
+      "llm_tldr_cn": "This paper addresses the problem that current LLM-driven GUI agents are typically fine-tuned to complete tasks even when safety implications arise, making real-world deployment risky. The authors propose an explorer agent that systematically explores queries and screens to identify and categorize user-sensitive states and queries. The resulting dataset is intended to help engineers build agents that recognize critical scenarios and request handover to the user. This work contributes a practical safety mechanism for controlling when an autonomous agent should stop and defer to a human operator.",
+      "llm_tldr": "Proposes an explorer agent that identifies user-sensitive GUI states so LLM agents can request human handover instead of acting unsafely.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness safety mechanisms and practices",
+      "matched_requirement_id": "req-2",
+      "relevance_score": 6.0,
+      "author_score": 9.0,
+      "author_rating_explanation": "The last author Feng Liu is affiliated with Huawei Heisenberg Research Center (Munich), a major industrial AI/tech research lab. Huawei is a major technology company with substantial AI research output, placing this in the 9-10 band.",
+      "author_profiles": [
+        {
+          "name": "Aradhana Nayak",
+          "role": "first_author",
+          "affiliation": "Mussadiq Nazeer 1; Wang Peng 2 Feng Liu 1; 1 Huawei Heisenberg Research Center (Munich)",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Feng Liu",
+          "role": "last_author",
+          "affiliation": "1 Huawei Heisenberg Research Center (Munich)",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.23130v2",
+      "source": "arxiv",
+      "title": "Understanding the (In)Security of Vibe-Coded Applications",
+      "abstract": "Recent advances in large language models (LLMs) have enabled vibe coding, an emerging software development paradigm in which users create applications primarily through natural-language interactions with AI agents. Due to its low barrier to entry, vibe coding is rapidly gaining adoption in practice. Unlike conventional AI-assisted programming, where developers remain responsible for implementation and code review, vibe coding delegates a substantial portion of development to AI systems. This shift raises a fundamental question: how (in)secure are applications developed through vibe coding? In this paper, we conduct a systematic study of the security of vibe-coded applications. We collect a large corpus of real-world applications developed using popular AI agents and design a vulnerability analysis framework that combines agent-assisted code auditing with human validation. Using this framework, we examine the prevalence, severity, and root causes of vulnerabilities in the deployed vibe-coded applications. Our study reveals several key findings: (1) vibe-coded applications exhibit recurring vulnerability patterns that differ from those commonly observed in conventional software development workflows, including placeholder logic, unfiltered input, and secret exposure; (2) these vulnerabilities arise from systematic limitations of AI agents throughout the vibe-coding lifecycle, such as memory loss, locally optimized objectives and insufficient security knowledge; and (3) while advances in LLM capabilities and improved prompting strategies can reduce the incidence of vulnerabilities, they do not eliminate the underlying security risks. Overall, our study provides an empirical understanding of the security landscape of vibe-coded applications and lays the groundwork for addressing the security challenges introduced by the growing delegation of software development to AI systems.",
+      "authors": [
+        "Junquan Deng",
+        "Zhiyu Fan",
+        "Ruijie Meng"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.SE"
+      ],
+      "published": "2026-06-22T10:19:07+00:00",
+      "link": "https://arxiv.org/pdf/2606.23130v2",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.4,
+      "llm_evidence_en": "security study of AI-coded applications",
+      "llm_evidence_cn": "security study of AI-coded applications",
+      "llm_evidence": "security study of AI-coded applications",
+      "canonical_evidence": "security study of AI-coded applications",
+      "llm_tldr_en": "A systematic security study of real-world vibe-coded applications that exposes common weaknesses introduced by AI agents.",
+      "llm_tldr_cn": "This paper investigates the security properties of applications created through vibe coding, a paradigm where users build software primarily via natural-language interactions with AI agents. The authors collect a large corpus of real-world applications built with popular AI agents and conduct a systematic security analysis. The work reveals how delegating substantial development to AI systems introduces concrete vulnerabilities and failure modes. While it does not focus on a named harness framework, the study is directly relevant to understanding how AI-agent-generated code can be attacked and what defensive practices are needed to manage those vulnerabilities.",
+      "llm_tldr": "A systematic security study of real-world vibe-coded applications that exposes common weaknesses introduced by AI agents.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness security",
+      "matched_requirement_id": "req-7",
+      "relevance_score": 5.0,
+      "author_score": 8.5,
+      "author_rating_explanation": "The first author Junquan Deng is affiliated with Microsoft and CISPA Helmholtz Center for Information Security, Germany. Microsoft is a major AI/tech company and CISPA is a top European security research center. The last author Ruijie Meng is affiliated with CISPA Helmholtz Center. These are strong institutional affiliations in the 8-9 band.",
+      "author_profiles": [
+        {
+          "name": "Junquan Deng",
+          "role": "first_author",
+          "affiliation": "Zhiyu Fan Microsoft; United Kingdom; Ruijie Meng CISPA Helmholtz Center for Information Security; Germany",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Ruijie Meng",
+          "role": "last_author",
+          "affiliation": "Germany",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.26924v1",
+      "source": "arxiv",
+      "title": "A Deterministic Control Plane for LLM Coding Agents",
+      "abstract": "LLM coding harnesses grant agents broad file and shell access, yet the configuration layer that steers them -- rules files, agent definitions, IDE-specific markdown -- is largely unmanaged. A prevalence study of 10,008 public GitHub repositories (n=6,145 agent config files) finds that agent configurations propagate as undeclared shared components: 10.1% of tracked paths are SHA-256 exact duplicates across independent repositories (fork-adjusted, threshold-independent), with 75.5% of clone pairs crossing organisational boundaries. Two further patterns are indicative: configurations are rarely revised (58% single-commit; 0.4 vs 0.6 commits/month age-normalised against CI/CD workflows), and rarely declare permission boundaries (<1% of agent configs vs 33% of Actions workflows, n=31 true positives).   We propose a deterministic control plane above the harness that maps one-to-one to these gaps. Rel(AI)Build treats agent definitions as a managed supply chain (SHA-256 content addressing, HMAC-stamped lockfiles, hash-chained audit logs); enforces tiered permissions and attack-derived blocklists before LLM invocation; gates feature work through a phase state machine with requirement-to-file-to-test traceability; compiles a single canonical definition to seven IDE targets; and detects prompt drift via Jaccard similarity. Conformance tests on injected violations confirm each mechanism enforces its stated invariant; developer outcomes remain future work. Governance of this layer must be deterministic and tool-agnostic -- not delegated to further LLM orchestration.",
+      "authors": [
+        "Padmaraj Madatha"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE",
+        "cs.AI",
+        "cs.CR"
+      ],
+      "published": "2026-06-25T12:02:18+00:00",
+      "link": "https://arxiv.org/pdf/2606.26924v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.2,
+      "llm_evidence_en": "studies LLM coding harness configuration layer and permission boundaries",
+      "llm_evidence_cn": "studies LLM coding harness configuration layer and permission boundaries",
+      "llm_evidence": "studies LLM coding harness configuration layer and permission boundaries",
+      "canonical_evidence": "studies LLM coding harness configuration layer and permission boundaries",
+      "llm_tldr_en": "Prevalence study of 10,008 GitHub repos reveals LLM coding harness configs are unmanaged, rarely declare permission boundaries, and propagate as undeclared shared components.",
+      "llm_tldr_cn": "This paper addresses the unmanaged configuration layer of LLM coding harnesses that grant agents broad file and shell access. The authors conduct a prevalence study of 10,008 public GitHub repositories containing 6,145 agent config files. They find that agent configurations propagate as undeclared shared components, with 10.1% of tracked paths being exact duplicates across independent repositories and 75.5% of clone pairs crossing organizational boundaries. Additionally, configurations are rarely revised and rarely declare permission boundaries. The findings highlight critical gaps in harness security and governance that demand systematic control-plane solutions.",
+      "llm_tldr": "Prevalence study of 10,008 GitHub repos reveals LLM coding harness configs are unmanaged, rarely declare permission boundaries, and propagate as undeclared shared components.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 9.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "No affiliation metadata is available for the focus author Padmaraj Madatha, so the score is neutral and confidence is low.",
+      "author_profiles": [
+        {
+          "name": "Padmaraj Madatha",
+          "role": "first_author",
+          "affiliation": "",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "low",
+          "evidence_source": "metadata lookup unavailable"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.23189v1",
+      "source": "arxiv",
+      "title": "Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?",
+      "abstract": "Computer-use agents (CUAs) now act on a user's behalf across personal applications such as email, calendars, and to-do lists. This cross-application access is useful, but it also creates a privacy risk that has been largely overlooked: when an agent works in one context, it can pull in information from another that is inappropriate in that context. Hence, we introduce AgentCIBench, an evaluation harness that turns this risk into executable, deterministically scored scenarios. We target three common failure modes in CUAs: visual co-location, where the agent pulls in prohibited items that sit next to the task target in the UI; task-ambiguity overshare, where the agent dumps dense personal state in response to an under-specified prompt; and recipient misalignment, where the agent sends content to an addressee for whom it is inappropriate. We evaluate 15 frontier agents and find a surprisingly high failure rate: 11 of 15 leak on more than 50% of scenarios, with an average leakage of 67.9%, and the same failures persist when agents act end-to-end in the environment to complete the task. We release AgentCIBench to encourage the development of safer computer-use agents and position contextual disclosure testing as a pre-deployment safety check.",
+      "authors": [
+        "Anmol Goel",
+        "Iryna Gurevych"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-22T11:36:58+00:00",
+      "link": "https://arxiv.org/pdf/2606.23189v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 6.4,
+      "llm_evidence_en": "evaluation harness for computer-use agent privacy failures",
+      "llm_evidence_cn": "AgentCIBench turns contextual integrity risks into executable scored scenarios",
+      "llm_evidence": "evaluation harness for computer-use agent privacy failures",
+      "canonical_evidence": "evaluation harness for computer-use agent privacy failures",
+      "llm_tldr_en": "This paper introduces AgentCIBench, an evaluation harness that turns contextual integrity risks for computer-use agents into executable, deterministically scored scenarios.",
+      "llm_tldr_cn": "The paper addresses the privacy risk that computer-use agents acting across personal applications may inappropriately pull information from one context into another. It introduces AgentCIBench, an evaluation harness that converts this risk into executable and deterministically scored scenarios. The harness targets three common failure modes: visual co-location, task-ambiguity overshare, and recipient misuse. By providing a structured testbed, the work supports safety evaluation and vulnerability assessment for agent behavior, offering a reusable method for auditing agent harness and agent-system interaction safety.",
+      "llm_tldr": "This paper introduces AgentCIBench, an evaluation harness that turns contextual integrity risks for computer-use agents into executable, deterministically scored scenarios.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "harness vulnerability assessment",
+      "matched_requirement_id": "req-5",
+      "relevance_score": 6.0,
+      "author_score": 7.0,
+      "author_rating_explanation": "Both first author Anmol Goel and last author Iryna Gurevych are affiliated with the Ubiquitous Knowledge Processing Lab (UKP Lab) at TU Darmstadt and the National Research Center for Applied Cybersecurity ATHENE. TU Darmstadt is a well-known German technical university with strong CS/AI research output, placing it in the 6-8 band for top European AI schools/labs.",
+      "author_profiles": [
+        {
+          "name": "Anmol Goel",
+          "role": "first_author",
+          "affiliation": "Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science; TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Iryna Gurevych",
+          "role": "last_author",
+          "affiliation": "Ubiquitous Knowledge Processing Lab (UKP Lab), Department of Computer Science; TU Darmstadt and National Research Center for Applied Cybersecurity ATHENE",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.26057v1",
+      "source": "arxiv",
+      "title": "The Unfireable Safety Kernel: Execution-Time AI Alignment for AI Agents and Other Escapable AI Systems",
+      "abstract": "AI agents are granted access to tools, APIs, and other infrastructure, making them active principals in those systems. The dominant approach places controls inside the agent's own runtime: system prompts, output filters, and guardrail libraries. Any control in the agent's address space is reachable by inputs that influence it; this generalizes to any AI system with sufficient reach into its own runtime, a class we term escapable AI systems.   We identify four properties that an authorization mechanism must satisfy for architectural control rather than for cooperative requests: process separation, pre-action enforcement on a structurally only path, fail-closed at both the request and system levels, and externalized signed evidence verifiable outside the controlled system's trust boundary. We position this layer as execution-time AI alignment, complementing training-time alignment (RLHF, Constitutional AI) and inference-time alignment.   We present the Unfireable Safety Kernel, a Rust reference implementation realizing all four. Its fail-closed invariant is machine-checked at two levels: an SMT theorem (Z3) and an exhaustive bounded-model-checking proof of the production decision function (Kani, 4/4 harnesses). A Python-to-Rust migration was gated on byte-equivalence (1000/1000 fixtures; 17/17 adversarial classes). We evaluate the kernel governing a live, escapable AI system, a deterministic, self-improving world model, against an escape-seeking adversary driving its real self-modification seam: across 1,000 self-modifications, all 704 attempts on the safety-critical core are refused, with no escape; a further 300, under the operator kill switch, are also refused. A separate campaign of 6,240 authorization round-trips had no successful bypass. Against 3 contemporary systems claiming the agent control plane, the agent invokes control; here, it lacks that choice.",
+      "authors": [
+        "Seth Dobrin",
+        "Łukasz Chmiel"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CR",
+        "cs.LG"
+      ],
+      "published": "2026-06-24T17:32:27+00:00",
+      "link": "https://arxiv.org/pdf/2606.26057v1",
+      "tags": [
+        "keyword:harness",
+        "query:harness"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "architectural safety kernel for execution-time agent control",
+      "llm_evidence_cn": "architectural safety kernel for execution-time agent control",
+      "llm_evidence": "architectural safety kernel for execution-time agent control",
+      "canonical_evidence": "architectural safety kernel for execution-time agent control",
+      "llm_tldr_en": "Proposes an external safety kernel for execution-time alignment of escapable AI agents.",
+      "llm_tldr_cn": "This paper argues that dominant agent safety approaches placing controls inside the agent runtime, such as system prompts, output filters, and guardrail libraries, are fundamentally escapable because inputs can influence anything in the agent address space. It generalizes this problem to escapable AI systems with sufficient reach into their own runtime. The authors identify four properties an authorization mechanism must satisfy for architectural control rather than cooperative requests, including process separation, pre-action enforcement on a structurally only path, fail-closed behavior, and externalized signed authorization. They propose an external safety kernel that enforces execution-time alignment outside the agent runtime.",
+      "llm_tldr": "Proposes an external safety kernel for execution-time alignment of escapable AI agents.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "design principles for agent harness architecture",
+      "matched_requirement_id": "req-3",
+      "relevance_score": 9.0,
+      "author_score": 4.0,
+      "author_rating_explanation": "The first author lists ARYA Labs PBC, which is not a widely recognized institution in the score bands and lacks third-party-verifiable research evidence. The last author has no verifiable affiliation. Without concrete institutional evidence, a neutral score of 4.0 is assigned.",
+      "author_profiles": [
+        {
+          "name": "Seth Dobrin",
+          "role": "first_author",
+          "affiliation": "[2pt] ARYA Labs PBC",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Łukasz Chmiel",
+          "role": "last_author",
+          "affiliation": "",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "low",
+          "evidence_source": "metadata lookup unavailable"
+        }
+      ],
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
