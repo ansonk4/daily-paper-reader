@@ -147,7 +147,9 @@
 
   <script>
     (function () {
-      var DEFAULT_CDN_BASE = 'https://cdn.zwwen.online';
+      // GitHub Pages should serve the frontend assets from this repository by default.
+      // A stale CDN copy can otherwise keep showing an old UI after the repo is redeployed.
+      var DEFAULT_CDN_BASE = '';
       var ASSET_TIMEOUT_MS = 6000;
       var explicitBase = String(window.DPR_CDN_BASE || '').replace(/\/$/, '');
       var disabled = String(window.DPR_DISABLE_CDN || '').toLowerCase() === '1';
