@@ -6,56 +6,71 @@
 </div>
 
 ## Daily Report
-- Latest run date: 2026-06-28
-- Run time: 2026-06-28 20:22:54 UTC
+- Latest run date: 2026-06-29
+- Run time: 2026-06-29 20:34:07 UTC
 - Run status: success
-- Total papers: 12
-- Deep reads: 1
-- Quick reads: 11
+- Total papers: 17
+- Deep reads: 5
+- Quick reads: 12
 
 ### Daily Brief (AI)
-Today's digest covers 12 papers on LLM agent safety, privacy, and harness design, led by a deep-read on AOHP, an open-source OS-level agent harness for personalized and secure interaction. The most compelling themes are cross-module interference in agentic systems and multi-user/multi-party privacy risks, with AOHP standing out as a practical, high-scoring solution. Start with AOHP for a concrete, implementable approach to safer agent deployment, then skim the quick reads to stay current on emerging privacy and interference challenges.
-- Details: [/202606/28/README](/202606/28/README)
+Today's digest covers 17 papers on AI safety, agentic systems, and retrieval-augmented methods, with 5 deep reads and 12 quick reads. The standout directions are agentic memory safety and long-term memory management, with Revelio's repository-scale vulnerability detection and RaMem's contextual reinstatement as top picks. Start with the deep-read papers on memory and safety if you're building or deploying LLM agents.
+- Details: [/202606/29/README](/202606/29/README)
 
 ### Deep-Read Paper Tags
-1. [AOHP: An Open-Source OS-Level Agent Harness for Personalized, Efficient and Secure Interaction](/202606/28/2606.23449v1-aohp-an-open-source-os-level-agent-harness-for-personalized-efficient-and-secure-interaction)  
-   tags: Score: 9.0/10, query:harness
-   evidence: open-source OS-level agent harness for secure interaction
+1. [Revelio: Cost-Efficient Agentic Memory Safety Vulnerability Detection For Repository-Scale Codebases](/202606/29/2606.22263v1-revelio-cost-efficient-agentic-memory-safety-vulnerability-detection-for-repository-scale-codebases)  
+   tags: Score: 8.8/10, query:memory
+   evidence: agentic framework for memory safety vulnerability detection
+2. [RaMem: Contextual Reinstatement for Long-term Agentic Memory](/202606/29/2606.22844v1-ramem-contextual-reinstatement-for-long-term-agentic-memory)  
+   tags: Score: 8.6/10, query:memory
+   evidence: long-term agentic memory framework addressing context collapse and retrieval validity
+3. [Are We Ready For An Agent-Native Memory System?](/202606/29/2606.24775v1-are-we-ready-for-an-agent-native-memory-system)  
+   tags: Score: 8.2/10, query:memory
+   evidence: system-level study of agent memory robustness and architectural trade-offs
+4. [DMV-Bench: Diagnosing Long-Horizon Multimodal Agents' Visual Memory with Incidental Cue Injection](/202606/29/2606.27499v1-dmv-bench-diagnosing-long-horizon-multimodal-agents-visual-memory-with-incidental-cue-injection)  
+   tags: Score: 8.0/10, query:memory
+   evidence: benchmark for multimodal agent visual memory recall and integrity
+5. [Agentic Hardware Design as Repository-Level Code Evolution](/202606/29/2606.28279v1-agentic-hardware-design-as-repository-level-code-evolution)  
+   tags: Score: 8.0/10, query:harness
+   evidence: Markdown harness compiled into project pack for agent scaffolding
 
 ### Quick-Read Paper Tags
-1. [Instruction Bleed: Cross-Module Interference in Prompt-Composed Agentic Systems](/202606/28/2606.26356v1-instruction-bleed-cross-module-interference-in-prompt-composed-agentic-systems)  
+1. [Diagnosing and Mitigating Compounding Failures in Agentic Persuasion via Taxonomic Strategy Retrieval](/202606/29/2606.24976v1-diagnosing-and-mitigating-compounding-failures-in-agentic-persuasion-via-taxonomic-strategy-retrieval)  
+   tags: Score: 7.8/10, query:memory
+   evidence: compounding failures in agentic RAG and strategy retrieval
+2. [Tracing Target Answers in Poisoned Retrieval Corpora via Token Influence Attribution](/202606/29/2606.25721v1-tracing-target-answers-in-poisoned-retrieval-corpora-via-token-influence-attribution)  
+   tags: Score: 7.8/10, query:memory
+   evidence: detection of poisoned retrieval corpora attacks relevant to memory-augmented agents
+3. [A Stackelberg Framework for Resource-Aware LLM Agents: Learning, Repair, and Conditional Guarantees](/202606/29/2606.23026v1-a-stackelberg-framework-for-resource-aware-llm-agents-learning-repair-and-conditional-guarantees)  
    tags: Score: 7.6/10, query:harness
-   evidence: formalizes compositional behavioral leakage as interference between prompt modules sharing context window
-2. [Harness-MU: A Safe, Governed, and Effective Harness for Multi-User LLM Agents](/202606/28/2606.21856v1-harness-mu-a-safe-governed-and-effective-harness-for-multi-user-llm-agents)  
+   evidence: resource governance framework for LLM agents
+4. [Detecting Malicious Agent Skills in the Wild using Attention](/202606/29/2606.23416v1-detecting-malicious-agent-skills-in-the-wild-using-attention)  
+   tags: Score: 7.6/10, query:harness
+   evidence: detecting malicious agent skills as supply-chain attack surface
+5. [GIF: Locally Sound Geometric Information Flow Control for LLMs](/202606/29/2606.23277v1-gif-locally-sound-geometric-information-flow-control-for-llms)  
    tags: Score: 7.4/10, query:harness
-   evidence: proposes a multi-user LLM agent harness with governance hooks
-3. [MuPPET: A Benchmark for Contextual Privacy of LLM Assistants in Multi-Party Conversations](/202606/28/2606.23217v1-muppet-a-benchmark-for-contextual-privacy-of-llm-assistants-in-multi-party-conversations)  
-   tags: Score: 7.2/10, query:harness
-   evidence: benchmark for privacy vulnerabilities of LLM agents in multi-party settings
-4. [GUI agent: Guided Exploration of User-Sensitive Screens](/202606/28/2606.25705v1-gui-agent-guided-exploration-of-user-sensitive-screens)  
-   tags: Score: 7.2/10, query:harness
-   evidence: runtime safety handover for GUI agents
-5. [A Deterministic Control Plane for LLM Coding Agents](/202606/28/2606.26924v1-a-deterministic-control-plane-for-llm-coding-agents)  
-   tags: Score: 7.2/10, query:harness
-   evidence: studies LLM coding harness configuration layer and permission boundaries
-6. [The Unfireable Safety Kernel: Execution-Time AI Alignment for AI Agents and Other Escapable AI Systems](/202606/28/2606.26057v1-the-unfireable-safety-kernel-execution-time-ai-alignment-for-ai-agents-and-other-escapable-ai-systems)  
-   tags: Score: 7.0/10, query:harness
-   evidence: architectural safety kernel for execution-time agent control
-7. [Jailbreaking for the Average Jane: Choosing Optimal Jailbreaks via Bandit Algorithms for Automatically Enhanced Queries](/202606/28/2606.26936v1-jailbreaking-for-the-average-jane-choosing-optimal-jailbreaks-via-bandit-algorithms-for-automatically-enhanced-queries)  
+   evidence: geometric information flow control framework for tracking security risks in LLM agentic systems
+6. [ReM-MoA: Reasoning Memory Sustains Mixture-of-Agents Scaling](/202606/29/2606.24437v1-rem-moa-reasoning-memory-sustains-mixture-of-agents-scaling)  
+   tags: Score: 7.4/10, query:memory
+   evidence: memory-augmented mixture-of-agents framework for sustained reasoning scaling
+7. [RIFT-Bench: Dynamic Red-teaming For Agentic AI Systems](/202606/29/2606.23927v1-rift-bench-dynamic-red-teaming-for-agentic-ai-systems)  
    tags: Score: 6.8/10, query:harness
-   evidence: studies how non-experts can learn effective jailbreaks against LLM safeguards
-8. [AgentLens: Interpretable Safety Steering via Mechanistic Subspaces for Multi-Turn Coding Agent](/202606/28/2606.22673v1-agentlens-interpretable-safety-steering-via-mechanistic-subspaces-for-multi-turn-coding-agent)  
-   tags: Score: 6.4/10, query:harness
-   evidence: internal mechanistic safety steering for multi-turn coding agents
-9. [Safety in Self-Evolving LLM Agent Systems: Threats, Amplification, and Case Studies](/202606/28/2606.23075v1-safety-in-self-evolving-llm-agent-systems-threats-amplification-and-case-studies)  
-   tags: Score: 6.4/10, query:harness
-   evidence: systematic security analysis of self-evolving LLM agent systems
-10. [Understanding the (In)Security of Vibe-Coded Applications](/202606/28/2606.23130v2-understanding-the-insecurity-of-vibe-coded-applications)  
-   tags: Score: 6.4/10, query:harness
-   evidence: security study of AI-coded applications
-11. [Capable but Careless: Do Computer-Use Agents Follow Contextual Integrity?](/202606/28/2606.23189v1-capable-but-careless-do-computer-use-agents-follow-contextual-integrity)  
-   tags: Score: 6.4/10, query:harness
-   evidence: evaluation harness for computer-use agent privacy failures
+   evidence: dynamic red-teaming methodology for agentic AI systems
+8. [Metis: Bridging Text and Code Memory for Self-Evolving Agents](/202606/29/2606.24151v1-metis-bridging-text-and-code-memory-for-self-evolving-agents)  
+   tags: Score: 6.8/10, query:memory
+   evidence: controlled study of text memory and code memory representations in self-evolving agents
+9. [MIRROR: Novelty-Constrained Memory-Guided MCTS Red-Teaming for Agentic RAG](/202606/29/2606.26793v1-mirror-novelty-constrained-memory-guided-mcts-red-teaming-for-agentic-rag)  
+   tags: Score: 6.8/10, query:memory
+   evidence: memory-guided red-teaming framework for multimodal agentic RAG covering poisoning and tool manipulation
+10. [Joint Learning of Experiential Rules and Policies for Large Language Model Agents](/202606/29/2606.27136v1-joint-learning-of-experiential-rules-and-policies-for-large-language-model-agents)  
+   tags: Score: 6.8/10, query:memory
+   evidence: LLM agent memory-augmented experiential rule pool for long-term reasoning
+11. [Safety in Self-Evolving LLM Agent Systems: Threats, Amplification, and Case Studies](/202606/29/2606.23075v1-safety-in-self-evolving-llm-agent-systems-threats-amplification-and-case-studies)  
+   tags: Score: 6.6/10, query:harness
+   evidence: systematic security analysis of self-evolving agent systems using MLAS matrix
+12. [Memory Contagion: Cross-Temporal Propagation of Evaluator Bias via Agent Memory](/202606/29/2606.23195v2-memory-contagion-cross-temporal-propagation-of-evaluator-bias-via-agent-memory)  
+   tags: Score: 6.6/10, query:memory
+   evidence: cross-temporal propagation of evaluator bias through agent memory
 
 
 <div class="dpr-home-promo-card">
