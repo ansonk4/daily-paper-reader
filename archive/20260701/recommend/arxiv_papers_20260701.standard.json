@@ -1,0 +1,1163 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-01T20:13:57.887290+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": null,
+    "deep_selected": 5,
+    "quick_candidates": 0,
+    "quick_skim_target": 12,
+    "quick_selected": 12,
+    "fallback": "recent_recommendation_cache",
+    "fallback_source_date": "20260629"
+  },
+  "deep_dive": [
+    {
+      "id": "2606.22263v1",
+      "source": "arxiv",
+      "title": "Revelio: Cost-Efficient Agentic Memory Safety Vulnerability Detection For Repository-Scale Codebases",
+      "abstract": "Memory safety vulnerabilities remain a significant threat even for projects with extensive fuzzing and manual auditing. Recent results suggest that large language models hold great promise for detecting such vulnerabilities, but they are unreliable, at risk of hallucination, and challenging to scale to repository-size codebases. This paper presents Revelio, a cost-efficient end-to-end agentic framework for memory-safety vulnerability discovery. Revelio addresses the problem of hallucination by generating an executable Proof-of-Vulnerability, which is checked with a deterministic sanitizer. It reduces cost using inexpensive LLMs and lightweight static analysis to help generate and rank vulnerability hypotheses, reporting vulnerabilities only when they can be reproduced and confirmed by a sanitizer. We evaluated Revelio on seven production-quality projects that had been continuously fuzzed for five to eight years, as well as on 100 randomly selected Arvo projects from the CyberGym benchmark. With around one hour per project and a total cost of $300, Revelio discovered 19 previously unknown memory-safety vulnerabilities. On benchmarks, Revelio outperformed frontier coding agents across diverse backbone models at comparable token costs. Our results suggest that Revelio enables scalable and trustworthy end-to-end LLM-based memory-safety vulnerability detection.",
+      "authors": [
+        "Yiwei Hou",
+        "Hao Wang",
+        "Muxi Lyu",
+        "Marius Momeu",
+        "Eric Nguyen",
+        "Taige Yang",
+        "Koushik Sen",
+        "Dawn Song",
+        "David Wagner"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.MA",
+        "cs.SE"
+      ],
+      "published": "2026-06-20T23:17:23+00:00",
+      "link": "https://arxiv.org/pdf/2606.22263v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness"
+      ],
+      "llm_score": 8.8,
+      "llm_evidence_en": "agentic framework for memory safety vulnerability detection",
+      "llm_evidence_cn": "agentic framework for memory safety vulnerability detection",
+      "llm_evidence": "agentic framework for memory safety vulnerability detection",
+      "canonical_evidence": "agentic framework for memory safety vulnerability detection",
+      "llm_tldr_en": "Revelio proposes a cost-efficient agentic framework for detecting memory safety vulnerabilities in repository-scale codebases.",
+      "llm_tldr_cn": "The paper addresses the problem of memory safety vulnerabilities that remain a significant threat even for projects with extensive fuzzing and manual auditing. It presents Revelio, a cost-efficient end-to-end agentic framework for memory-safety vulnerability discovery that addresses LLM hallucination by generating executable Proof-of-Vulnerability checked with a deterministic sanitizer. The framework reduces cost using inexpensive LLMs and lightweight static analysis to generate and rank vulnerability hypotheses. This work directly contributes to memory safety assessment and vulnerability management in agent systems.",
+      "llm_tldr": "Revelio proposes a cost-efficient agentic framework for detecting memory safety vulnerabilities in repository-scale codebases.",
+      "llm_tags": [
+        "query:memory:composite"
+      ],
+      "matched_query_tag": "query:memory:composite",
+      "matched_query_text": "Papers central to memory safety, especially work that connects or combines: safety and security of agent memory systems; adversarial attacks on agent memory; interpretability and analysis of agent memory; interpretability and explainability of agent memory in language model agents; attacks and defenses for memory augmented autonomous agents; memory integrity and robustness in autonomous agent systems.",
+      "matched_requirement_id": "req-composite-memory",
+      "relevance_score": 9.0,
+      "author_score": 8.5,
+      "author_rating_explanation": "First author Yiwei Hou's affiliation string includes University of California, Berkeley, which is a top US AI school in the 8-9 band. The last author David Wagner has no verifiable affiliation in the metadata, but the presence of UC Berkeley as a concrete affiliation for the first author anchors the score in the top band.",
+      "author_profiles": [
+        {
+          "name": "Yiwei Hou",
+          "role": "first_author",
+          "affiliation": "Eric Nguyen, Taige Yang, Koushik Sen, Dawn Song, David Wagner University of California, Berkeley",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "David Wagner",
+          "role": "last_author",
+          "affiliation": "",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "low",
+          "evidence_source": "metadata lookup unavailable"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.28279v1",
+      "source": "arxiv",
+      "title": "Agentic Hardware Design as Repository-Level Code Evolution",
+      "abstract": "We present HORIZON, a self-evolving agent framework that treats hardware design as repository-level code evolution. A Markdown harness is compiled into a project pack containing domain knowledge, an executable evaluator, an acceptance predicate, and a git/runtime policy; a hands-free agent loop then evolves an isolated git worktree, using repository operations for state management, tracing, and replay. This extends prior works of repository-scale self-evolution from EDA software systems, to hardware-design artifacts themselves. We evaluate our approach on ChipBench, RTLLM, Verilog-Eval, and nine CVDP categories, achieving 100\\% benchmark completion across all suites with a fully hands-free agentic loop. However, we do not claim that agentic AI for hardware design is solved: these benchmarks are controlled proxies for a much broader engineering problem in chip design. Section~\\ref{sec:discuss} examines the limitations of the current study and highlights open research challenges.",
+      "authors": [
+        "Cunxi Yu",
+        "Chenhui Deng",
+        "Nathaniel Pinckney",
+        "Brucek Khailany"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR",
+        "cs.AI"
+      ],
+      "published": "2026-06-26T17:21:06+00:00",
+      "link": "https://arxiv.org/pdf/2606.28279v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness",
+        "query:memory"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Markdown harness compiled into project pack for agent scaffolding",
+      "llm_evidence_cn": "Markdown harness compiled into project pack for agent scaffolding",
+      "llm_evidence": "Markdown harness compiled into project pack for agent scaffolding",
+      "canonical_evidence": "Markdown harness compiled into project pack for agent scaffolding",
+      "llm_tldr_en": "HORIZON uses a Markdown harness to structure self-evolving hardware design agents with domain knowledge and runtime policies.",
+      "llm_tldr_cn": "This paper presents HORIZON, a self-evolving agent framework for hardware design that treats design as repository-level code evolution. A Markdown harness is compiled into a project pack containing domain knowledge, an executable evaluator, an acceptance predicate, and git/runtime policy. The hands-free agent loop then evolves an isolated git worktree using repository operations for state management, tracing, and replay. The harness design determines how the agent interacts with the repository and what constraints govern its evolution. Evaluation on ChipBench and related benchmarks achieves 100% completion, demonstrating how harness scaffolding enables autonomous agent operation in complex engineering domains.",
+      "llm_tldr": "HORIZON uses a Markdown harness to structure self-evolving hardware design agents with domain knowledge and runtime policies.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 7.0,
+      "author_score": 9.5,
+      "author_rating_explanation": "Both focus authors are affiliated with NVIDIA Research, a major AI/tech company research lab explicitly listed in the 9-10 band.",
+      "author_profiles": [
+        {
+          "name": "Cunxi Yu",
+          "role": "first_author",
+          "affiliation": "NVIDIA Research",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Brucek Khailany",
+          "role": "last_author",
+          "affiliation": "NVIDIA Research",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.22844v1",
+      "source": "arxiv",
+      "title": "RaMem: Contextual Reinstatement for Long-term Agentic Memory",
+      "abstract": "Long-term memory has become increasingly important for LLM agents that operate across extended interactions and evolving task contexts. Recent memory systems have made past experiences more persistent, compact, and retrievable, but retrieval alone does not ensure that a memory provides valid evidence for the current query. When experiences are compressed into reusable fragments, memories from different situations may appear equally relevant if they involve recurring entities or user states. We refer to this failure as context collapse: memories lose the surrounding context needed to judge whether they provide valid evidence for the current query. To address this problem, we propose Contextual Reinstatement for Agentic Memory (RaMem), a framework that turns retrieved memory fragments into contextually verifiable evidence. RaMem operates through four coordinated stages: (i) evidence anchoring grounds each memory in its original episodic conditions, especially event time, mention time, session span, and participants; (ii) recall condition induction derives the evidence conditions implied by the query; (iii) validity-aware retrieval uses these conditions to prioritize context-compatible memories while retaining content-relevant candidates as fallback evidence; and (iv) context-preserved synthesis keeps the selected memories' structured context available to the generator. Experiments on long-term memory benchmarks show that RaMem consistently improves performance over strong memory baselines, with average F1 gains of more than 10% across several backbones.",
+      "authors": [
+        "Wei Yang",
+        "Bryce Kan",
+        "Shixuan Li",
+        "Li Li",
+        "Yuehan Qin",
+        "Jiate Li",
+        "Paul Bogdan",
+        "Jesse Thomason"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.MA"
+      ],
+      "published": "2026-06-22T04:41:14+00:00",
+      "link": "https://arxiv.org/pdf/2606.22844v1",
+      "tags": [
+        "keyword:memory",
+        "query:memory"
+      ],
+      "llm_score": 8.6,
+      "llm_evidence_en": "long-term agentic memory framework addressing context collapse and retrieval validity",
+      "llm_evidence_cn": "long-term agentic memory framework addressing context collapse and retrieval validity",
+      "llm_evidence": "long-term agentic memory framework addressing context collapse and retrieval validity",
+      "canonical_evidence": "long-term agentic memory framework addressing context collapse and retrieval validity",
+      "llm_tldr_en": "RaMem reinstates context during retrieval to reduce context collapse in long-term agentic memory.",
+      "llm_tldr_cn": "This paper addresses context collapse in long-term agentic memory, where compressed memory fragments lose the surrounding context needed to judge their relevance to the current query. The authors propose RaMem, a framework for Contextual Reinstatement in agentic memory that augments retrieval with contextual reinstatement so memories can be validated against the current task context. RaMem turns raw retrieval into evidence that is more discriminative across recurring entities and user states. The approach improves the reliability of memory use in LLM agents operating over extended interactions. By strengthening memory integrity and retrieval validity, RaMem contributes to safer and more robust memory-augmented agent systems.",
+      "llm_tldr": "RaMem reinstates context during retrieval to reduce context collapse in long-term agentic memory.",
+      "llm_tags": [
+        "query:memory:composite"
+      ],
+      "matched_query_tag": "query:memory:composite",
+      "matched_query_text": "Papers central to memory safety, especially work that connects or combines: safety and security of agent memory systems; adversarial attacks on agent memory; interpretability and analysis of agent memory; interpretability and explainability of agent memory in language model agents; attacks and defenses for memory augmented autonomous agents; memory integrity and robustness in autonomous agent systems.",
+      "matched_requirement_id": "req-composite-memory",
+      "relevance_score": 9.0,
+      "author_score": 8.0,
+      "author_rating_explanation": "Both focus authors are affiliated with the University of Southern California, a top US AI school in the 8-9 band. First author Wei Yang has citation evidence (410 citations, 73 papers). Last author Jesse Thomason is also at USC.",
+      "author_profiles": [
+        {
+          "name": "Wei Yang",
+          "role": "first_author",
+          "affiliation": "Jiate Li, Paul Bogdan, Jesse Thomason; University of Southern California",
+          "citation_count": "410",
+          "paper_count": "73",
+          "citation_hints": "Semantic Scholar citation_count=410; Semantic Scholar paper_count=73",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        },
+        {
+          "name": "Jesse Thomason",
+          "role": "last_author",
+          "affiliation": "University of Southern California",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.24775v1",
+      "source": "arxiv",
+      "title": "Are We Ready For An Agent-Native Memory System?",
+      "abstract": "Memory for large language model (LLM) agents has rapidly evolved from simple retrieval-augmented mechanisms into a data management system that supports persistent information storage, retrieval, update, consolidation, and dynamic lifecycle governance throughout agent execution. Despite this evolution, existing evaluations still benchmark agent memory mainly through end-to-end task success metrics (e.g., F1, BLEU), while treating the underlying system as a monolithic black box. As a result, critical system-level concerns, including operational costs, architectural trade-offs across memory modules, and robustness under dynamic knowledge updates, remain insufficiently explored. In this paper, we present a systematic experimental study of agent memory from a data management perspective. We propose an analytical framework that decomposes agent memory into four core modules: memory representation and storage, extraction, retrieval and routing, and maintenance. Under this framework, we evaluate 12 representative memory systems and two reference baselines across five benchmark workloads spanning 11 datasets. Our extensive end-to-end evaluation shows that no single architecture dominates across all scenarios; instead, effectiveness depends heavily on how well the memory structure aligns with the workload bottleneck. Furthermore, through fine-grained ablation studies, we quantify their individual effects on representation fidelity, retrieval precision, update correctness, and long-horizon stability. Finally, we reveal cost-performance trade-offs under realistic workloads, showing localized maintenance is more cost-efficient than global reorganization. Based on these findings, we identify promising directions towards building truly agent-native memory systems. The code is publicly available at https://github.com/OpenDataBox/MemoryData.",
+      "authors": [
+        "Wei Zhou",
+        "Xuanhe Zhou",
+        "Shaokun Han",
+        "Hongming Xu",
+        "Guoliang Li",
+        "Zhiyu Li",
+        "Feiyu Xiong",
+        "Fan Wu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.DB",
+        "cs.IR"
+      ],
+      "published": "2026-06-23T16:34:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.24775v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness",
+        "query:memory"
+      ],
+      "llm_score": 8.2,
+      "llm_evidence_en": "system-level study of agent memory robustness and architectural trade-offs",
+      "llm_evidence_cn": "system-level study of agent memory robustness and architectural trade-offs",
+      "llm_evidence": "system-level study of agent memory robustness and architectural trade-offs",
+      "canonical_evidence": "system-level study of agent memory robustness and architectural trade-offs",
+      "llm_tldr_en": "This paper presents a systematic experimental study of LLM agent memory from a data management perspective, examining robustness under dynamic knowledge updates.",
+      "llm_tldr_cn": "Memory for LLM agents has evolved from simple retrieval-augmented mechanisms into a data management system supporting persistent storage, retrieval, update, consolidation and dynamic lifecycle governance. However, existing evaluations still benchmark agent memory mainly through end-to-end task success metrics while treating the underlying system as a monolithic black box, leaving critical system-level concerns such as operational costs, architectural trade-offs and robustness under dynamic knowledge updates insufficiently explored. This paper presents a systematic experimental study of agent memory from a data management perspective. The work examines how different memory modules behave under dynamic knowledge updates and characterizes robustness and architectural trade-offs. It contributes a more nuanced understanding of agent memory system design and the conditions under which memory integrity can be maintained.",
+      "llm_tldr": "This paper presents a systematic experimental study of LLM agent memory from a data management perspective, examining robustness under dynamic knowledge updates.",
+      "llm_tags": [
+        "query:memory:composite"
+      ],
+      "matched_query_tag": "query:memory:composite",
+      "matched_query_text": "Papers central to memory safety, especially work that connects or combines: safety and security of agent memory systems; adversarial attacks on agent memory; interpretability and analysis of agent memory; interpretability and explainability of agent memory in language model agents; attacks and defenses for memory augmented autonomous agents; memory integrity and robustness in autonomous agent systems.",
+      "matched_requirement_id": "req-composite-memory",
+      "relevance_score": 9.0,
+      "author_score": 7.0,
+      "author_rating_explanation": "Both focus authors are affiliated with Shanghai Jiao Tong University, a top Chinese AI school in the 6-8 band. The last author has strong citation metrics (2233 citations, 56 papers) from Semantic Scholar, reinforcing the research credibility of the affiliation.",
+      "author_profiles": [
+        {
+          "name": "Wei Zhou",
+          "role": "first_author",
+          "affiliation": "Shanghai Jiao Tong University",
+          "citation_count": "7",
+          "paper_count": "29",
+          "citation_hints": "Semantic Scholar citation_count=7; Semantic Scholar paper_count=29",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        },
+        {
+          "name": "Fan Wu",
+          "role": "last_author",
+          "affiliation": "Shanghai Jiao Tong University",
+          "citation_count": "2233",
+          "paper_count": "56",
+          "citation_hints": "Semantic Scholar citation_count=2233; Semantic Scholar paper_count=56",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.27499v1",
+      "source": "arxiv",
+      "title": "DMV-Bench: Diagnosing Long-Horizon Multimodal Agents' Visual Memory with Incidental Cue Injection",
+      "abstract": "Research on agent memory has matured rapidly, but almost entirely on the text side: few existing benchmarks ask, in an interactive environment, when an agent genuinely needs to remember what it saw rather than what it could write down. We introduce DMV-Bench (Code: https://github.com/yyyujintang/DMV-Bench), the first interactive benchmark for multimodal-agent visual memory. DMV-Bench is built on a controlled home-furnishing e-commerce catalogue of 1,000 product variants in which a text-leakage contract keeps the discriminative signal of each task in the pixels alone. Across a chain of autonomous shopping sessions, every visited product image carries a unique, pre-rendered incidental cue, and the agent is later asked to recall a particular cued product and navigate to its URL. Inspired by dual-coding theory, we propose DualMem, a memory architecture that maintains a visual and a verbal code in parallel. On DMV-Bench, DualMem outperforms a caption baseline and three recent multimodal agent-memory systems at every chain length J in {5, 10, 15, 50} on both Gemini 2.5 Flash and Qwen2.5-VL-7B, with the lead surviving controls for memory-bank size and encoding-position bias, and an asymmetric dual-coding regime in which vision carries the cue end-to-end while the verbal channel plays a smaller query-grounding role.",
+      "authors": [
+        "Yujin Tang",
+        "Chenming Shang",
+        "Ruize Xu",
+        "Nikhil Singh"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-25T19:34:25+00:00",
+      "link": "https://arxiv.org/pdf/2606.27499v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:memory"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "benchmark for multimodal agent visual memory recall and integrity",
+      "llm_evidence_cn": "benchmark for multimodal agent visual memory recall and integrity",
+      "llm_evidence": "benchmark for multimodal agent visual memory recall and integrity",
+      "canonical_evidence": "benchmark for multimodal agent visual memory recall and integrity",
+      "llm_tldr_en": "DMV-Bench evaluates long-horizon visual memory in multimodal agents using incidental cue recall tasks.",
+      "llm_tldr_cn": "This paper addresses the lack of benchmarks for evaluating when multimodal agents genuinely need to remember visual information rather than textual summaries. It introduces DMV-Bench, an interactive benchmark built on a home-furnishing e-commerce catalogue where discriminative signals are kept only in pixels via a text-leakage contract. Agents visit product images carrying incidental visual cues and are later asked to recall them across a chain of autonomous shopping sessions. The benchmark enables systematic diagnosis of visual memory retention, retrieval, and robustness in long-horizon multimodal agents. The work contributes a tool for assessing memory integrity and failure modes in agent systems that rely on visual memory.",
+      "llm_tldr": "DMV-Bench evaluates long-horizon visual memory in multimodal agents using incidental cue recall tasks.",
+      "llm_tags": [
+        "query:memory:composite"
+      ],
+      "matched_query_tag": "query:memory:composite",
+      "matched_query_text": "Papers central to memory safety, especially work that connects or combines: safety and security of agent memory systems; adversarial attacks on agent memory; interpretability and analysis of agent memory; interpretability and explainability of agent memory in language model agents; attacks and defenses for memory augmented autonomous agents; memory integrity and robustness in autonomous agent systems.",
+      "matched_requirement_id": "req-composite-memory",
+      "relevance_score": 8.0,
+      "author_score": 8.0,
+      "author_rating_explanation": "Both focus authors are affiliated with Dartmouth College, a top US AI school in the 8-9 band. First author Yujin Tang has strong citation evidence (2314 citations, 75 papers). Last author Nikhil Singh is also at Dartmouth College.",
+      "author_profiles": [
+        {
+          "name": "Yujin Tang",
+          "role": "first_author",
+          "affiliation": "Dartmouth College",
+          "citation_count": "2314",
+          "paper_count": "75",
+          "citation_hints": "Semantic Scholar citation_count=2314; Semantic Scholar paper_count=75",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        },
+        {
+          "name": "Nikhil Singh",
+          "role": "last_author",
+          "affiliation": "Dartmouth College",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "fallback_source_date": "20260629"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.24976v1",
+      "source": "arxiv",
+      "title": "Diagnosing and Mitigating Compounding Failures in Agentic Persuasion via Taxonomic Strategy Retrieval",
+      "abstract": "Foundation-model agents in multi-step, open-ended environments frequently suffer from compounding errors, where early mistakes contaminate long-horizon trajectories. While Multi-Agent Debate (MAD) succeeds in deterministic domains, agents in subjective tasks like persuasion experience severe problem drift and sycophantic conformity. We identify semantic leakage in standard Retrieval-Augmented Generation (RAG) as a reproducible trigger for these failures, as standard RAG prioritizes vocabulary overlap over logical necessity.   To eliminate this leakage, we introduce Taxonomic Strategy RAG (TS-RAG), a systems intervention that routes strategies through a discrete categorical bottleneck to decouple argumentative structure from topical content. Zero-shot, cross-domain evaluations demonstrate that TS-RAG significantly improves the transfer of abstract logic where standard semantic retrieval collapses. Crucially, TS-RAG acts as a \"capability bridge\" in asymmetric deployments, empowering lightweight persuaders to consistently defeat parametrically superior opponents (improving win rates from 70.5 to 78.5) and accelerating argumentative efficiency. Finally, we introduce trace-level diagnostics via a turn-by-turn Debate State Representation (DSR), demonstrating the necessity of strict constraints to prevent evaluation collapse via default agentic sycophancy.",
+      "authors": [
+        "Pradyumna Narayana",
+        "Sana Ayromlou",
+        "Purvi Sehgal"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-06-23T12:16:27+00:00",
+      "link": "https://arxiv.org/pdf/2606.24976v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:memory"
+      ],
+      "llm_score": 7.8,
+      "llm_evidence_en": "compounding failures in agentic RAG and strategy retrieval",
+      "llm_evidence_cn": "agent memory retrieval safety and contamination",
+      "llm_evidence": "compounding failures in agentic RAG and strategy retrieval",
+      "canonical_evidence": "compounding failures in agentic RAG and strategy retrieval",
+      "llm_tldr_en": "The paper diagnoses semantic leakage in agent RAG that causes compounding failures and proposes taxonomic strategy retrieval to improve agent memory safety.",
+      "llm_tldr_cn": "This paper studies compounding failures in foundation-model agents operating in multi-step, open-ended environments such as persuasion. The authors identify semantic leakage in standard Retrieval-Augmented Generation as a reproducible trigger for problem drift and sycophantic conformity, because standard RAG prioritizes vocabulary overlap over logical necessity. To address this, they introduce Taxonomic Strategy RAG, a systems intervention that routes strategies through a discrete categorical bottleneck to decouple argumentative structure from lexical similarity. Experiments show that TS-RAG reduces semantic leakage and improves trajectory robustness. The work contributes a memory-retrieval safety mechanism that helps prevent contamination of agent behavior through flawed strategy recall.",
+      "llm_tldr": "The paper diagnoses semantic leakage in agent RAG that causes compounding failures and proposes taxonomic strategy retrieval to improve agent memory safety.",
+      "llm_tags": [
+        "query:memory"
+      ],
+      "matched_query_tag": "query:memory",
+      "matched_query_text": "safety and security of agent memory systems",
+      "matched_requirement_id": "req-10",
+      "relevance_score": 7.0,
+      "author_score": 9.0,
+      "author_rating_explanation": "Both authors are affiliated with Google (United States), which is a major AI/tech company in the 9-10 band. First author Pradyumna Narayana has strong citation metrics (1028 citations, 34 papers). Last author Purvi Sehgal has minimal publication record but the Google affiliation is sufficient for the top band.",
+      "author_profiles": [
+        {
+          "name": "Pradyumna Narayana",
+          "role": "first_author",
+          "affiliation": "Google; Google (United States)",
+          "citation_count": "1028",
+          "paper_count": "34",
+          "citation_hints": "OpenAlex cited_by_count=1335; OpenAlex works_count=41; Semantic Scholar citation_count=1028; Semantic Scholar paper_count=34",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex, semantic_scholar"
+        },
+        {
+          "name": "Purvi Sehgal",
+          "role": "last_author",
+          "affiliation": "Google",
+          "citation_count": "0",
+          "paper_count": "1",
+          "citation_hints": "OpenAlex cited_by_count=0; OpenAlex works_count=1",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "7",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.23927v1",
+      "source": "arxiv",
+      "title": "RIFT-Bench: Dynamic Red-teaming For Agentic AI Systems",
+      "abstract": "Agentic AI systems powered by large language models (LLMs) are rapidly evolving into autonomous decision-making systems, exposing attack vectors beyond those of traditional LLM vulnerabilities. Existing security evaluations are often tied to specific implementations or domains, limiting unified comparison across heterogeneous systems. To address this gap, we introduce RIFT-Bench, a graph representation-driven methodology for dynamic red-teaming that enables unified evaluations across diverse agentic architectures. Building on a novel hierarchical representation, RIFT-Bench operates in two automated phases: Discovery, which extracts system structure, and Scanning, which deploys adaptive adversarial attacks and produces a comprehensive evaluation report. It evaluates the examined system itself, leveraging a broad set of dynamically adaptable adversarial probes across diverse attack vectors and objectives. We demonstrate the effectiveness of the proposed evaluation pipeline across 45 agentic systems spanning a diverse range of implementations, showing that the approach generalizes effectively to heterogeneous agentic architectures. Beyond systems and attacks, RIFT-Bench also supports direct evaluation of mitigation strategies. These key capabilities make RIFT-Bench a scalable foundation for security evaluation of agentic AI systems.",
+      "authors": [
+        "Yarin Yerushalmi Levi",
+        "Roy Betser",
+        "Amit Giloni",
+        "Lidor Erez",
+        "Itay Gershon",
+        "Oren Rachmil",
+        "Sindhu Padakandla",
+        "Roman Vainshtein"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-22T20:46:56+00:00",
+      "link": "https://arxiv.org/pdf/2606.23927v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness",
+        "query:memory"
+      ],
+      "llm_score": 6.8,
+      "llm_evidence_en": "dynamic red-teaming methodology for agentic AI systems",
+      "llm_evidence_cn": "graph-driven adversarial evaluation across diverse agent architectures",
+      "llm_evidence": "dynamic red-teaming methodology for agentic AI systems",
+      "canonical_evidence": "dynamic red-teaming methodology for agentic AI systems",
+      "llm_tldr_en": "RIFT-Bench introduces a graph representation-driven red-teaming framework that dynamically discovers agentic system structures and deploys adaptive adversarial attacks to evaluate security across heterogeneous agent architectures.",
+      "llm_tldr_cn": "As agentic AI systems evolve into autonomous decision-makers, they expose attack vectors beyond traditional LLM vulnerabilities, yet existing security evaluations remain tied to specific implementations and lack unified comparison. This paper introduces RIFT-Bench, a graph representation-driven methodology for dynamic red-teaming that enables unified security evaluation across diverse agentic architectures. The framework operates in two automated phases: Discovery, which extracts system structure through a novel hierarchical representation, and Scanning, which deploys adaptive adversarial attacks to produce comprehensive evaluation reports. By enabling cross-architecture comparison, RIFT-Bench addresses a critical gap in agent security assessment and provides a transferable methodology for evaluating harness-level vulnerabilities in autonomous agent systems.",
+      "llm_tldr": "RIFT-Bench introduces a graph representation-driven red-teaming framework that dynamically discovers agentic system structures and deploys adaptive adversarial attacks to evaluate security across heterogeneous agent architectures.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 8.0,
+      "author_score": 5.0,
+      "author_rating_explanation": "Both focus authors are affiliated with Fujitsu Research of Europe (FRE). FRE is a corporate research lab but is not among the major AI/tech companies or elite AI labs in the top bands, nor is it a top-tier academic institution. It falls into the mid-tier range with concrete but non-elite research output.",
+      "author_profiles": [
+        {
+          "name": "Yarin Yerushalmi Levi",
+          "role": "first_author",
+          "affiliation": "Fujitsu Research of Europe (FRE)",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Roman Vainshtein",
+          "role": "last_author",
+          "affiliation": "Fujitsu Research of Europe (FRE)",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "6",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.25721v1",
+      "source": "arxiv",
+      "title": "Tracing Target Answers in Poisoned Retrieval Corpora via Token Influence Attribution",
+      "abstract": "Retrieval-Augmented Generation (RAG) systems are vulnerable to corpus poisoning attacks that manipulate model outputs through malicious retrieved documents. Existing detection methods typically rely on auxiliary classifiers or additional LLM-based verification, introducing substantial computational overhead. We present TRACE, a lightweight detection framework that identifies poisoning attacks by tracing answer-related tokens through token influence attribution. TRACE first discovers recurrent high-influence keywords across retrieved documents and then performs a secondary verification to confirm their influence on model predictions. Experiments on three QA benchmarks and six LLMs demonstrate strong detection performance while simultaneously uncovering attacker-specified target answers.",
+      "authors": [
+        "Yan-Lun Chen",
+        "Pin-Yu Chen",
+        "Chia-Mu Yu",
+        "Ying-Dar Lin",
+        "Yu-Sung Wu",
+        "Wei-Bin Lee"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.CL",
+        "cs.IR"
+      ],
+      "published": "2026-06-24T11:39:26+00:00",
+      "link": "https://arxiv.org/pdf/2606.25721v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness"
+      ],
+      "llm_score": 7.8,
+      "llm_evidence_en": "detection of poisoned retrieval corpora attacks relevant to memory-augmented agents",
+      "llm_evidence_cn": "detection of poisoned retrieval corpora attacks relevant to memory-augmented agents",
+      "llm_evidence": "detection of poisoned retrieval corpora attacks relevant to memory-augmented agents",
+      "canonical_evidence": "detection of poisoned retrieval corpora attacks relevant to memory-augmented agents",
+      "llm_tldr_en": "TRACE detects poisoned retrieval corpora via token influence attribution, defending memory-augmented RAG systems.",
+      "llm_tldr_cn": "This paper studies corpus poisoning attacks against Retrieval-Augmented Generation systems, where adversaries inject malicious retrieved documents to manipulate model outputs. Existing detection methods rely on auxiliary classifiers or extra LLM verification, which add substantial overhead. The authors propose TRACE, a lightweight framework that detects poisoning by tracing answer-related tokens through token influence attribution. TRACE identifies recurrent high-influence keywords across retrieved documents and verifies their impact on predictions. Experiments on three QA benchmarks and six LLMs show strong detection performance with low computational cost. The method is directly relevant to defending memory-augmented agents that depend on external retrieval.",
+      "llm_tldr": "TRACE detects poisoned retrieval corpora via token influence attribution, defending memory-augmented RAG systems.",
+      "llm_tags": [
+        "query:memory:composite"
+      ],
+      "matched_query_tag": "query:memory:composite",
+      "matched_query_text": "Papers central to memory safety, especially work that connects or combines: safety and security of agent memory systems; adversarial attacks on agent memory; interpretability and analysis of agent memory; interpretability and explainability of agent memory in language model agents; attacks and defenses for memory augmented autonomous agents; memory integrity and robustness in autonomous agent systems.",
+      "matched_requirement_id": "req-composite-memory",
+      "relevance_score": 8.0,
+      "author_score": 7.5,
+      "author_rating_explanation": "Last author Wei-Bin Lee is affiliated with National Yang Ming Chiao Tung University (a top Chinese/Taiwanese school in the 6-8 band), IBM Research (a major AI/tech company in the 9-10 band), and Hon Hai Research Institute. First author Yan-Lun Chen has an unclear affiliation listing. The IBM Research affiliation anchors the score in the upper range.",
+      "author_profiles": [
+        {
+          "name": "Yan-Lun Chen",
+          "role": "first_author",
+          "affiliation": "Ying-Dar Lin * , Yu-Sung Wu *",
+          "citation_count": "14",
+          "paper_count": "5",
+          "citation_hints": "Semantic Scholar citation_count=14; Semantic Scholar paper_count=5",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        },
+        {
+          "name": "Wei-Bin Lee",
+          "role": "last_author",
+          "affiliation": "* National Yang Ming Chiao Tung University; IBM Research; Hon Hai Research Institute",
+          "citation_count": "1910",
+          "paper_count": "92",
+          "citation_hints": "Semantic Scholar citation_count=1910; Semantic Scholar paper_count=92",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "7",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.24151v1",
+      "source": "arxiv",
+      "title": "Metis: Bridging Text and Code Memory for Self-Evolving Agents",
+      "abstract": "Self-evolving agents improve over time by distilling experience from past executions and reusing it in future tasks. Existing systems represent such experience either as natural-language text injected into the agent context or as code exposed as callable tools. However, the choice between these representations is typically made at design time rather than derived from the characteristics of the experience itself, leaving the trade-offs between them poorly understood. We present the first controlled study that isolates text memory and code memory over an identical set of experiences. Our results show that the two forms exhibit complementary trade-offs in construction cost, execution efficiency, and transferability, such that neither representation alone is sufficient. Guided by these findings, we propose Metis, a self-evolving agent system built on a hierarchical dual-representation memory. Metis organizes textual experience into execution plans, environment facts, and common pitfalls, and selectively crystallizes recurring plans into validated callable tools. This design combines the broad applicability of text memory with the execution efficiency of code memory while incurring tool-generation cost only when justified by repeated reuse. We evaluate Metis on AppWorld, a challenging benchmark for interactive agents. The results show that Metis improves task accuracy by up to 20.6% over ReAct while reducing execution cost by up to 22.8%. Compared with representative self-evolving agent systems, Metis consistently achieves a better balance between accuracy, execution efficiency, and memory-construction cost.",
+      "authors": [
+        "Zijie Dai",
+        "Siuhin He",
+        "Hui Li",
+        "Qihui Zhou",
+        "Jiajun Li",
+        "Mingcong Song",
+        "Guoping Long",
+        "Hongjie Si",
+        "Xin Yao",
+        "Lin Zhang",
+        "James Cheng",
+        "Xiao Yan"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-06-23T05:17:22+00:00",
+      "link": "https://arxiv.org/pdf/2606.24151v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness",
+        "query:memory"
+      ],
+      "llm_score": 6.8,
+      "llm_evidence_en": "controlled study of text memory and code memory representations in self-evolving agents",
+      "llm_evidence_cn": "controlled study of text memory and code memory representations in self-evolving agents",
+      "llm_evidence": "controlled study of text memory and code memory representations in self-evolving agents",
+      "canonical_evidence": "controlled study of text memory and code memory representations in self-evolving agents",
+      "llm_tldr_en": "Metis presents the first controlled study isolating text memory and code memory in self-evolving agents, revealing complementary trade-offs in construction cost, execution efficiency, and transferability.",
+      "llm_tldr_cn": "Self-evolving agents typically store experience either as natural-language text injected into context or as callable code tools, but the trade-offs between these representations remain poorly understood. This paper presents the first controlled study that isolates text memory and code memory over an identical set of experiences. The results show that the two forms exhibit complementary trade-offs in construction cost, execution efficiency, and transferability, such that neither representation alone is sufficient. The work provides principled guidance for agent memory design and analysis.",
+      "llm_tldr": "Metis presents the first controlled study isolating text memory and code memory in self-evolving agents, revealing complementary trade-offs in construction cost, execution efficiency, and transferability.",
+      "llm_tags": [
+        "query:memory"
+      ],
+      "matched_query_tag": "query:memory",
+      "matched_query_text": "interpretability and analysis of agent memory",
+      "matched_requirement_id": "req-12",
+      "relevance_score": 7.0,
+      "author_score": 6.5,
+      "author_rating_explanation": "First author Zijie Dai has a verified affiliation with University of Science and Technology of China (USTC), a top Chinese AI school/lab in the 6-8 band, plus Jiangsu University. Last author Xiao Yan is affiliated with Wuhan University and several other Chinese institutions, which fall in the 6-8 band for top Chinese schools. The combination of USTC and Wuhan University supports a score in the upper part of the 6-8 range.",
+      "author_profiles": [
+        {
+          "name": "Zijie Dai",
+          "role": "first_author",
+          "affiliation": "Siuhin He; Jiangsu University; University of Science and Technology of China",
+          "citation_count": "399",
+          "paper_count": "44",
+          "citation_hints": "OpenAlex cited_by_count=690; OpenAlex works_count=102; Semantic Scholar citation_count=399; Semantic Scholar paper_count=44",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex, semantic_scholar"
+        },
+        {
+          "name": "Xiao Yan",
+          "role": "last_author",
+          "affiliation": "Wuhan University; Qingdao University; Affiliated Hospital of Qingdao University; Henan Normal University",
+          "citation_count": "63",
+          "paper_count": "13",
+          "citation_hints": "OpenAlex cited_by_count=55381; OpenAlex works_count=91; Semantic Scholar citation_count=63; Semantic Scholar paper_count=13",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex, semantic_scholar"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "6",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.23026v1",
+      "source": "arxiv",
+      "title": "A Stackelberg Framework for Resource-Aware LLM Agents: Learning, Repair, and Conditional Guarantees",
+      "abstract": "Large language model (LLM) agents increasingly operate as multi-turn systems that must allocate context, prompt verbosity, and tool access under finite computational budgets. Static thresholds are simple, but they are brittle under heterogeneous tasks and evolving session states. We formulate resource governance as a contextual Stackelberg game: a controller commits to a quality target and a cost incentive, while an executor responds with resource actions over context, prompting, and tool usage. We learn a conditional response model, optimize a leader policy against that model, and repair the resulting policy using real-API calibration and projection onto an empirically selected action set. For the restricted game, we establish conditional guarantees for equilibrium existence, follower-response stability, safe-set projection, and transfer from a surrogate environment to the real environment under bounded value error. The primary real-API experiment comprises 300 evaluated turns. Relative to a conservative baseline, the selected repaired controller reduces mean token cost by 17.4% (Welch $p=0.022$), while the measured quality difference is not statistically significant ($p=0.44$). The theoretical results are conditional and the experiments do not estimate their regret or transfer constants; consequently, the evidence establishes a promising repaired operating point, not a certified real-system equilibrium.",
+      "authors": [
+        "Baoxun Wang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-22T08:38:22+00:00",
+      "link": "https://arxiv.org/pdf/2606.23026v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness",
+        "query:memory"
+      ],
+      "llm_score": 7.6,
+      "llm_evidence_en": "resource governance framework for LLM agents",
+      "llm_evidence_cn": "controller-executor governance of agent behavior",
+      "llm_evidence": "resource governance framework for LLM agents",
+      "canonical_evidence": "resource governance framework for LLM agents",
+      "llm_tldr_en": "The paper formulates resource governance as a Stackelberg game between a controller and an executor, offering a control-theoretic harness-like framework for LLM agents.",
+      "llm_tldr_cn": "This paper addresses the problem of governing LLM agents that must allocate context, prompt verbosity, and tool access under finite computational budgets. The authors formulate resource governance as a contextual Stackelberg game in which a controller commits to quality targets and cost incentives while an executor responds with resource actions. They learn a conditional response model, optimize a leader policy, and repair the resulting policy through real-API calibration and projection onto an empirically selected action set. The framework provides conditional guarantees for the restricted game. Conceptually, the controller-executor structure functions as a harness-like mechanism for constraining and shaping agent behavior.",
+      "llm_tldr": "The paper formulates resource governance as a Stackelberg game between a controller and an executor, offering a control-theoretic harness-like framework for LLM agents.",
+      "llm_tags": [
+        "query:harness"
+      ],
+      "matched_query_tag": "query:harness",
+      "matched_query_text": "agent harness framework for controlling AI agent behavior",
+      "matched_requirement_id": "req-1",
+      "relevance_score": 7.0,
+      "author_score": 8.5,
+      "author_rating_explanation": "First author Baoxun Wang is affiliated with the Platform and Content Group (PCG) at Tencent, which is a major Chinese tech company with significant AI research output. Tencent is comparable to other major tech companies in the 9-10 band. The author has strong citation metrics (1229 citations, 61 papers) supporting research impact.",
+      "author_profiles": [
+        {
+          "name": "Baoxun Wang",
+          "role": "first_author",
+          "affiliation": "Platform and Content Group, Tencent; PCG, Tencent",
+          "citation_count": "1229",
+          "paper_count": "61",
+          "citation_hints": "Semantic Scholar citation_count=1229; Semantic Scholar paper_count=61",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, semantic_scholar"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "7",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.26793v1",
+      "source": "arxiv",
+      "title": "MIRROR: Novelty-Constrained Memory-Guided MCTS Red-Teaming for Agentic RAG",
+      "abstract": "Multimodal agentic retrieval-augmented generation (RAG) systems expand the attack surface beyond prompt injection to include text poisoning, image injection, direct-query attacks, and orchestrator-level tool manipulation. Existing red-teaming approaches are typically surface-specific and often recycle known attack templates; on text-poisoning benchmarks we measure 73-84% exact duplication. We present MIRROR, a unified cross-surface framework that performs memory-guided Monte Carlo tree search while conditioning candidate generation on retrieved context under an explicit novelty constraint. A deterministic Novelty Gate rejects any candidate matching the retrieval set under normalized comparison, allowing retrieval to inform search priors without enabling prompt copying. Across four attack surfaces on a multimodal agentic RAG target, MIRROR attains 76% ASR on image poisoning compared with 52% for baselines, 97% ASR on orchestrator attacks at half the query cost, and the lowest cross-surface variance (coefficient of variation 0.47). In contrast, specialized baselines collapse across surfaces: suffix optimization reaches 79% ASR on text poisoning but 1% on direct queries. We release ART-SafeBench with 41,815 in-package records and runtime adapters yielding 41,991+ total records across four surfaces.",
+      "authors": [
+        "Inderjeet Singh",
+        "Andrés Murillo",
+        "Motoyoshi Sekiya",
+        "Yuki Unno",
+        "Junichi Suga"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-25T09:26:49+00:00",
+      "link": "https://arxiv.org/pdf/2606.26793v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness",
+        "query:memory"
+      ],
+      "llm_score": 6.8,
+      "llm_evidence_en": "memory-guided red-teaming framework for multimodal agentic RAG covering poisoning and tool manipulation",
+      "llm_evidence_cn": "memory-guided red-teaming framework for multimodal agentic RAG covering poisoning and tool manipulation",
+      "llm_evidence": "memory-guided red-teaming framework for multimodal agentic RAG covering poisoning and tool manipulation",
+      "canonical_evidence": "memory-guided red-teaming framework for multimodal agentic RAG covering poisoning and tool manipulation",
+      "llm_tldr_en": "MIRROR presents a unified cross-surface red-teaming framework using memory-guided Monte Carlo tree search to discover novel attacks on multimodal agentic RAG systems.",
+      "llm_tldr_cn": "Multimodal agentic RAG systems expand the attack surface beyond prompt injection to include text poisoning, image injection, direct-query attacks, and orchestrator-level tool manipulation. Existing red-teaming approaches are surface-specific and recycle known attack templates. This paper presents MIRROR, a unified cross-surface framework that performs memory-guided Monte Carlo tree search under an explicit novelty constraint. A deterministic Novelty Gate rejects candidates matching the retrieval set, enabling retrieval to inform search priors without enabling duplication. The work advances adversarial testing of memory-augmented agent systems.",
+      "llm_tldr": "MIRROR presents a unified cross-surface red-teaming framework using memory-guided Monte Carlo tree search to discover novel attacks on multimodal agentic RAG systems.",
+      "llm_tags": [
+        "query:memory:composite"
+      ],
+      "matched_query_tag": "query:memory:composite",
+      "matched_query_text": "Papers central to memory safety, especially work that connects or combines: safety and security of agent memory systems; adversarial attacks on agent memory; interpretability and analysis of agent memory; interpretability and explainability of agent memory in language model agents; attacks and defenses for memory augmented autonomous agents; memory integrity and robustness in autonomous agent systems.",
+      "matched_requirement_id": "req-composite-memory",
+      "relevance_score": 8.0,
+      "author_score": 5.0,
+      "author_rating_explanation": "First author Inderjeet Singh is affiliated with The University of Texas at Arlington, a mid-tier US research university in the 5-6 band. Last author Junichi Suga is affiliated with Fujitsu (Germany), which is a major tech company and would fall in the 9-10 band, but the German Fujitsu branch is not one of the specifically listed elite AI research labs. UT Arlington anchors this in the 5-6 range.",
+      "author_profiles": [
+        {
+          "name": "Inderjeet Singh",
+          "role": "first_author",
+          "affiliation": "Motoyoshi Sekiya; The University of Texas at Arlington; Experimental Drug Development Centre",
+          "citation_count": "1576",
+          "paper_count": "157",
+          "citation_hints": "OpenAlex cited_by_count=1576; OpenAlex works_count=157",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex"
+        },
+        {
+          "name": "Junichi Suga",
+          "role": "last_author",
+          "affiliation": "Yuki Unno; Fujitsu (Germany)",
+          "citation_count": "74",
+          "paper_count": "14",
+          "citation_hints": "OpenAlex cited_by_count=71; OpenAlex works_count=29; Semantic Scholar citation_count=74; Semantic Scholar paper_count=14",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source, openalex, semantic_scholar"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "6",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.23416v1",
+      "source": "arxiv",
+      "title": "Detecting Malicious Agent Skills in the Wild using Attention",
+      "abstract": "LLM agents increasingly load skills, file-based packages of natural-language instructions written by third parties and distributed through marketplaces, that execute with the user's privileges. A single malicious skill can exfiltrate data, hijack the agent, or persist as a supply-chain foothold, which turns the skill marketplace into a new attack surface for agentic systems. Prompt-injection defenses do not carry over to this setting. They rely on a boundary between trusted instructions and untrusted data, whereas a skill is itself a body of instructions, so an injected command sits among many legitimate ones and inherits their authority. We present Locate-and-Judge, a two-stage detector designed for this regime. A lightweight locator scores the structural spans of a skill by the instruction-following attention each span draws and retains only the top-K. A judge then examines the retained spans in detail. Concentrating the costly judgment on a few high-attention spans lets the detector audit an entire marketplace instead of a sample. Compared to direct LLM-based scanning, this approach offers an order-of-magnitude cost reduction, dramatically increasing its scalability at a small cost to recall, and it dominates keyword and regex baselines at comparable expense. Deployed at marketplace scale and at negligible cost, Locate-and-Judge flags skills with high precision, the majority of which we manually confirmed as malicious, surfacing dozens of live malicious skills, including several disguised as benign functionality and many that SkillSpector and Cisco Skill Scanner fail to detect. We release the resulting labeled dataset.",
+      "authors": [
+        "Bacem Etteib",
+        "Daniele Lunghi",
+        "Tégawendé F. Bissyandé"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-22T14:41:06+00:00",
+      "link": "https://arxiv.org/pdf/2606.23416v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness",
+        "query:memory"
+      ],
+      "llm_score": 7.6,
+      "llm_evidence_en": "detecting malicious agent skills as supply-chain attack surface",
+      "llm_evidence_cn": "detecting malicious agent skills as supply-chain attack surface",
+      "llm_evidence": "detecting malicious agent skills as supply-chain attack surface",
+      "canonical_evidence": "detecting malicious agent skills as supply-chain attack surface",
+      "llm_tldr_en": "The paper presents Locate-and-Judge, a two-stage detector for identifying malicious third-party agent skills that can hijack agents or exfiltrate data.",
+      "llm_tldr_cn": "The paper addresses the emerging attack surface where LLM agents load third-party skills that execute with user privileges, creating supply-chain risks such as data exfiltration, agent hijacking, and persistent footholds. It argues that prompt-injection defenses fail because skills are themselves bodies of instructions where injected commands inherit authority. The authors present Locate-and-Judge, a two-stage detector with a lightweight locator that scores structural spans and a judge that assesses malicious intent. This work directly addresses harness attack vectors and exploitation through the skill marketplace as a new attack surface.",
+      "llm_tldr": "The paper presents Locate-and-Judge, a two-stage detector for identifying malicious third-party agent skills that can hijack agents or exfiltrate data.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 9.0,
+      "author_score": 5.5,
+      "author_rating_explanation": "First author Bacem Etteib is affiliated with University of Luxembourg, which is a European institution not explicitly listed in the top European band but has concrete research output. Last author Tégawendé F. Bissyandé has no verifiable affiliation. The score reflects a mid-range placement given the European university affiliation.",
+      "author_profiles": [
+        {
+          "name": "Bacem Etteib",
+          "role": "first_author",
+          "affiliation": "University of Luxembourg",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Tégawendé F. Bissyandé",
+          "role": "last_author",
+          "affiliation": "",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "low",
+          "evidence_source": "metadata lookup unavailable"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "7",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.27136v1",
+      "source": "arxiv",
+      "title": "Joint Learning of Experiential Rules and Policies for Large Language Model Agents",
+      "abstract": "For LLM agents in multi-step interactive environments, a key challenge is to make effective use of accumulated interaction experience. Existing work has typically separated two uses of such experience: keeping it outside the model as natural-language rules for later prompting, or using trajectories and feedback to update the model parameters. The former is easy to interpret but can fall out of sync with the evolving policy; the latter improves the policy more broadly but provides only limited correction for local mistakes in sparse-reward settings. We present Joint Learning of Experiential Rules and Policies for LLM Agents (JERP), which updates a long-term experiential-rule pool and the policy from the same interaction trajectories. At decision time, JERP retrieves task-relevant rules and conditions the agent on them together with the interaction history. After each episode, it uses the collected trajectories both to optimize the policy and to revise the rule pool by comparing current rollouts with reference successful trajectories. This coupling keeps the rule pool aligned with the evolving policy while allowing stable and effective behaviors to be gradually absorbed into the model itself. Experiments on AlfWorld and WebShop show that JERP yields consistent gains in decision performance for complex interactive tasks.",
+      "authors": [
+        "Shicheng Ye",
+        "Chao Yu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-25T15:11:02+00:00",
+      "link": "https://arxiv.org/pdf/2606.27136v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness",
+        "query:memory"
+      ],
+      "llm_score": 6.8,
+      "llm_evidence_en": "LLM agent memory-augmented experiential rule pool for long-term reasoning",
+      "llm_evidence_cn": "LLM agent memory-augmented experiential rule pool for long-term reasoning",
+      "llm_evidence": "LLM agent memory-augmented experiential rule pool for long-term reasoning",
+      "canonical_evidence": "LLM agent memory-augmented experiential rule pool for long-term reasoning",
+      "llm_tldr_en": "JERP jointly learns experiential rules and policies for LLM agents, improving long-term memory use and sparse-reward performance.",
+      "llm_tldr_cn": "This paper addresses the challenge of making effective use of accumulated interaction experience in LLM agents operating in multi-step environments. It proposes Joint Learning of Experiential Rules and Policies (JERP), which jointly updates a long-term experiential-rule memory pool and the policy from the same interaction trajectories. The method combines the interpretability of external natural-language rules with the broad policy improvement of parameter updates. Experiments show that this dual-memory approach outperforms methods that treat rules and policies separately, especially in sparse-reward settings where local mistakes are hard to correct.",
+      "llm_tldr": "JERP jointly learns experiential rules and policies for LLM agents, improving long-term memory use and sparse-reward performance.",
+      "llm_tags": [
+        "query:memory:composite"
+      ],
+      "matched_query_tag": "query:memory:composite",
+      "matched_query_text": "Papers central to memory safety, especially work that connects or combines: safety and security of agent memory systems; adversarial attacks on agent memory; interpretability and analysis of agent memory; interpretability and explainability of agent memory in language model agents; attacks and defenses for memory augmented autonomous agents; memory integrity and robustness in autonomous agent systems.",
+      "matched_requirement_id": "req-composite-memory",
+      "relevance_score": 7.0,
+      "author_score": 6.5,
+      "author_rating_explanation": "First author Shicheng Ye is affiliated with Sun Yat-sen University, a top Chinese AI school/lab in the 6-8 band. Last author Chao Yu has no verified affiliation in the metadata, only citation evidence (2374 citations, 74 papers). The concrete affiliation of the first author anchors the score in the 6-8 range.",
+      "author_profiles": [
+        {
+          "name": "Shicheng Ye",
+          "role": "first_author",
+          "affiliation": "Chao Yu* Sun Yat-sen University",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Chao Yu",
+          "role": "last_author",
+          "affiliation": "",
+          "citation_count": "2374",
+          "paper_count": "74",
+          "citation_hints": "Semantic Scholar citation_count=2374; Semantic Scholar paper_count=74",
+          "confidence": "medium",
+          "evidence_source": "semantic_scholar"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "6",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.23277v1",
+      "source": "arxiv",
+      "title": "GIF: Locally Sound Geometric Information Flow Control for LLMs",
+      "abstract": "Large language models increasingly mediate interactions between sensitive data, untrusted inputs, and privileged actions in agentic systems, creating security and privacy risks. These range from prompt injections that manipulate downstream tool use to leakage of confidential information through model outputs. Recent Information Flow Control (IFC)-based defenses show promise but lack a principled semantic foundation for reasoning about information flow through the model itself. Since any input token may influence any output token in an autoregressive LLM, existing approaches suffer from severe taint explosion.   We present Geometric Information Flow (GIF), a semantic framework for tracking information flow from input tokens to outputs. GIF uses the LLM Jacobian and local output geometry to upper-bound the Shannon mutual information between perturbed input spans and model outputs, yielding a scalable measure computable on large models via automatic differentiation and low-rank approximation. Unlike attention-based or correlational attribution heuristics, GIF satisfies local geometric soundness, and we provide a fully mechanized Lean 4 proof that it upper-bounds the true information flow induced by a given prompt under local regularity assumptions.   We evaluate GIF on integrity and confidentiality tasks across multiple prompt-injection and privacy-leakage benchmarks. GIF achieves near-perfect recall even without a downstream declassifier, outperforming attention-based baselines. Combined with lightweight LLM-based declassifiers, it matches or exceeds the F1 of direct LLM-as-judge baselines such as GPT-5.5 xhigh reasoning while using up to 81x lower token cost. GIF flows detected with small surrogate models transfer to larger state-of-the-art models and other model families, even when the surrogate is up to 200x smaller, suggesting black-box deployment without gradient access.",
+      "authors": [
+        "Adam Storek",
+        "Nikolaus Holzer",
+        "Zhuo Zhang",
+        "Suman Jana"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-22T12:54:04+00:00",
+      "link": "https://arxiv.org/pdf/2606.23277v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness",
+        "query:memory"
+      ],
+      "llm_score": 7.4,
+      "llm_evidence_en": "geometric information flow control framework for tracking security risks in LLM agentic systems",
+      "llm_evidence_cn": "geometric information flow control framework for tracking security risks in LLM agentic systems",
+      "llm_evidence": "geometric information flow control framework for tracking security risks in LLM agentic systems",
+      "canonical_evidence": "geometric information flow control framework for tracking security risks in LLM agentic systems",
+      "llm_tldr_en": "GIF proposes a geometric information flow control framework using LLM Jacobians to track information flow from inputs to outputs, addressing prompt injection and data leakage in agentic systems.",
+      "llm_tldr_cn": "Large language models increasingly mediate interactions between sensitive data, untrusted inputs, and privileged actions in agentic systems, creating security and privacy risks including prompt injection and confidential information leakage. Existing Information Flow Control defenses lack principled semantic foundations and suffer from taint explosion. This paper presents Geometric Information Flow (GIF), a semantic framework using the LLM Jacobian to track information flow from input tokens to outputs. GIF provides a principled foundation for reasoning about security risks in LLM-mediated agentic workflows.",
+      "llm_tldr": "GIF proposes a geometric information flow control framework using LLM Jacobians to track information flow from inputs to outputs, addressing prompt injection and data leakage in agentic systems.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 7.0,
+      "author_score": 8.0,
+      "author_rating_explanation": "Both authors are affiliated with Columbia University, a top US AI school in the 8-9 band (Columbia is an Ivy League institution comparable to Princeton and Harvard). Both first author Adam Storek and last author Suman Jana share this verified affiliation, supporting a score in the lower portion of the 8-9 band.",
+      "author_profiles": [
+        {
+          "name": "Adam Storek",
+          "role": "first_author",
+          "affiliation": "Columbia University",
+          "citation_count": "4",
+          "paper_count": "2",
+          "citation_hints": "OpenAlex cited_by_count=4; OpenAlex works_count=2",
+          "confidence": "medium",
+          "evidence_source": "openalex"
+        },
+        {
+          "name": "Suman Jana",
+          "role": "last_author",
+          "affiliation": "Columbia University",
+          "citation_count": "152",
+          "paper_count": "6",
+          "citation_hints": "OpenAlex cited_by_count=700; OpenAlex works_count=31; Semantic Scholar citation_count=152; Semantic Scholar paper_count=6",
+          "confidence": "medium",
+          "evidence_source": "openalex, semantic_scholar"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "7",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.23075v1",
+      "source": "arxiv",
+      "title": "Safety in Self-Evolving LLM Agent Systems: Threats, Amplification, and Case Studies",
+      "abstract": "Self-evolving LLM agent systems, which autonomously update their model parameters, memory, tools, and architectures, introduce a qualitatively new threat landscape in which adversarial influences become permanently encoded, self-amplify across generations, and propagate through populations without sustained attacker access. We present a systematic security and privacy analysis organized around the Module-Lifecycle Attack Surface (MLAS) matrix, which decomposes the attack surface into five functional modules (Brain, Cognitive Resource, Execution, Self-Design, Collective) $\\times$ five lifecycle stages (Bootstrap, Propose, Evaluate, Commit, Serve). Analysis of the resulting 25 cells reveals that 17 face critical threats for which no effective partial mitigation. We identify seven cross-cutting amplification effects that interact synergistically and cannot be addressed by securing individual modules in isolation. Comparative case studies of two open-source frameworks demonstrate that evolution-native design activates $3.5\\times$ more attack surface cells and achieves a 100% attack persistence rate (40/40 payloads across all CIA+Privacy categories), while co-located security scanners block only 2.5% of attacks. Our findings establish that self-evolution converts every known attack category from session-bounded to lineage-persistent, gives rise to entirely new attack classes, and renders static defenses structurally inadequate, motivating evolution-aware security frameworks and formal verification for self-modifying systems.",
+      "authors": [
+        "Ruixiao Lin",
+        "Xinhao Deng",
+        "Qingming Li",
+        "Jianan Ma",
+        "Yunhao Feng",
+        "Yuqi Qing",
+        "Zhenyuan Li",
+        "Yechao Zhang",
+        "Shiwen Cui",
+        "Changhua Meng",
+        "Tianwei Zhang",
+        "Xingjun Ma",
+        "Qi Li",
+        "Ke Xu",
+        "Shouling Ji"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-22T09:23:50+00:00",
+      "link": "https://arxiv.org/pdf/2606.23075v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness",
+        "query:memory"
+      ],
+      "llm_score": 6.6,
+      "llm_evidence_en": "systematic security analysis of self-evolving agent systems using MLAS matrix",
+      "llm_evidence_cn": "systematic security analysis of self-evolving agent systems using MLAS matrix",
+      "llm_evidence": "systematic security analysis of self-evolving agent systems using MLAS matrix",
+      "canonical_evidence": "systematic security analysis of self-evolving agent systems using MLAS matrix",
+      "llm_tldr_en": "Analyzes security threats in self-evolving LLM agents using a Module-Lifecycle Attack Surface matrix covering five modules and five lifecycle stages.",
+      "llm_tldr_cn": "Self-evolving LLM agent systems that autonomously update their parameters, memory, tools, and architectures introduce qualitatively new threat landscapes where adversarial influences become permanently encoded and self-amplify across generations. This paper presents a systematic security and privacy analysis organized around the Module-Lifecycle Attack Surface matrix, decomposing threats across five functional modules and five lifecycle stages. Analysis reveals that 17 of 25 cells face critical threats with no effective defenses. The work identifies how attacks on agent memory, tools, and architecture can propagate through populations, providing a comprehensive framework for understanding harness attack vectors and safety in evolving agent systems.",
+      "llm_tldr": "Analyzes security threats in self-evolving LLM agents using a Module-Lifecycle Attack Surface matrix covering five modules and five lifecycle stages.",
+      "llm_tags": [
+        "query:harness:composite"
+      ],
+      "matched_query_tag": "query:harness:composite",
+      "matched_query_text": "Papers central to harness safety and harness attack, especially work that connects or combines: agent harness framework for controlling AI agent behavior; harness safety mechanisms and practices; design principles for agent harness architecture; harness attack vectors and exploitation; harness vulnerability assessment; how to implement safety harness for AI agents; agent harness security; What are the common harness attack methods and how to prevent them?; What are the best practices for harness vulnerability management?.",
+      "matched_requirement_id": "req-composite-harness",
+      "relevance_score": 8.0,
+      "author_score": 4.5,
+      "author_rating_explanation": "No verified affiliation metadata is available for either focus author. Metadata lookup was unavailable, so a neutral score is assigned with low confidence.",
+      "author_profiles": [
+        {
+          "name": "Ruixiao Lin",
+          "role": "first_author",
+          "affiliation": "",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "low",
+          "evidence_source": "metadata lookup unavailable"
+        },
+        {
+          "name": "Shouling Ji",
+          "role": "last_author",
+          "affiliation": "",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "low",
+          "evidence_source": "metadata lookup unavailable"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "6",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.24437v1",
+      "source": "arxiv",
+      "title": "ReM-MoA: Reasoning Memory Sustains Mixture-of-Agents Scaling",
+      "abstract": "Mixture-of-Agents (MoA) architectures improve inference-time scaling by organizing multiple LLM agents into layered reasoning pipelines. However, existing MoA variants fail to sustain gains as depth increases, exhibiting degradation, early plateauing, or saturation. We propose ReM-MoA, a memory-augmented MoA framework that sustains scaling through two mechanisms: (1) a Ranked Reasoning Memory that persistently stores and ranks reasoning traces from all layers using a comparative Reviewer Agent, and (2) a Curated Diversified Memory Routing scheme that exposes different agents to distinct combinations of successful and failed traces, preserving exploration diversity while propagating high-quality reasoning. We further introduce an optional multi-domain Reviewer distillation pipeline that improves ranking quality through frontier-model supervision. Across five reasoning benchmarks spanning math, formal logic, code, knowledge, and commonsense, ReM-MoA consistently outperforms prior MoA variants across both depth and width scaling, and its advantage widens with depth, establishing structured cross-layer reasoning memory as a key missing mechanism for scalable multi-agent inference.",
+      "authors": [
+        "Heng Ping",
+        "Arijit Bhattacharjee",
+        "Peiyu Zhang",
+        "Shixuan Li",
+        "Wei Yang",
+        "Ali Jannesari",
+        "Nesreen Ahmed",
+        "Paul Bogdan"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-23T11:14:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.24437v1",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:harness",
+        "query:memory"
+      ],
+      "llm_score": 7.4,
+      "llm_evidence_en": "memory-augmented mixture-of-agents framework for sustained reasoning scaling",
+      "llm_evidence_cn": "memory-augmented mixture-of-agents framework for sustained reasoning scaling",
+      "llm_evidence": "memory-augmented mixture-of-agents framework for sustained reasoning scaling",
+      "canonical_evidence": "memory-augmented mixture-of-agents framework for sustained reasoning scaling",
+      "llm_tldr_en": "ReM-MoA adds ranked reasoning memory and diversified routing to MoA to sustain scaling with depth.",
+      "llm_tldr_cn": "This paper addresses performance degradation in deep Mixture-of-Agents reasoning pipelines, where gains plateau as depth increases. It proposes ReM-MoA, a memory-augmented MoA framework that sustains scaling using a Ranked Reasoning Memory and Curated Diversified Memory Routing. The Ranked Reasoning Memory stores and ranks reasoning traces from all layers via a comparative Reviewer Agent, while the routing scheme exposes different agents to diverse combinations of successful and failed traces. This preserves exploration diversity and propagates high-quality reasoning across layers. Experiments show that ReM-MoA sustains inference-time scaling more effectively than memory-free MoA baselines. The work highlights how structured agent memory can improve robustness and scalability in multi-agent systems.",
+      "llm_tldr": "ReM-MoA adds ranked reasoning memory and diversified routing to MoA to sustain scaling with depth.",
+      "llm_tags": [
+        "query:memory:composite"
+      ],
+      "matched_query_tag": "query:memory:composite",
+      "matched_query_text": "Papers central to memory safety, especially work that connects or combines: safety and security of agent memory systems; adversarial attacks on agent memory; interpretability and analysis of agent memory; interpretability and explainability of agent memory in language model agents; attacks and defenses for memory augmented autonomous agents; memory integrity and robustness in autonomous agent systems.",
+      "matched_requirement_id": "req-composite-memory",
+      "relevance_score": 7.0,
+      "author_score": 8.0,
+      "author_rating_explanation": "Both focus authors are affiliated with the University of Southern California, a top US AI school in the 8-9 band. First author Heng Ping and last author Paul Bogdan are both at USC.",
+      "author_profiles": [
+        {
+          "name": "Heng Ping",
+          "role": "first_author",
+          "affiliation": "University of Southern California",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        },
+        {
+          "name": "Paul Bogdan",
+          "role": "last_author",
+          "affiliation": "University of Southern California",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "7",
+      "fallback_source_date": "20260629"
+    },
+    {
+      "id": "2606.23195v2",
+      "source": "arxiv",
+      "title": "Memory Contagion: Cross-Temporal Propagation of Evaluator Bias via Agent Memory",
+      "abstract": "Large Language Model (LLM) agents increasingly rely on memory systems to maintain long-term coherence. Recent work shows that agent memories degrade during continuous consolidation. However, existing research assumes memories are derived from unbiased experiences. In this work, we identify and formalize a novel phenomenon: Memory Contagion -- the cross-temporal propagation of evaluator bias through agent memory. We show that when agents are trained or guided by biased evaluators, their experiences become biased; when these trajectories are stored and consolidated into memory, the bias propagates to future agents retrieving from the same memory store, even when consolidation is perfect (oracle). Across two bias types (length preference, authority bias) and four experimental phases, we demonstrate: (1) Memory Contagion occurs for length bias even with perfect consolidation on older models (Gamma_A = 13.18, DeepSeek V4-Chat), while newer models (V4-Pro, Claude) are immune, proving both that biased input is a sufficient cause and that contagion is model-generation-dependent; (2) authority bias fails to propagate in all 15 controlled multi-seed experiments (Gamma_A = 0.00), revealing that not all evaluator biases can cross temporal boundaries through current memory architectures; (3) No observed safe threshold: length bias propagation is detected at contamination rates as low as p=0.2. Our findings expose a critical but contingent vulnerability in current agent memory designs and provide formal tools for measuring cross-temporal bias propagation.",
+      "authors": [
+        "Zewen Liu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-22T11:43:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.23195v2",
+      "tags": [
+        "keyword:harness",
+        "keyword:memory",
+        "query:memory"
+      ],
+      "llm_score": 6.6,
+      "llm_evidence_en": "cross-temporal propagation of evaluator bias through agent memory",
+      "llm_evidence_cn": "memory contagion showing bias propagation via memory consolidation",
+      "llm_evidence": "cross-temporal propagation of evaluator bias through agent memory",
+      "canonical_evidence": "cross-temporal propagation of evaluator bias through agent memory",
+      "llm_tldr_en": "This paper identifies Memory Contagion, showing how evaluator bias propagates cross-temporally through agent memory even with perfect consolidation, revealing a fundamental memory integrity vulnerability.",
+      "llm_tldr_cn": "LLM agents increasingly rely on memory systems for long-term coherence, but existing research assumes memories derive from unbiased experiences, overlooking how bias propagates through memory. This paper identifies and formalizes Memory Contagion, a novel phenomenon where evaluator bias propagates cross-temporally through agent memory. When agents are trained or guided by biased evaluators, their experiences become biased, and when these trajectories are stored and consolidated into memory, the bias propagates to future agents retrieving from the same memory store. The authors demonstrate this effect across two bias types including length preference and authority bias, showing propagation occurs even with perfect oracle consolidation. This work reveals a fundamental vulnerability in agent memory systems where biased evaluation creates self-reinforcing contamination loops, highlighting the need for memory integrity mechanisms and bias-aware consolidation in autonomous agent architectures.",
+      "llm_tldr": "This paper identifies Memory Contagion, showing how evaluator bias propagates cross-temporally through agent memory even with perfect consolidation, revealing a fundamental memory integrity vulnerability.",
+      "llm_tags": [
+        "query:memory:composite"
+      ],
+      "matched_query_tag": "query:memory:composite",
+      "matched_query_text": "Papers central to memory safety, especially work that connects or combines: safety and security of agent memory systems; adversarial attacks on agent memory; interpretability and analysis of agent memory; interpretability and explainability of agent memory in language model agents; attacks and defenses for memory augmented autonomous agents; memory integrity and robustness in autonomous agent systems.",
+      "matched_requirement_id": "req-composite-memory",
+      "relevance_score": 9.0,
+      "author_score": 3.0,
+      "author_rating_explanation": "The sole focus author Zewen Liu is listed as 'Independent Researcher' with no institutional affiliation. This falls squarely in the 0-5 bucket for unknown, independent, or weakly verifiable affiliations.",
+      "author_profiles": [
+        {
+          "name": "Zewen Liu",
+          "role": "first_author",
+          "affiliation": "Independent Researcher",
+          "citation_count": "",
+          "paper_count": "",
+          "citation_hints": "",
+          "confidence": "medium",
+          "evidence_source": "arxiv_source"
+        }
+      ],
+      "selection_source": "recent_recommendation_cache",
+      "quick_tier": "6",
+      "fallback_source_date": "20260629"
+    }
+  ]
+}

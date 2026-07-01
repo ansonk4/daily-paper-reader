@@ -1,0 +1,927 @@
+Title: DMV-Bench: Diagnosing Long-Horizon Multimodal Agents' Visual Memory with Incidental Cue Injection
+
+URL Source: https://arxiv.org/pdf/2606.27499v1
+
+Published Time: Mon, 29 Jun 2026 00:06:32 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+## DMV-Bench: Diagnosing Long-Horizon Multimodal Agents’ Visual Memory with Incidental Cue Injection 
+
+Yujin Tang Chenming Shang Ruize Xu Nikhil Singh 
+
+Dartmouth College 
+
+{yujin.tang.gr, nikhil.singh}@dartmouth.edu 
+
+Abstract 
+
+Research on agent memory has matured rapidly, but almost entirely on the text side: few exist-ing benchmarks ask, in an interactive environ-ment, when an agent genuinely needs to remem-ber what it saw rather than what it could write down. We introduce DMV-Bench 1, the first interactive benchmark for multimodal-agent visual memory. DMV-Bench is built on a controlled home-furnishing e-commerce cat-alogue of 1,000 product variants in which a text-leakage contract keeps the discriminative signal of each task in the pixels alone. Across a chain of autonomous shopping sessions, ev-ery visited product image carries a unique, pre-rendered incidental cue , and the agent is later asked to recall a particular cued product and navigate to its URL. InspirAdded the ed by dual-coding theory, we propose DualMem , a memory architecture that maintains a visual and a verbal code in parallel. On DMV-Bench, DualMem outperforms a caption baseline and three recent multimodal agent-memory systems at every chain length J ∈ { 5, 10 , 15 , 50 } on both Gemini 2.5 Flash and Qwen2.5-VL-7B, with the lead surviving controls for memory-bank size and encoding-position bias, and an 
+
+asymmetric dual-coding regime in which vi-sion carries the cue end-to-end while the verbal channel plays a smaller query-grounding role. 
+
+1 Introduction 
+
+Much of what humans remember from a long-past experience is recovered not by deliberate rehearsal but by a cue: an incidental perceptual detail (like the colour of a wrapper, or the pattern on a hat) that was not flagged as important at the time, yet later acts as the key that unlocks the rest of the episode. This has been theorized; for example en-coding specificity (Tulving and Thomson, 1973) 
+
+> 1
+
+Code: https://github.com/yyyujintang/ DMV-Bench Textual Memory Only 
+
+❌ ✅       
+
+> I'm furnishing
+> a room. Please
+> find me a
+> chair, a lamp,
+> and a vase.
+> Go to the
+> lamp with an
+> alarm clock
+> next to it.
+> Lamp
+> Mushroom-shaped table
+> lamp. Bedroom bedside
+> light. Low-saturation color
+> palette. Cream-style
+> lampshade. Gradient
+> frosted glass body. White-
+> to-gray gradient base.
+> Cozy, laid-back home feel…
+> No alarm
+> clock
+> mentioned
+> in text.
+> Textual+Visual Memory
+> Visual
+> alarm
+> clock
+> found! Chair Lamp Vase
+
+Figure 1: Why interactive visual memory matters. Ashopping agent helps a user furnish a room across prod-ucts spanning chair , lamp , and vase categories. When the user later returns and refers to “the lamp with the alarm clock,” a text-only memory has stored only name-able attributes (mushroom-shape, frosted glass, cream lampshade) with no record of the incidental alarm-clock cue, and the agent gets stuck. A visual memory pre-serves the cue and lets the agent locate the correct lamp and complete the request. 
+
+holds that a memory is retrievable to the extent that cues present at encoding are reinstated at retrieval, and incidental-encoding studies (Hyde and Jenk-ins, 1969; Craik and Lockhart, 1972) show that such cues are routinely laid down without intent to memorise. In humans these cues are dispropor-tionately visual, and the hippocampal mechanism that exploits them, pattern completion from a par-tial cue to a full episode (Marr, 1971; Nakazawa et al., 2002), has recently begun to inspire memory systems for LM agents (Gutiérrez et al., 2024). Multimodal web agents do not yet remember this way. Working through a task, an agent may stream past hundreds of product images, and unless 
+
+> arXiv:2606.27499v1 [cs.CV] 25 Jun 2026
+
+a detail is flagged as relevant to the current sub-goal it has little reason to encode it. When something is committed to memory, most current systems write it down as text (Packer et al., 2023; Zhong et al., 2024; Xu et al., 2025; Gutiérrez et al., 2024). So if a user later refers back to something by a visual detail (e.g. the lamp that had the triangular brass base ), a text memory can confirm a lamp was seen, but may have nothing to say about which one. At the same time, carrying every pixel forward is neither feasible nor needed. The pertinent question is when : which tasks genuinely require an agent to remember what it saw , and for which would a text note have served equally well? Existing bench-marks make this question difficult to settle, because they typically combine visual and textual signals rather than isolating the contribution of each. We build DMV-Bench to make this answerable. 
+
+Testing visual recall via incidental cue injection. DMV-Bench reduces the question to one task and one mechanism. An agent runs a chain of ordi-nary comparison-shopping sessions on a realistic storefront. Every product the storefront serves car-ries a unique, pre-rendered visual cue , e.g. asmall object in a particular color baked into the product image at build time. The agent is told to comparison-shop within a category and is given no instruction to attend to or remember any visual detail; cues are present on every visited product but are never mentioned by the task. Between ses-sions its in-context conversation is wiped, so only its memory architecture carries anything forward; an eval-only agent is later asked to navigate back to a particular cued product. Because the cue lives in the pixels and not in any text channel, a text memory can answer only if its captioner happened to describe an object the task did not explicitly point out. The axis of interest is recall reach : how many session boundaries separate the visit from the probe. Sweeping reach turns a single accuracy into a retention curve , a direct readout of how long a visual cue survives in a given memory. 
+
+Why existing benchmarks cannot answer this. 
+
+Three properties of current benchmarks make this question hard to settle. They conflate textual and visual recall: in VisualWebArena (Koh et al., 2024), WebArena (Zhou et al., 2024), and most long-video QA (Fu et al., 2024; Li et al., 2024), an agent can solve ostensibly visual tasks by reading captions or alt-text. When visual recall is genuinely required, the discriminative detail is usually nameable (a red sofa versus a blue one), so a text memory is not put under real pressure. And the evidence is almost al-ways flagged in advance and probed at short range, leaving the question of whether an unflagged detail survives a long, multi-session horizon largely un-measured. The agentic-memory literature has ma-tured quickly, but on the text side: MemoryArena (He et al., 2026), for instance, rigorously stresses cross-session dependence, yet its observations are textual and it does not ask whether a visual detail survives a session boundary. 
+
+Overall, our contributions are: 
+
+1. We instantiate DMV-Bench , to our knowl-edge the first benchmark for interactive, multi-session, visual agent memory: a realistic e-commerce environment with a calibrated 1,000-variant catalogue in which every vis-ited product image carries a unique, baked-in incidental cue. 2. We frame the when question for multi-session agentic visual memory and introduce per-item incidental cue injection as the protocol that operationalizes it: the agent encounters cues throughout each session without any in-struction to attend to them. 3. We propose the recall-reach retention diag-nostic , which probes recall as a function of how many session boundaries a cue survived, evaluated efficiently over a shared-prefix roll-out tree. 4. We propose DualMem , a dual-coding-inspired memory architecture that maintains a visual and a verbal signal in parallel and fuses them at retrieval and injection, and audit it against six baselines including three recent multimodal external memory systems. 
+
+2 Related Work 
+
+Text-side memory systems. An explicit read-/write/inject machinery is well established for purely textual agents, from operating-system-style hierarchies and Ebbinghaus-inspired forgetting (Packer et al., 2023; Zhong et al., 2024; Shinn et al., 2023) to autonomous memory operations (Xu et al., 2025; Wang and Chen, 2025; Chhikara et al., 2025) and hippocampal-style retrieval (Gutiérrez et al., 2024). A more recent line distils trajecto-ries into reusable units the agent can later com-pose: Agent Workflow Memory (Wang et al., 2024) Incidental 
+
+> Cues
+> Text
+> Captions
+> Observations
+> Failure:
+> Agent navigates
+> to WRONG product
+> Success!
+> Agent navigates
+> to CORRECT
+> product
+
+✅
+
+❌
+
+> Retrieval
+> Visual Memory:
+> Textual Memory:
+
+😄 
+
+😰 
+
+> Visual Cue
+> Retained
+> Visual Cue
+> Lost
+> 1. Lounge Chair
+> 3. Soft Pillow
+> 2. Wooden Frame
+> 4. Vintage Lamp
+> Memory
+
+DualMem Architecture           
+
+> VLM
+> Captioner
+> VLM
+> Image
+> Encoder
+> LM
+> Text
+> Encoder
+> 𝑰 𝑶
+> 𝑰 𝑶
+> 𝒄 𝑶
+> Verbal
+> Signal Store
+> (e.g. SBERT
+> Embeddings)
+> Visual
+> Signal Store
+> (e.g. SigLIP-2
+> Embeddings)
+> 𝒗 𝑶
+> 𝒕 𝑶
+> Memory
+> Bank
+> {𝐼 𝑖 ,𝑐 𝑖 ,𝑣 𝑖 ,𝑡 𝑖 }𝑁
+> 𝑖 =1
+> Query
+> (e.g. “teal sleep
+> mask product”)
+> VLM
+> Text
+> Encoder
+> LM
+> Text
+> Encoder
+> Retrieval
+> Manager
+> (Recall
+> Sessions)
+> Visual
+> Retriever
+> (Top-k )𝑰 𝒊
+> Verbal
+> Retriever
+> (Top-k )𝒄 𝒊
+> 𝒒 𝒗
+> 𝒒 𝒕
+> VLM
+> Navigator
+> Action
+> (e.g. go_to_
+> URL_1234)
+> Encoding: Storefront →Memory
+> Retrieval:
+> Memory
+> ↓
+> Storefront
+> {𝒗 𝒊 }𝑵
+> 𝒊 =𝟏
+> {𝒕 𝒊 }𝑵
+> 𝒊 =𝟏
+> 𝜶
+> 𝟏 −𝜶
+
+Figure 2: (a) DMV-Bench. Each visited product carries a unique incidental cue baked into its image and barred from every text channel by the L2-leakage contract. (b) DualMem Architecture. Each observation is dual-coded into a visual embedding and a verbal embedding, stored as four channels in one bank; at retrieval, visual and verbal top-k
+
+scores are fused with a tunable weight α before the VLM agent emits an action. 
+
+induces program-form workflows from past suc-cesses, and ReasoningBank (Ouyang et al., 2026) extracts strategy-level reasoning items from both successes and failures. Across these systems the unit of memory is textual, a sentence, a fact, a graph node, a workflow, a reasoning step, so diag-nosing a failure reduces to a text-retrieval-quality question. DMV-Bench targets the regime where that assumption breaks: the unit becomes visual. 
+
+Vision-side memory systems. Once observa-tions are images, the design space widens. In-model multimodal memories tie storage to a fixed visual encoder: caption-based entity graphs (M3-Agent (Long et al., 2025), MA-LMM (He et al., 2024), EgoLife/EgoRAG (Yang et al., 2025)), continuous-token memory via a Q-Former (CoMEM (Wu et al., 2025b; Li et al., 2023)), and discrete-continuous hybrids (HSE-Mem (Zhu et al., 2026)); these are bound to the host model and do not transfer as drop-in modules. We instead focus on external multimodal memories that any agent can query: WorldMM (Yeo et al., 2026) adaptively retrieves across parallel episodic, semantic, and visual modules; M2A (Feng et al., 2026) couples a raw-message store with a semantic-abstraction store, routed by paired chat and memory-manager agents; MMA (Lu et al., 2026) reweights retrieved items by source credibility, temporal decay, and conflict-aware consensus; MemVerse (Liu et al., 2025) maintains a hierarchical multimodal knowl-edge graph that is periodically distilled back into the host model. These four are the comparison set we benchmark directly against DualMem. Evalua-tion across both waves stays end-to-end, with little direct measurement of how long a visual entry actu-ally survives a multi-session horizon, the quantity DMV-Bench measures along its reach axis. 
+
+Agent memory benchmarks. On the text side, LoCoMo (Maharana et al., 2024), LongMemEval (Wu et al., 2025a), and MemoryAgentBench (Hu et al., 2026) evaluate long-term conversational memory; MemoryArena (He et al., 2026) make the multi-session agentic dimension explicit, but its observations remain textual and they do not test whether a visual detail survives a session boundary. On the visual side, FindingDory (Ya-dav et al., 2025) stresses embodied long-trajectory agents and EMemBench (Li et al., 2026) probes VLM episodic memory, while the contemporane-ous MemEye (Guo et al., 2026) evaluates visual-centric multimodal-agent memory at multiple lev-els of evidence granularity; MemEye, however, is a static QA benchmark rather than an interactive environment in which the agent acts and is scored on what it does. Realistic web-agent environments (Zhou et al., 2024; Koh et al., 2024) provide the in-teractive setting, but they do not isolate the agent’s visual memory as a measurement; in VisualWe-bArena in particular, screenshots are observations but no probe targets long-horizon visual retention. DMV-Bench occupies the intersection these miss (Table 1): an interactive web environment whose evaluation isolates long-horizon visual retention along a controlled reach axis. 
+
+3 DMV-Bench 
+
+DMV-Bench is a diagnostic benchmark for long-horizon visual memory in multimodal agents. 
+
+3.1 A controlled e-commerce environment 
+
+The benchmark lives inside a realistic modern-furniture storefront with hero pages, category grids, product detail pages, breadcrumbs, ratings, and “related items” carousels. Ten product categories (sofas, lamps, rugs, cushions, chairs, side tables, vases, bookshelves, wall art, plant pots) appear in ten interior-design styles ( modern , minimalist , mid-century , Scandinavian , industrial , vintage , rustic ,
+
+bohemian , art deco , Japandi ), with ten variants per collection, giving a catalogue of 10 × 10 × 10 = 1,000 variants each bound to the storefront by a frozen urlHash . A storefront screenshot of the four navigation levels is given in Appendix A. 
+
+Variant generation. For each variant we first synthesize a natural-language prompt naming the product class and the collection’s style. For cued variants the prompt also names a unique color– object pair from a bijective cue vocabulary, so ev-ery cue is globally unique. Nano-Banana (Google DeepMind, 2025) renders the base studio photo-graph and then performs the cue overlay edit, keep-ing cue rendering consistent across categories and styles. A VLM-as-judge filters generations whose product class drifts. 
+
+The L2-leakage contract. The primary signal for every task is the cue : a small colored object present only in the pixels of one product image. The L2-leakage contract keeps this signal out of language: the cue vocabulary (object types ×
+
+colours) appears in no text channel surrounding a product (not in its title, description, alt-text, URL slug, meta-tags, or template reviews), and a pre-release audit rejects any such occurrence. A text-only memory system therefore has nowhere the cue could be recorded making sure it is truly a test of 
+
+visual memory. 
+
+3.2 The incidental-cue task 
+
+Every instance in DMV-Bench is an incidental-cue (IC) task, as shown in Figure 3: a chain of autonomous shopping sessions into which a unique visual cue is injected, followed by recall probes at controlled reach. 
+
+The session chain. A task is a chain of J ses-sions , each one a brief shopping task ( “I’m furnish-ing a room; find me a chair, a lamp, and a vase” )that a ReAct agent fulfils over 22–28 steps of free browsing. The open-ended shopping list sustains a long trajectory of unrelated observations through which an injected cue must survive. Within a ses-sion the agent runs with no memory. Trajectories are generated once and replayed into each mem-ory baseline, so every baseline sees an identical observation stream. 
+
+Per-product incidental cue injection. Every product is carrying one unique pre-rendered cue, which has three important properties: (i) unan-nounced : the session prompt never mentions cues; 
+
+(ii) identity-bound and unknowable : each cue is fixed at build time and the agent cannot know which product will be probed; (iii) text-leakage-free , as mentioned before. 
+
+Cue uniqueness. Cues are drawn from a bijec-tive object–color vocabulary designed to be glob-ally unique across the catalog, such that a recall query of the form “the product with the teal sleep mask” resolves to exactly one product, a necessary condition for deterministic (e.g. URL) evaluation. 
+
+Context wipe and recall probes. Between sessions the agent’s in-context conversation is 
+
+wiped ; only the memory bank crosses the boundary. After the encoding chain, a read-only ReAct agent issues recall probes against 
+
+(visited product , recall session ) pairs: each probe states the cue ( “take me back to the product with the teal sleep mask” ) and the agent must navigate to it. Success is exact URL match. 
+
+Recall reach. The diagnostic axis is recall reach 
+
+r = ( recall session ) − (visit session ): a reach-1
+
+probe recalls a product seen in the immediately preceding session, a reach-4 probe one whose cue survived four context wipes. Because trajectories are cached, J is freely extensible; we report J ∈{5, 10 , 15 } and a Monte Carlo pilot at J = 50 .Benchmark Year Modality # Tasks Length / task Memory dimension Interactive?                                                   
+
+> LoCoMo (Maharana et al., 2024) 2024 Text dialog 1,540 ∼300 turns, ∼9K tok Long-term recall, multi-hop No (QA) LongMemEval (Wu et al., 2025a) 2025 Text dialog 500 50+ sessions, ∼115K tok Multi-session, temporal, update No (QA) M3-Bench (Long et al., 2025) 2025 Video + audio 4,490 ∼30 min videos Multimodal multi-hop, cross-modal No (video QA) MemGUI-Bench (Liu et al., 2026) 2026 Mobile GUI 128 36 steps (3–160) Cross-app, cross-session retention Yes (GUI) MemoryArena (He et al., 2026) 2026 Web / text 766 6.9 sessions, 57 steps Multi-session interdependence Yes (Text) MemoryAgentBench (Hu et al., 2026) 2026 Text 2,071 100K–1.4M tok Retrieval / TTL / long-range / conflict No (QA) MemEye (Guo et al., 2026) 2026 Image + dialog 371 221 sess., 848 turns total Visual evidence granularity No (QA)
+> DMV-Bench (ours) 2026 Web / Multimodal 46,265 / 18,588 22– ∼1,250 steps Incidental visual recall Yes (Visual)
+
+Table 1: Agent-memory benchmarks contemporaneous with DMV-Bench. To the best of our knowledge, DMV-Bench is the first benchmark designed specifically for interactive, multi-session, visual agent memory: prior memory benchmarks are either QA-style, GUI-interactive on mobile screenshots, or mixed web-and-reasoning. None probes the multi-session retention of visual cues an agent saw incidentally inside a live environment. For DMV-Bench, the # Tasks cell “ 46 ,265 /18 ,588 ” reports recall-probe tasks on Gemini 2.5 Flash / Qwen2.5-VL-7B .S0 S1 S2
+
+Inside One Session: 
+
+➢ ReAct agent, no memory, browsing at least three products of distinct 
+
+categories, e.g., chair, lamp, vase. 
+
+➢ No explicit cues mentioned in text. 
+
+➢ Images contain unique visual cues (e.g., specific objects, patterns). 
+
+S3 S4 S5 S9
+
+Global Trajectory Caching: Sessions generated once per (J, Contract) setting and cached. 
+
+··· 
+
+Phase 1: Encoding  S: Session Index 
+
+Expandable 
+
+Query 
+
+e.g. “take me back to the product with the visual cue in S2”
+
+(text describes visual detail) 
+
+Navigator 
+
+VLM-based 
+
+Agent 
+
+Action 
+
+Navigate to URL: 
+
+www.example.com/product_id_1234 
+
+Metric 
+
+Final Product URL Match Success Rate (for varying reaches r) 
+
+Measure % of products correctly navigated back to via visual 
+
+cues only (across all r) 
+
+S0 S1 S2 S3 S4
+
+Probe targeting S 0, S 1, S 2, S 3, S 4
+
+Phase 2: Retrieval (Evaluated after S 4 is completed)     
+
+> k Probes
+> (one for each
+> product in S0)
+> k Probes
+> (one for each
+> product in S1)
+> k Probes
+> (one for each
+> product in S2)
+> k Probes
+> (one for each
+> product in S3)
+
+r = 3 
+
+r = 2 
+
+r = 1 
+
+Example 
+
+Probe 
+
+Targeting S2
+
+Retrieval 
+
+Reach ( r)
+
+Figure 3: The DMV-Bench task. Phase 1 (Encoding): a chain of J sessions S0, . . . , S J−1 in which a memoryless ReAct agent comparison-shops across at least three product categories (e.g., chair, lamp, vase); cues appear as unique visual patterns in product images but never in text. Sessions are cached and shared across rollouts (§3.3). 
+
+Phase 2 (Retrieval): after the chain completes, k probes per visited session ask a VLM navigator to re-locate a cued product by its visual description (e.g., “take me back to the product with the visual cue in S2”); the example probes 
+
+S2 from S4 at recall reach r=2 . Scoring is exact-match on the emitted product URL (§3.4). 
+
+3.3 Efficient evaluation: the rollout tree 
+
+Long sessions are expensive, and re-running a full 
+
+J-session chain for every recall probe wastes the shared early sessions. DMV-Bench instead eval-uates over a shared-prefix rollout tree (annotated in Figure 3): the first session is run once, then B
+
+child sessions branch from its end-of-session mem-ory, each branching B ways in turn to depth J. A node is executed exactly once and all descendants reuse its memory snapshot, so a tree of depth J and branching factor B costs (BJ − 1) /(B − 1) runs while yielding on the order of BJ−1 distinct recall paths—roughly a J× saving over flat re-runs at 
+
+B=5 . A memory bank is a deterministic function of its ordered encode sequence. Children are as-signed probes spanning different reaches; each leaf contributes one recall instance tagged with visit session, recall session, reach r, and bank size. 
+
+3.4 Evaluation metrics 
+
+We treat every recall probe as an independent task. Each probe p resolves to a unique ground-truth product URL; let yp ∈ { 0, 1} equal 1 iff the agent’s final navigate action matches it exactly. We report a single metric, task success rate 
+
+TSR = 1
+
+|P |
+
+X
+
+p∈P
+
+yp, (1) optionally stratified by reach rp to expose how re-tention degrades with horizon. A deterministic URL match, rather than an LLM judge, keeps eval-uator noise out of the diagnostic; the bijective cue vocabulary makes each ground-truth URL unique. 
+
+4 Baselines 
+
+A memory architecture is a choice at three stages:  
+
+> ENCODE
+
+(what the bank stores), RETRIEVE (how the recall query is matched), and INJECT (what is re-presented to the VLM). We audit seven architec-tures along this interface: three reference baselines, three recent multimodal external memories from the literature, and DualMem (ours) . The side-by-side placement of all seven in this common coordi-nate system, with the per-system adapter details, is in Appendix D (Table 6). 
+
+DualMem. Our architecture (bottom panel of Figure 2), follows dual-coding theory (Paivio, 1971): memory is most robust when information is held in a visual and a verbal signal at once, each retrievable on its own. At encoding, every observed product page o is dual-coded into a visual signal vo
+
+via SigLIP-2 (Tschannen et al., 2025) and a verbal signal to via SBERT (Reimers and Gurevych, 2019) over the page’s VLM-generated caption; both are 
+
+L2-normalised. At a recall query q, the same two encoders embed the query into qv and qt, and for each bank entry i we score the two channels by in-ner product s(i) 
+
+> v
+
+= ⟨qv, v i⟩ and s(i) 
+
+> t
+
+= ⟨qt, t i⟩. We combine them after min-max normalisation within the bank, so the two channels are commensurate even when their raw similarity ranges differ: 
+
+bx(i) = x(i) − min j x(j)
+
+max j x(j) − min j x(j) , (2) 
+
+s(i) = α bs(i) 
+
+> v
+
++ (1 −α) bs(i) 
+
+> t
+
+, (3) with α=0 .75 in our runs. The top entry e∗ =arg max i s(i) is then injected back into the VLM as both the raw image Ie∗ and the caption ce∗ .
+
+5 Experiments 
+
+We audit the seven memory architectures of §4 on the incidental-cue task, sweeping chain length 
+
+J ∈ {5, 10 , 15 } plus a Monte Carlo pilot at 
+
+J=50 (N =5 chains, sparse reach sampling 1–49 ,
+
+nr=2 ,407 ). Each run is executed in parallel on 
+
+Gemini 2.5 Flash (Gemini Team, Google, 2024) and Qwen2.5-VL-7B-Instruct (Bai et al., 2025). 
+
+Why nr differs across back-ends. The two VLM back-ends share an identical task setup, yet 22 24 26 28       
+
+> Number of agent steps per session
+> 0
+> 20
+> 40
+> 60
+> 80
+> Session count
+> identical for both back-ends
+> (a) Agent steps per session
+> 2.5 5.0 7.5 10.0 12.5 15.0
+> Number of distinct products visited per session
+> 0
+> 50
+> 100
+> 150
+> 200
+> (b) Distinct products per session
+> Qwen2.5-VL-7B Gemini 2.5 Flash
+
+Figure 4: Per-session activity for both back-ends (N =550 each). (a) Agent steps per session. (b) Distinct products visited per session for Qwen2.5-VL-7B (blue) and Gemini 2.5 Flash (orange). 
+
+the probe counts nr differ at every reach since ev-ery distinct product visited during encoding be-comes a recall probe, fewer products visited means fewer probes. Across the 550 encoded sessions per back-end (Table 3), both agents take essentially the same number of steps, but Gemini 2.5 Flash visits 11 .02 ± 1.11 distinct products per session versus only 4.21 ± 2.09 for Qwen2.5-VL-7B. De-spite a system-prompt directive to visit “at least 3 product categories,” 33 .1% of Qwen sessions (182 /550 ) fall below this floor, including 18 that visit a single product; Gemini violates it in zero. This instruction-following gap (Figure 4) explains the smaller nr for Qwen and is orthogonal to the recall-accuracy axis in Table 2. 
+
+DualMem is the strongest architecture. Table 2 reports TSR across J on both back-ends, showing that: DualMem leads at every J on both back-ends :All DualMem results in this table use α=0 .75 
+
+visual-dominant retrieval weight (see ablation Fig-ure 7). M2A is the consistent runner-up, and the ranking among Caption, MMA, and WorldMM is less stable across cells. Finally, the verbal floors (NoMemory, TextOnly) sit at 0% everywhere , con-firming that the L2-leakage contract holds and vi-sual information is necessary. Per-reach break-downs for all four chain-lengths are in Appendix F. 
+
+Memory-bank and positional checks. Figures 5 and 6 stratify TSR along the two axes that most nat-urally explain a memory-architecture gap, with one figure per back-end. First, memory-bank size (top row of each figure): DualMem stays high across the full sweep, while baselines degrade as the bank grows, so its lead in Table 2 is not the artefact of a smaller bank. Encoding position t (bottom row): DualMem is essentially flat across t on both back-ends, while baselines exhibit position drifts, so the lead is not driven by remembering only the most-recent or earliest sessions. DualMem’s robustness Qwen2.5-VL-7B Gemini 2.5 Flash Memory J=5 J=10 J=15 MC ( J=50 ) J=5 J=10 J=15 MC ( J=50 )                                                                               
+
+> 118–134 stp 238–259 stp 359–394 stp r=1 −49 118–134 stp 238–259 stp 359–394 stp r=1 −49
+> nr=1 ,053 nr=4 ,821 nr=10 ,307 nr=2 ,407 nr=2 ,762 nr=12 ,344 nr=28 ,710 nr=2 ,449
+> NoMemory 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 TextOnly 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 Caption 67.3 63.7 62.3 58.8 58.9 53.4 50.7 47.7 WorldMM 39.8 32.6 29.7 30.9 43.5 39.3 38.4 37.0 MMA 47.7 41.0 39.4 35.6 46.1 41.7 33.6 36.9 M2A 70.4 64.8 62.6 58.7 65.7 63.0 59.6 64.7 DualMem (ours) 81.1 77.2 75.1 68.3 82.7 75.2 71.3 65.1
+
+Table 2: Task success rate (%) across chain length and VLM back-end. The table is split into two side-by-side sub-blocks, one per back-end. Within each block the columns sweep J=5 , 10 , 15 and a Monte Carlo pilot at J=50 .The Gemini and Qwen agents visit different numbers of products, so probe counts nr differ; we therefore report each back-end in its own block. Bold = best per column, underline = second-best. 
+
+Back-end Metric min max mean std Qwen2.5-VL-7B nsteps 22 28 24.96 1.94 
+
+ndistinct products 1 9 4.21 2.09 Gemini 2.5 Flash nsteps 22 28 24.96 1.94 
+
+ndistinct products 7 14 11.02 1.11 
+
+Table 3: Per-session encoding statistics over N =550 
+
+sessions per back-end. 
+
+alongside the baselines’ degradation attributes the gap to memory-architecture proper. 
+
+Asymmetric dual coding: vision contains the key and text grounds the query. The L2-leakage contract places every cue in vision only, such that the two channels are asymmetric by construction. 
+
+Retrieval. Vision does the heavy lifting; the α
+
+sweep in Figure 7 rises monotonically to α=0 .75 
+
+(82 .7% ), with pure-visual at 80 .1 and pure-verbal collapsing to 59 .5. The interior peak says the ver-bal channel contributes about a quarter of the signal, as a query-grounding scaffold and not a cue carrier. 
+
+Injection. The captioner is unconstrained (not filtered against the cue vocabulary) but is prompted to focus on product attributes, so it verbalises the product’s actual incidental cue (both its colour and object name) in only 16 .5% of the 1,000 with_cue 
+
+captions; most cues do not survive the visual-to-text compression. Image-only injection ( 75 .9)therefore essentially ties image +caption ( 76 .9), while caption-only collapses ( 65 .1). The bottom sub-block of Table 4 shows this asymmetry widens 
+
+when retrieval is solved (image 79 .0 vs caption 
+
+64 .0 under visual-only retrieval), isolating the in-jection bottleneck cleanly. 
+
+Encoder. Replacing SigLIP-2 with CLIP costs 
+
+11 .5 points ( 76 .9→65 .4) because both retrieval and injection depend on visual-code discriminability. Together these results describe asymmetric dual coding : vision carries the cue end-to-end while text plays a smaller query-grounding role. 
+
+Variant Enc. Retr. Inj. SR 
+
+DualMem (ours, α=0 .75 ) SigLIP-2 hybrid img+cap 82.7 
+
+DualMem ( α=0 .5) SigLIP-2 hybrid img+cap 76.9 
+
+Encoder 
+
+CLIP CLIP hybrid img+cap 65.4 
+
+Retrieval 
+
+visual SigLIP-2 visual img+cap 80.1 verbal SigLIP-2 verbal img+cap 59.5 
+
+Injection 
+
+image SigLIP-2 hybrid img 75.9 caption SigLIP-2 hybrid cap 65.1 
+
+Visual retrieval × injection 
+
+image SigLIP-2 visual img 79.0 caption SigLIP-2 visual cap 64.0 
+
+Table 4: DualMem ablations at J=5 on Gem-ini 2.5 Flash. Bold = best SR; underline = second-best. 
+
+Fine-grained α sweep on hybrid retrieval. The asymmetric-dual-coding picture motivates a finer sweep over α in s = α bsv + (1 −α) bst. Figure 7 reports SR at five evenly-spaced α values, with the encoder (SigLIP-2) and injection format (im-age+caption) fixed. The endpoints reproduce the verbal-only ( α=0 , 59 .5% ) and visual-only ( α=1 ,
+
+80 .1% ) rows of Table 4; the curve rises monoton-ically to a peak of 82 .7% at α=0 .75 before drop-ping 2.6 points at α=1 . The 0.25 verbal contribu-tion to query grounding beats pure-visual retrieval, which supports the empirical grounding-vs-cue bal-ance of the asymmetric regime. We adopt α=0 .75 
+
+as the operating point in Table 2. 20 30 40                                          
+
+> Bank size at recall
+> 0
+> 25
+> 50
+> 75
+> 100
+> Task SR (%)
+> J= 5 (nr= 1, 053 )
+> 20 40 60 80 100
+> Bank size at recall
+> J= 10 (nr= 4, 821 )
+> 50 100 150
+> Bank size at recall
+> J= 15 (nr= 10, 307 )
+> 100 200 300 400 500
+> Bank size at recall
+> MC ( J= 50 )(nr= 2, 407 )
+> 0123
+> Encoding position t
+> 0
+> 25
+> 50
+> 75
+> 100
+> Task SR (%)
+> 02468
+> Encoding position t
+> 0.0 2.5 5.0 7.5 10.0 12.5
+> Encoding position t
+> 10 20 30 40
+> Encoding position t
+
+Qwen2.5-VL-7B     
+
+> Bank size Position
+> DualMem (ours) M2A Caption MMA WorldMM
+
+Figure 5: Two confound checks, all five memory architectures, Qwen2.5-VL-7B . Top: TSR vs. memory-bank size at recall. Bottom: TSR by encoding position t. DualMem (blue) stays roughly flat across both axes at every J;baselines degrade as the bank grows and exhibit weak position drifts. 20 30 40                                          
+
+> Bank size at recall
+> 0
+> 25
+> 50
+> 75
+> 100
+> Task SR (%)
+> J= 5 (nr= 2, 762 )
+> 20 40 60 80 100
+> Bank size at recall
+> J= 10 (nr= 12, 344 )
+> 50 100 150
+> Bank size at recall
+> J= 15 (nr= 28, 710 )
+> 100 200 300 400 500
+> Bank size at recall
+> MC ( J= 50 )(nr= 2, 449 )
+> 0123
+> Encoding position t
+> 0
+> 25
+> 50
+> 75
+> 100
+> Task SR (%)
+> 02468
+> Encoding position t
+> 0.0 2.5 5.0 7.5 10.0 12.5
+> Encoding position t
+> 10 20 30 40
+> Encoding position t
+
+Gemini 2.5 Flash     
+
+> Bank size Position
+> DualMem (ours) M2A Caption MMA WorldMM
+
+Figure 6: Two confound checks, all five memory architectures, Gemini 2.5 Flash . Top: TSR vs. memory-bank size at recall. Bottom: TSR by encoding position t. Same legend and same conclusions as Figure 5, on the Gemini back-end: DualMem (orange) is roughly flat along both axes while baselines degrade. α
+
+SR (%) 
+
+0 0.25 0.5 0.75 1
+
+60 
+
+70 
+
+80 
+
+59.5 
+
+67.5 
+
+76.9 
+
+82.7 80.1 
+
+Figure 7: α sweep on Gemini 2.5 Flash at J=5 . En-coder fixed at SigLIP-2 and injection at image+caption. Endpoints α=0 and α=1 recover verbal-only and visual-only retrieval; the peak at α=0 .75 (bold) exceeds the visual endpoint by 2.6 pts. 
+
+6 Conclusion 
+
+For all the progress we have made in giving agents the ability to see, we have largely treated their vi-sual inputs as momentary observations to be acted on and then discarded. We envision agents with a kind of perceptual continuity, wherein a persistent visual map of their environment can grow richer and fuller over time and power the small acts of recognition and familiarity that make assistance useful over the long haul. This might in turn facil-itate agents that better reflect our preferences and goals. DMV-Bench takes a first step toward this by isolating and precisely measuring visual memory. We invite the community to take perceptual conti-nuity seriously as a design target in its own right, alongside reasoning, planning, and dialog. Limitations 
+
+The synthetic modern-furniture catalogue leaves transfer to other visual domains untested, and the main grid uses two back-ends (Gemini 2.5 Flash, Qwen2.5-VL-7B); broader cross-VLM coverage and a human ceiling are deferred. We sweep α
+
+at evenly-spaced values on Gemini 2.5 Flash at 
+
+J = 5 (Figure 7), then apply the same α = 0 .75 
+
+to Qwen2.5-VL-7B without a separate sweep. The consistent DualMem lead across both back-ends in Table 2 indicates the choice transfers reasonably well, but per-back-end tuning could yield additional gains and is left to future work. A natural follow-up is a more adaptive vision/verbal fusion (per-query weighting or a learned gate conditioned on the query and candidate set), which we leave to future work. 
+
+References 
+
+Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wen-bin Ge, Sibo Song, Kai Dang, Peng Wang, Shi-jie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhaohai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, and 8 oth-ers. 2025. Qwen2.5-VL technical report. In arXiv preprint arXiv:2502.13923 .Prateek Chhikara, Dev Khant, Saket Aryan, Taranjeet Singh, and Deshraj Yadav. 2025. Mem0: Building production-ready AI agents with scalable long-term memory. In arXiv preprint arXiv:2504.19413 .Fergus I. M. Craik and Robert S. Lockhart. 1972. Levels of processing: A framework for memory research. In 
+
+Journal of Verbal Learning and Verbal Behavior .Junyu Feng, Binxiao Xu, Jiayi Chen, Mengyu Dai, Cenyang Wu, Haodong Li, Bohan Zeng, Yunliu Xie, Hao Liang, Ming Lu, and Wentao Zhang. 2026. M2A: Multimodal memory agent with dual-layer hy-brid memory for long-term personalized interactions. In arXiv preprint arXiv:2602.07624 .Chaoyou Fu, Yuhan Dai, Yongdong Luo, Lei Li, Shuhuai Ren, Renrui Zhang, Zihan Wang, Chenyu Zhou, Yunhang Shen, Mengdan Zhang, Peixian Chen, Yanwei Li, Shaohui Lin, Sirui Zhao, Ke Li, Tong Xu, Xiawu Zheng, Enhong Chen, Caifeng Shan, and 2 others. 2024. Video-MME: The first-ever comprehen-sive evaluation benchmark of multi-modal LLMs in video analysis. In arXiv preprint arXiv:2405.21075 .Gemini Team, Google. 2024. Gemini: A family of highly capable multimodal models. In arXiv preprint arXiv:2312.11805 .Google DeepMind. 2025. Introducing gemini 2.5 flash image (nano-banana), our state-of-the-art image model. https://developers.googleblog.com/ en/introducing-gemini-2-5-flash-image/ .Google Developers Blog. Minghao Guo, Qingyue Jiao, Zeru Shi, Yihao Quan, Boxuan Zhang, Danrui Li, Liwei Che, Wujiang Xu, Shilong Liu, Zirui Liu, Mubbasir Kapadia, Vladimir Pavlovic, Jiang Liu, Mengdi Wang, Yiyu Shi, Dimitris N. Metaxas, and Ruixiang Tang. 2026. MemEye: A visual-centric evaluation framework for multimodal agent memory. In arXiv preprint arXiv:2605.15128 .Bernal Jiménez Gutiérrez, Yiheng Shu, Yu Gu, Michi-hiro Yasunaga, and Yu Su. 2024. HippoRAG: Neu-robiologically inspired long-term memory for large language models. In NeurIPS .Bo He, Hengduo Li, Young Kyun Jang, Menglin Jia, Xuefei Cao, Ashish Shah, Abhinav Shrivas-tava, and Ser-Nam Lim. 2024. MA-LMM: Memory-augmented large multimodal model for long-term video understanding. In CVPR .Zexue He, Yu Wang, Churan Zhi, Yuanzhe Hu, Tzu-Ping Chen, Lang Yin, Ze Chen, Tong Arthur Wu, Siru Ouyang, Zihan Wang, Jiaxin Pei, Julian McAuley, Yejin Choi, and Alex Pentland. 2026. Memor-yArena: Benchmarking agent memory in interdepen-dent multi-session agentic tasks. In arXiv preprint arXiv:2602.16313 .Yuanzhe Hu, Yu Wang, and Julian McAuley. 2026. Eval-uating memory in LLM agents via incremental multi-turn interactions. In ICLR .Thomas S. Hyde and James J. Jenkins. 1969. Differen-tial effects of incidental tasks on the organization of recall of a list of highly associated words. In Journal of Experimental Psychology .Jing Yu Koh, Robert Lo, Lawrence Jang, Vikram Duvvur, Ming Chong Lim, Po-Yu Huang, Graham Neubig, Shuyan Zhou, Ruslan Salakhutdinov, and Daniel Fried. 2024. VisualWebArena: Evaluating multimodal agents on realistic visual web tasks. In 
+
+ACL .Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. 2023. BLIP-2: Bootstrapping language-image pre-training with frozen image encoders and large lan-guage models. In ICML .Kunchang Li, Yali Wang, Yinan He, Yizhuo Li, Yi Wang, Yi Liu, Zun Wang, Jilan Xu, Guo Chen, Ping Luo, Limin Wang, and Yu Qiao. 2024. MVBench: A comprehensive multi-modal video un-derstanding benchmark. In CVPR .Xinze Li, Ziyue Zhu, Siyuan Liu, Yubo Ma, Yuhang Zang, Yixin Cao, and Aixin Sun. 2026. EMemBench: Interactive benchmarking of episodic memory for VLM agents. In arXiv preprint arXiv:2601.16690 .Guangyi Liu, Pengxiang Zhao, Yaozhen Liang, Qinyi Luo, Shunye Tang, Yuxiang Chai, Weifeng Lin, Han Xiao, WenHao Wang, Siheng Chen, Zhengxi Lu, Gao Wu, Hao Wang, Liang Liu, and Yong Liu. 2026. MemGUI-Bench: Benchmarking memory of mo-bile GUI agents in dynamic environments. In arXiv preprint arXiv:2602.06075 .Junming Liu, Yifei Sun, Weihua Cheng, Haodong Lei, Yirong Chen, Licheng Wen, Xuemeng Yang, Daocheng Fu, Pinlong Cai, Nianchen Deng, Yi Yu, Shuyue Hu, Botian Shi, and Ding Wang. 2025. Mem-Verse: Multimodal memory for lifelong learning agents. In arXiv preprint arXiv:2512.03627 .Lin Long, Yichen He, Wentao Ye, Yiyuan Pan, Yuan Lin, Hang Li, Junbo Zhao, and Wei Li. 2025. Seeing, lis-tening, remembering, and reasoning: A multimodal agent with long-term memory. In arXiv preprint arXiv:2508.09736 .Yihao Lu, Wanru Cheng, Zeyu Zhang, and Hao Tang. 2026. MMA: Multimodal memory agent. In arXiv preprint arXiv:2602.16493 .Adyasha Maharana, Dong-Ho Lee, Sergey Tulyakov, Mohit Bansal, Francesco Barbieri, and Yuwei Fang. 2024. Evaluating very long-term conversational memory of LLM agents. In ACL .David Marr. 1971. Simple memory: A theory for archicortex. In Philosophical Transactions of the Royal Society of London. Series B .Kazu Nakazawa, Michael C. Quirk, Raymond A. Chit-wood, Masahiko Watanabe, Mark F. Yeckel, Linus D. Sun, Akira Kato, Candice A. Carr, Daniel Johnston, Matthew A. Wilson, and Susumu Tonegawa. 2002. Requirement for hippocampal CA3 NMDA receptors in associative memory recall. In Science .Siru Ouyang, Jun Yan, I-Hung Hsu, Yanfei Chen, Ke Jiang, Zifeng Wang, Rujun Han, Long T. Le, Samira Daruki, Xiangru Tang, Vishy Tirumalashetty, George Lee, Mahsan Rofouei, Hangfei Lin, Jiawei Han, Chen-Yu Lee, and Tomas Pfister. 2026. Reason-ingBank: Scaling agent self-evolving with reasoning memory. In ICLR .Charles Packer, Sarah Wooders, Kevin Lin, Vivian Fang, Shishir G. Patil, Ion Stoica, and Joseph E. Gonzalez. 2023. MemGPT: Towards LLMs as operating sys-tems. In arXiv preprint arXiv:2310.08560 .Allan Paivio. 1971. Imagery and verbal processes. In 
+
+Holt, Rinehart and Winston .Nils Reimers and Iryna Gurevych. 2019. Sentence-BERT: Sentence embeddings using siamese BERT-networks. In EMNLP .Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao. 2023. Re-flexion: Language agents with verbal reinforcement learning. In NeurIPS .Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muhammad Ferjad Naeem, Ibrahim Alabdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, Olivier Hénaff, Jeremiah Harmsen, Andreas Steiner, and Xiaohua Zhai. 2025. SigLIP 2: Multilingual vision-language en-coders with improved semantic understanding, lo-calization, and dense features. In arXiv preprint arXiv:2502.14786 .Endel Tulving and Donald M. Thomson. 1973. En-coding specificity and retrieval processes in episodic memory. In Psychological Review .Yu Wang and Xi Chen. 2025. MIRIX: Multi-agent memory system for LLM-based agents. In arXiv preprint arXiv:2507.07957 .Zora Zhiruo Wang, Jiayuan Mao, Daniel Fried, and Graham Neubig. 2024. Agent workflow memory. In 
+
+arXiv preprint arXiv:2409.07429 .Di Wu, Hongwei Wang, Wenhao Yu, Yuwei Zhang, Kai-Wei Chang, and Dong Yu. 2025a. LongMemEval: Benchmarking chat assistants on long-term interac-tive memory. In ICLR .Wenyi Wu, Kun Zhou, Ruoxin Yuan, Vivian Yu, Stephen Wang, Zhiting Hu, and Biwei Huang. 2025b. Auto-scaling continuous memory for GUI agent. In arXiv preprint arXiv:2510.09038 .Wujiang Xu, Zujie Liang, Kai Mei, Hang Gao, Juntao Tan, and Yongfeng Zhang. 2025. A-MEM: Agen-tic memory for LLM agents. In arXiv preprint arXiv:2502.12110 .Karmesh Yadav, Yusuf Ali, Gunshi Gupta, Yarin Gal, and Zsolt Kira. 2025. FindingDory: A benchmark to evaluate memory in embodied agents. In arXiv preprint arXiv:2506.15635 .Jingkang Yang, Shuai Liu, Hongming Guo, Yuhao Dong, Xiamengwei Zhang, Sicheng Zhang, Pengyun Wang, Zitang Zhou, Binzhu Xie, Ziyue Wang, Bei Ouyang, Zhengyu Lin, Marco Cominelli, Zhon-gang Cai, Bo Li, Yuanhan Zhang, Peiyuan Zhang, Fangzhou Hong, Joerg Widmer, and 3 others. 2025. EgoLife: Towards egocentric life assistant. In CVPR .Woongyeong Yeo, Kangsan Kim, Jaehong Yoon, and Sung Ju Hwang. 2026. WorldMM: Dynamic multi-modal memory agent for long video reasoning. In      
+
+> CVPR .Wanjun Zhong, Lianghong Guo, Qiqi Gao, He Ye, and Yanlin Wang. 2024. MemoryBank: Enhancing large language models with long-term memory. In AAAI .Shuyan Zhou, Frank F. Xu, Hao Zhu, Xuhui Zhou, Robert Lo, Abishek Sridhar, Xianyi Cheng, Tianyue Ou, Yonatan Bisk, Daniel Fried, Uri Alon, and Gra-ham Neubig. 2024. WebArena: A realistic web envi-ronment for building autonomous agents. In ICLR .Sibo Zhu, Wenyi Wu, Kun Zhou, Stephen Wang, and Biwei Huang. 2026. Hybrid self-evolving struc-tured memory for GUI agents. In arXiv preprint arXiv:2603.10291 .
+
+A DMV-Bench storefront layout 
+
+DMV-Bench is served as a live e-commerce site (Next.js + Playwright); the agent’s observations are real DOM snapshots and rendered images, not cu-rated thumbnails. The site exposes four navigation levels (Figure 8): (a) Homepage : a single hero panel and a 10-cell “Shop by category” grid (chair, sofa, lamp, cushion, vase, rug, side_table, book-shelf, plant_pot, wall_art); (b) Category page : the 10 style-coherent collections that live under a cat-egory, each preview card showing the collection name, item count, and price range; (c) Style page :the 10 individual product variants in one collection, each with its rendered photo, name, and price; (d) Product detail page : the variant’s main image, price, an L2-compliant attribute summary ( colour: n/a, material: varied ), an Add to wishlist button (the agent’s terminal action), customer reviews, and a “More from this collection” carousel. Together these four levels instantiate the 10 categories × 10 styles × 10 variants = 1,000 products. Two design features the figure makes visible are load-bearing for the diagnostic in §3.1. First, the 
+
+L2-leakage contract : every visible textual surface (titles, prices, attribute labels, breadcrumbs, footer links) carries only the product class and a collection name. The discriminative incidental cue baked into each variant’s image (e.g. the red bow on the back of Lumen Chair 01) appears nowhere in text, so a memory architecture that compresses observations into language cannot recover it. Second, the no-cross-page-persistence (NCP) invariant: the small “Recently viewed” strip at the bottom of the cate-gory and style pages renders only thumbnails of products visited within the current Playwright ten-ancy and is reset between sessions, so the storefront UI never leaks a previous-session observation back to the agent. The only path that bridges sessions is the memory architecture under test. 
+
+B Cue edit prompts 
+
+Every with_cue variant is rendered by Nano-Banana (Google DeepMind, 2025) as an image-edit on the base studio photograph, instructed by a single templated prompt. The template is: (a) Homepage (b) Category Page (c) Style Page (d) Product Page Figure 8: The four navigation levels of the DMV-Bench storefront. (a) Homepage with the 10-category shop grid; (b) Category page listing the 10 collections in a category; (c) Style page listing the 10 variants of one collection; (d) Product detail page with image, L2-compliant attributes, “Add to wishlist” (the agent’s terminal action), and a “More from this collection” carousel. 
+
+Add a small {color} {object_name}, {placement}, in a naturally placed way. The object should be subtle and modest in size, clearly visible but not dominating the scene. Keep the {cat_noun} itself and the background completely unchanged. Photographic realism, no text, no watermark, no caption overlay. 
+
+Slot fills are deterministic functions of 
+
+(cat, style, prod _idx ). {color} is drawn from a fixed 10-colour palette (red, blue, green, yellow, white, black, brown, beige, orange, purple), keyed by prod_idx ; {object_name} and {placement} 
+
+are drawn from a per-category, per-style vocabulary keyed by style_idx , so the (object, colour) pair is bijective across the whole catalogue. Table 5 lists one representative cue per category to show the vocabulary’s flavour. 
+
+C Sample session dialogue 
+
+Every agent back-end in DMV-Bench (Gem-ini 2.5 Flash and Qwen2.5-VL-7B) receives an identical system prompt and the same ReAct-format user message at every step. We show one encoding-session step and one recall-session step end-to-end so the prompt structure is visible. Long lines are abridged with . . . for space; the rendered images and Playwright DOM are passed alongside but not reproduced here. The same harness, the same prompts, and the same memory injectors are used for both back-ends; only the model weights differ. 
+
+Category Object (example) Placement 
+
+chair wool scarf draped over the backrest sofa paperback book open on the cushion lamp framed photo propped against the base cushion eyeglasses on the cushion vase dried rose tucked at the rim rug rolled yoga mat lying on the rug table coffee mug on the tabletop bookshelf ceramic vase on a shelf plant_pot ceramic gnome next to the pot wall_art adhesive sticky note on the frame edge 
+
+Table 5: Cue vocabulary (one representative per cate-gory). Each category provides 10 objects (one per style) and each is paired with a placement clause appropriate to that product class. Combined with the 10 colours, this yields the 1,000 bijective (cat, style, prod ) →
+
+(object , colour ) assignments. Filling the template above with one row of this table and one colour gives the exact prompt shipped to Nano-Banana. 
+
+System prompt (sent once per session, both VLMs) 
+
+System 
+
+You are a shopping-assistant agent in an e-commerce website. You receive (i) the customer’s instruction, (ii) the conversation so far, (iii) memory context from prior sessions (may be empty), and (iv) the current page. De-cide ONE action. 
+
+URL patterns that exist on the site: /,
+
+/category/<slug> , /collection/<slug>-<style> ,
+
+/product/<8-hex-hash> , /wishlist , /cart . Valid category slugs: chair, sofa, lamp, cushion, vase, rug, table, bookshelf, plant_pot, wall_art . Valid styles: modern, minimalist, vintage, industrial, scandinavian, bohemian, mid_century, rustic, japandi, art_deco .Action vocabulary: navigate("/...") ,
+
+click_index(N) on a listing page (N =0 . . . 3), 
+
+add_to_wishlist (terminal), done (failure exit). Some user requests may ask you to navigate to a product the customer has previously visited. You cannot see earlier sessions in the conversation; only the [Memory context] block bridges them. 
+
+Strategy hints: 
+
+• The [Memory context] block lists products recalled from prior sessions, each with its 
+
+/product/<hash> URL and image. If a re-membered product matches what the customer is asking for, navigate("/product/<hash>") DI-RECTLY; this is the fastest and intended path. You DO know the exact hash in that case. • Inspect the memory image(s): pick the product whose image matches what the customer is de-scribing, then navigate to that product’s hash. • Only if memory gives you nothing usable: from a category page use 
+
+navigate("/collection/<slug>-<style>") 
+
+then click_index(N) on the N-th product card. You can NOT guess /product/<hash> URLs you have never seen. • Once on the /product/<hash> page the cus-tomer asked for, emit add_to_wishlist : that ends the session successfully. Reply in ReAct format, ONE Thought line + ONE Ac-tion line: 
+
+Thought: <one sentence reasoning> Action: <action> 
+
+Encoding session (Session 3 of 10, step 7/25) 
+
+User 
+
+Step 7/25. 
+
+[Subtask] 
+
+Comparison-shop for a chair: open a wide range (step 7/25). So far: 5 distinct products viewed across 3 styles. Aim for ≥3 styles and ∼12 products; open NEW prod-ucts you have not seen yet. 
+
+[Conversation so far] 
+
+User: I’m furnishing a reading nook; show me some chairs. Agent: Thought: start on the chair category. Action: 
+
+navigate("/category/chair") 
+
+Agent: Thought: open the modern collection first. Ac-tion: navigate("/collection/chair-modern") 
+
+Agent: Thought: click the first card to inspect it. Action: 
+
+click_index(0) 
+
+. . . (4 turns elided) . . . 
+
+[Memory context retrieved this step] 
+
+(no memory retrieved this step) 
+
+[Current page] 
+
+URL: /collection/chair-vintage 
+
+Title: Vintage Chair Collection Description: . . . four product cards . . . 
+
+Reply with one Thought + one Action. 
+
+Agent (Gemini / Qwen) 
+
+Thought: I haven’t seen the vintage style yet; open the second vintage card to widen coverage. 
+
+Action: click_index(1) 
+
+Behind the scenes: this step lands on a product page whose image carries a unique pre-rendered incidental cue (e.g. a teal sleep mask resting on the chair). The encoding agent never sees the cue men-tioned; the memory architecture under test ingests the page autonomously. 
+
+Recall session (Session 7, step 2/25, r=4 from encoding) 
+
+User 
+
+Step 2/25. 
+
+[Subtask] 
+
+Recall: go to the product with the teal sleep mask. 
+
+[Conversation so far] 
+
+User: Take me to the product with the teal sleep mask I saw earlier. Agent: Thought: I should check memory first. Action: 
+
+navigate("/") [Memory context retrieved this step] 
+
+(rendered through the memory injector below) 
+
+[Current page] 
+
+URL: /
+
+Title: Home Description: . . . 
+
+Reply with one Thought + one Action. 
+
+Memory context 
+
+5 item(s) recalled from earlier sessions, most relevant first. 
+
+Rank 1. URL /product/a7c1e9b2 : vintage chair (memory image attached) 
+
+Rank 2. URL /product/3f88c401 : modern chair (memory image attached) 
+
+Rank 3. URL /product/9d44a7e0 : minimalist chair (memory image attached) 
+
+Two further entries omitted for space. 
+
+Agent (Gemini / Qwen) 
+
+Thought: Rank-1’s attached image shows a teal sleep mask on the chair seat, matching the customer’s descrip-tion. 
+
+Action: navigate("/product/a7c1e9b2") 
+
+The next step lands on /product/a7c1e9b2 , and the agent emits add_to_wishlist , terminating the session successfully. Both back-ends use this exact dialogue surface; the only behavioural difference between Gemini and Qwen is how each parses the attached memory image against the customer’s ver-bal description (“teal sleep mask”), which is exactly the visual-memory capability DMV-Bench is de-signed to measure. Crucially, the system prompt itself never primes the agent to attend to inciden-tal details during encoding; the agent must surface the cue from memory at recall using only the cus-tomer’s natural-language reference and the images its memory bank chose to retain. 
+
+D Memory architectures 
+
+Reference baselines. NoMemory discards every entry, so any score above it is attributable to mem-ory. TextOnly indexes the bare product class of a page; Caption indexes a VLM-generated cap-tion. Both recover a cue only if it was put into words. Caption is the strongest text-only baseline and serves as the reference against which the gain from visual encoding is interpreted. 
+
+Prior multimodal external memory. WorldMM (Yeo et al., 2026) maintains par-allel episodic / semantic / visual memories and selects across them with an adaptive iterative retriever. M2A (Feng et al., 2026) couples a raw-message store with a semantic-abstraction store, routed by chat and memory-manager agents. 
+
+MMA (Lu et al., 2026) augments retrieval with per-item reliability scores combining source credibility, temporal decay, and conflict-aware consensus. We adapt each to operate inside the DMV-Bench harness under the shared 
+
+ENCODE /RETRIEVE /INJECT interface. Table 6 places all seven audited memory archi-tectures on a common ENCODE /RETRIEVE /INJECT 
+
+coordinate system. Reading the rows top-to-bottom traces the progression from no memory through verbal-only baselines, three recent multimodal ex-ternal memories from the literature, and DualMem (ours). The DMV-Bench adapter for each external system preserves its paper’s protocol on every axis where preservation is feasible. 
+
+E Cluster-aware statistical analysis 
+
+The shared-prefix rollout tree (§3.3) means that probes nested in the same chain trunk share encod-ing prefix and are not independent. A naive iid bootstrap or iid t-test on the per-probe vector there-fore understates the variance of any cell mean and inflates the apparent significance of any cell-to-cell gap. We give both fixes below. 
+
+Cluster bootstrap by chain trunk. For each (back-end, J, architecture) cell we resample chain trunks with replacement (one resample = a multiset of N trunks out of the N in that cell). Within each                          
+
+> Memory Encode Retrieve Inject
+> Reference baselines
+> NoMemory none none none TextOnly class text verbal text Caption VLM caption verbal caption
+> Prior multimodal external memory
+> WorldMM (Yeo et al., 2026) episodic+semantic+visual adaptive iterative retrieved ctx MMA (Lu et al., 2026) items + reliability scores reliability-weighted scored items M2A (Feng et al., 2026) raw log + semantic abstr. agent-routed (dual-layer) text snippets DualMem (ours) image + caption hybrid (SigLIP-2+SBERT) image + caption
+
+Table 6: The seven memory architectures , as choices over ENCODE , RETRIEVE , and INJECT . The reference baselines establish whether memory must be visual at all. The three prior multimodal external memories are re-cent state-of-the-art systems adapted to the DMV-Bench harness. DualMem (ours) is the only entry that carries an unreduced visual code and a verbal code through every stage. Visual retrieval is SigLIP-2 cross-modal; verbal is SBERT over captions; hybrid fuses both. 
+
+resample we concatenate all probes of the sampled trunks and recompute the TSR; the 2.5/97 .5 per-centiles of 1,000 such resamples give the cluster-aware 95% CI. Tables 7 and 8 report both the naive iid bootstrap CI (probe-level resampling, the wrong 
+
+one) and the cluster bootstrap CI (the right one), for Qwen2.5-VL-7B and Gemini 2.5 Flash respec-tively. Cluster CIs are wider than naive CIs in essentially every cell, with the largest inflation on the Gemini back-end at J=15 for the M2A baseline (naive [56 .0, 57 .1] , cluster [49 .7, 62 .5] ). DualMem’s cluster CIs are tight at every J on both back-ends, reflecting that its lead is consis-tent across chain trunks rather than carried by a handful of outliers. 
+
+Paired cluster permutation test (DualMem vs M2A). Because every memory architecture sees the same replayed trajectories on the same probes, we can compare DualMem and the runner-up M2A at the probe level : for each probe present un-der both architectures we record the difference 
+
+di = 1[DualMem correct i] − 1[M2A correct i] ∈{− 1, 0, +1 } and report the mean ¯d in percentage points. We test H0 : E[ ¯d] = 0 by a cluster per-mutation: independently for each chain trunk we flip the sign of all di in that trunk with probability 
+
+0.5, repeat 1,000 times, and compute the two-sided 
+
+p-value Pr( | ¯dperm | ≥ | ¯dobs |) under the null. Permut-ing at the trunk level rather than the probe level keeps the within-trunk correlation structure intact, so the null distribution respects the same nesting that the data has. Table 9 reports the result. The DualMem lead over M2A is significant at p ≤ 0.003 
+
+on all six J ∈ { 5, 10 , 15 } cells across both back-ends. On the two Monte Carlo J=50 pilots (only J Arch Mean (%) Naive 95% CI Cluster 95% CI 
+
+5
+
+Caption 67.3 [64.7, 70.2] [62.1, 72.4] WorldMM 39.8 [36.8, 42.7] [34.9, 44.6] MMA 47.7 [44.6, 50.6] [43.0, 52.4] M2A 70.4 [67.6, 72.9] [65.8, 74.6] DualMem 81.2 [77.6, 84.6] [76.0, 85.9] 
+
+10 
+
+Caption 64.5 [62.6, 66.5] [61.3, 67.9] WorldMM 34.1 [32.2, 36.0] [29.5, 39.4] MMA 41.0 [38.9, 43.0] [36.5, 45.1] M2A 66.7 [64.8, 68.5] [63.0, 70.5] DualMem 77.2 [76.0, 78.3] [74.8, 79.7] 
+
+15 
+
+Caption 62.3 [61.4, 63.2] [60.0, 64.7] WorldMM 29.7 [28.9, 30.7] [27.3, 32.3] MMA 39.4 [38.4, 40.3] [37.0, 41.8] M2A 62.6 [61.8, 63.6] [60.6, 64.7] DualMem 75.1 [74.4, 75.9] [73.1, 77.1] MC 50 
+
+Caption 58.1 [56.0, 60.0] [54.9, 61.9] WorldMM 27.5 [25.8, 29.4] [26.4, 28.7] MMA 35.2 [33.4, 37.2] [32.2, 37.0] M2A 59.8 [57.8, 61.5] [56.2, 63.0] DualMem 68.3 [66.4, 70.0] [65.7, 70.6] 
+
+Table 7: Cluster-aware 95% CIs, Qwen2.5-VL-7B. 
+
+Naive CIs resample probes iid; cluster CIs resample chain trunks with replacement, the correct unit of inde-pendence under shared-prefix rollouts. 1,000 bootstrap resamples; point estimates match Table 2. 
+
+five trunks each by design), the test is underpow-ered: on Qwen the +8 .5 pp lead reaches p=0 .057 
+
+(borderline), and on Gemini the +0 .4 pp gap is, in line with Table 2, not distinguishable from zero (p=0 .69 ). 
+
+F More results: per-reach task success rate 
+
+Tables 10–13 (Qwen2.5-VL-7B) and Tables 14– 17 (Gemini 2.5 Flash) give the full per-reach task success rate (TSR) for all four chain-length settings, one table per J per back-end. Rows are memory architectures; columns are reaches r (number of session boundaries between visit and probe). For the Monte Carlo J=50 pilot, we bin reaches r ∈
+
+[1 , 49] into seven contiguous groups of seven; the underlying per-reach values are sparse (10 probes per reach per chain). 
+
+J Arch Mean (%) Naive 95% CI Cluster 95% CI 
+
+5
+
+Caption 58.9 [57.1, 60.8] [55.8, 61.8] WorldMM 43.5 [41.6, 45.3] [39.7, 47.1] MMA 46.1 [44.3, 48.1] [42.5, 49.5] M2A 65.7 [63.9, 67.4] [62.2, 68.7] DualMem 82.7 [81.3, 84.1] [80.7, 84.6] 
+
+10 
+
+Caption 53.4 [52.5, 54.3] [51.6, 55.0] WorldMM 39.3 [38.5, 40.2] [37.6, 41.2] MMA 41.7 [40.8, 42.5] [39.4, 43.8] M2A 63.0 [62.1, 63.8] [61.3, 64.8] DualMem 75.3 [74.1, 76.4] [72.1, 78.0] 
+
+15 
+
+Caption 50.7 [50.1, 51.3] [49.7, 51.7] WorldMM 38.4 [37.8, 38.9] [37.1, 39.7] MMA 33.6 [33.0, 34.1] [28.7, 38.1] M2A 56.5 [56.0, 57.1] [49.7, 62.5] DualMem 71.3 [70.8, 71.8] [70.3, 72.3] MC 50 
+
+Caption 47.7 [45.7, 49.7] [47.4, 48.0] WorldMM 37.0 [35.2, 38.9] [34.6, 39.1] MMA 36.9 [35.1, 38.8] [35.8, 37.9] M2A 64.7 [62.8, 66.5] [63.7, 65.6] DualMem 65.1 [63.2, 67.0] [62.8, 67.2] 
+
+Table 8: Cluster-aware 95% CIs, Gemini 2.5 Flash. 
+
+Same protocol as Table 7. Largest naive-vs-cluster gap is M2A at J=15 (naive [56 .0, 57 .1] , cluster 
+
+[49 .7, 62 .5] ), showing how much the iid assumption can understate variance on the Gemini back-end. 
+
+Back-end Cell ¯d (pp) p-value #trunks 
+
+Qwen J=5 +12 .2 0.003 10 Qwen J=10 +11 .1 0.001 12 Qwen J=15 +12 .0 < 0.001 25 Qwen MC J=50 +8 .5 0.057 5Gemini J=5 +17 .0 < 0.001 25 Gemini J=10 +10 .1 0.002 10 Gemini J=15 +12 .4 < 0.001 23 Gemini MC J=50 +0 .4 0.69 5
+
+Table 9: Paired cluster permutation test, DualMem (ours) vs M2A (runner-up). ¯d is the mean per-probe outcome difference in percentage points; p-values from 
+
+1,000 trunk-level sign permutations. The DualMem lead is significant ( p ≤ 0.003 ) on all six J ∈ { 5, 10 , 15 }
+
+cells across both back-ends. The Monte Carlo J=50 
+
+cells have only five trunks each and are underpowered; the +8 .5 pp Qwen gap is borderline ( p=0 .057 ), and the Gemini cell where DualMem and M2A coincide to within 0.5 pp is not significant ( p=0 .69 ).                                          
+
+> Memory SR r=1 r=2 r=3 r=4
+> NoMemory 0.0 0.0 0.0 0.0 0.0 TextOnly 0.0 0.0 0.0 0.0 0.0 Caption 67.3 66.5 66.9 67.6 72.0 WorldMM 39.8 38.6 39.6 40.6 44.1 MMA 47.7 47.7 45.8 48.8 51.6 M2A 70.4 69.3 69.3 72.0 75.3 DualMem (ours) 81.1 79.9 83.0 81.5 80.6
+
+Table 10: Per-reach TSR (%) on Qwen2.5-VL-7B, J=5 
+
+(nr =1 ,053 ). Memory SR r=1 r=2 r=3 r=4 r=5 r=6 r=7 r=8 r=9 
+
+NoMemory 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 TextOnly 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 Caption 63.7 64.6 64.1 62.7 63.0 63.4 62.1 62.2 65.2 73.1 WorldMM 32.6 31.6 31.4 31.7 32.6 33.6 34.4 34.1 34.3 39.8 MMA 41.0 40.4 39.6 39.9 40.5 41.9 41.6 42.1 46.9 49.5 M2A 64.8 65.2 66.1 65.3 64.7 63.9 62.1 63.2 65.2 67.7 DualMem (ours) 77.2 75.9 76.5 77.4 76.8 78.3 78.1 77.7 79.2 81.7 
+
+Table 11: Per-reach TSR (%) on Qwen2.5-VL-7B, 
+
+J=10 (nr =4 ,821 ). 
+
+Memory SR r=1 r=2 r=3 r=4 r=5 r=6 r=7 r=8 r=9 r=10 r=11 r=12 r=13 r=14 
+
+NoMemory 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 TextOnly 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 Caption 62.3 64.0 63.5 62.5 62.3 62.1 60.9 61.6 61.3 61.7 62.1 61.4 61.0 62.3 72.0 WorldMM 29.7 30.9 29.2 28.4 28.3 28.5 28.2 29.3 29.7 31.3 32.7 30.5 31.9 33.8 38.7 MMA 39.4 39.6 38.2 38.7 39.1 38.6 37.6 38.4 38.7 40.8 40.8 41.4 42.4 45.4 49.5 M2A 62.6 64.0 63.4 63.6 63.2 62.4 61.9 62.9 61.4 61.2 61.4 60.9 61.0 64.3 65.6 DualMem (ours) 75.1 76.3 76.3 76.6 75.6 75.2 73.5 73.1 73.1 73.8 75.3 74.0 73.4 76.3 78.5 
+
+Table 12: Per-reach TSR (%) on Qwen2.5-VL-7B, 
+
+J=15 (nr =10 ,307 ). 
+
+Memory SR r∈[1 , 7] r∈[8 , 14] r∈[15 , 21] r∈[22 , 28] r∈[29 , 35] r∈[36 , 42] r∈[43 , 49] 
+
+NoMemory 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 TextOnly 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 Caption 58.8 62.3 61.4 59.7 56.0 56.3 60.6 55.1 WorldMM 30.9 26.6 34.0 32.9 34.6 28.3 30.0 29.8 MMA 35.6 36.6 38.9 38.9 34.0 31.4 37.1 32.7 M2A 58.7 64.3 61.4 60.9 55.7 53.1 60.6 53.0 DualMem (ours) 68.3 71.7 75.1 68.0 67.1 65.7 66.9 62.9 
+
+Table 13: Per-reach TSR (%) on Qwen2.5-VL-7B, Monte Carlo J=50 , reach-binned ( nr =2 ,407 ). 
+
+Memory SR r=1 r=2 r=3 r=4 
+
+NoMemory 0.0 0.0 0.0 0.0 0.0 TextOnly 0.0 0.0 0.0 0.0 0.0 Caption 58.9 60.4 58.9 57.3 56.2 WorldMM 43.5 42.3 43.5 45.7 43.4 MMA 46.1 47.1 46.8 44.8 43.1 M2A 65.7 65.4 65.7 67.4 63.7 DualMem (ours) 82.7 83.2 82.7 81.6 83.0 
+
+Table 14: Per-reach TSR (%) on Gemini 2.5 Flash, J=5 
+
+(nr =2 ,762 ). 
+
+Memory SR r=1 r=2 r=3 r=4 r=5 r=6 r=7 r=8 r=9 
+
+NoMemory 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 TextOnly 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 Caption 53.4 55.3 54.3 53.1 52.1 53.0 52.6 51.9 51.6 50.5 WorldMM 39.3 38.9 39.5 39.0 38.3 38.3 38.7 41.6 43.9 41.6 MMA 41.7 42.3 42.3 41.5 41.5 42.2 40.5 41.0 39.8 40.6 M2A 63.0 63.5 63.0 63.3 62.7 63.2 62.0 62.5 63.3 61.2 DualMem (ours) 75.2 74.6 74.8 75.4 75.8 76.2 72.4 73.8 78.5 82.5 
+
+Table 15: Per-reach TSR (%) on Gemini 2.5 Flash, 
+
+J=10 (nr =12 ,344 ). 
+
+Memory SR r=1 r=2 r=3 r=4 r=5 r=6 r=7 r=8 r=9 r=10 r=11 r=12 r=13 r=14 
+
+NoMemory 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 TextOnly 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 Caption 50.7 53.7 52.4 51.5 50.7 50.2 49.9 49.3 49.2 49.3 49.7 48.8 48.5 48.7 46.6 WorldMM 38.4 38.0 38.3 38.4 37.9 37.6 37.6 38.8 38.8 38.2 38.2 38.4 41.1 42.8 40.2 MMA 33.6 35.9 35.2 34.3 33.9 33.1 32.1 32.5 32.0 32.6 32.7 31.7 31.6 30.6 33.5 M2A 59.6 60.2 60.0 60.3 60.0 59.8 59.7 59.3 58.9 59.2 58.9 58.1 57.1 58.2 55.9 DualMem (ours) 71.3 73.4 72.8 72.2 71.6 70.7 69.8 69.1 69.3 69.8 71.4 70.5 70.3 70.9 73.3 
+
+Table 16: Per-reach TSR (%) on Gemini 2.5 Flash, 
+
+J=15 (nr =28 ,710 ). 
+
+Memory SR r∈[1 , 7] r∈[8 , 14] r∈[15 , 21] r∈[22 , 28] r∈[29 , 35] r∈[36 , 42] r∈[43 , 49] 
+
+NoMemory 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 TextOnly 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 Caption 47.7 49.4 45.1 50.6 47.1 45.4 47.4 48.7 WorldMM 37.0 34.9 40.3 37.1 32.6 32.3 38.3 43.5 MMA 36.9 37.1 34.6 38.0 38.6 36.0 35.7 38.4 M2A 64.7 64.0 65.1 67.7 62.6 61.7 65.4 66.1 DualMem (ours) 65.1 69.4 58.6 66.6 66.9 64.6 63.7 66.2 
+
+Table 17: Per-reach TSR (%) on Gemini 2.5 Flash, Monte Carlo J=50 , reach-binned ( nr =2 ,449 ).
