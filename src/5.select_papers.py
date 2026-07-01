@@ -52,6 +52,7 @@ CARRYOVER_DAYS = 5
 CARRYOVER_RATIO = 0.5
 SOURCE_FRESH_FETCH = "fresh_fetch"
 SOURCE_CARRYOVER_CACHE = "carryover_cache"
+SOURCE_RECENT_RECOMMENDATION_CACHE = "recent_recommendation_cache"
 PRIORITY_DEEP_SCORE = 9.0
 CARRYOVER_MIN_SCORE = 8.0
 CARRYOVER_UNTAGGED = "untagged"
@@ -316,6 +317,8 @@ def normalize_carryover_tag(tag: Any) -> str:
         prefix, suffix = text.split(":", 1)
         if prefix in {"query", "keyword"} and suffix.strip():
             text = suffix.strip()
+    if text.endswith(":composite"):
+        text = text[: -len(":composite")].strip()
     return text
 
 
@@ -392,6 +395,68 @@ def collect_seen_ids(
                             continue
                     seen.add(pid)
     return seen
+
+
+def item_matches_active_tags(item: Dict[str, Any], active_tags: List[str] | None = None) -> bool:
+    active_tag_keys = {
+        normalize_carryover_tag(tag).lower()
+        for tag in (active_tags or [])
+        if normalize_carryover_tag(tag)
+    }
+    if not active_tag_keys:
+        return True
+    item_tag_keys = {
+        normalize_carryover_tag(tag).lower()
+        for tag in resolve_carryover_tags(item)
+        if normalize_carryover_tag(tag)
+    }
+    return bool(item_tag_keys.intersection(active_tag_keys))
+
+
+def load_recent_recommendation_result(
+    archive_root: str,
+    today_str: str,
+    mode: str,
+    max_days: int,
+    active_tags: List[str] | None = None,
+) -> Tuple[Dict[str, Any] | None, str]:
+    today_date = parse_date_str(today_str)
+    for day in reversed(list_date_dirs(archive_root)):
+        if day == today_str:
+            continue
+        try:
+            delta = (today_date - parse_date_str(day)).days
+        except Exception:
+            continue
+        if delta < 0 or delta > max_days:
+            continue
+
+        rec_path = os.path.join(archive_root, day, "recommend", f"arxiv_papers_{day}.{mode}.json")
+        if not os.path.exists(rec_path):
+            continue
+        try:
+            payload = load_json(rec_path)
+        except Exception:
+            continue
+
+        result: Dict[str, List[Dict[str, Any]]] = {"deep_dive": [], "quick_skim": []}
+        for key in ("deep_dive", "quick_skim"):
+            for item in payload.get(key) or []:
+                if not isinstance(item, dict):
+                    continue
+                if item.get("selection_source") == SOURCE_RECENT_RECOMMENDATION_CACHE:
+                    continue
+                if not item_matches_active_tags(item, active_tags):
+                    continue
+                copied = dict(item)
+                copied["selection_source"] = SOURCE_RECENT_RECOMMENDATION_CACHE
+                copied["fallback_source_date"] = day
+                result[key].append(copied)
+
+        if result["deep_dive"] or result["quick_skim"]:
+            return result, day
+
+    return None, ""
 
 
 def parse_score(value: Any) -> float:
@@ -1086,10 +1151,45 @@ def main() -> None:
         log_substep("5.3", "加载 carryover 并构建候选集", "END")
 
     if not candidates:
-        log("[INFO] 没有候选论文（新论文=0 且 carryover=0），将写入空推荐结果并更新 carryover。")
+        log("[INFO] 没有候选论文（新论文=0 且 carryover=0），尝试复用最近一次真实推荐。")
         os.makedirs(output_dir, exist_ok=True)
         for mode in modes:
             output_path = os.path.join(output_dir, f"arxiv_papers_{TODAY_STR}.{mode}.json")
+            recent, recent_date = load_recent_recommendation_result(
+                archive_root,
+                TODAY_STR,
+                mode,
+                carryover_days,
+                active_tags=active_carryover_tags,
+            )
+            if recent:
+                deep_fallback = recent.get("deep_dive") or []
+                quick_fallback = recent.get("quick_skim") or []
+                fallback_result = {
+                    "mode": mode,
+                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "stats": {
+                        "mode": mode,
+                        "tag_count": tag_count,
+                        "deep_divecandidates": 0,
+                        "deep_cap": None,
+                        "deep_selected": len(deep_fallback),
+                        "quick_candidates": 0,
+                        "quick_skim_target": int((MODES.get(mode) or {}).get("quick_base") or 0) + tag_count,
+                        "quick_selected": len(quick_fallback),
+                        "fallback": SOURCE_RECENT_RECOMMENDATION_CACHE,
+                        "fallback_source_date": recent_date,
+                    },
+                    "deep_dive": sanitize_items(deep_fallback),
+                    "quick_skim": sanitize_items(quick_fallback),
+                }
+                save_json(fallback_result, output_path)
+                log(
+                    f"[INFO] mode={mode} fallback={SOURCE_RECENT_RECOMMENDATION_CACHE} "
+                    f"source_date={recent_date} deep={len(deep_fallback)} quick={len(quick_fallback)}"
+                )
+                continue
+
             empty = {
                 "mode": mode,
                 "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -1107,6 +1207,7 @@ def main() -> None:
                 "quick_skim": [],
             }
             save_json(empty, output_path)
+            log(f"[INFO] mode={mode} 无可复用推荐，写入空推荐结果。")
 
         carryover_payload = build_carryover_payload(
             load_carryover_payload(CARRYOVER_PATH),

@@ -206,6 +206,64 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             self.assertIn("OpenAI", item["author_affiliations"])
             self.assertIn("Verified OpenAI", item["author_rating_explanation"])
 
+    def test_copy_cached_recommendation_files_marks_fallback_source(self):
+        with tempfile.TemporaryDirectory() as d:
+            docs_dir = Path(d)
+            title = "Cached Paper"
+            arxiv_id = "2601.00001v1"
+            source_md, source_txt, _ = self.mod.prepare_paper_paths(
+                str(docs_dir),
+                "20260327",
+                title,
+                arxiv_id,
+            )
+            Path(source_md).parent.mkdir(parents=True, exist_ok=True)
+            Path(source_md).write_text(
+                "\n".join(
+                    [
+                        "---",
+                        "title: Cached Paper",
+                        "selection_source: fresh_fetch",
+                        "---",
+                        "## Abstract",
+                        "body",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            Path(source_txt).write_text("full text", encoding="utf-8")
+
+            copied = self.mod.copy_cached_recommendation_files(
+                docs_dir=str(docs_dir),
+                target_date="20260328",
+                source_date="20260327",
+                title=title,
+                arxiv_id=arxiv_id,
+                selection_source="recent_recommendation_cache",
+            )
+            target_md, target_txt, _ = self.mod.prepare_paper_paths(
+                str(docs_dir),
+                "20260328",
+                title,
+                arxiv_id,
+            )
+            meta = self.mod._parse_front_matter(Path(target_md).read_text(encoding="utf-8"))
+            target_text = Path(target_txt).read_text(encoding="utf-8")
+            copied_again = self.mod.copy_cached_recommendation_files(
+                docs_dir=str(docs_dir),
+                target_date="20260328",
+                source_date="20260327",
+                title=title,
+                arxiv_id=arxiv_id,
+                selection_source="recent_recommendation_cache",
+            )
+
+        self.assertTrue(copied)
+        self.assertTrue(copied_again)
+        self.assertEqual(target_text, "full text")
+        self.assertEqual(meta["selection_source"], "recent_recommendation_cache")
+        self.assertEqual(meta["fallback_source_date"], "20260327")
+
     def test_maybe_generate_paper_media_accepts_biorxiv(self):
         calls = []
 

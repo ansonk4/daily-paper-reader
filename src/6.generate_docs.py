@@ -6,6 +6,7 @@ import html
 import json
 import math
 import os
+import shutil
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
@@ -54,6 +55,7 @@ def create_llm_client() -> DeepSeekClient | None:
 LLM_CLIENT = create_llm_client()
 
 DEFAULT_DOCS_CONCURRENCY = 4
+SOURCE_RECENT_RECOMMENDATION_CACHE = "recent_recommendation_cache"
 
 
 def call_llm_text(
@@ -853,6 +855,42 @@ def prepare_paper_paths(docs_dir: str, date_str: str, title: str, arxiv_id: str)
     return md_path, txt_path, paper_id
 
 
+def copy_cached_recommendation_files(
+    docs_dir: str,
+    target_date: str,
+    source_date: str,
+    title: str,
+    arxiv_id: str,
+    selection_source: str,
+) -> bool:
+    if selection_source != SOURCE_RECENT_RECOMMENDATION_CACHE or not source_date:
+        return False
+    target_md, target_txt, _target_id = prepare_paper_paths(docs_dir, target_date, title, arxiv_id)
+    source_md, source_txt, _source_id = prepare_paper_paths(docs_dir, source_date, title, arxiv_id)
+    if not os.path.exists(target_md) and not os.path.exists(source_md):
+        return False
+
+    if not os.path.exists(target_md):
+        os.makedirs(os.path.dirname(target_md), exist_ok=True)
+        shutil.copy2(source_md, target_md)
+    if os.path.exists(source_txt) and not os.path.exists(target_txt):
+        shutil.copy2(source_txt, target_txt)
+
+    try:
+        with open(target_md, "r", encoding="utf-8") as f:
+            text = f.read()
+        for key, value in (
+            ("selection_source", selection_source),
+            ("fallback_source_date", source_date),
+        ):
+            text, _changed = upsert_front_matter_field(text, key, yaml_escape_value(value))
+        with open(target_md, "w", encoding="utf-8") as f:
+            f.write(text + ("\n" if not text.endswith("\n") else ""))
+    except Exception:
+        pass
+    return True
+
+
 def prepare_day_report_paths(docs_dir: str, date_str: str) -> Tuple[str, str]:
     if RANGE_DATE_RE.match(date_str):
         day_dir = os.path.join(docs_dir, date_str)
@@ -937,6 +975,7 @@ def build_daily_brief_summary(
     quick_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     total_count: int,
     run_status: str,
+    fallback_source_date: str = "",
 ) -> str:
     if total_count == 0:
         return "> No new recommendations today; the system did not produce papers to display."
@@ -958,6 +997,16 @@ def build_daily_brief_summary(
             f"- Status: {run_status}.\n"
             f"- Generation completed with {total_count} papers ({len(deep_entries)} deep reads, {len(quick_entries)} quick reads)."
         )
+
+    fallback_label = format_date_str(fallback_source_date) if fallback_source_date else ""
+    if fallback_label:
+        fallback = (
+            f"- No fresh candidates were found; showing recommendations from {fallback_label} "
+            f"({len(deep_entries)} deep reads, {len(quick_entries)} quick reads).\n"
+            + "\n".join(highlight)
+            + "\n- Start with the deep-read papers to review the key problems and methods first."
+        )
+        return fallback
 
     fallback = (
         f"- Generated {total_count} recommendations today ({len(deep_entries)} deep reads, {len(quick_entries)} quick reads).\n"
@@ -1027,6 +1076,7 @@ def build_latest_report_section(
     deep_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     quick_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     paper_evidence_by_id: Dict[str, str],
+    fallback_source_date: str = "",
 ) -> str:
     effective_label = (date_label or "").strip() or format_date_str(date_str)
     run_status = "success" if recommend_exists else "no recommend file produced (treated as no result)"
@@ -1037,6 +1087,7 @@ def build_latest_report_section(
         quick_entries=quick_entries,
         total_count=total,
         run_status=run_status,
+        fallback_source_date=fallback_source_date,
     )
 
     lines: List[str] = []
@@ -1046,6 +1097,8 @@ def build_latest_report_section(
     lines.append(f"- Total papers: {total}")
     lines.append(f"- Deep reads: {len(deep_entries)}")
     lines.append(f"- Quick reads: {len(quick_entries)}")
+    if fallback_source_date:
+        lines.append(f"- Fallback source date: {format_date_str(fallback_source_date)}")
     if summary:
         lines.append("")
         lines.append("### Daily Brief (AI)")
@@ -1063,7 +1116,7 @@ def build_latest_report_section(
         for idx, (paper_id, title, tags) in enumerate(deep_entries, start=1):
             safe_title = (title or "").strip() or paper_id
             evidence = (paper_evidence_by_id.get(str(paper_id).strip(), "") or "").strip()
-            lines.append(f"{idx}. [{safe_title}]({build_docsify_id_href(paper_id)})  ")
+            lines.append(f"{idx}. [{safe_title}]({build_docsify_id_href(paper_id)})")
             lines.append(f"   tags: {_format_entry_tags(tags)}")
             if evidence:
                 lines.append(f"   evidence: {evidence}")
@@ -1075,7 +1128,7 @@ def build_latest_report_section(
         for idx, (paper_id, title, tags) in enumerate(quick_entries, start=1):
             safe_title = (title or "").strip() or paper_id
             evidence = (paper_evidence_by_id.get(str(paper_id).strip(), "") or "").strip()
-            lines.append(f"{idx}. [{safe_title}]({build_docsify_id_href(paper_id)})  ")
+            lines.append(f"{idx}. [{safe_title}]({build_docsify_id_href(paper_id)})")
             lines.append(f"   tags: {_format_entry_tags(tags)}")
             if evidence:
                 lines.append(f"   evidence: {evidence}")
@@ -1607,6 +1660,17 @@ def process_paper(
     pdf_url = str(paper.get("link") or paper.get("pdf_url") or "").strip()
     paper_llm_client = create_llm_client()
 
+    copied_cached = copy_cached_recommendation_files(
+        docs_dir=docs_dir,
+        target_date=date_str,
+        source_date=str(paper.get("fallback_source_date") or "").strip(),
+        title=title,
+        arxiv_id=arxiv_id,
+        selection_source=str(paper.get("selection_source") or "").strip(),
+    )
+    if copied_cached:
+        return paper_id, title
+
     glance = ""
 
     if os.path.exists(md_path):
@@ -2007,6 +2071,7 @@ def build_day_report_markdown(
     deep_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     quick_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     recommend_exists: bool,
+    fallback_source_date: str = "",
 ) -> str:
     effective_label = (date_label or "").strip() or format_date_str(date_str)
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -2018,6 +2083,7 @@ def build_day_report_markdown(
         quick_entries=quick_entries,
         total_count=total,
         run_status=run_status,
+        fallback_source_date=fallback_source_date,
     )
 
     lines: List[str] = []
@@ -2027,6 +2093,8 @@ def build_day_report_markdown(
     lines.append(f"- Total recommendations: {total}")
     lines.append(f"- Deep reads: {len(deep_entries)}")
     lines.append(f"- Quick reads: {len(quick_entries)}")
+    if fallback_source_date:
+        lines.append(f"- Fallback source date: {format_date_str(fallback_source_date)}")
     if summary:
         lines.append("")
         lines.append("## Daily Brief (AI)")
@@ -2075,6 +2143,7 @@ def write_day_report_readme(
     deep_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     quick_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     recommend_exists: bool,
+    fallback_source_date: str = "",
 ) -> str:
     day_dir, day_readme = prepare_day_report_paths(docs_dir, date_str)
     os.makedirs(day_dir, exist_ok=True)
@@ -2084,6 +2153,7 @@ def write_day_report_readme(
         deep_entries=deep_entries,
         quick_entries=quick_entries,
         recommend_exists=recommend_exists,
+        fallback_source_date=fallback_source_date,
     )
     with open(day_readme, "w", encoding="utf-8") as f:
         f.write(content)
@@ -2132,6 +2202,7 @@ def build_home_readme_content(
     deep_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     quick_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     paper_evidence_by_id: Dict[str, str],
+    fallback_source_date: str = "",
 ) -> str:
     notice_path, promo_path = ensure_home_module_files(docs_dir)
     notice_md = _read_module_markdown(notice_path)
@@ -2144,6 +2215,7 @@ def build_home_readme_content(
         deep_entries=deep_entries,
         quick_entries=quick_entries,
         paper_evidence_by_id=paper_evidence_by_id,
+        fallback_source_date=fallback_source_date,
     )
 
     lines: List[str] = []
@@ -2166,6 +2238,7 @@ def sync_home_readme_from_day_report(
     deep_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     quick_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     paper_evidence_by_id: Dict[str, str],
+    fallback_source_date: str = "",
 ) -> str:
     home_readme = os.path.join(docs_dir, "README.md")
     # Home由三段模块拼接：公告栏（独立 md）+ 本次日报 + 宣传栏（独立 md）
@@ -2178,6 +2251,7 @@ def sync_home_readme_from_day_report(
         deep_entries=deep_entries,
         quick_entries=quick_entries,
         paper_evidence_by_id=paper_evidence_by_id,
+        fallback_source_date=fallback_source_date,
     )
     with open(home_readme, "w", encoding="utf-8") as f:
         f.write(content)
@@ -2743,6 +2817,10 @@ def main() -> None:
         log_substep("6.1", "读取 recommend 结果", "END")
     deep_list = payload.get("deep_dive") or []
     quick_list = payload.get("quick_skim") or []
+    stats = payload.get("stats") if isinstance(payload.get("stats"), dict) else {}
+    fallback_source_date = ""
+    if stats.get("fallback") == SOURCE_RECENT_RECOMMENDATION_CACHE:
+        fallback_source_date = str(stats.get("fallback_source_date") or "").strip()
 
     def _paper_score(p: dict) -> float:
         try:
@@ -2862,6 +2940,7 @@ def main() -> None:
         deep_entries=deep_entries,
         quick_entries=quick_entries,
         recommend_exists=recommend_exists,
+        fallback_source_date=fallback_source_date,
     )
     home_readme = sync_home_readme_from_day_report(
         docs_dir=docs_dir,
@@ -2872,6 +2951,7 @@ def main() -> None:
         deep_entries=deep_entries,
         quick_entries=quick_entries,
         paper_evidence_by_id=sidebar_evidence_by_id,
+        fallback_source_date=fallback_source_date,
     )
     log(f"[OK] day report saved: {day_readme}")
     log(f"[OK] home README synced: {home_readme}")

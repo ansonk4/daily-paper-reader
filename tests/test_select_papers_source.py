@@ -74,6 +74,10 @@ class SelectPapersSourceTagTest(unittest.TestCase):
             self.assertNotIn("_source", out[0])
             self.assertEqual(out[0].get("selection_source"), "fresh_fetch")
 
+    def test_normalize_carryover_tag_strips_composite_suffix(self):
+        self.assertEqual(self.mod.normalize_carryover_tag("query:memory:composite"), "memory")
+        self.assertEqual(self.mod.normalize_carryover_tag("keyword:harness"), "harness")
+
     def test_load_recent_carryover_keeps_tag_time_independent(self):
         payload = {
             "generated_at": "2026-03-28T00:00:00+00:00",
@@ -193,6 +197,91 @@ class SelectPapersSourceTagTest(unittest.TestCase):
         self.assertEqual(seen_gene, {"paper-gene"})
         self.assertEqual(seen_ahd, {"paper-ahd"})
         self.assertEqual(seen_all, {"paper-ahd", "paper-gene"})
+
+    def test_load_recent_recommendation_result_reuses_real_recommendations(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = pathlib.Path(tmpdir)
+            recommend_dir = root / "20260327" / "recommend"
+            recommend_dir.mkdir(parents=True, exist_ok=True)
+            payload = {
+                "deep_dive": [
+                    {
+                        "id": "paper-gene",
+                        "llm_score": 9.1,
+                        "matched_query_tag": "query:GENE",
+                        "selection_source": "fresh_fetch",
+                    },
+                    {
+                        "id": "paper-ahd",
+                        "llm_score": 9.0,
+                        "matched_query_tag": "query:AHD",
+                        "selection_source": "fresh_fetch",
+                    },
+                ],
+                "quick_skim": [
+                    {
+                        "id": "paper-gene-quick",
+                        "llm_score": 7.2,
+                        "matched_query_tag": "query:GENE",
+                        "selection_source": "fresh_fetch",
+                    }
+                ],
+            }
+            (recommend_dir / "arxiv_papers_20260327.standard.json").write_text(
+                json.dumps(payload, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            result, source_date = self.mod.load_recent_recommendation_result(
+                str(root),
+                "20260328",
+                "standard",
+                5,
+                active_tags=["GENE"],
+            )
+
+        self.assertEqual(source_date, "20260327")
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertEqual([item.get("id") for item in result["deep_dive"]], ["paper-gene"])
+        self.assertEqual([item.get("id") for item in result["quick_skim"]], ["paper-gene-quick"])
+        self.assertEqual(
+            result["deep_dive"][0].get("selection_source"),
+            "recent_recommendation_cache",
+        )
+        self.assertEqual(result["deep_dive"][0].get("fallback_source_date"), "20260327")
+
+    def test_load_recent_recommendation_result_ignores_cached_fallbacks(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = pathlib.Path(tmpdir)
+            recommend_dir = root / "20260327" / "recommend"
+            recommend_dir.mkdir(parents=True, exist_ok=True)
+            payload = {
+                "deep_dive": [
+                    {
+                        "id": "paper-gene",
+                        "llm_score": 9.1,
+                        "matched_query_tag": "query:GENE",
+                        "selection_source": "recent_recommendation_cache",
+                    }
+                ],
+                "quick_skim": [],
+            }
+            (recommend_dir / "arxiv_papers_20260327.standard.json").write_text(
+                json.dumps(payload, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            result, source_date = self.mod.load_recent_recommendation_result(
+                str(root),
+                "20260328",
+                "standard",
+                5,
+                active_tags=["GENE"],
+            )
+
+        self.assertIsNone(result)
+        self.assertEqual(source_date, "")
 
 
 class SelectPapersDeepPriorityModeTest(unittest.TestCase):
