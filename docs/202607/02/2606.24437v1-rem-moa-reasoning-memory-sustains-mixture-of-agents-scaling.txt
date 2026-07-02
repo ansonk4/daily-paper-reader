@@ -1,0 +1,617 @@
+Title: ReM-MoA: Reasoning Memory Sustains Mixture-of-Agents Scaling
+
+URL Source: https://arxiv.org/pdf/2606.24437v1
+
+Published Time: Wed, 24 Jun 2026 00:53:13 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+## ReM-MoA: Reasoning Memory Sustains Mixture-of-Agents Scaling 
+
+Heng Ping 1,* , Arijit Bhattacharjee 2, Peiyu Zhang 1, Shixuan Li 1, Wei Yang 1,Ali Jannesari 2, Nesreen Ahmed 3, Paul Bogdan 1,* 
+
+> 1
+
+University of Southern California; 2Iowa State University; 3Cisco AI Research 
+
+> *
+
+Correspondence: hping@usc.edu, pbogdan@usc.edu 
+
+Abstract 
+
+Mixture-of-Agents (MoA) architectures im-prove inference-time scaling by organizing multiple LLM agents into layered reasoning pipelines. However, existing MoA variants fail to sustain gains as depth increases, exhibit-ing degradation, early plateauing, or saturation. We propose ReM-MoA, a memory-augmented MoA framework that sustains scaling through two mechanisms: (1) a Ranked Reasoning Memory that persistently stores and ranks rea-soning traces from all layers using a compara-tive Reviewer Agent, and (2) a Curated Diver-sified Memory Routing scheme that exposes different agents to distinct combinations of suc-cessful and failed traces, preserving exploration diversity while propagating high-quality rea-soning. We further introduce an optional multi-domain Reviewer distillation pipeline that im-proves ranking quality through frontier-model supervision. Across five reasoning benchmarks spanning math, formal logic, code, knowledge, and commonsense, ReM-MoA consistently out-performs prior MoA variants across both depth and width scaling, and its advantage widens with depth, establishing structured cross-layer reasoning memory as a key missing mechanism for scalable multi-agent inference. 
+
+1 Introduction 
+
+Inference-time computation has emerged as a com-plementary scaling axis to parameter scaling for large language models (Snell et al., 2024). Among inference-time strategies, multi-LLM collaboration leverages collective reasoning by aggregating out-puts from multiple agents, with paradigms rang-ing from majority voting (Wang et al., 2022) to multi-agent debate (Du et al., 2024; Liang et al., 2024). A more recent paradigm, Mixture-of-Agents (MoA) (Wang et al., 2025), organizes N
+
+proposer agents into L stacked layers followed by a final aggregator, enabling iterative refinement across depth. In principle, increasing depth and width should provide a natural path toward scalable collective reasoning. In practice, however, existing MoA systems fail to sustain gains as architectures deepen, often degrading, plateauing, or saturating after only a few layers. Existing MoA variants attempt to sustain scal-ing through three broad strategies. The first strat-egy, information consolidation , curates the inputs of each layer to reduce redundancy, exemplified by RMoA (Xie et al., 2025), which selects a di-verse subset of prior outputs and forwards only the inter-layer residuals between adjacent layers. The second, inter-agent interaction , exemplified by At-tentionMoA (Wen et al., 2026), enables agents to refine each other within a layer through natural-language attention. The third, quality-guided selec-tion , exemplified by VeriMoA (Ping et al., 2025a), maintains a global cache of the highest-scoring so-lutions but requires domain-specific verifiers such as hardware description language simulators, limit-ing its applicability to specialized tasks. While these methods differ architecturally, none sustains performance as MoA depth increases. Three mechanisms drive this scaling collapse (Xie et al., 2025; Wen et al., 2026). First, raw inter-layer concatenation propagates both useful reason-ing and accumulated errors, allowing mistakes to compound across depth. Second, architectures with only local inter-layer communication fail to pre-serve strong reasoning trajectories generated ear-lier in the hierarchy. Third, as agents consume increasingly similar accumulated context, explo-ration diversity collapses and agents converge to-ward redundant solution paths, undermining the core benefit of multi-agent reasoning (Zhang et al., 2025; Li et al., 2025b). More importantly, retaining memory alone is insufficient: exposing all agents to identical accumulated reasoning can itself ac-celerate convergence toward repetitive trajectories. Sustained MoA scaling therefore requires simulta-neously preserving high-quality reasoning across 1
+
+> arXiv:2606.24437v1 [cs.AI] 23 Jun 2026
+
+layers while maintaining diversity among agents within each layer. To address these scaling failures, we propose 
+
+ReM-MoA , a Mixture-of-Agents framework cen-tered on a Ranked Reasoning Memory that stores reasoning traces produced across the layers. Unlike episodic or retrieval-based memory systems that ac-cumulate experience across tasks, ReM-MoA main-tains a structured cross-layer reasoning memory within a single problem instance, enabling deeper layers to revisit prior reasoning paths. At each layer, proposer agents generate reasoning traces, and a Reviewer Agent (Zheng et al., 2023) compar-atively evaluates these traces by assigning scores together with targeted rationales. The ranked traces and rationale are then stored in memory (Ouyang et al., 2025). Subsequent layers consult this mem-ory through a Curated Diversified Memory Routing 
+
+scheme that exposes different agents to distinct combinations of high-quality and low-quality rea-soning trajectories, providing contrastive reasoning signals while preserving exploration diversity. ReM-MoA therefore treats MoA scaling as a joint quality-diversity preservation problem rather than solely an aggregation or interaction problem. As an optional enhancement, the Reviewer Agent can be further improved through frontier-model distillation (Hinton et al., 2015), where a strong teacher model supervises a smaller reviewer fine-tuned using parameter-efficient LoRA (Hu et al., 2022). Multi-domain training produces a general-purpose Reviewer that transfers across reasoning tasks. Our contributions are as follows: • We empirically characterize three scaling fail-ure modes in existing MoA systems: degrada-tion under raw concatenation, early plateauing under local residual propagation, and diversity collapse under intra-layer interaction mecha-nisms. These observations motivate structured cross-layer reasoning memory as a critical mechanism for sustained MoA scaling. • We propose ReM-MoA , which sustains MoA scaling through a Ranked Reasoning Mem-ory and a Curated Diversified Memory Rout-ing scheme. At each layer, a comparative Reviewer Agent ranks reasoning traces with rationales, and subsequent agents receive dis-tinct combinations of successful and failed traces, jointly preserving quality and diver-sity. An optional frontier-model distillation pipeline further upgrades the Reviewer Agent through multi-domain training. • Across five reasoning benchmarks (math, for-mal logic, code, knowledge, and common-sense), ReM-MoA consistently outperforms prior MoA variants across all tested depth and width configurations, with the performance gap widening rather than diminishing as the architecture scales. 
+
+2 Related Work 
+
+Mixture-of-Agents variants. Building on the original MoA framework (Wang et al., 2025), sev-eral variants extend the three paradigms from Sec-tion 1. Within information consolidation , beyond RMoA (Xie et al., 2025), SMoA (Li et al., 2025a) sparsifies agent interactions via dedicated judge and moderator agents, while Self-MoA (Li et al., 2025b) instead argues quality dominates diversity, aggregating samples from a single strong model. Within inter-agent interaction , beyond Attention-MoA (Wen et al., 2026), DEI (Zhang et al., 2025) ensembles specialist agents with complementary expertise. The quality-guided paradigm is exem-plified by VeriMoA (Ping et al., 2025a) and re-lated agentic frameworks for hardware description language generation (Ping et al., 2025b, 2026a,b), which rely on domain-specific feedback such as hardware simulators. No prior MoA variant main-tains a structured cross-layer memory of reasoning traces accessible to subsequent layers. 
+
+Memory in LLM agents. Explicit memory has been used for LLM agent self-improvement: Reflexion (Shinn et al., 2023) stores verbal self-reflection from past failures, Reasoning-Bank (Ouyang et al., 2025) distills reasoning strate-gies from successful and failed trajectories across tasks, and AgentAuditor (Luo et al., 2026) aug-ments LLM evaluators with retrieval-augmented examples for safety judgment. Our Ranked Rea-soning Memory instead operates within a single problem across MoA depth, holding ranked traces from each layer for subsequent layers to consult. 
+
+LLM-as-Judge and judge distillation. LLM-as-Judge (Zheng et al., 2023) has emerged as a scal-able proxy for human preference, with pairwise comparison generally more reliable than indepen-dent scoring (Yang et al., 2026). JudgeLM (Zhu et al., 2025) distills frontier-model judgments 2into open-source judges via knowledge distilla-tion (Hinton et al., 2015) and parameter-efficient fine-tuning (Hu et al., 2022). Our Reviewer Agent extends this with a layer-wise comparative ranking that feeds a downstream reasoning memory. 
+
+3 Preliminaries: MoA Scaling 
+
+The standard MoA framework. The original Mixture-of-Agents framework (Wang et al., 2025) defines the standard MoA structure: N proposer agents are organized into L sequential layers fol-lowed by a final aggregator. Layer 1 receives the original problem x and produces N candidate re-sponses; each subsequent layer l ∈ { 2, . . . , L }
+
+receives the previous layer’s outputs together with 
+
+x and produces N new responses; the aggregator then synthesizes the outputs of layer L into a final answer. Specific variants modify aspects of this structure (Section 2). 
+
+Quality and diversity drive scaling. Li et al. (2025b) model MoA accuracy through a linear re-gression 
+
+t = αq + βd + γ, (1) where q is the average proposer accuracy and d is the Vendi Score of proposer outputs. With α > β 
+
+across datasets, MoA performance depends on both factors but is more sensitive to quality. Sustained scaling therefore requires mechanisms that pre-serve quality and diversity simultaneously, since gains in one cannot offset losses in the other. 
+
+Empirical scaling failures. Figure 1 plots the accuracy of three representative MoA variants un-der two natural scaling axes: layer depth (top row, 
+
+L from 1 to 9 with width fixed at N = 3 ) and layer width (bottom row, N from 3 to 8 with depth fixed at L = 3 ). The depth axis exposes three distinct failure patterns. Standard MoA (Wang et al., 2025) peaks at shallow depths and then de-grades, with the drop reaching nearly 10 percent-age points on MMLU-redux. RMoA (Xie et al., 2025) avoids this degradation but plateaus early, because its adjacent-layer residual cannot retrieve high-quality reasoning produced in non-adjacent earlier layers. AttentionMoA (Wen et al., 2026) improves but saturates before deeper layers (with slight late decline on MMLU-redux), since intra-layer attention promotes convergence among the layer’s agents. Width scaling exhibits the same hierarchy at smaller magnitude: Standard MoA still degrades on MMLU-redux, while RMoA and AttentionMoA improve more slowly with dimin-ishing returns. 
+
+Design requirements. The three patterns above instantiate the failure mechanisms outlined in Sec-tion 1 and show that existing variants violate the quality-diversity balance of Equation (1) as MoA scales. Sustaining scaling therefore requires pre-serving both factors of this equation: 
+
+Q (Quality Preservation): A scalable MoA should retain the quality of reasoning produced at each layer so that deeper layers build on it rather than dilute it. Both high-quality successful traces (positive guidance) and low-quality failed traces (counter-examples) enrich the input signal beyond positive examples alone. This calls for presenting traces in a quality-ranked form rather than raw con-catenation, and keeping them accessible across all earlier layers. 
+
+D (Diversity Preservation): A scalable MoA should also preserve exploration diversity among agents within each layer, so that they do not col-lapse onto a single solution path as memory accu-mulates. To this end, different agents in the same layer should engage with different selections from the memory rather than sharing identical inputs. ReM-MoA, introduced in Section 4, addresses both Q and D through a Ranked Reasoning Mem-ory paired with a curated diversified memory rout-ing scheme: the memory ranks and retains traces from every layer, and the routing scheme delivers quality-aware reference sets to within-layer agents. 
+
+4 ReM-MoA 
+
+ReM-MoA addresses the failure patterns observed in Section 3 through three interconnected compo-nents: a Ranked Reasoning Memory M, a curated diversified memory routing scheme Π, and an op-tional reviewer distillation pipeline. Let Al =
+
+{Al, 1, . . . , A l,N } denote the N proposer agents at layer l ∈ { 1, . . . , L }, and let rl,j = Al,j (Pl,j ) de-note the reasoning trace produced by agent Al,j 
+
+given prompt Pl,j . We write rl = ( rl, 1, . . . , r l,N )
+
+for the vector of all traces produced at layer l. Fig-ure 2 illustrates the framework: the memory ranks and retains rl at every layer (Section 4.1); the rout-ing scheme delivers distinct curated reference sets to within-layer agents (Section 4.2); and the distil-lation pipeline optionally enhances the memory’s ranking module (Section 4.3). After layer L, the aggregator consults the memory M through routes drawn from the same three families as the proposer 31 2 3 4 5 6 7 8 9                                       
+
+> Number of Layers L
+> 60
+> 64
+> 68
+> 72
+> 76
+> Accuracy (%)
+> MATH
+> 123456789
+> Number of Layers L
+> 51
+> 54
+> 57
+> 60
+> 63
+> 66
+> Accuracy (%)
+> MMLU-redux
+> 123456789
+> Number of Layers L
+> 44
+> 48
+> 52
+> 56
+> 60
+> Accuracy (%)
+> Formal Logic
+> 345678
+> Agents per Layer N
+> 70.5
+> 72.0
+> 73.5
+> 75.0
+> 76.5
+> Accuracy (%)
+> MATH
+> 345678
+> Agents per Layer N
+> 55.0
+> 57.5
+> 60.0
+> 62.5
+> 65.0
+> Accuracy (%)
+> MMLU-redux
+> 345678
+> Agents per Layer N
+> 52
+> 54
+> 56
+> 58
+> Accuracy (%)
+> Formal Logic
+> Layer Depth Scaling Layer Width Scaling
+> MoA RMoA AttMoA
+
+Figure 1: Scaling behavior of three existing MoA variants on three benchmarks (MATH, MMLU-redux, Formal Logic) along two scaling axes. All variants share the same heterogeneous proposer pool: Qwen-2.5-7B, Qwen-2.5-Coder-7B, and Llama-3.1-8B. Top row : layer depth scaling ( L from 1 to 9, width fixed at N = 3 ). Bottom row :layer width scaling ( N from 3 to 8, depth fixed at L = 3 ). The depth axis exposes three failure patterns: Standard MoA peaks at shallow depths and then degrades, RMoA plateaus early, and AttentionMoA improves but saturates with limited gains at depth. The width axis shows the same hierarchy at smaller magnitude. 
+
+Figure 2: The ReM-MoA framework. At each layer, N proposer agents produce reasoning traces rl,j , and the Reviewer Agent compares them and assigns per-trace scores sl,j and rationales ρl,j , committed to the Ranked Reasoning Memory M. From layer 2 onwards, each proposer agent receives a curated reference set from M drawn from three families: Top n (highest-scoring traces), Bot n (lowest-scoring), or Con n (contrastive, Top a ∪ Bot b). 
+
+agents, and synthesizes the final answer. 
+
+4.1 Ranked Reasoning Memory Memory subsystem. The Ranked Reasoning Memory M is a shared subsystem that records ranked traces at every proposer layer. After layer 
+
+l has been processed, the memory accumulates as the union of per-layer entries: 
+
+M≤l =
+
+l[
+
+k=1 
+
+Mk, (2) where Mk is the entry committed by layer k (de-fined below). The memory is append-only and supports read access from any subsequent layer: for any l′ > l , layer l′ may consult M≤l. This sub-system addresses Q (Quality Preservation) because traces are stored in quality-ranked form rather than raw concatenated outputs, and remain accessible across arbitrary layer distances rather than only between adjacent layers. 
+
+The Reviewer Agent. The ranking inside the memory is performed by an LLM-based Reviewer Agent R. After the N proposers at layer l produce their traces rl, the Reviewer is invoked once with all N traces presented together; it compares the traces against each other and emits, for each trace, an integer score together with a targeted rationale 4specific to that trace: 
+
+(sl, ρl) = R(x, rl), (3) where sl = (sl, 1, . . . , s l,N ) with each sl,j ∈{1, . . . , S } being an integer score on a scale with maximum S (higher is better), and ρl =(ρl, 1, . . . , ρ l,N ) with each ρl,j being a rationale spe-cific to trace rl,j (rationales are independent across traces). We use comparative scoring rather than in-dependent scoring because grounding each trace’s score in relative differences across candidates pro-duces more reliable estimates than absolute scor-ing (Zheng et al., 2023). 
+
+Memory entries and access. Each layer com-mits one entry to the memory, formed by zipping the traces with their Reviewer-assigned scores and rationales: 
+
+Ml = {(rl,j , s l,j , ρ l,j )}Nj=1 . (4) 
+
+Ml is a set of N trace-score-rationale triples. The accumulated memory M≤l thus contains N · l
+
+triples available for cross-layer retrieval by the rout-ing scheme described next. 
+
+4.2 Curated Diversified Memory Routing Curated reference delivery. At every subse-quent layer, each proposer agent receives, in ad-dition to the problem x, a curated set of reference traces drawn from the memory. The selection fol-lows two design principles. First, the reference set must carry quality-aware information for the agent’s reasoning: it comprises high-scoring traces as positive examples, low-scoring traces as nega-tive examples, or both. Second, the reference sets must differ across the N agents within the same layer, so the layer as a whole explores the mem-ory’s content rather than redundantly consuming the same references. Formally, at layer l ≥ 2, the curated diversified memory routing scheme Π oper-ates on the global pool of all previously committed entries, Pl = M≤l−1:
+
+Sl,j = Π j (Pl), (5) where Sl,j ⊂ P l is the curated reference set routed to agent Al,j . Operating on Pl rather than only the most recent layer realizes the cross-layer access promised by the memory subsystem (Section 4.1). The prompt for agent Al,j is then: 
+
+Pl,j =
+
+(
+
+x if l = 1 ,x ⊕ S l,j if l ≥ 2, (6) where ⊕ denotes concatenation; each entry in Sl,j 
+
+contributes its trace together with its score and ra-tionale. 
+
+Routing functions. We implement the two de-sign principles above through three families of rout-ing functions operating on Pl. Let Top n(M) de-note the size-n subset of M containing the highest-scoring entries, and Bot n(M) the analogous sub-set for the lowest-scoring ones. The three families are: contrastive , of the form Top a ∪ Bot b (denoted Con n with n = a + b), pairing high- and low-scoring entries; positive reinforcement , of the form Top a, emphasizing successful patterns; and failure-mode focus , of the form Bot a, surfacing common pitfalls. For each layer, the N routing functions 
+
+Π1, . . . , ΠN are distributed across these three fam-ilies, with the distribution chosen to balance the three modes of reference. As one concrete instance, for N = 3 we use one route per family: 
+
+Πj (Pl) = 
+
+
+
+Top 1(Pl) ∪ Bot 1(Pl) j = 1 ,
+
+Top 2(Pl) j = 2 ,
+
+Bot 2(Pl) j = 3 .
+
+(7) Appendix B details the distributions used for larger 
+
+N in our scaling experiments. This design real-izes both Q (Quality Preservation) and D (Diversity Preservation). For Q, the curated reference sets preserve the Reviewer-extracted quality signal as it propagates forward through the layers. For D, the 
+
+N distinct routes within each layer sustain explo-ration diversity even as the memory grows. 
+
+4.3 Reviewer Distillation (Optional Enhancement) Distillation pipeline. The Reviewer Agent R is implemented as an off-the-shelf LLM by default. It can be optionally enhanced via frontier-model dis-tillation (Hinton et al., 2015). Crucially, the train-ing data for distillation comes from ReM-MoA’s own runs : we execute the framework on a multi-domain set of training problems, collect the pro-poser traces rl generated at each layer, and query a strong external teacher T on each (problem, traces) pair to obtain high-quality supervision targets: 
+
+Dtrain = (xi, ri, s∗ 
+
+> i
+
+, ρ∗ 
+
+> i
+
+) | (s∗ 
+
+> i
+
+, ρ∗ 
+
+> i
+
+) = T (xi, ri) ,
+
+(8) where (xi, ri) is sampled from the framework’s intermediate outputs and (s∗ 
+
+> i
+
+, ρ∗ 
+
+> i
+
+) is the teacher’s score-rationale labeling treated as the supervision 5Table 1: Depth scaling ( N =3 fixed). Trend: ↓ degrade, 
+
+→ plateau, ↑→ saturate, ↑↑ sustain (based on tail-3 gain). Our methods in bold ; ∗: with distilled Reviewer.                                                                                                                                                                                                                                                                      
+
+> Benchmark Method L=1 L=2 L=3 L=4 L=5 L=6 L=7 L=8 L=9 Trend
+> MATH
+> Standard MoA 65.0 68.5 70.0 69.2 67.8 66.0 64.2 62.5 61.0 ↓
+> RMoA 66.0 69.5 71.0 71.8 72.0 72.0 71.8 71.6 71.5 ↑→
+> AttentionMoA 67.0 71.0 73.0 74.5 75.5 76.2 76.6 76.8 76.9 ↑→
+> ReM-MoA 68.0 72.5 75.0 77.0 78.5 79.5 80.2 80.7 81.0 ↑↑
+> ReM-MoA ∗68.3 73.5 76.8 79.2 81.0 82.2 83.0 83.7 84.0 ↑↑
+> MMLU-redux
+> Standard MoA 61.5 59.8 58.2 56.9 55.8 54.8 53.9 53.1 52.4 ↓
+> RMoA 63.8 65.1 65.4 65.3 65.2 65.0 64.8 64.6 64.4 →
+> AttentionMoA 63.2 64.2 64.8 65.0 65.1 65.0 64.9 64.8 64.7 →
+> ReM-MoA 64.0 66.0 67.0 67.8 68.3 68.6 68.8 68.9 68.9 ↑→
+> ReM-MoA ∗64.2 66.3 67.4 68.3 68.9 69.3 69.6 69.9 70.2 ↑↑
+> Formal Logic
+> Standard MoA 44.2 49.5 51.0 50.2 48.8 47.0 45.5 44.0 42.8 ↓
+> RMoA 45.0 51.2 52.8 53.4 53.5 53.4 53.3 53.2 53.1 ↑→
+> AttentionMoA 46.5 53.8 55.6 57.0 58.2 59.0 59.5 59.8 59.9 ↑→
+> ReM-MoA 47.8 55.5 59.0 61.5 63.5 65.0 66.0 66.8 67.2 ↑↑
+> ReM-MoA ∗48.2 56.7 60.8 63.7 66.0 67.7 68.8 69.7 70.2 ↑↑
+> CRUX
+> Standard MoA 54.0 56.5 57.5 57.0 56.0 54.8 53.5 52.2 51.0 ↓
+> RMoA 54.5 57.5 58.5 59.0 59.2 59.4 59.4 59.5 59.5 ↑→
+> AttentionMoA 55.5 58.8 60.5 61.8 62.7 63.3 63.6 63.8 63.9 ↑→
+> ReM-MoA 56.5 60.5 63.0 65.2 67.0 68.5 69.5 70.0 70.2 ↑↑
+> ReM-MoA ∗57.0 61.6 64.6 67.2 69.3 71.1 72.2 72.8 73.0 ↑↑
+> HellaSwag
+> Standard MoA 73.5 76.0 76.8 76.2 75.3 74.2 73.0 71.8 70.8 ↓
+> RMoA 74.0 76.8 77.5 77.8 78.0 77.9 77.8 77.7 77.6 ↑→
+> AttentionMoA 74.8 77.5 78.5 79.2 79.7 80.0 80.1 80.2 80.2 ↑→
+> ReM-MoA 75.5 78.8 80.5 81.5 82.2 82.6 82.8 82.9 82.9 ↑→
+> ReM-MoA ∗75.8 79.5 81.2 82.2 83.0 83.4 83.7 84.0 84.3 ↑↑
+
+target. A smaller base Reviewer Rθ is then fine-tuned via parameter-efficient LoRA (Hu et al., 2022) to imitate the teacher: 
+
+θ∗ = arg min 
+
+θ
+
+X
+
+(x, r,s∗,ρ∗)∈D train 
+
+L Rθ(x, r), (s∗, ρ∗),
+
+(9) where L is the standard supervised loss on the con-catenated score-rationale output. Because the train-ing distribution matches the traces ReM-MoA actu-ally produces at inference, the resulting Rθ∗ learns to judge exactly the distribution of traces it will encounter at deployment. 
+
+Multi-domain training. The training problems span multiple reasoning domains. Multi-domain training is essential to the design: it lets a single Reviewer generalize across all benchmarks we eval-uate, including held-out domains not seen during training (Section 5). Full training configuration and hyperparameters are described in Section 5.1. 
+
+5 Experiments 
+
+We evaluate ReM-MoA against existing MoA vari-ants to answer three research questions: 
+
+RQ1. Does ReM-MoA continue to improve as depth and width scale, where prior MoA variants degrade, plateau, or saturate? 
+
+RQ2. How much do the Ranked Reasoning Mem-ory and the Curated Diversified Memory Routing each contribute to ReM-MoA’s overall gain? 
+
+Table 2: Width scaling ( L=3 fixed). Conventions follow Table 1. 
+
+Benchmark Method N =3 N =4 N =5 N =6 N =7 N =8 Trend 
+
+MATH 
+
+Standard MoA 70.0 70.8 71.4 71.8 72.0 72.1 ↑→ 
+
+RMoA 71.0 72.0 72.7 73.3 73.6 73.8 ↑↑ 
+
+AttentionMoA 73.0 74.0 74.8 75.5 75.9 76.2 ↑↑ 
+
+ReM-MoA 75.0 76.2 77.2 78.0 78.5 78.9 ↑↑ 
+
+ReM-MoA ∗ 76.8 78.0 79.1 79.9 80.5 80.9 ↑↑ 
+
+MMLU-redux 
+
+Standard MoA 58.2 57.2 56.5 55.8 55.2 54.5 ↓
+
+RMoA 65.4 65.5 65.5 65.4 65.3 65.2 →
+
+AttentionMoA 64.8 65.1 65.2 65.2 65.1 65.0 →
+
+ReM-MoA 67.0 67.8 68.3 68.8 69.0 69.2 ↑→ 
+
+ReM-MoA ∗ 67.4 68.2 68.7 69.3 69.5 69.8 ↑↑ 
+
+Formal Logic 
+
+Standard MoA 51.0 51.8 52.2 52.5 52.4 52.2 →
+
+RMoA 52.8 53.8 54.5 55.0 55.2 55.3 ↑→ 
+
+AttentionMoA 55.6 56.8 57.5 58.2 58.6 59.0 ↑↑ 
+
+ReM-MoA 59.0 60.5 61.8 63.0 63.8 64.5 ↑↑ 
+
+ReM-MoA ∗ 60.8 62.3 63.7 64.9 65.8 66.6 ↑↑ 
+
+CRUX 
+
+Standard MoA 57.5 58.0 58.4 58.6 58.5 58.3 →
+
+RMoA 58.5 59.3 59.8 60.3 60.6 60.7 ↑→ 
+
+AttentionMoA 60.5 61.5 62.3 62.9 63.3 63.6 ↑↑ 
+
+ReM-MoA 63.0 64.3 65.3 66.2 66.8 67.3 ↑↑ 
+
+ReM-MoA ∗ 64.6 66.0 67.0 68.0 68.7 69.3 ↑↑ 
+
+HellaSwag 
+
+Standard MoA 76.8 77.2 77.4 77.5 77.4 77.2 →
+
+RMoA 77.5 78.0 78.4 78.7 78.8 78.9 →
+
+AttentionMoA 78.5 79.2 79.7 80.1 80.3 80.4 ↑→ 
+
+ReM-MoA 80.5 81.2 81.8 82.3 82.6 82.9 ↑↑ 
+
+ReM-MoA ∗ 81.2 82.0 82.6 83.1 83.4 83.7 ↑↑ 
+
+RQ3. Does multi-domain Reviewer distillation transfer to held-out reasoning domains? 
+
+5.1 Experimental Setup Benchmarks. We evaluate on five rea-soning benchmarks, one per target domain: MATH (Hendrycks et al., 2021) (mathematics), MMLU-redux (Gema et al., 2025) (knowledge), the formal_logic subject of MMLU (Hendrycks et al., 2020) (formal logic), CRUX (Gu et al., 2024) (code understanding), and HellaSwag (Zellers et al., 2019) (common-sense reasoning). We report accuracy on all evaluation domains, except for the code benchmarks (CRUX and, in the distillation experiment, MBPP), for which we report pass@1. 
+
+Proposer pool and aggregator. A heterogeneous pool of three 7-8B open-source instruction-tuned models (Qwen2.5-7B-Instruct (Yang et al., 2024), Llama-3.1-8B-Instruct (Grattafiori et al., 2024), and Qwen2.5-Coder-7B-Instruct (Hui et al., 2024)) serves as proposers. Qwen2.5-7B-Instruct is the aggregator in all configurations. 
+
+Reviewer Agent. We evaluate two variants of our framework that differ only in the Reviewer: ReM-MoA uses the off-the-shelf Qwen2.5-7B-Instruct as the Reviewer, while ReM-MoA ∗ replaces it with a LoRA-distilled fine-tune of the same base model. For the distillation, we query GPT-5.5 as the teacher T on traces generated by ReM-MoA itself, then fine-tune Qwen2.5-7B-Instruct 61 2 3 4 5 6 7 8 9           
+
+> Number of Layers L
+> 55
+> 60
+> 65
+> 70
+> 75
+> Mean Accuracy (%)  Layer Depth Scaling
+> 345678
+> Agents per Layer N
+> 62.5
+> 65.0
+> 67.5
+> 70.0
+> 72.5
+> 75.0
+> Mean Accuracy (%)  Layer Width Scaling
+> MoA RMoA AttMoA ReM-MoA ReM-MoA*
+
+Figure 3: Mean accuracy across the five benchmarks under depth scaling (left, N =3 fixed) and width scaling (right, 
+
+L=3 fixed). Mean accuracy under depth scaling exhibits a clear separation: Standard MoA peaks at L=3 and declines, RMoA and AttentionMoA flatten as L grows, while ReM-MoA and ReM-MoA ∗ continue to improve. 
+
+with LoRA (Hu et al., 2022). Training data con-sists of 100 problems each from MATH, ARC-Challenge (Clark et al., 2018), MedQA (Jin et al., 2021), MBPP (Austin et al., 2021), and HellaSwag (500 problems total); ReM-MoA is run on each at L = 3 , N = 3 , yielding 1,500 (problem, layer-traces) training tuples. Full LoRA configuration is in Appendix C. 
+
+Baselines. We compare against three MoA vari-ants representing the paradigms introduced in Sec-tion 2: standard MoA (Wang et al., 2025) (informa-tion concatenation), RMoA (Xie et al., 2025) (in-formation consolidation), and AttentionMoA (Wen et al., 2026) (inter-agent interaction). All baselines share our proposer pool and aggregator, retaining each baseline’s original hyperparameters. 
+
+Implementation. All experiments run on NVIDIA A100 GPUs via vLLM (Kwon et al., 2023). Proposer agents sample at temperature 0.8, the Reviewer at 0.3, and the aggregator at 0.5. We evaluate along two axes: depth , sweeping 
+
+L ∈ { 1, . . . , 9} at N = 3 , and width , sweeping 
+
+N ∈ { 3, . . . , 8} at L = 3 . Further implementation details are in Appendix C. 
+
+5.2 Sustained Scaling and Cross-Benchmark Results (RQ1) 
+
+Tables 1 and 2 report depth and width scaling across the five benchmarks. Figure 3 plots the correspond-ing mean accuracy. 
+
+Baseline failure modes are confirmed on all five benchmarks. Standard MoA degrades on all five benchmarks, peaking by L=3 and losing 9.1 points on MMLU-redux ( 61 .5 → 52 .4), 4.0 on MATH, 
+
+3.0 on CRUX, 2.7 on HellaSwag, and 1.4 on For-mal Logic by L=9 . RMoA plateaus on MMLU-redux (its representative failure mode in Figure 1) and saturates on the other four benchmarks, with tail-3 gain below +0 .2 on every non-plateau cell. AttentionMoA saturates on four benchmarks and plateaus on MMLU-redux (peaking at L=5 then slightly declining), with per-step gain shrinking to 
+
+≤ 0.1 at L=9 , indicating intra-layer convergence among agents. 
+
+ReM-MoA outperforms every baseline across all configurations. ReM-MoA ∗ is column-best with ReM-MoA second across all 45 benchmark-
+
+L and 30 benchmark-N cells. The lead is largest on reasoning-intensive benchmarks: at L=9 , ReM-MoA exceeds AttentionMoA by +7 .3 on Formal Logic ( 67 .2 vs 59 .9), +6 .3 on CRUX, and +4 .1
+
+on MATH. On knowledge-heavy MMLU-redux and common-sense HellaSwag, where headroom is smaller, ReM-MoA still leads at every L but saturates due to limited remaining ceiling. 
+
+The gap widens monotonically with scale. Fig-ure 3 renders the spectrum of scaling behaviors in one view and shows a clean monotonic fan-out among the five methods along the depth axis. Quantitatively, ReM-MoA’s gap over the strongest baseline grows from +0 .84 at L=1 to +4 .92 at 
+
+L=9 (5.9×); against Standard MoA it expands from +2 .72 to +18 .44 (6.8×). Width yields a more modest expansion from +2 .30 at N =3 to 
+
++3 .68 at N =8 , with the five methods following more closely-spaced trajectories than under depth (right panel of Fig. 3). The widening holds against all three baselines across the five benchmarks. 
+
+Distillation extends sustained scaling to all benchmarks. ReM-MoA ∗ improves accuracy across all configurations, with gains over ReM-MoA of up to 3.0 points at L=9 on MATH and 7Table 3: Ablation study under depth scaling ( N =3 ). All variants share the off-the-shelf Reviewer (ReM-MoA, not ReM-MoA ∗). Trend conventions follow Table 1. The ReM-MoA (full) row repeats Table 1 for reference.                                                                                                                                                                                                                                   
+
+> Benchmark Variant L=1 L=2 L=3 L=4 L=5 L=6 L=7 L=8 L=9 Trend
+> MATH
+> ReM-MoA (full) 68.0 72.5 75.0 77.0 78.5 79.5 80.2 80.7 81.0 ↑↑ −cross-layer access 68.0 72.5 74.1 75.5 76.0 76.4 76.5 76.3 76.2 ↑→ −routing diversification 68.0 72.0 74.0 75.2 76.2 77.0 77.4 77.6 77.7 ↑→ −rationale 67.7 71.9 74.2 75.9 77.2 78.0 78.7 79.1 79.3 ↑↑
+> MMLU-redux
+> ReM-MoA (full) 64.0 66.0 67.0 67.8 68.3 68.6 68.8 68.9 68.9 ↑→ −cross-layer access 64.0 66.0 66.4 66.7 66.9 67.0 66.9 66.7 66.8 ↑→ −routing diversification 64.0 65.8 66.5 66.9 67.2 67.4 67.5 67.6 67.6 ↑→ −rationale 63.9 65.8 66.5 67.2 67.5 67.8 68.0 68.0 68.0 ↑→
+> Formal Logic
+> ReM-MoA (full) 47.8 55.5 59.0 61.5 63.5 65.0 66.0 66.8 67.2 ↑↑ −cross-layer access 47.8 55.5 57.7 59.6 60.6 60.9 61.1 60.8 61.0 ↑→ −routing diversification 47.8 55.0 57.8 59.8 61.5 62.8 63.5 63.8 63.9 ↑→ −rationale 47.4 54.8 57.9 60.1 61.8 63.1 64.1 64.8 65.1 ↑↑
+> CRUX
+> ReM-MoA (full) 56.5 60.5 63.0 65.2 67.0 68.5 69.5 70.0 70.2 ↑↑ −cross-layer access 56.5 60.5 62.1 63.5 64.2 64.7 64.5 64.4 64.5 ↑→ −routing diversification 56.5 60.0 62.0 63.5 64.8 65.8 66.5 66.8 66.9 ↑→ −rationale 56.1 59.8 62.1 63.9 65.4 66.5 67.3 67.8 68.0 ↑↑
+> HellaSwag
+> ReM-MoA (full) 75.5 78.8 80.5 81.5 82.2 82.6 82.8 82.9 82.9 ↑→ −cross-layer access 75.5 78.8 79.7 80.3 80.6 80.5 80.4 80.2 80.3 ↑→ −routing diversification 75.5 78.5 79.7 80.4 81.0 81.3 81.5 81.6 81.6 ↑→ −rationale 75.3 78.5 79.8 80.8 81.5 81.8 82.0 82.2 82.2 ↑→
+
+Formal Logic. Distillation also flips the Trend label on the three cells where ReM-MoA still saturated (MMLU-redux and HellaSwag depth, MMLU-redux width), all moving to ↑↑ . ReM-MoA ∗ thus sustains scaling on all five benchmarks under both axes. 
+
+5.3 Ablation Studies (RQ2) 
+
+We ablate three ReM-MoA components indepen-dently: cross-layer access (restrict reads to Ml−1
+
+only), routing diversification (share one reference set across the layer’s N proposers), and rationale 
+
+(remove rationales from memory entries). All vari-ants use the off-the-shelf Reviewer (ReM-MoA, not ReM-MoA ∗). Table 3 reports depth scaling. 
+
+Cross-layer access and routing drive sustained scaling; rationale refines magnitude. Restrict-ing reads to Ml−1 causes the largest drop (avg 
+
+−4.28 at L=9 , peak −6.2 on Formal Logic), with all three previously sustained benchmarks collaps-ing from ↑↑ to ↑→ and mirroring RMoA’s adjacent-layer residual in Table 1. Sharing a single refer-ence set across N proposers is the second-largest contributor ( −2.50 at L=9 ) and triggers the same regression on the three sustained benchmarks, con-firming that within-layer diversification rather than memory richness alone drives sustained scaling. Removing rationales costs only −1.52 at L=9 but preserves the trend pattern fully (MATH, Formal Logic, and CRUX still sustain, MMLU-redux and HellaSwag still saturate), indicating that rationales act as refinement rather than scaffolding. 
+
+Table 4: Reviewer distillation under depth scaling (N =3 ). Orig : off-the-shelf Reviewer (ReM-MoA). 
+
+Multi-FT : distilled on all five domains (ReM-MoA ∗). 
+
+LOO : distilled on four domains, holding out the row’s benchmark. Trend conventions follow Table 1.                                                                                                                                                                  
+
+> Benchmark Reviewer L=1 L=2 L=3 L=4 L=5 L=6 L=7 L=8 L=9 Trend
+> MATH
+> Orig 68.0 72.5 75.0 77.0 78.5 79.5 80.2 80.7 81.0 ↑↑
+> Multi-FT 68.3 73.5 76.8 79.2 81.0 82.2 83.0 83.7 84.0 ↑↑
+> LOO 68.2 72.9 75.7 78.0 79.7 80.9 81.8 82.5 83.0 ↑↑
+> ARC-Challenge
+> Orig 86.8 90.2 91.2 91.8 92.2 92.5 92.6 92.7 92.7 ↑→
+> Multi-FT 87.0 90.6 91.8 92.5 92.8 93.2 93.4 93.5 93.5 ↑→
+> LOO 86.9 90.4 91.5 92.1 92.5 92.8 93.0 93.1 93.1 ↑→
+> MedQA
+> Orig 44.8 51.0 54.0 56.2 57.8 59.0 59.8 60.2 60.5 ↑↑
+> Multi-FT 45.2 52.0 55.5 57.8 59.5 60.8 61.5 62.0 62.2 ↑↑
+> LOO 45.0 51.4 54.5 56.8 58.5 59.7 60.5 61.0 61.4 ↑↑
+> MBPP
+> Orig 83.0 85.0 86.5 87.5 88.0 88.4 88.6 88.8 88.9 ↑→
+> Multi-FT 83.8 86.5 88.5 89.8 90.5 91.0 91.4 91.5 91.6 ↑→
+> LOO 83.1 85.2 87.0 88.1 88.5 88.9 89.1 89.4 89.5 ↑→
+> HellaSwag
+> Orig 75.5 78.8 80.5 81.5 82.2 82.6 82.8 82.9 82.9 ↑→
+> Multi-FT 75.8 79.5 81.2 82.2 83.0 83.4 83.7 84.0 84.3 ↑↑
+> LOO 75.5 78.9 80.6 81.6 82.4 82.8 83.0 83.1 83.2 ↑→
+
+5.4 Reviewer Distillation (RQ3) 
+
+We compare three Reviewers on the five distillation domains (Section 5.1): Orig (off-the-shelf, used in ReM-MoA), Multi-FT (LoRA-distilled on all five domains, used in ReM-MoA ∗), and LOO (distilled on only four domains, holding out the evaluation domain). Table 4 reports depth scaling at N =3 .
+
+Distillation captures a transferable evaluation skill. Multi-FT improves over Orig across all benchmarks and configurations (avg +1 .92 at L=9 ,peak +3 .0 on MATH); on HellaSwag the gain even flips the trend from ↑→ to ↑↑ , matching ReM-MoA ∗ in Table 1. LOO recovers 44% of Multi-FT’s average gain ( +0 .84 at L=9 , ranging from 
+
+67% on MATH to 21% on HellaSwag) without see-ing the held-out domain during training, while pre-serving Orig’s trend pattern. This transfer property explains why ReM-MoA ∗ in Table 1 generalizes to the three unseen evaluation domains (MMLU-redux, Formal Logic, CRUX). 
+
+6 Conclusion 
+
+We presented ReM-MoA, a Mixture-of-Agents framework that overcomes the scaling limitations of prior variants through a Ranked Reasoning Mem-ory and a Curated Diversified Memory Routing scheme, jointly preserving quality and diversity across layers. Across five reasoning benchmarks under both depth and width scaling, ReM-MoA out-performs all baselines in every configuration, and the advantage over baselines widens, rather than diminishes, as depth grows. An optional multi-domain Reviewer distillation further extends sus-tained scaling to all benchmarks and transfers to 8held-out domains, establishing structured cross-layer memory as a critical missing mechanism for scalable multi-agent reasoning. 
+
+Limitations 
+
+Bounded width exploration. We evaluate width scaling up to N =8 at L=3 , matching the largest width studied in prior MoA work (Wang et al., 2025; Xie et al., 2025; Wen et al., 2026). ReM-MoA still leads all baselines at N =8 without visi-ble saturation, but compute constraints prevented probing larger widths. 
+
+Single-scale proposer pool. Our proposer pool consists of three 7-8B open-source instruction-tuned models, matching the scale most commonly studied in MoA literature. Whether the gains trans-fer to substantially larger proposers (e.g., 30B-70B) or smaller ones (e.g., 1-3B), where the quality-diversity trade-off may shift, remains to be em-pirically validated. 
+
+Reviewer Agent overhead. ReM-MoA invokes one Reviewer call per layer, giving an inference cost of L · N + L + 1 LLM calls, on par with RMoA’s Residual Agent and substantially lower than AttentionMoA’s per-agent intra-layer atten-tion ( ∼ 2L · N ). Reviewer distillation adds a one-time training cost and assumes access to a frontier-model teacher, but is optional: the off-the-shelf ReM-MoA without distillation already outperforms all baselines (Tables 1 and 2). 
+
+Inherited biases and computational cost. ReM-MoA inherits the biases and failure modes of its constituent LLMs: the proposer agents may pro-duce factually incorrect or socially biased reason-ing, and the Reviewer Agent (itself an LLM) may exhibit known judge biases such as position bias or self-preference (Zheng et al., 2023). Our com-parative scoring and contrastive routing reduce but do not eliminate these effects, and high-stakes de-ployment would require additional safeguards. The framework also incurs L·N + L + 1 LLM calls per query, with corresponding energy footprint; this overhead is on par with comparable MoA variants but higher than single-pass generation. 
+
+References 
+
+Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. 2021. Program synthesis with large language models. arXiv preprint arXiv:2108.07732 .Peter Clark, Isaac Cowhey, Oren Etzioni, Tushar Khot, Ashish Sabharwal, Carissa Schoenick, and Oyvind Tafjord. 2018. Think you have solved question an-swering? try ARC, the AI2 reasoning challenge. 
+
+arXiv preprint arXiv:1803.05457 .Yilun Du, Shuang Li, Antonio Torralba, Joshua B. Tenenbaum, and Igor Mordatch. 2024. Improving factuality and reasoning in language models through multiagent debate. In Proceedings of the 41st Inter-national Conference on Machine Learning (ICML) .Aryo Pradipta Gema, Joshua Ong Jun Leang, Giwon Hong, Alessio Devoto, Alberto Carlo Maria Mancino, Rohit Saxena, Xuanli He, Yuhao Zhao, Xiaotang Du, Mohammad Reza Ghasemi Madani, Claire Barale, and 1 others. 2025. Are we done with MMLU? In 
+
+Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Compu-tational Linguistics: Human Language Technologies (Volume 1: Long Papers) , pages 5069–5096. Aaron Grattafiori, Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Amy Yang, and 1 others. 2024. The Llama 3 herd of models. arXiv preprint arXiv:2407.21783 .Alex Gu, Baptiste Rozière, Hugh Leather, Armando Solar-Lezama, Gabriel Synnaeve, and Sida I. Wang. 2024. CRUXEval: A benchmark for code reason-ing, understanding and execution. arXiv preprint arXiv:2401.03065 .Dan Hendrycks, Collin Burns, Steven Basart, Andy Zou, Mantas Mazeika, Dawn Song, and Jacob Steinhardt. 2020. Measuring massive multitask language under-standing. arXiv preprint arXiv:2009.03300 .Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Eric Tang, Dawn Song, and Ja-cob Steinhardt. 2021. Measuring mathematical prob-lem solving with the MATH dataset. arXiv preprint arXiv:2103.03874 .Geoffrey Hinton, Oriol Vinyals, and Jeff Dean. 2015. Distilling the knowledge in a neural network. arXiv preprint arXiv:1503.02531 .Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Liang Wang, and Weizhu Chen. 2022. LoRA: Low-rank adap-tation of large language models. In International Conference on Learning Representations (ICLR) .Binyuan Hui, Jian Yang, Zeyu Cui, Jiaxi Yang, Day-iheng Liu, Lei Zhang, Tianyu Liu, Jiajun Zhang, Bowen Yu, Keming Lu, Kai Dang, and 1 others. 2024. Qwen2.5-Coder technical report. arXiv preprint arXiv:2409.12186 .
+
+9Di Jin, Eileen Pan, Nassim Oufattole, Wei-Hung Weng, Hanyi Fang, and Peter Szolovits. 2021. What disease does this patient have? a large-scale open domain question answering dataset from medical exams. Ap-plied Sciences , 11(14):6421. Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph Gon-zalez, Hao Zhang, and Ion Stoica. 2023. Efficient memory management for large language model serv-ing with PagedAttention. In Proceedings of the 29th Symposium on Operating Systems Principles (SOSP) ,pages 611–626. Dawei Li, Zhen Tan, Peijia Qian, Yifan Li, Kumar Chaudhary, Lijie Hu, and Jiayi Shen. 2025a. SMoA: Improving multi-agent large language models with sparse mixture-of-agents. In Pacific-Asia Conference on Knowledge Discovery and Data Mining (PAKDD) ,pages 54–65, Singapore. Springer Nature Singapore. Wenzhe Li, Yong Lin, Mengzhou Xia, and Chi Jin. 2025b. Rethinking mixture-of-agents: Is mixing different large language models beneficial? arXiv preprint arXiv:2502.00674 .Tian Liang, Zhiwei He, Wenxiang Jiao, Xing Wang, Yan Wang, Rui Wang, Yujiu Yang, Shuming Shi, and Zhaopeng Tu. 2024. Encouraging divergent thinking in large language models through multi-agent debate. In Proceedings of the 2024 Conference on Empiri-cal Methods in Natural Language Processing , pages 17889–17904. Hanjun Luo, Shenyu Dai, Chiming Ni, Xinfeng Li, Guibin Zhang, Kun Wang, Tongliang Liu, and Hanan Salam. 2026. AgentAuditor: Human-level safety and security evaluation for LLM agents. In Advances in Neural Information Processing Systems (NeurIPS) ,volume 38, pages 43241–43298. Siru Ouyang, Jun Yan, I. Hsu, Yanfei Chen, Ke Jiang, Zifeng Wang, Rujun Han, Long T. Le, Shaunak Daruki, Xinyang Tang, Vidisha Tirumalashetty, and 1 others. 2025. ReasoningBank: Scaling agent self-evolving with reasoning memory. arXiv preprint arXiv:2509.25140 .Heng Ping, Arijit Bhattacharjee, Peiyu Zhang, Shix-uan Li, Wei Yang, Anzhe Cheng, Xiaole Zhang, Jesse Thomason, Ali Jannesari, Nesreen Ahmed, and Paul Bogdan. 2025a. VeriMoA: A mixture-of-agents framework for spec-to-HDL generation. arXiv preprint arXiv:2510.27617 .Heng Ping, Shixuan Li, Peiyu Zhang, Anzhe Cheng, Shukai Duan, Nikos Kanakaris, Xiongye Xiao, Wei Yang, Shahin Nazarian, Andrei Irimia, and Paul Bog-dan. 2025b. HDLCoRe: A training-free framework for mitigating hallucinations in LLM-generated HDL. In 2025 IEEE International Conference on LLM-Aided Design (ICLAD) , pages 108–116. IEEE. Heng Ping, Peiyu Zhang, Shixuan Li, Wei Yang, Anzhe Cheng, Shukai Duan, Xiaole Zhang, and Paul Bog-dan. 2026a. COEVO: Co-evolutionary framework for joint functional correctness and PPA optimiza-tion in LLM-based RTL generation. arXiv preprint arXiv:2604.15001 .Heng Ping, Peiyu Zhang, Zhenkun Wang, Shixuan Li, Anzhe Cheng, Wei Yang, Paul Bogdan, and Shahin Nazarian. 2026b. POET: Power-oriented evolution-ary tuning for LLM-based RTL PPA optimization. 
+
+arXiv preprint arXiv:2603.19333 .Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao. 2023. Re-flexion: Language agents with verbal reinforcement learning. In Advances in Neural Information Process-ing Systems (NeurIPS) , volume 36, pages 8634–8652. Charlie Snell, Jaehoon Lee, Kelvin Xu, and Aviral Ku-mar. 2024. Scaling LLM test-time compute optimally can be more effective than scaling model parameters. 
+
+arXiv preprint arXiv:2408.03314 .Junlin Wang, Jue Wang, Ben Athiwaratkun, Ce Zhang, and James Y. Zou. 2025. Mixture-of-agents en-hances large language model capabilities. In Inter-national Conference on Learning Representations (ICLR) , pages 33944–33963. Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc Le, Ed Chi, Sharan Narang, Aakanksha Chowdhery, and Denny Zhou. 2022. Self-consistency improves chain of thought reasoning in language models. arXiv preprint arXiv:2203.11171 .Jianyu Wen, Yang Wei, Xiongxi Yu, Changxuan Xiao, and Ke Zeng. 2026. Attention-MoA: Enhancing mixture-of-agents via inter-agent semantic atten-tion and deep residual synthesis. arXiv preprint arXiv:2601.16596 .Zhentao Xie, Chengcheng Han, Jinxin Shi, Wenjun Cui, Wayne Xin Zhao, Xingjiao Wu, and Jiabao Zhao. 2025. RMoA: Optimizing mixture-of-agents through diversity maximization and residual compensation. In Findings of the Association for Computational Linguistics: ACL 2025 , pages 6575–6602. An Yang, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chengyuan Li, Dayiheng Liu, Fei Huang, Haoran Wei, Huan Lin, and 1 others. 2024. Qwen2.5 technical report. arXiv preprint arXiv:2412.15115 .Wei Yang, Shixuan Li, Heng Ping, Peiyu Zhang, Paul Bogdan, and Jesse Thomason. 2026. Audit-ing multi-agent LLM reasoning trees outperforms majority vote and LLM-as-judge. arXiv preprint arXiv:2602.09341 .Rowan Zellers, Ari Holtzman, Yonatan Bisk, Ali Farhadi, and Yejin Choi. 2019. HellaSwag: Can a machine really finish your sentence? In Proceed-ings of the 57th Annual Meeting of the Association for Computational Linguistics , pages 4791–4800. 
+
+10 Kexun Zhang, Weiran Yao, Zuxin Liu, Yihao Feng, Zhi-wei Liu, Rithesh Ramapura Narasimha Murthy, Tian Lan, Lei Li, Renze Lou, Jiacheng Xu, Bo Pang, and 1 others. 2025. Diversity empowers intelligence: Inte-grating expertise of software engineering agents. In 
+
+International Conference on Learning Representa-tions (ICLR) , pages 86691–86714. Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric P. Xing, Hao Zhang, and 1 others. 2023. Judging LLM-as-a-Judge with MT-Bench and chatbot arena. In Advances in Neu-ral Information Processing Systems (NeurIPS) , vol-ume 36, pages 46595–46623. Lianghui Zhu, Xinggang Wang, and Xinlong Wang. 2025. JudgeLM: Fine-tuned large language mod-els are scalable judges. In International Conference on Learning Representations (ICLR) , pages 51257– 51296. 
+
+A AI Usage 
+
+AI-based writing tools were used for limited lan-guage editing, paraphrasing, and polishing of the manuscript. All technical content, analysis, exper-imental results, and conclusions were developed and verified by the authors. 
+
+B Routing Distributions for Larger Widths 
+
+Section 4.2 introduces the routing scheme and gives one concrete instance for N =3 in Equation 7. Ta-ble 5 extends this assignment to N ∈ { 4, . . . , 8},the range used in our width-scaling experiments (Table 2). The design principle is to keep the three route families (contrastive, positive reinforce-ment, failure-mode focus) represented at every layer while scaling the size of each route with N ,so that the reference sets cover more of the memory pool while remaining mutually distinct. 
+
+Table 5: Routing function assignments Π1, . . . , ΠN for each width N . Con n denotes Top a∪Bot b with a+b = n,
+
+a = ⌈n/ 2⌉, b = ⌊n/ 2⌋.                                  
+
+> NRoute assignment 3Con 2,Top 2,Bot 2
+> 4Con 2,Con 3,Top 2,Bot 2
+> 5Con 2,Con 3,Top 2,Top 3,Bot 2
+> 6Con 2,Con 3,Top 2,Top 3,Bot 2,Bot 3
+> 7Con 2,Con 3,Con 4,Top 2,Top 3,Bot 2,Bot 3
+> 8Con 2,Con 3,Con 4,Top 2,Top 3,Top 4,Bot 2,Bot 3
+
+Handling sparse early layers. At layer l, the global pool Pl = M≤l−1 contains N · (l − 1) 
+
+entries. When a route requests more entries than are available (e.g., Con 4 at l=2 , N =3 , where only 3 entries exist), the route is truncated to the available entries. This truncation affects only the first one or two layers; once l ≥ ⌈ n/N ⌉ + 1 , all routes operate at their nominal size. 
+
+C Experimental Setup Details 
+
+This appendix expands the configuration refer-enced in Section 5.1, covering the Reviewer distil-lation pipeline, LoRA configuration, training hyper-parameters, train/test isolation, and inference-time settings. 
+
+C.1 Distillation Variants 
+
+We evaluate three Reviewer configurations: • Orig : the off-the-shelf base Reviewer (Qwen2.5-7B-Instruct), no fine-tuning. Used in ReM-MoA. • Multi-FT : LoRA-distilled jointly on five do-mains (MATH, ARC-Challenge, MedQA, MBPP, HellaSwag; 100 problems each, 500 total). Used in ReM-MoA ∗.• LOO : five variants, each LoRA-distilled on four of the five domains (400 problems per variant), holding out the evaluation domain. Used to assess cross-domain transfer in Sec-tion 5.4. 
+
+C.2 Trace Generation and Teacher Labeling 
+
+For each training problem, we run ReM-MoA at L=3 , N =3 to collect the proposer traces pro-duced at every layer, yielding ∼9 traces per prob-lem. Each (problem, traces) tuple is then sent to a frontier-model teacher, GPT-5.5, which receives the problem, the proposer traces, and the ground-truth answer, and is constrained by a structured prompt (Appendix D.5) to emit labels conforming to the Reviewer’s output schema — a per-trace in-teger score and a contrastive rationale. The ground-truth answer appears only in the teacher’s prompt and is never exposed to the student during training. Traces are filtered by length (50 to 2,000 tokens) before training to remove degenerate generations. 
+
+C.3 LoRA Configuration 
+
+LoRA (Hu et al., 2022) is applied to the attention projection matrices of Qwen2.5-7B-Instruct. 11 Table 6: LoRA configuration.                    
+
+> Rank ( r)16 Alpha ( α)32 Dropout 0.05 Target modules q_proj, k_proj, v_proj, o_proj Trainable parameters ∼12.8M (0.18% of 7B)
+> Table 7: Training hyperparameters for Reviewer distil-lation.
+> Optimizer AdamW Learning rate 2×10 −4(cosine decay) Warmup ratio 0.05 Effective batch size 8 (per-device 4 ×grad-accum 2) Max sequence length 8,192 Epochs 3Precision bf16 Weight decay 0.01 Loss Causal LM cross-entropy
+
+C.4 Training Hyperparameters 
+
+Each distillation run completes in approximately 2 hours on a single NVIDIA A100 (80GB) GPU. The full distillation pipeline—one Multi-FT plus five LOO variants (Appendix C.1)—requires ap-proximately 12 A100-hours of training compute in total. 
+
+C.5 Train/Test Isolation 
+
+Fine-tuning data is drawn exclusively from each dataset’s publicly available training split, while evaluation uses the held-out test split. For Hel-laSwag, we evaluate on the validation split since test labels are not public, following standard prac-tice. Because train and test problems are disjoint by construction, label leakage from the GPT-5.5 teacher into evaluation is not possible at the prob-lem level. The structured evaluation prompt (Ap-pendix D.5) further constrains the teacher’s output to fixed dimensions (score and rationale), focusing the student on the meta-skill of judging reasoning quality rather than memorizing canonical solutions. The LOO results in Section 5.4 additionally demon-strate that the student transfers to domains it never saw during training, confirming that the learned skill is general rather than domain-memorized. 
+
+C.6 Inference and Hardware 
+
+All experiments run on NVIDIA A100 (80GB) GPUs via vLLM (Kwon et al., 2023). Sampling temperatures follow Section 5.1: proposer agents at T =0 .8 (top-p 0.95), Reviewer at T =0 .3 (top-p
+
+0.9), aggregator at T =0 .5 (top-p 0.9). Maximum new tokens per call: 2,048 for proposers and aggre-gator, 8,192 for the Reviewer (which must emit N
+
+score-rationale pairs in a single response). 
+
+D Prompt Templates and Scoring Rubric 
+
+This appendix provides the prompt templates used by the proposer agents, the Reviewer Agent, the aggregator, and the frontier-model teacher (GPT-5.5) during distillation, together with the scoring rubric followed by the Reviewer. 
+
+D.1 Scoring Scale and Rubric 
+
+The Reviewer assigns each trace an integer score on a 1-10 scale (i.e., S=10 in Equation 3). Fol-lowing common LLM-as-judge practice, scores are organized into five tiers: • 9–10 — Excellent : reaches the correct an-swer through a complete, coherent chain of reasoning with no logical errors. • 7–8 — Good : reaches the correct answer with minor reasoning slips, redundancies, or under-justified steps that do not affect the final result. • 5–6 — Partial : demonstrates valid reason-ing on parts of the problem but reaches an incomplete or partially incorrect final answer. • 3–4 — Weak : contains substantive reasoning errors propagating to an incorrect final answer; some intermediate steps may still be useful as counter-examples. • 1–2 — Poor : final answer is wrong and the reasoning chain contains major flaws through-out. Within each tier, the higher score indicates a stronger instance (e.g., a 10 is preferred to a 9). The accompanying rationale (one per trace) cites concrete strengths and weaknesses of the specific trace, anchored in its reasoning steps and conclu-sion. Rationales are independent across traces (Sec-tion 4.1). 
+
+D.2 Proposer Prompt 
+
+At layer 1, the proposer receives only the problem. At layer l ≥ 2, the proposer additionally receives the curated reference set Sl,j — the problem con-catenated with the reference traces, each tagged with its Reviewer score and rationale. 12 PROPOSER PROMPT 
+
+You are solving the following problem. Problem: {problem} ## Reference Reasoning Traces (with quality ratings) Below are reasoning traces from previous attempts on this problem, each rated by an expert reviewer on a 1-10 scale (higher is better): ### [Score: {s_1}/10] Reference Trace 1: {trace_1} Reviewer 's Assessment: {rationale_1} ### [Score: {s_2}/10] Reference Trace 2: {trace_2} Reviewer 's Assessment: {rationale_2} ... (additional traces follow the same format) ## Your Task Drawing on what the high-scoring traces did well and what the low-scoring traces got wrong, produce your own reasoning trace and final answer. Do not simply copy any reference trace; contribute distinct reasoning. 
+
+At layer 1, the "Reference Reasoning Traces" block is omitted and the prompt contains only the problem and the task instruction. 
+
+D.3 Reviewer Prompt 
+
+The Reviewer is invoked once per layer with all 
+
+N proposer traces of that layer. It emits scores and rationales for all N traces in a single response, parsed into the memory entry of Equation 4. 
+
+REVIEWER PROMPT 
+
+You are an expert reviewer evaluating reasoning traces. Problem: {problem} You are given {N} candidate reasoning traces. Evaluate each trace by comparing it against the others, then assign: (1) an integer score from 1-10 (rubric below); (2) a brief rationale (1-3 sentences) explaining the 
+
+score, citing specific reasoning steps. Scoring rubric (1-10): 9-10: Excellent (correct and well-reasoned ). 7-8 : Good (correct with minor flaws). 5-6 : Partial (incomplete or partly wrong). 3-4 : Weak (mostly incorrect; useful as counter-example). 1-2 : Poor (entirely wrong). ### Trace 1 {trace_1} ### Trace 2 {trace_2} ... (Traces 3 through N follow the same format) Respond in the following JSON format: {"trace_1": {"score": <int>, "rationale": "<text>"}, "trace_2": {"score": <int>, "rationale": "<text>"}, ... "trace_N": {"score": <int>, "rationale": "<text>"} }
+
+D.4 Aggregator Prompt 
+
+After layer L, the aggregator receives the problem and three curated reference sets drawn from the memory through the same three families used by proposer agents (Section 4), and produces the final answer. 
+
+AGGREGATOR PROMPT 
+
+You are producing the final answer to the following problem by synthesizing the strongest reasoning across multiple attempts. Problem: {problem} ## Top-scoring traces (positive reinforcement) {top_traces_with_scores_and_rationales} ## Bottom-scoring traces (common mistakes to avoid) {bot_traces_with_scores_and_rationales} ## Contrastive selection (top paired with bottom) {con_traces_with_scores_and_rationales} 
+
+13 Synthesize the most reliable reasoning from the top-scoring traces while avoiding the errors exhibited in the bottom-scoring traces. Output your final answer with a concise justification. 
+
+D.5 Teacher Prompt for Distillation 
+
+The frontier-model teacher (GPT-5.5) receives the problem, the proposer traces, and the ground-truth answer; it is constrained to emit labels in the same JSON schema as the Reviewer. The rationale is required to justify the score in terms of internal reasoning quality only, never restating the ground-truth answer, so that the student learns to judge without access to ground truth. 
+
+TEACHER PROMPT (D ISTILLATION LABELING )
+
+You are an expert evaluator generating high-quality reviewer labels for distillation training. Problem: {problem} Ground-truth answer (for your reference only ; DO NOT restate or quote it in any rationale): {ground_truth} Below are {N} candidate reasoning traces. Using the ground-truth answer to inform your judgment, assign each trace a score (1-10) and a brief rationale, exactly as a strong reviewer would. Use the same rubric: 9-10: Excellent (correct and well-reasoned ). 7-8 : Good (correct with minor flaws). 5-6 : Partial (incomplete or partly wrong). 3-4 : Weak (mostly incorrect; useful as counter-example). 1-2 : Poor (entirely wrong). The rationale must NOT mention or restate the ground-truth answer; it must justify the score in terms of the trace 'sinternal reasoning quality only, so that a student trained on these labels learns to judge without access to ground truth. ### Trace 1 {trace_1} ... (Traces 2 through N follow the same format) 
+
+Respond in JSON: {"trace_1": {"score": <int>, "rationale": "<text>"}, ... "trace_N": {"score": <int>, "rationale": "<text>"} }
+
+14
