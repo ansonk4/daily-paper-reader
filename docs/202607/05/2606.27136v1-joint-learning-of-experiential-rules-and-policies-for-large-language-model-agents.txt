@@ -1,0 +1,855 @@
+Title: Joint Learning of Experiential Rules and Policies for Large Language Model Agents
+
+URL Source: https://arxiv.org/pdf/2606.27136v1
+
+Published Time: Fri, 26 Jun 2026 01:08:14 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# Joint Learning of Experiential Rules and Policies for Large Language Model Agents 
+
+Shicheng Ye 
+
+Sun Yat-sen University 
+
+yeschch@mail2.sysu.edu.cn 
+
+Chao Yu* 
+
+Sun Yat-sen University 
+
+yuchao3@mail.sysu.edu.cn 
+
+Abstract —For LLM agents in multi-step interactive environ-ments, a key challenge is to make effective use of accumulated interaction experience. Existing work has typically separated two uses of such experience: keeping it outside the model as natural-language rules for later prompting, or using trajectories and feedback to update the model parameters. The former is easy to interpret but can fall out of sync with the evolving policy; the latter improves the policy more broadly but provides only limited correction for local mistakes in sparse-reward settings. We present Joint Learning of Experiential Rules and Policies for LLM Agents (JERP), which updates a long-term experiential-rule pool and the policy from the same interaction trajectories. At decision time, JERP retrieves task-relevant rules and conditions the agent on them together with the interaction history. After each episode, it uses the collected trajectories both to optimize the policy and to revise the rule pool by comparing current rollouts with reference successful trajectories. This coupling keeps the rule pool aligned with the evolving policy while allowing stable and effective behaviors to be gradually absorbed into the model itself. Experiments on AlfWorld and WebShop show that JERP yields consistent gains in decision performance for complex interactive tasks. 
+
+Index Terms —large language model agents, learning from experience, reinforcement learning 
+
+I. I NTRODUCTION 
+
+Large language models (LLMs) have become a natural foundation for general-purpose agents because they combine broad world knowledge with strong in-context learning and language reasoning abilities [1]. In settings such as web navigation [2], embodied interaction [3], [4], and tool use [5], however, solving a task rarely amounts to producing a single correct response. Agents often have to explore, recover from errors, and adjust their strategy over multiple steps before they succeed. In this setting, an important question is how an agent can accumulate experience during interaction and use it to make better decisions on future tasks [6], [7]. Most existing approaches exploit interaction experience in one of two ways. One line of work converts past experience into reusable natural-language knowledge, including reflective texts [8], guiding rules [9], [10], and operation manuals [11]. In these methods, experience is externalized into a form that can be stored, retrieved, and revised, then fed back to the agent as additional context. The other line of work uses trajectories and environmental feedback to update model parameters di-rectly, with the goal of improving the agent’s policy on later tasks [7]. These two uses of experience have complementary limita-tions. Retrieved rules can quickly address recurring local errors by reminding the agent of task preconditions or correcting persistent action biases [8]–[12]. Yet rules do not execute themselves: they help only if the current model can interpret and apply them correctly in context. They can also become stale as the policy changes during training, and rules that were once useful may gradually lose value or even become mis-leading [13]. Parameter updates can improve behavior more globally, but feedback in complex interactive tasks is often sparse. As a result, some local but consequential mistakes may not be exposed early enough to receive timely and targeted correction [7], [14]. We therefore study whether the same interaction data can support both explicit rule updates and policy optimization. We propose Joint Learning of Experiential Rules and Policies for LLM Agents (JERP), which maintains a dynamically updated long-term experiential-rule pool and uses it together with the interaction history as decision context during each episode. Once an episode ends, the resulting trajectories are used twice: to optimize model parameters and to update the rule pool by comparing current behavior with reference successful trajectories. This allows the rule pool to evolve with the policy while gradually absorbing stable and repeatedly validated behaviors into the model itself. II. R ELATED WORK 
+
+A. Experience Reuse through Prompt Engineering 
+
+A common way to reuse interaction experience is to store it outside the model and feed it back as context in later episodes. Some methods preserve feedback or intermediate summaries after trial and error. For example, Reflexion [8] writes natural-language reflections after failures into episodic memory to guide future attempts. Generative Agents [15], MemoryBank [16], and MemGPT [17] study how such mem-ories can be retained, maintained, and retrieved over longer horizons. Other studies distill interaction experience into reusable skills, rules, or manuals. For example, Voyager [18] accumulates experience and transfers it across tasks through an expanding library of code skills. ExpeL [9], AutoGuide [10], and AutoManual [11] distill multi-task trial-and-error experi-ence into reusable natural-language instructions for contextual guidance in subsequent tasks. 1                
+
+> arXiv:2606.27136v1 [cs.AI] 25 Jun 2026 交互轨迹组
+> Parameter
+> Update
+> Compute gradients
+> based on the loss
+> Interaction
+> 交互轨迹组 Trajectory
+> Group
+> {𝜏 !,𝜏 ",𝜏 #,⋯,𝜏 $}
+> Reward Functions
+> Learned
+> Reward Model
+> Environment
+> Reward
+> Generate
+> Trajectories
+> Reward
+> Custom
+> Reward
+> 交互轨迹组
+> Rule
+> Update
+> Update rules and
+> optimize prompts
+> 交互轨迹组
+> {𝜏 !,𝜏 ",𝜏 #,⋯,𝜏 $}
+> Reflection
+> Analysis
+> Strategic
+> Insights
+> Manuals or
+> Guidelines
+> Executable
+> Skills
+> 交互轨迹组
+> Rule
+> Update
+> Update rules and
+> optimize prompts
+> 交互轨迹组
+> {𝜏 !,𝜏 ",𝜏 #,⋯,𝜏 $}
+> Reflection
+> Analysis
+> Strategic
+> Insights
+> Manuals or
+> Guidelines
+> Executable
+> Skills
+> 交互轨迹组
+> Parameter
+> Update
+> Compute gradients
+> based on the loss
+> Reward Functions
+> Learned
+> Reward Model
+> Environment
+> Reward
+> Reward
+> Custom
+> Reward
+> Trajectory
+> Group
+> Trajectory
+> Group
+> Interaction Interaction
+> Generate
+> Trajectories
+> Generate
+> Trajectories
+
+(a) Prompt optimization paradigm 交互轨迹组 
+
+> Parameter
+> Update
+> Compute gradients
+> based on the loss
+> Interaction
+> 交互轨迹组 Trajectory
+> Group
+
+{𝜏 !, 𝜏 ", 𝜏 #, ⋯ , 𝜏 $}
+
+> Reward Functions
+> Learned
+> Reward Model
+> Environment
+> Reward
+> Generate
+> Trajectories
+> Reward
+> Custom
+> Reward
+> 交互轨迹组
+> Rule
+> Update
+> Update rules and
+> optimize prompts
+> 交互轨迹组
+
+{𝜏 !, 𝜏 ", 𝜏 #, ⋯ , 𝜏 $}
+
+> Reflection
+> Analysis
+> Strategic
+> Insights
+> Manuals or
+> Guidelines
+> Executable
+> Skills
+> 交互轨迹组
+> Rule
+> Update
+> Update rules and
+> optimize prompts
+> 交互轨迹组
+
+{𝜏 !, 𝜏 ", 𝜏 #, ⋯ , 𝜏 $}  
+
+> Reflection
+> Analysis
+> Strategic
+> Insights
+> Manuals or
+> Guidelines
+> Executable
+> Skills
+> 交互轨迹组
+> Parameter
+> Update
+> Compute gradients
+> based on the loss
+> Reward Functions
+> Learned
+> Reward Model
+> Environment
+> Reward
+> Reward
+> Custom
+> Reward
+> Trajectory
+> Group
+> Trajectory
+> Group
+> Interaction Interaction
+> Generate
+> Trajectories
+> Generate
+> Trajectories
+
+(b) Model-parameter optimization paradigm 交互轨迹组                  
+
+> Parameter
+> Update
+> Compute gradients
+> based on the loss
+> Interaction
+> 交互轨迹组 Trajectory
+> Group
+> {𝜏 !,𝜏 ",𝜏 #,⋯,𝜏 $}
+> Reward Functions
+> Learned
+> Reward Model
+> Environment
+> Reward
+> Generate
+> Trajectories
+> Reward
+> Custom
+> Reward
+> 交互轨迹组
+> Rule
+> Update
+> Update rules and
+> optimize prompts
+> 交互轨迹组
+> {𝜏 !,𝜏 ",𝜏 #,⋯,𝜏 $}
+> Reflection
+> Analysis
+> Strategic
+> Insights
+> Manuals or
+> Guidelines
+> Executable
+> Skills
+> 交互轨迹组
+> Rule
+> Update
+> Update rules and
+> optimize prompts
+> 交互轨迹组
+> {𝜏 !,𝜏 ",𝜏 #,⋯,𝜏 $}
+> Reflection
+> Analysis
+> Strategic
+> Insights
+> Manuals or
+> Guidelines
+> Executable
+> Skills
+> 交互轨迹组
+> Parameter
+> Update
+> Compute gradients
+> based on the loss
+> Reward Functions
+> Learned
+> Reward Model
+> Environment
+> Reward
+> Reward
+> Custom
+> Reward
+> Trajectory
+> Group
+> Trajectory
+> Group
+> Interaction Interaction
+> Generate
+> Trajectories
+> Generate
+> Trajectories
+
+(c) JERP paradigm Fig. 1. Comparison between JERP and two basic paradigms. 
+
+Beyond reflection-style memory, prior work has also in-duced tool-use patterns [19], workflows [20], and reusable skills [21] from historical interactions, and has explored long-term use of experiential knowledge through knowledge bases [22], reflective memory [23], and experience replay [12]. These studies establish that stored experience can improve later decisions when it is organized in a reusable form. Most of them, however, treat rule reuse and parameter learning as separate processes, leaving open how a rule pool should be maintained when the policy using it is also changing. 
+
+B. Policy Optimization for LLMs via Reinforcement Learning Fine-Tuning 
+
+Another line of work uses interaction experience to update the policy directly, turning trajectories, feedback, or prefer-ences into optimization signals. Through reinforcement learn-ing fine-tuning and closely related preference-optimization methods, these signals are used to update the model so that improved behavior is encoded in its parameters [7]. Early representative work such as InstructGPT [24] adopts a three-stage pipeline consisting of supervised fine-tuning, reward-model training, and PPO optimization, demonstrating that reinforcement learning from human feedback can substantially improve instruction following and output quality. Subsequent studies have explored how to perform rein-forcement learning fine-tuning for LLMs more stably and efficiently [25]. In addition to PPO-based methods, GRPO [26] estimates advantages by comparing samples within the same group, reducing the need for a separate value model and the associated memory overhead. DPO [27] rewrites reinforce-ment learning from human feedback into a simpler direct preference-optimization objective. DMPO [28] extends prefer-ence optimization to multi-turn agent tasks. For long-horizon interactive agent tasks, GiGPO [14] proposes a hierarchical group policy optimization method that combines episode-level and step-level relative advantage estimation to mitigate sparse rewards and fine-grained credit assignment. These methods improve the policy through parameter updates, but they do not maintain an explicit rule pool that can be inspected, revised, and reused during later interaction. III. P ROBLEM DEFINITION AND BASIC PARADIGMS 
+
+We consider interactive tasks in which an LLM agent must choose actions from partial observations over multiple steps. Besides the policy parameters that produce actions, the agent also uses external experiential rules retrieved into the prompt. This section defines the resulting rule-augmented interaction process and introduces the two basic paradigms adopted by the two parts of JERP, namely prompt-based rule learning and group-relative policy optimization. 
+
+A. Partially Observable Markov Decision Process 
+
+Let D denote the task-instance space, with each instance 
+
+d ∈ D drawn from distribution p (d). For a fixed task instance, the agent interacts with the environment until the task terminates or the step budget is exhausted. Since the agent receives observations rather than full environment states, we model the interaction as a partially observable Markov decision process (POMDP), written as 
+
+E = ( S, A, O, P, Ω, R, γ, T ) , (1) where S, A, and O are the state, action, and observation spaces; P (st+1 | st, a t) and Ω ( ot+1 | st+1 , a t) are the tran-sition and observation functions; R (st, a t) is the reward function; γ ∈ [0 , 1) is the discount factor; and T is the maximum number of interaction steps. At step t, st is the hidden environment state, ot is the observation available to the agent, and at is the executed action. Since the true state is not directly observed, the policy must condition on the interaction history rather than on st. We write the history at step t as 
+
+ht = ( o0, a 0, o 1, . . . , a t−1, o t) , (2) where o0 contains the initial task description. 2JERP differs from a standard POMDP policy in that the prompt also contains reusable experience. For task instance 
+
+d, we maintain a long-term experiential-rule pool K (d), and denote the collection of such pools by K = {K (d)}. Before an episode starts, a size-controlled subset is selected from K (d)
+
+as the working rule set eK (d). Thus, the policy does not act from the history alone. Its decision context combines the task, the observed interaction history, and the currently retrieved rules. The input prompt at step t is 
+
+xt =
+
+
+
+d, h t, eK (d)
+
+
+
+. (3) The parameterized policy then samples an action by 
+
+at ∼ πθ (· | xt) . (4) After executing at, the environment returns reward rt =
+
+R (st, a t), next observation ot+1 , and termination indicator 
+
+zt+1 ∈ { 0, 1}. For a complete trajectory τ , the discounted return is 
+
+G (τ ) =  
+
+> T−1
+
+X
+
+> t=0
+
+γtrt. (5) The learning problem is therefore not only to find better policy parameters. The rule pools also affect the trajectory distribution because they enter the prompt before each action. We define the training objective over both θ and K as 
+
+J (θ, K) = Ed∼p(d)
+
+h
+
+Eτ ∼pθ (τ |d, K)
+
+G (τ )i
+
+, (6) where pθ (τ | d, K) is the trajectory distribution induced by πθ
+
+when working rules are selected from the current rule pools. This notation makes the coupling explicit. Changing θ changes how the agent interprets the prompt, while changing K changes the prompt from which the same policy acts. 
+
+B. Prompt-Based Experiential-Rule Learning 
+
+One way to use experience is to keep it outside the model. Given trajectory samples {e1, e 2, . . . , e N } from related tasks, prior prompt-based methods ask an LLM to summarize reusable behavioral guidance and store the result as natural-language rules. Abstractly, 
+
+K = ExtractRules  {ei}Ni=1 
+
+. (7) This paradigm is useful because the stored experience remains inspectable and editable, and can be revised without changing model parameters. Its limitation is equally important for our setting. The rule set is only effective through the current policy’s ability to read and apply it. If the policy evolves during training while the rules remain static, the two may become poorly matched. This motivates treating rule maintenance as part of the training process rather than as a separate preprocessing step. 
+
+C. Group-Relative Policy Optimization 
+
+The other paradigm updates the policy from interaction feedback. For a given task instance d, group-relative methods sample N complete trajectories {τ1, τ 2, . . . , τ N } under the old policy πθold and assign each trajectory a scalar reward R (τi).Instead of relying on an additional value model, they construct an advantage signal by comparing rewards within the sampled group. 
+
+A (τi) = GroupComputation  {R (τj )}Nj=1 
+
+. (8) For example, GRPO [26] normalizes each trajectory reward by the mean and standard deviation of rewards in the same group. This style of optimization is suitable for our setting because it uses complete task outcomes and avoids training a separate value-function estimator. In JERP, the same sampled trajectory group is used not only for this policy update but also for updating the experiential-rule pool, which is the main departure from a pure parameter-optimization paradigm. IV. J OINT LEARNING OF EXPERIENTIAL RULES AND 
+
+POLICIES 
+
+We propose Joint Learning of Experiential Rules and Poli-cies for LLM Agents (JERP), which updates policy parameters and the experiential-rule pool in the same training loop. In each episode, the current policy acts with a working rule set selected from the long-term rule pool. The sampled trajectories are then used for both a group-relative policy update and an experiential-rule-pool update. Fig. 1 compares prompt-engineering-based experiential-rule learning, group-based re-inforcement learning for policy optimization, and the overall structure of JERP. 
+
+A. Overall Framework 
+
+This work maintains experiential rules for each task. For a given task instance d, its corresponding long-term experiential-rule pool is 
+
+K (d) = {(zi, s i)}|K (d)| 
+
+> i=1
+
+, (9) where zi is the textual content of the i-th experiential rule, and 
+
+si is its utility score. The rule text records guidance informa-tion in natural language, while the utility score measures the rule’s reference value for future decisions. At the beginning of each episode, the system selects a subset from the current long-term experiential-rule pool K (d) as the working rule set eK (d), and provides it to the policy model together with the task description and current interaction history. The LLM agent then interacts with the environment on task instance d and generates a trajectory group Td. The same trajectory group is used to update model parameters according to relative trajectory performance and to update the long-term experiential-rule pool by contrasting current trajectories with reference successful trajectories. The training process can be summarized as 
+
+Td ∼ πθ
+
+
+
+· | d, eK (d)
+
+
+
+, (10) 3θ′ = Update θ (θ, Td) , (11) 
+
+K′ (d) = Update K
+
+ K (d) , Td, T + (d). (12) where parameter updates are driven by the trajectory group Td,while rule updates combine Td with the reference successful trajectory set T + (d). The overall framework is shown in Fig. 2. 
+
+B. Trajectory Sampling 
+
+Because the rule pool K (d) for task d expands during training, we do not feed all rules into the model in each episode. Instead, we select a size-controlled subset of rules for the current decision process. Since the working rules are already organized by task, the current implementation does not perform further instance-level relevance retrieval. The system sorts rules in K (d) by utility score in descending order and selects the top k rules as the input for the current episode, 
+
+eK (d) = topk  K (d) , k . (13) If the rule pool contains fewer than k rules, all rules are used. This score-based selection is an implementation choice; we do not claim it is generally superior to finer-grained instance-level retrieval. Within a single episode, the working rule set 
+
+eK (d) remains fixed, avoiding context shifts caused by time-step-level rule reselection. Rules in the working set are sorted by score and organized into the input prompt using a fixed template. Together with the task description and interaction history, they form the decision basis at the current time step. At time step t, the LLM policy defined in (4) generates the action as 
+
+at ∼ πθ (· | xt) , (14) where xt =
+
+
+
+d, h t, eK (d)
+
+
+
+denotes the input prompt at the current time step. 
+
+C. JERP Optimization Stage I: Model-Parameter Update 
+
+For a fixed task instance d, we sample a trajectory group 
+
+{τi}Ni=1 from the old policy πθold . The i-th trajectory τi
+
+denotes a complete task-solving interaction episode. At time step t, its corresponding input prompt is 
+
+xi,t =
+
+
+
+d, h i,t , eK (d)
+
+
+
+. (15) The agent generates action ai,t conditioned on this input and receives environment feedback until the trajectory terminates. In our setting, task rewards are returned only when a trajectory terminates. Therefore, for trajectory τi, its trajectory-level reward is 
+
+R (τi) = r(i)
+
+> |τi|
+
+, (16) where r(i) 
+
+> |τi|
+
+is the environment reward obtained by τi at termination. For the same task instance d, we standardize the trajectory-level rewards R (τi) within the sampled group {τi}Ni=1 and construct group-relative advantages. Let the mean and standard deviation of trajectory rewards in the group be 
+
+μd = 1
+
+N
+
+> N
+
+X
+
+> j=1
+
+R (τj ) , σd =
+
+vuut 1
+
+N
+
+> N
+
+X
+
+> j=1
+
+ R (τj ) − μd
+
+2.
+
+(17) The group-relative advantage of the i-th trajectory is then defined as 
+
+Ai = R (τi) − μd
+
+σd + δ , (18) where δ is a numerical stability constant that prevents division by zero. Following the advantage modeling strategy of GiGPO [14] for multi-step tasks, all time steps in the same trajectory share the same advantage, 
+
+Ai,t ≡ Ai. (19) On this basis, the parameter-update objective is defined as 
+
+LGRPO (θ) = − 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+1
+
+|τi|
+
+> |τi|− 1
+
+X
+
+> t=0
+
+ℓi,t (θ) , (20) where the per-step surrogate term is 
+
+ℓi,t (θ) = min 
+
+
+
+ρi,t (θ) Ai,t , ¯ρi,t (θ) Ai,t 
+
+
+
+− βD KL 
+
+
+
+πθ (· | xi,t ) ∥ πref (· | xi,t )
+
+
+
+,
+
+(21) and 
+
+¯ρi,t (θ) = clip  ρi,t (θ) , 1 − ϵ, 1 + ϵ. (22) with 
+
+ρi,t (θ) = πθ (ai,t | xi,t )
+
+πθold (ai,t | xi,t ) . (23) Here, ai,t denotes the action generated at time step t of trajectory τi; xi,t is the corresponding input prompt; |τi| is the number of environment interaction steps in τi; ϵ is the clipping coefficient; β is the coefficient of KL regularization; and πref denotes the reference policy. This stage updates model parameters according to the rela-tive performance of trajectories under the given task instance and working rule set. 
+
+D. JERP Optimization Stage II: Experiential-Rule Updating via Contrastive Reflection 
+
+In the experiential-rule updating stage, the long-term experiential-rule pool is maintained rather than only expanded. Given the current long-term experiential-rule pool, the tra-jectory group sampled in the current episode, and reference successful trajectories for the same task, the update needs to extract reusable experience, revise inaccurate or weak rules, merge semantically similar and functionally overlapping rules, and keep the rule pool within its capacity limit. Because the content of the rule pool is represented in natural language, rule addition and revision are difficult to formulate as a standard numerical optimization problem. We adopt a structured update method based on contrastive re-flection. The system generates rule-level edit operations from 4Task & Current   
+
+> Interaction History
+> Task:
+> look at bowl under the desklamp.
+> Observation 0:
+> You are in the middle of a room.
+> Looking quickly around you, you see
+> a bed 1, a desk 2, a desk 1…
+> Working Rule Set
+> 1. When performing tasks that
+> require inspecting objects, it is
+> necessary to use a light source,
+> such as a desk lamp, to ensure
+> that the environment is not dark.
+
+Prompt Input 
+
++                           
+
+> Env
+> Long -Term
+> Experiential -Rule Pool
+> 1. When performing tasks that
+> require inspecting objects, it is
+> necessary to use a light source,
+> such as a desk lamp, to ensure
+> that the environment is not dark.
+> 2. After observing an object in a
+> location, if interaction fails…
+> Policy
+> Retrieval
+> Action Update the trajectory
+> with new
+> observations
+> Input Prompt
+> Trajectory Group
+> {𝜏 !,𝜏 ",𝜏 #,⋯,𝜏 $}
+> Experiential Rule
+> Analysis
+> Long -Term
+> Experiential -Rule Pool
+> 1. When performing tasks that
+> require inspecting objects, it is
+> necessary to use a light source,
+> such as a desk lamp, to ensure
+> that the environment is not dark.
+> 2. After observing an object in a
+> location, if interaction fails…
+> Input: Successful & Failed
+> Trajectories + Long -term
+> Experiential -Rule Pool
+> Output: Experiential Rule
+> Editing Operations
+> Experiential -Rule
+> Updating
+> ADD/UPDATE/UPVOTE/
+> DOWNVOTE/MERGE
+> Input
+> Input
+> Update
+> Rule -level edit operation
+> Compute Advantages
+> Estimate advantages from trajectory
+> rewards {𝐴 !,𝐴 ",𝐴 #,⋯,𝐴 $}
+> Trajectory Group
+> {𝜏 !,𝜏 ",𝜏 #,⋯,𝜏 $}
+> Compute the GRPO
+> loss: ℒ!"#$
+> 𝜃 ←𝜃 +∇%ℒ&'()
+> Model
+> Parameter
+> Updating
+> Update parameters
+> via gradient ascent:
+
+Fig. 2. Overview of the JERP framework. 
+
+the current rule pool, current trajectory group, and reference successful trajectories, and then obtains the updated long-term experiential-rule pool. This idea is close to ExpeL [9], which maintains natural-language rules through experiential reflection; both approaches prompt an LLM to generate rule-update operations. We further introduce a merge operation to combine semantically similar and functionally overlapping rules when the long-term experiential-rule pool expands during online training. For task instance d, let its long-term experiential-rule pool be K (d) and let the trajectory group sampled in the current episode be 
+
+Td = {τi}Ni=1 . (24) The reference successful trajectory set for the same task instance is 
+
+T + (d) = {τ +1 , τ +2 , . . . , τ + 
+
+> M
+
+}, (25) where T + (d) denotes the successful trajectories accumulated for the same task during training, and M = |T + (d)| denotes the number of reference successful trajectories for task in-stance d. We do not use human demonstrations or successful trajectories from the test stage. If no successful trajectory has been accumulated for the current task instance, we set 
+
+T + (d) = ∅; in this case, rule-pool updating relies only on the current rule pool and current trajectory group. Based on these inputs, the system generates a set of rule-level edit operations, 
+
+O (d) = ReflectAndEdit  K (d) , Td, T + (d), (26) where ReflectAndEdit( ·) denotes the rule-update operator based on contrastive reflection. In our implementation, this operator prompts an LLM with frozen parameters to generate a structured list of rule-edit operations from the current rule pool, current trajectory group, and reference successful trajec-tories. The output is constrained to a fixed edit format so that it can be parsed and applied automatically. To balance result parseability and online maintenance cost, we use a small and fixed structured edit syntax to represent rule-pool updates. The system generates five types of primitive operations, ADD (z), EDIT (q, z ), UPVOTE (q), DOWNVOTE (q),and MERGE (Q, z ). Here, q denotes the identifier of a target rule, Q denotes a set of rule identifiers to be merged, and 
+
+z denotes newly generated rule text. In ADD and EDIT , z
+
+corresponds to the newly added rule text and the revised rule text, respectively. In MERGE , z corresponds to the merged rule text. These five operations correspond to supplementation, re-vision, reinforcement, weakening, and compression in rule-pool maintenance. Specifically, ADD introduces supplemen-tary experience, EDIT modifies existing rules, UPVOTE and 
+
+DOWNVOTE increase or decrease the utility score of a target rule, and MERGE combines semantically close and functionally overlapping rules into one rule. After generating structured edit operations, the system first edits rule texts according to the operation list generated in the current episode, 
+
+K (d) ← Apply  K (d) , O (d). (27) The system then updates the utility score of each rule to reflect its future retention value. We adopt a fixed-step update rule. For ADD , the new rule is assigned an initial score s0 > 0. For 
+
+UPVOTE and DOWNVOTE , the target rule score is adjusted by fixed increments δ+ and δ−, respectively. For EDIT , the edited rule retains its original score. For MERGE , the score 5Algorithm 1 JERP Training Procedure 
+
+Input: Training task set D, initial policy parameters θ, work-ing rule set size k, trajectory group size N , maximum interac-tion steps T , training steps E. 
+
+> 1:
+
+for each task d ∈ D do  
+
+> 2:
+
+Initialize long-term experiential-rule pool K(d) ← ∅ 
+
+> 3:
+
+Initialize reference successful trajectory set T +(d) ←
+
+∅ 
+
+> 4:
+
+end for  
+
+> 5:
+
+for e = 1 , 2, . . . , E do  
+
+> 6:
+
+Sample task instance d ∈ D  
+
+> 7:
+
+Set θold ← θ 
+
+> 8:
+
+Construct working rule set eK(d) ← topk( K(d), k ) 
+
+> 9:
+
+Initialize trajectory group Td ← ∅ 
+
+> 10:
+
+for i = 1 , 2, . . . , N do  
+
+> 11:
+
+Initialize τi ← ∅ and hi, 0 ← { oi, 0} 
+
+> 12:
+
+for t = 0 , 1, . . . , T − 1 do  
+
+> 13:
+
+Set xi,t ← (d, h i,t , eK(d))  
+
+> 14:
+
+Sample action ai,t ∼ πθold (· | d, h i,t , eK(d))  
+
+> 15:
+
+Execute ai,t and update hi,t +1  
+
+> 16:
+
+τi ← τi ∪ { (xi,t , a i,t , h i,t +1 )} 
+
+> 17:
+
+if τi terminates then  
+
+> 18:
+
+break  
+
+> 19:
+
+end if  
+
+> 20:
+
+end for  
+
+> 21:
+
+Compute trajectory reward R(τi) 
+
+> 22:
+
+Td ← T d ∪ { τi} 
+
+> 23:
+
+end for  
+
+> 24:
+
+Compute group-relative advantages from trajectory re-wards  
+
+> 25:
+
+Update θ using the GRPO objective  
+
+> 26:
+
+O(d) ← ReflectAndEdit( K(d), Td, T +(d))  
+
+> 27:
+
+Apply rule updates K(d) ← Apply( K(d), O(d))  
+
+> 28:
+
+Update rule scores and prune K(d) under the capacity limit  
+
+> 29:
+
+T +(d) ← T +(d) ∪ { τi ∈ T d | R(τi) > 0} 
+
+> 30:
+
+end for  
+
+> 31:
+
+return θ and {K (d)}d∈D 
+
+of the merged rule is set to the maximum score among the original rules. If a rule’s updated score is below a predefined threshold, it is removed from the rule pool. Through these edit and score updates, the long-term experiential-rule pool incorporates useful experience from the current trajectory group while removing or merging rules with lower retention value. Algorithm 1 summarizes the full training process, including trajectory sampling, parameter updating, and rule-pool updat-ing. V. E XPERIMENTS 
+
+This section presents the experimental evaluation on two interactive benchmarks and analyzes where the gains of JERP come from. We first compare JERP with baselines that use on-line reasoning, reflection-style memory, or policy optimization. We then examine the effect of continual experiential-rule-pool updating through an ablation experiment. 
+
+A. Environments and Evaluation Metrics 
+
+We evaluate JERP on two interactive environments, Alf-World [29] and WebShop [30]. AlfWorld is a text-based household manipulation environment. We use its six task types, pick and place , pick clean then place , pick heat then place , pick cool then place , look at obj , and pick two obj ,abbreviated as Pick , Clean , Heat , Cool , Look , and Pick2 . The environment is partially observable and requires multi-step interaction. WebShop is an interactive environment for online shopping tasks. Given a user’s product requirements, the agent performs search, browsing, comparison, and purchase actions through Web-page interactions. We use environment-specific evaluation metrics. For AlfWorld, we report task success rate (%). For WebShop, we report average score and task success rate (%). 
+
+B. Baseline Methods 
+
+We compare JERP with five baselines, Vanilla LLM, Re-Act [31], Reflexion [8], RLOO [32], and GRPO [26], covering direct prompting, online reasoning, reflection-style memory reuse, and group-relative policy optimization. Vanilla LLM directly prompts the base model to act without reasoning scaf-folding, cross-episode memory, or parameter updates. ReAct alternates between reasoning and action during interaction. It relies on observations and context from the current episode, without cross-episode memory or parameter updates. Reflex-ion writes natural-language reflections from prior attempts into memory to guide later decisions. Compared with Re-Act, it reuses cross-episode experience, but this experience remains in external memory rather than in model parameters. RLOO updates policy parameters with a REINFORCE-style objective, using a leave-one-out baseline computed from the other trajectories in the same sampled group to estimate the advantage. GRPO updates policy parameters through group-relative trajectory comparison without relying on an indepen-dent value model. Unlike ReAct and Reflexion, RLOO and GRPO improve later decisions through training rather than through test-time reasoning or memory alone.                     
+
+> TABLE I HYPERPARAMETER CONFIGURATIONS OF JERP IN DIFFERENT BENCHMARK ENVIRONMENTS .Hyperparameter AlfWorld WebShop Learning rate 3e-6 3e-6 Group sampling size 88Reward discount factor 0.95 0.95 Training epochs 200 300 Batch size 256 64 LoRA rank 64 64 LoRA scaling factor 64 64 Maximum steps per episode 50 15
+
+6TABLE II PERFORMANCE COMPARISON BETWEEN JERP AND BASELINE METHODS ON TWO BENCHMARK ENVIRONMENTS .
+
+Method AlfWorld a WebShop b
+
+Pick Look Clean Heat Cool Pick2 All Score Success Rate Vanilla LLM 5.9 5.5 3.3 9.7 4.2 0.0 4.1 23.1 5.2 ReAct 17.4 20.5 15.7 6.2 7.7 2.0 12.8 40.1 11.3 Reflexion 35.3 22.2 21.7 13.6 19.4 3.7 21.8 55.8 21.9 RLOO(+LoRA) 71.5 68.3 61.2 34.4 41.0 19.9 48.7 71.9 57.8 GRPO(+LoRA) 78.5 73.3 50.7 62.7 51.7 33.9 57.8 78.1 56.2 JERP(+LoRA) 72.2 69.8 65.4 67.4 60.1 42.5 61.5 79.0 64.1  
+
+> a
+
+AlfWorld uses task success rate (%) as the evaluation metric.  
+
+> b
+
+WebShop uses average score and task success rate (%) as evaluation metrics. 
+
+C. Implementation Details 
+
+All experiments are conducted on a server running Ubuntu 22.04 LTS with two Intel Xeon Gold 6226R processors, approximately 512 GB of memory, and four NVIDIA A30 GPUs. For GRPO and JERP, which require reinforcement learning training, we use LoRA [33] for parameter-efficient fine-tuning. Unless otherwise specified, all reported results are averaged over three independent runs on the same platform. The key hyperparameters are shown in Table I. 
+
+D. Comparison with Baselines 
+
+Table II and Fig. 4 show the performance differences between JERP and the baselines. Vanilla LLM performs poorly on both environments (4.1% success rate on AlfWorld and 5.2% on WebShop), confirming that direct prompting of the base model is insufficient for these multi-step tasks and that the gains of the other methods come from how they use interaction experience. On AlfWorld, JERP obtains the best overall success rate at 61.5%, above GRPO at 57.8% and RLOO at 48.7%. The gains over GRPO are concentrated on 
+
+Clean , Heat , Cool , and Pick2 , while GRPO remains higher on 
+
+Pick and Look . On WebShop, JERP also performs best, with the highest average score (79.0) and a success rate of 64.1%, clearly above both RLOO (57.8%) and GRPO (56.2%). The comparison also separates the roles of different forms of experience use. ReAct mainly relies on context within the current episode and does not reuse cross-episode expe-rience. Reflexion adds language-based memory, but the stored reflections remain outside parameter learning. RLOO and GRPO improve the policy through reinforcement learning and are much stronger than ReAct and Reflexion, but they use trajectories only for parameter updates. JERP adds a second use of the same trajectories by maintaining the experiential-rule pool during training, which is consistent with its stronger results on the more constraint-heavy AlfWorld categories and on WebShop success rate. The training curves in Fig. 4 show a similar pattern. JERP and GRPO are close at the early stage, but JERP improves more clearly in the middle and late stages on Heat , Cool ,
+
+Clean , and Pick2 . These tasks usually require longer operation sequences and more intermediate constraints, where reusable rules can preserve effective operation patterns observed in earlier episodes. These results suggest that rule-pool updating is most helpful when the task exposes recurring intermediate mistakes. Param-eter updates still provide the main policy improvement, while the rule pool keeps task-specific corrections available during later trajectory sampling. 
+
+E. Ablation on the Key Mechanism 
+
+To analyze the role of dynamic experiential-rule-pool up-dating, we construct an ablated variant that pauses rule-pool updates. This variant uses the same training pipeline as JERP, but updates the rule pool only once at the initial training stage. The rule-pool content is then fixed and no longer supplemented or revised according to later interaction trajectories. The results are shown in Fig. 3. The complete JERP maintains a higher task success rate throughout training. The ablated variant still benefits from rules formed at the initial stage, but its improvement slows after the rule pool is fixed. As the policy changes, later trajectories expose different errors and useful behavior patterns. A fixed rule pool cannot absorb these later observations, whereas JERP continues to revise the rule pool during training. 0 25 50 75 100 125 150 175 200   
+
+> 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7
+> Alfworld Ablated Varitant of JERP JERP
+> Training Steps
+> Success Rate
+> Fig. 3. Success-rate curves of JERP and its ablated variant on AlfWorld over training steps.
+
+70 25 50 75 100 125 150 175 200                                           
+
+> Training Step
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> Success Rate
+> pick_two_obj_and_place
+> 025 50 75 100 125 150 175 200
+> Training Step
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Success Rate
+> pick_heat_then_place_in_recep
+> 025 50 75 100 125 150 175 200
+> Training Step
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Success Rate
+> pick_cool_then_place_in_recep
+> 025 50 75 100 125 150 175 200
+> Training Step
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Success Rate
+> pick_clean_then_place_in_recep
+> 025 50 75 100 125 150 175 200
+> Training Step
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Success Rate
+> pick_and_place
+> 025 50 75 100 125 150 175 200
+> Training Step
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Success Rate
+> look_at_obj_in_light
+> GRPO JERP RLOO
+
+Fig. 4. Success-rate curves of JERP and baseline methods on different AlfWorld task types over training steps. 
+
+VI. C ONCLUSION 
+
+This work proposes JERP, a joint learning method for experiential rules and policies in LLM agents. The method maintains a long-term experiential-rule pool together with a working rule set for each task. During training, the same batch of interaction trajectories is used both for group-relative policy optimization and for experiential-rule updating. This design keeps rule maintenance and parameter learning in the same loop, so that reusable local experience can be preserved as rules while better behavior is gradually absorbed into the policy. Experiments on AlfWorld and WebShop show that JERP improves overall performance over the baselines. The gains are more evident on tasks with longer decision sequences and richer intermediate constraints. Ablation results further show that continual experiential-rule-pool updating is important to these improvements. Future work may explore more adaptive rule-retrieval strategies and extend the method to multi-agent interactive settings. REFERENCES [1] A. Plaat, M. van Duijn, N. Van Stein, M. Preuss, P. van der Putten, and K. J. Batenburg, “Agentic large language models, a survey,” Journal of Artificial Intelligence Research , vol. 84, no. 29, 2025. [2] L. Ning, Z. Liang, Z. Jiang, H. Qu, Y. Ding, W. Fan, X.-y. Wei, S. Lin, H. Liu, P. S. Yu et al. , “A survey of webagents: Towards next-generation ai agents for web automation with large foundation models,” in Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V. 2 , 2025, pp. 6140–6150. [3] F. Zeng, W. Gan, Y. Wang, N. Liu, and P. S. Yu, “Large language models for robotics: A survey,” arXiv preprint arXiv:2311.07226 , 2023. [4] W. Liang, R. Zhou, Y. Ma, B. Zhang, S. Li, Y. Liao, and P. Kuang, “Large model empowered embodied ai: A survey on decision-making and embodied learning,” arXiv preprint arXiv:2508.10399 , 2025. [5] W. Xu, C. Huang, S. Gao, and S. Shang, “LLM-based agents for tool learning: a survey,” Data Science and Engineering , vol. 10, no. 4, pp. 1–31, 2025. [6] H.-a. Gao, J. Geng, W. Hua, M. Hu, X. Juan, H. Liu, S. Liu, J. Qiu, X. Qi, Y. Wu et al. , “A survey of self-evolving agents: On path to artificial super intelligence,” arXiv preprint arXiv:2507.21046 , 2025. [7] S. Du, J. Zhao, J. Shi, Z. Xie, X. Jiang, Y. Bai, and L. He, “A survey on the optimization of large language model-based agents,” ACM Computing Surveys , vol. 58, no. 9, pp. 1–37, 2026. [8] N. Shinn, F. Cassano, A. Gopinath, K. Narasimhan, and S. Yao, “Reflexion: Language agents with verbal reinforcement learning,” in 
+
+Advances in Neural Information Processing Systems , vol. 36, 2023, pp. 8634–8652. [9] A. Zhao, D. Huang, Q. Xu, M. Lin, Y.-J. Liu, and G. Huang, “Expel: Llm agents are experiential learners,” in Proceedings of the AAAI Conference on Artificial Intelligence , vol. 38, no. 17, 2024, pp. 19 632–19 642. [10] Y. Fu, D.-K. Kim, J. Kim, S. Sohn, L. Logeswaran, K. Bae, and H. Lee, “Autoguide: Automated generation and selection of context-aware guidelines for large language model agents,” in Advances in Neural Information Processing Systems , vol. 37, 2024, pp. 119 919– 119 948. [11] M. Chen, Y. Li, Y. Yang, S. Yu, B. Lin, and X. He, “Automanual: Constructing instruction manuals by llm agents via interactive environ-mental learning,” in Advances in Neural Information Processing Systems ,vol. 37, 2024, pp. 589–631. [12] Y. Liu, C. Si, K. R. Narasimhan, and S. Yao, “Contextual experience replay for self-improvement of language agents,” in Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 2025, pp. 14 179–14 198. [13] Z. Xiong, Y. Lin, W. Xie, P. He, Z. Liu, J. Tang, H. Lakkaraju, and Z. Xi-ang, “How memory management impacts llm agents: An empirical study of experience-following behavior,” arXiv preprint arXiv:2505.16067 ,2025. [14] L. Feng, Z. Xue, T. Liu, and B. An, “Group-in-group policy optimization for llm agent training,” in Advances in Neural Information Processing Systems , 2025. [15] J. S. Park, J. O’Brien, C. J. Cai, M. R. Morris, P. Liang, and M. S. Bernstein, “Generative agents: Interactive simulacra of human behavior,” in Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology , 2023, pp. 1–22. 
+
+8[16] W. Zhong, L. Guo, Q. Gao, H. Ye, and Y. Wang, “Memorybank: En-hancing large language models with long-term memory,” in Proceedings of the AAAI Conference on Artificial Intelligence , vol. 38, no. 17, 2024, pp. 19 724–19 731. [17] C. Packer, V. Fang, S. G. Patil, K. Lin, S. Wooders, and J. E. Gonzalez, “Memgpt: towards llms as operating systems.” arXiv preprint arXiv:2310.08560 , 2023. [18] G. Wang, Y. Xie, Y. Jiang, A. Mandlekar, C. Xiao, Y. Zhu, L. Fan, and A. Anandkumar, “Voyager: An open-ended embodied agent with large language models,” Transactions on Machine Learning Research , 2024. [19] T. Schick, J. Dwivedi-Yu, R. Dess` ı, R. Raileanu, M. Lomeli, E. Hambro, L. Zettlemoyer, N. Cancedda, and T. Scialom, “Toolformer: Language models can teach themselves to use tools,” in Advances in Neural Information Processing Systems , vol. 36, 2023, pp. 68 539–68 551. [20] Z. Z. Wang, J. Mao, D. Fried, and G. Neubig, “Agent workflow memory,” in International Conference on Machine Learning . PMLR, 2025, pp. 63 897–63 911. [21] B. Zheng, M. Y. Fatemi, X. Jin, Z. Z. Wang, A. Gandhi, Y. Song, Y. Gu, J. Srinivasa, G. Liu, G. Neubig et al. , “Skillweaver: Web agents can self-improve by discovering and honing skills,” arXiv preprint arXiv:2504.07079 , 2025. [22] X. Tang, T. Qin, T. Peng, Z. Zhou, D. Shao, T. Du, X. Wei, P. Xia, F. Wu, H. Zhu et al. , “Agent kb: Leveraging cross-domain experience for agentic problem solving,” arXiv preprint arXiv:2507.06229 , 2025. [23] Z. Tan, J. Yan, I.-H. Hsu, R. Han, Z. Wang, L. Le, Y. Song, Y. Chen, H. Palangi, G. Lee et al. , “In prospect and retrospect: Reflective memory management for long-term personalized dialogue agents,” in Proceed-ings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 2025, pp. 8416–8439. [24] L. Ouyang, J. Wu, X. Jiang, D. Almeida, C. Wainwright, P. Mishkin, C. Zhang, S. Agarwal, K. Slama, A. Ray et al. , “Training language models to follow instructions with human feedback,” in Advances in Neural Information Processing Systems , vol. 35, 2022, pp. 27 730– 27 744. [25] G. Tie, Z. Zhao, D. Song, F. Wei, R. Zhou, Y. Dai, W. Yin, Z. Yang, J. Yan, Y. Su et al. , “A survey on post-training of large language models,” 
+
+arXiv preprint arXiv:2503.06072 , 2025. [26] Z. Shao, P. Wang, Q. Zhu, R. Xu, J. Song, X. Bi, H. Zhang, M. Zhang, Y. Li, Y. Wu et al. , “Deepseekmath: Pushing the limits of mathematical reasoning in open language models,” arXiv preprint arXiv:2402.03300 ,2024. [27] R. Rafailov, A. Sharma, E. Mitchell, C. D. Manning, S. Ermon, and C. Finn, “Direct preference optimization: Your language model is secretly a reward model,” in Advances in Neural Information Processing Systems , vol. 36, 2023, pp. 53 728–53 741. [28] W. Shi, M. Yuan, J. Wu, Q. Wang, and F. Feng, “Direct multi-turn preference optimization for language agents,” in Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing ,2024, pp. 2312–2324. [29] M. Shridhar, X. Yuan, M.-A. Cote, Y. Bisk, A. Trischler, and M. Hausknecht, “Alfworld: Aligning text and embodied environments for interactive learning,” in International Conference on Learning Rep-resentations , 2021. [30] S. Yao, H. Chen, J. Yang, and K. Narasimhan, “Webshop: Towards scalable real-world web interaction with grounded language agents,” in 
+
+Advances in Neural Information Processing Systems , vol. 35, 2022, pp. 20 744–20 757. [31] S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. R. Narasimhan, and Y. Cao, “React: Synergizing reasoning and acting in language models,” in International Conference on Learning Representations , 2023. [32] A. Ahmadian, C. Cremer, M. Gall´ e, M. Fadaee, J. Kreutzer, O. Pietquin, A. ¨Ust¨ un, and S. Hooker, “Back to basics: Revisiting reinforce-style optimization for learning from human feedback in llms,” in Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 2024, pp. 12 248–12 267. [33] E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang, W. Chen et al. , “Lora: Low-rank adaptation of large language models,” in International Conference on Learning Representations , 2022. 
+
+9
