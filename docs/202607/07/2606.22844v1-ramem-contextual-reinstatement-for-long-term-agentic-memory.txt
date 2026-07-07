@@ -1,0 +1,831 @@
+Title: RaMem: Contextual Reinstatement for Long-term Agentic Memory
+
+URL Source: https://arxiv.org/pdf/2606.22844v1
+
+Published Time: Tue, 23 Jun 2026 03:09:17 GMT
+
+Number of Pages: 36
+
+Markdown Content:
+# RaMem: Contextual Reinstatement for Long-term Agentic Memory 
+
+Wei Yang, Bryce Kan, Shixuan Li, Li Li, Yuehan Qin, Jiate Li, Paul Bogdan, Jesse Thomason 
+
+University of Southern California 
+
+{wyang930,brycekan,sli97750,pbogdan,jessetho}@usc.edu 
+
+## Abstract 
+
+Long-term memory has become increasingly important for LLM agents that operate across extended interactions and evolving task contexts. Recent memory systems have made past experiences more persistent, compact, and retrievable, but retrieval alone does not ensure that a memory provides valid evidence for the current query. When experiences are compressed into reusable fragments, memories from different situations may appear equally relevant if they involve recurring entities or user states. We refer to this failure as context collapse : memories lose the surrounding context needed to judge whether they provide valid evidence for the current query. To address this problem, we propose Contextual Reinstatement for Agentic Memory (RaMem) , a framework that turns retrieved memory fragments into contextually verifiable evidence. RaMem operates through four coordinated stages: ( i) evidence anchoring grounds each memory in its original episodic conditions, especially event time, mention time, session span, and participants; ( ii )
+
+recall condition induction derives the evidence conditions implied by the query; (iii ) validity-aware retrieval uses these conditions to prioritize context-compatible memories while retaining content-relevant candidates as fallback evidence; and (iv ) context-preserved synthesis keeps the selected memories’ structured context available to the generator. Experiments on long-term memory benchmarks show that RaMem consistently improves performance over strong memory baselines, with average F1 gains of more than 10% across several backbones. Code is available at https://github.com/weiyang930/RaMem-Release.git .
+
+## 1 Introduction 
+
+Long-term memory has become a central component of agentic systems, allowing agents to carry useful experience across interactions and reason beyond a single context window. Existing work has developed memory along several complementary directions. Some systems maintain persistent natural-language records, virtual contexts, or user-level facts across sessions [Park et al., 2023, Packer et al., 2024, Zhong et al., 2024, Chhikara et al., 2025]. Others organize memory with temporal graphs, linked notes, symbolic metadata, or multi-view indexes to support consolidation and retrieval [Rasmussen et al., 2025, Liu et al., 2026]. Recent agentic memory systems further study how memory should be actively managed during task execution, including when to distill experience, reuse procedures, retrieve past information, or update stored knowledge [Ma et al., 2025, Cao et al., 2025, Yu et al., 2026, Du et al., 2025a]. Together, these efforts help agents maintain usable memory beyond transient context storage. At a high level, they largely frame memory as an availability problem : what information should be stored, and how it should be retrieved when needed. Availability, however, does not guarantee that a retrieved memory can be reliably used as evidence. Most memory systems implicitly rely on what we call the decontextualized evidence assumption :once an experience is compressed into a memory fragment and retrieved through a relevance signal, it 
+
+> Preprint.
+> arXiv:2606.22844v1 [cs.AI] 22 Jun 2026
+
+Figure 1: Context collapse in long-term agent memory. Left : the example shows the core failure mode of context collapse. SimpleMem retrieves related but invalid memories from wrong sessions. Right :aggregate results on the context-confusable subset show that this failure is systematic. SimpleMem often promotes context-invalid memories to rank 1 and misses the ground-truth memory. can serve as evidence for future queries [Chhikara et al., 2025, Liu et al., 2026]. Long-term experience is not a collection of context-free fragments [Tulving, 2002]. A memory may depend on when it was observed, who was involved, what state the user or task was in, where it occurred in an event, and how it related to nearby interactions. When this context is weakened during compression, storage, or retrieval, multiple fragments may appear relevant to the same query even though only one is valid for the situation being asked about[Liu et al., 2025]. We call this failure mode context collapse :the surrounding context of an experience is flattened, causing related but context-invalid memories to compete as evidence. Context collapse is not simply a retrieval miss, but a form of evidence misidentification , where the agent retrieves information that is related to the query but belongs to the wrong context. Figure 1 illustrates this gap between retrieved relevance and evidential validity. We argue that a key missing property of long-term agent memory is contextual verifiability . A memory should not only be stored and retrieved; it should retain enough context for the agent to judge whether it can support the current query. For example, answering a query about a revised plan requires identifying which version of the plan is under discussion, while inferring a user preference requires determining whether the memory reflects a current preference, an earlier state, or a temporary exception. This view is consistent with the idea that memory retrieval depends on both content and context. Episodic memory and encoding specificity emphasize that retrieval is shaped by the match between a cue and the context in which the experience was encoded [Tulving, 2002, Tulving and Thomson, 1973]; work on temporal context and event segmentation further highlights the role of contextual states and event boundaries in organizing memory [Howard and Kahana, 2002, Kurby and Zacks, 2008]. We draw on these ideas as a functional principle for agent memory: a retrieved memory should be treated as evidence only after the relevant context has been reinstated. To make retrieved memories contextually verifiable, we propose Contextual Reinstatement for Agentic Memory (RaMem) , a framework that turns retrieved fragments into situated evidence by recovering the conditions under which each memory is applicable. RaMem implements this idea in four stages. First, Episodic Memory Anchoring attaches each memory to the key conditions of its original experience, including event time, mention time, session span, and participants. Second, 
+
+Recall Condition Induction decomposes the query into an information need and a contextual recall frame that specifies what valid evidence should satisfy. Third, Validity-Aware Retrieval 
+
+prioritizes memories whose episodic coordinates match the recall frame while retaining content-relevant candidates as fallback evidence. Finally, Context-Preserved Synthesis passes the selected memories to the generator with their structured context intact. Because contextual cues can be incomplete or noisy, RaMem applies reinstatement selectively and activates context-aware retrieval only when the relevant cues can be grounded reliably. The main contributions of this work are as follows: 2• We identify context collapse as a central failure mode of long-term agent memory: memories can appear relevant but be misused as evidence when the agent cannot verify the context in which they were formed. We formulate this challenge as contextual evidence identification .• We propose Contextual Reinstatement for Agentic Memory (RaMem) , a framework that turns retrieved fragments into situated evidence. RaMem makes memories contextually verifiable by anchoring them to episodic conditions, inducing recall conditions, retrieving validity-aware evidence, and preserving structured context during answer synthesis. • Experiments on long-term memory benchmarks show that RaMem consistently improves answer quality, ground-truth memory retrieval, and context-budget efficiency over strong memory baselines. 
+
+## 2 Related Work 
+
+Long-term memory has become an important mechanism for extending LLM agents beyond a single interaction. Early systems maintain external memory streams, virtual context, or persistent user facts, enabling agents to carry information across sessions [Park et al., 2023, Shinn et al., 2023, Packer et al., 2024, Zhong et al., 2024]. Later work makes these memories more structured by using temporal knowledge graphs, note-like organizations, graph-augmented facts, lightweight memory modules, and multi-view indexes [Rasmussen et al., 2025, Xu et al., 2025, Chhikara et al., 2025, Fang et al., 2025, Liu et al., 2026]. Recent methods further study how agents should distill experience, reuse procedural knowledge, learn memory operations, or control retrieval and reflection during task execution [Nan et al., 2025, Yu et al., 2026, 2025, Cao et al., 2025, Du et al., 2025a]. These directions have made agent memory more persistent, compact, and easier to retrieve. In parallel, long-context modeling and retrieval-augmented generation improve how models access large information sources through context extension, compression, retrieval, graph-based evidence aggregation, and agentic retrieval policies [Lewis et al., 2020, Liu et al., 2024, Jiang et al., 2023a, Asai et al., 2023, Edge et al., 2024, Guo et al., 2024, Yao et al., 2022]. A more detailed discussion is provided in Appendix B. 
+
+## 3 Method 
+
+In this section, we introduce Contextual Reinstatement for Agentic Memory (RaMem) , a frame-work that turns retrieved memory fragments into contextually verifiable evidence. Figure 2 provides an overall structure. The complete method details are provided in Appendix C. 
+
+3.1 Episodic Memory Anchoring 
+
+A central source of context collapse is that memory units often become reusable fragments whose applicability conditions are weakly represented. Although such fragments may preserve useful content, they do not expose enough context to verify when the content can serve as evidence. RaMem therefore anchors each memory to the conditions under which it was observed, forming an episodic evidence unit . Each memory mi consists of a content field xi and an episodic context field ei:
+
+mi = ( xi, e i). The content xi is a self-contained restatement of the remembered information, while 
+
+ei records the coordinates needed for contextual verification: 
+
+ei = {τ event  
+
+> i
+
+, τ mention  
+
+> i
+
+, τ session  
+
+> i
+
+, p i, ℓ i, u i, z i}. (1) Here τ event  
+
+> i
+
+is the time of the described event when inferable, τ mention  
+
+> i
+
+denotes an explicitly mentioned temporal cue when available, and τ session  
+
+> i
+
+= [ sstart  
+
+> i
+
+, s end  
+
+> i
+
+] is the session span in which the memory was observed. The remaining fields denote participants pi, location ℓi, entities ui, and topic description 
+
+zi.The distinction between event time and session time is central to evidence verification. An event may be discussed after it occurred, so τ event  
+
+> i
+
+describes time of the real-world occurrence, while τ session 
+
+> i
+
+records when the memory was observed in the conversation. Since many long-horizon queries depend on when information was mentioned rather than when the event happened, we treat the session span as a stable episodic coordinate. In practice, we process the interaction history with overlapping windows, extract memory entries with lossless restatements and structured cues, and match each memory back to the real session span of its source window. 3Figure 2: Overview of RaMem . RaMem converts long-term interaction history into contextually verifiable memory evidence through four stages. (A) Interaction histories are converted into memories anchored with episodic evidence conditions. (B) A query is decomposed into an information need and recall conditions. (C) RaMem retrieves candidates through multiple paths and prioritizes context-compatible evidence when grounded recall conditions are available. (D) The selected evidence is passed to the generator with structured context preserved, enabling answer synthesis from contextually verifiable memories. 
+
+3.2 Recall Condition Induction 
+
+A query specifies not only what information is needed, but also the conditions under which a memory can serve as valid evidence. These conditions may be either explicit or implicit: explicit anchors include named entities or dates, while implicit anchors arise from temporal cues, referenced events, or evolving user state. Therefore, we map each query q into an information need rq and a contextual recall frame cq : q 7 → (rq , c q ). The information need rq captures what is being requested, while cq
+
+records the recall conditions that constrain which episode can provide valid evidence: 
+
+cq = {ˆτq , ˆpq , ˆℓq , ˆuq , ˆzq }. (2) Here ˆτq is a grounded time range when inferable, ˆpq denotes people or participants, ˆℓq denotes locations, ˆuq denotes entities, and ˆzq denotes topic or episode hints. The recall frame separates the requested information from the evidence conditions that a supporting memory should satisfy. For example, in “What did Sarah decide after the appointment in late March?”, 
+
+rq concerns Sarah’s decision, while cq specifies Sarah, the appointment episode, the temporal relation “after”, and the grounded range for late March. This decomposition is necessary because a memory may answer the same type of question while belonging to a different episode. To ground relative expressions such as “last August” or “the first weekend of May”, the query analyzer can use the global date range of the interaction history, making temporal cues resolvable within the memory timeline. Since induced recall conditions can still be ambiguous, RaMem does not apply them unconditionally; instead, contextual retrieval is activated only when the relevant cues can be grounded reliably, as described next. 
+
+3.3 Validity-Aware Memory Retrieval 
+
+Recall conditions are useful only when they can be grounded reliably. If an inferred condition is wrong, enforcing it may exclude the correct memory and turn contextual verification into a false constraint. RaMem therefore uses selective contextual reinstatement : it activates validity-aware 4retrieval only when the recall frame contains grounded evidence conditions; otherwise, it falls back to content-based retrieval. RaMem first retrieves a broad candidate set using complementary content-based access paths, in-cluding dense semantic retrieval over memory restatements and lexical retrieval over keywords or full-text matches. When enabled, an optional LLM-based planning step first analyzes the query and generates a small set of targeted semantic search queries while retaining the original query. When contextual retrieval is not activated, semantic and lexical results are fused with reciprocal rank fusion: 
+
+Ccontent (q) = RRF  Csem (q), Clex (q),
+
+where Csem (q) is obtained from dense retrieval over xi and Clex (q) from keyword or BM25-style retrieval. When grounded temporal conditions are available, RaMem can instead apply the same fusion inside the session-overlap filtered candidate set. This step recalls memories that may contain relevant content, but it does not by itself verify whether they satisfy the query’s evidence conditions. When the recall frame provides grounded conditions, RaMem constructs a context-compatible candidate list rather than directly treating all content-relevant memories as equally valid evidence. Let Ccontent (q) be the content-retrieved candidates and let Cctx (q) denote memories retrieved under grounded contextual conditions. The candidate list used for evidence synthesis is 
+
+Cq =
+
+Dedup first 
+
+ Cctx (q) ⊕ C content (q), if recall conditions are grounded ,
+
+Ccontent (q), otherwise . (3) Here ⊕ denotes ordered concatenation, and Dedup first keeps the first occurrence of each memory according to its identifier. Thus, grounded context gives priority to memories that are applicable under the query’s evidence conditions, while content-relevant candidates are retained as fallback evidence. When the induced context is uncertain, it is not imposed as a hard constraint. For temporal conditions, V(q) is instantiated with session-overlap compatibility. Given a grounded query range ˆτq = [ tstart  
+
+> q
+
+, t end  
+
+> q
+
+] and a memory session span τ session  
+
+> i
+
+= [ sstart  
+
+> i
+
+, s end  
+
+> i
+
+], memory mi is temporally compatible if 
+
+sstart  
+
+> i
+
+≤ tend  
+
+> q
+
+and send  
+
+> i
+
+≥ tstart  
+
+> q
+
+. (4) A small buffer can be added around ˆτq to tolerate mismatch between event time and mention time. Within the compatible set, memories are ordered by content relevance and temporal proximity, where proximity favors sessions closer to the grounded query range. This validity-aware design directly targets context collapse: a relevance-only retriever may rank a related memory highly even when it violates the query’s evidence conditions. By prioritizing context-compatible memories when reliable recall conditions are available, while retaining content-relevant candidates as fallback evidence, RaMem separates two notions that are often conflated: a memory can be related to the query while still being invalid evidence for it. After the initial retrieval results are merged, an optional reflection step can further check whether the current memories cover the required information and issue a small number of additional semantic searches for missing evidence. 
+
+3.4 Context-Preserved Evidence Synthesis 
+
+After validity-aware retrieval, selected memories should not be reduced back to plain text fragments. Doing so would remove the evidence conditions used to verify their applicability. RaMem therefore performs context-preserved evidence synthesis : it merges retrieved candidates while preserving retrieval priority, removes duplicate memories, and formats the final evidence with its episodic coordinates. Let Ccontent  
+
+> q
+
+denote the ordered candidates obtained from content-based retrieval, and let Cctx  
+
+> q
+
+denote the ordered candidates retained or promoted through contextual reinstatement. We treat both as ranked lists rather than unordered sets. RaMem first places context-compatible candidates before general content-relevant fallback evidence, and then applies stable deduplication: 
+
+Lq = Dedup first 
+
+ Cctx  
+
+> q
+
+⊕ C content 
+
+> q
+
+ , (5) where ⊕ denotes ordered concatenation, and Dedup first keeps the first occurrence of each memory according to its identifier. The final evidence list is obtained by taking the first K memories from the deduplicated list: 
+
+Cq = Head K (Lq ). (6) 5Table 1: Performance on the LoCoMo benchmark. RaMem consistently improves answer quality across different backbone models and question categories. 
+
+Model Method MultiHop Temporal OpenDomain SingleHop Average F1 BLEU F1 BLEU F1 BLEU F1 BLEU F1 BLEU GPT-4o 
+
+LoCoMo 28.00 18.47 9.09 5.78 16.47 14.80 61.56 54.19 28.78 23.31 ReadAgent 14.61 9.95 4.16 3.19 8.84 8.37 12.46 10.29 10.02 7.95 MemoryBank 6.49 4.69 2.47 2.43 6.43 5.30 8.28 7.10 5.92 4.88 MemGPT 30.36 22.83 17.29 13.18 12.24 11.87 40.16 36.35 25.01 21.06 A-Mem 32.86 23.76 39.41 31.23 17.10 15.84 44.43 38.97 33.45 27.45 LightMem 28.15 21.83 36.53 29.12 13.38 11.54 33.76 28.02 27.96 22.63 Mem0 35.13 27.56 52.38 44.15 17.73 15.92 39.12 35.43 36.09 30.77 SimpleMem 35.89 32.83 56.71 20.57 18.23 16.34 45.41 39.25 39.06 27.25 RaMem (Ours) 47.31 39.08 60.09 45.35 25.58 20.47 52.87 47.08 51.66 43.60 GPT-4.1-mini 
+
+LoCoMo 25.02 21.62 12.04 10.63 19.05 17.07 18.68 15.87 18.70 16.30 ReadAgent 6.48 5.60 5.31 4.23 7.66 6.62 9.18 7.91 7.16 6.09 MemoryBank 5.00 4.68 5.94 4.78 5.16 4.52 5.72 4.86 5.46 4.71 MemGPT 17.72 16.02 19.44 16.54 11.29 10.18 25.59 24.25 18.51 16.75 A-Mem 25.06 17.32 51.01 44.75 13.22 14.75 41.02 36.99 32.58 28.45 LightMem 24.96 21.66 20.55 18.39 19.21 17.68 33.79 29.66 24.63 21.85 Mem0 30.14 27.62 48.91 44.82 16.43 14.94 41.30 36.17 34.20 30.89 SimpleMem 43.46 38.82 58.62 50.10 19.76 18.04 51.12 43.53 43.24 37.62 RaMem (Ours) 43.73 35.99 61.57 47.02 26.35 21.73 58.14 51.48 54.23 45.86 Qwen3-8b 
+
+LoCoMo 13.50 9.20 6.80 5.50 10.10 8.80 14.50 11.20 11.23 8.68 ReadAgent 7.20 5.10 3.50 3.10 5.50 5.40 8.10 6.20 6.08 4.95 MemoryBank 9.50 7.10 3.80 2.50 7.50 6.50 9.20 7.50 7.50 5.90 MemGPT 14.20 9.80 5.50 4.20 12.50 10.80 11.50 9.10 10.93 8.48 A-Mem 20.50 13.80 22.50 18.20 13.20 10.50 26.80 21.50 20.75 16.00 LightMem 18.53 14.23 26.78 21.52 14.12 11.24 29.48 23.83 22.23 17.71 Mem0 22.42 16.83 32.48 26.13 15.23 12.54 33.05 27.24 25.80 20.69 SimpleMem 28.97 24.93 42.85 36.49 15.35 13.90 46.62 40.69 33.45 29.00 RaMem (Ours) 36.10 28.07 44.17 32.72 17.71 13.79 50.59 44.88 44.55 37.33 Qwen2.5-3b 
+
+LoCoMo 4.61 4.29 3.11 2.71 4.55 5.97 7.03 5.69 4.83 4.67 ReadAgent 2.47 1.78 3.01 3.01 5.57 5.22 3.25 2.51 3.58 3.13 MemoryBank 3.60 3.39 1.72 1.97 6.63 6.58 4.11 3.32 4.02 3.82 MemGPT 5.07 4.31 2.94 2.95 7.04 7.10 7.26 5.52 5.58 4.97 A-Mem 12.57 9.01 27.59 25.07 7.12 7.28 17.23 13.12 16.13 13.62 LightMem 16.43 11.39 6.92 4.56 8.06 7.23 18.28 15.24 12.42 9.61 Mem0 16.89 11.54 8.52 6.23 10.24 8.82 16.47 12.43 13.03 9.76 SimpleMem 17.03 11.87 21.47 19.50 12.52 10.19 20.90 18.01 17.98 14.89 RaMem (Ours) 21.74 15.17 24.45 17.00 13.68 11.41 26.95 22.72 24.65 19.44 
+
+When contextual reinstatement is not activated, Cctx  
+
+> q
+
+is empty and the same operation reduces to content-based evidence selection. This construction preserves broad content coverage while giving priority to memories whose evidence conditions match the query’s recall frame. The final evidence is then formatted with structured context rather than flattened into plain text. Each memory is presented with its content and episodic coordinates, including session span, event time when available, location, persons, entities, and topic. These fields expose the conditions under which each memory was observed, allowing the generator to use both the remembered content and its evidential context. The generator is instructed to answer concisely from the provided evidence and to return a structured response from which the final answer can be extracted. Since each retrieved memory remains linked to its identifier and episodic coordinates, RaMem can record which memories entered the generator, where the ground-truth memory was ranked, and whether contextual activation was triggered. These diagnostics help separate failures across memory construction, retrieval, contextual activation, and answer generation. 
+
+## 4 Experiments 
+
+We evaluate whether RaMem improves long-term agent memory by making retrieved memories contextually verifiable as evidence. Our experiments follow the SimpleMem [Liu et al., 2026] protocol on LoCoMo [Maharana et al., 2024] and LongMemEval [Wu et al., 2024]. We evaluate across four backbones, GPT-4o, GPT-4.1-mini, Qwen2.5-3B, and Qwen3-8B, and report token-level F1 and BLEU-1 as the primary metrics. Full details and implementation are provided in Appendix D.1. 6Table 2: Retrieval diagnostics on LoCoMo. RaMem improves both ground-truth memory recall and ranking across backbone models. Lower values are better for CappedRank@10, HitOnlyRank, and GenFailGivenRetrieved.                                                             
+
+> Backbone Method R@1 R@3 R@5 R@10 MRR CappedRank@10 HitOnlyRank GenFailGivenRetrieved
+> GPT-4.1-mini SimpleMem 0.3662 0.5636 0.6364 0.7221 0.4908 8.5292 8.3831 0.8336 Ours 0.4175 0.6305 0.6961 0.7890 0.5476 5.9844 5.6510 0.8109
+> Qwen2.5-3B SimpleMem 0.2740 0.4539 0.5234 0.6247 0.3968 10.0006 9.8928 0.9230 Ours 0.3054 0.4776 0.5809 0.6901 0.4313 8.0143 7.6847 0.9113
+> Qwen3-8B SimpleMem 0.2870 0.4903 0.5526 0.6617 0.4178 9.7390 9.6429 0.8693 Ours 0.3292 0.5435 0.6266 0.7351 0.4669 7.2532 6.9594 0.8340
+
+4.1 Main Results on Long-Term Memory 
+
+Table 1 reports the main results on LoCoMo. RaMem achieves the best average F1 across all four backbones and consistently improves over SimpleMem, the strongest structured-memory baseline. The gains are substantial across model families: average F1 increases from 39.06 to 51.66 on GPT-4o, from 43.24 to 54.23 on GPT-4.1-mini, from 33.45 to 44.55 on Qwen3-8B, and from 17.98 to 24.65 on Qwen2.5-3B. Average BLEU also improves across all backbones. Since SimpleMem already uses compressed memory units, multi-view indexing, and intent-aware retrieval, these improvements suggest that RaMem provides a complementary benefit: it improves whether retrieved memories are contextually valid evidence for the current query, rather than merely making memories compact and retrievable. The category-level results further show that RaMem is not simply a temporal retrieval heuristic. Although temporal grounding is a central source of contextual verification, large gains also appear in MultiHop, OpenDomain, and SingleHop questions. For example, on GPT-4o, RaMem improves MultiHop, OpenDomain, and SingleHop F1 by 11.42, 7.35, and 7.46 points, respectively; on GPT-4.1-mini, the strongest gains appear in OpenDomain and SingleHop questions. Similar improvements in MultiHop and SingleHop performance also hold for Qwen3-8B and Qwen2.5-3B. This pattern supports the intended role of contextual reinstatement: time and session information are not used only to answer temporal questions, but to identify which episode or event instance should serve as evidence. A more detailed analysis of the main results is provided in Appendix D.2. 
+
+4.2 Evidence Retrieval Diagnostics 
+
+Final answer quality alone cannot show whether a memory system retrieves the right evidence, so we evaluate retrieval diagnostics using verified ground-truth memory entries. For each question, we record whether the answer-supporting memory appears in the retrieved set and where it is ranked. Table 2 shows that RaMem consistently improves evidence retrieval across backbones. On GPT-4.1-mini, Recall@10 increases from 0.7221 to 0.7890, MRR improves from 0.4908 to 0.5476, and capped average rank drops from 8.5292 to 5.9844; Qwen2.5-3B and Qwen3-8B show similar Recall@10 gains of 6.54 and 7.34 points. The gains are even stronger when contextual cues are activated: on the temporal-triggered subset, GPT-4.1-mini improves Recall@10 from 0.6326 to 0.8140, while Qwen2.5-3B improves from 0.5256 to 0.6558. These results show that RaMem retrieves the ground-truth memory more often and ranks it earlier, especially when the query points to a specific episode where related memories can become strong distractors. Generator failures can still occur after the correct memory is retrieved, but RaMem reduces this failure rate across all three backbones, suggesting that contextual reinstatement improves both memory access and the quality of evidence passed to the generator. 
+
+4.3 Context Collapse Analysis 
+
+To directly test whether RaMem mitigates context collapse, we analyze context distractors : retrieved memories that are related to the query or ground-truth memory but belong to an incompatible episodic context. We identify distractors using person, entity, topic, and keyword overlap for content relatedness, together with strict temporal or session mismatch for contextual incompatibility. We further define a context-confusable subset , where SimpleMem retrieves at least one strict context distractor in its top-5 results, isolating cases where relevance signals are most likely to select plausible but invalid evidence. Figure 3 and Table 6 show that context collapse is frequent rather than incidental: SimpleMem ranks a context distractor first in 43.66%, 45.88%, and 54.14% of examples on GPT-4.1-mini, Qwen3-8B, and Qwen2.5-3B, respectively. These distractors are related fragments that share 7Figure 3: Context collapse mitigation across backbones . Each subplot corresponds to one backbone and compares SimpleMem with our method on three diagnostic metrics: D@1, RankGap, and GT R@10. Lower is better for D@1 and RankGap, while higher is better for GT R@10. Table 3: Context shuffle test. Memory content is kept unchanged, while selected context fields are shuffled across memory entries. We report both all verified questions and the temporal-triggered subset. Lower is better for D@1 and RankGap.                                                                         
+
+> Backbone Subset Variant F1 ↑GT R@10 ↑MRR ↑D@1 ↓RankGap ↓
+> GPT-4.1-mini All Verified GT Original 0.5291 0.7550 0.5323 0.3428 2.0278
+> Shuffle temporal 0.5004 0.6744 0.4871 0.5753 5.2974 Shuffle full context 0.5079 0.6638 0.4822 0.5872 5.3965 Temporal-triggered Original 0.6009 0.8066 0.5249 0.2642 1.0404
+> Shuffle temporal 0.4985 0.2358 0.1796 0.8160 21.5029 Shuffle full context 0.5180 0.2358 0.1762 0.8302 22.0116 Qwen3-8B All Verified GT Original 0.4522 0.6925 0.4502 0.3702 2.1427
+> Shuffle temporal 0.4287 0.6204 0.4116 0.6518 5.7768 Shuffle full context 0.4347 0.6157 0.4053 0.6631 5.7634 Temporal-triggered Original 0.5317 0.7170 0.4271 0.2736 1.2350
+> Shuffle temporal 0.4081 0.1840 0.1250 0.8726 22.9595 Shuffle full context 0.4134 0.1840 0.1242 0.8868 23.0952
+
+entities, topics, or keywords with the query but fail its evidence conditions. RaMem consistently reduces this interference, lowering D@1 to 0.3495, 0.3846, and 0.4796 across the three backbones. It also reduces RankGap by more than three points on GPT-4.1-mini and Qwen3-8B and by nearly three points on Qwen2.5-3B, while improving GT R@10 across all backbones. These results show that RaMem suppresses context-invalid memories without losing the answer-supporting memory, directly supporting our claim that contextual reinstatement distinguishes valid evidence from related but invalid fragments. 
+
+4.4 Context Shuffle Test 
+
+To verify that contextual reinstatement depends on correct content-context binding, we conduct a context shuffle test: memory content is kept unchanged, while episodic context fields are shuffled across entries within the same memory bank. This preserves the amount and format of metadata but breaks the correspondence between a memory and the context in which it was encoded. We focus on temporal/session and full-context shuffling in the main text, with complete results in Appendix D.4. Table 3 shows that corrupted temporal context consistently hurts retrieval and answer quality. On all verified questions, temporal shuffling reduces GPT-4.1-mini F1 from 0.5291 to 0.5004 and GT R@10 from 0.7550 to 0.6744; on Qwen3-8B, F1 drops from 0.4522 to 0.4287 and GT R@10 from 0.6925 to 0.6204. The effect is much sharper on temporal-triggered questions: GT R@10 drops from 0.8066 to 0.2358 on GPT-4.1-mini and from 0.7170 to 0.1840 on Qwen3-8B, while D@1 rises from 0.2642 to 0.8160 and from 0.2736 to 0.8726, respectively. Full-context shuffling follows the same pattern, suggesting that the dominant failure comes from corrupted session-level temporal grounding. These results show that contextual metadata is not decorative prompt information; it must remain correctly bound to memory content to guide retrieval toward the correct episode. 8Figure 4: Sensitivity to the temporal reinstatement window. Each subplot shows the effect of varying the temporal buffer on F1 and GT R@10. Table 4: Component analysis on the temporal-triggered subset. We report the most diagnostic ablations in the main text. Lower is better for D@1 and RankGap.                                                    
+
+> Backbone Variant F1 ↑BLEU1 ↑GT R@10 ↑D@1 ↓RankGap ↓
+> GPT-4.1-mini Full 0.5957 0.5319 0.8066 0.2736 1.0354
+> w/o Session Context 0.5596 0.4922 0.5708 0.5189 10.0492 w/o Context-Aware Ranking 0.5693 0.5018 0.5708 0.5283 12.6332 w/o Context-Preserved Generation 0.5626 0.4968 0.8066 0.2736 1.0354 Qwen3-8B Full 0.5226 0.4695 0.7217 0.2783 1.1685
+> w/o Session Context 0.4578 0.4097 0.4245 0.5849 11.9565 w/o Context-Aware Ranking 0.4642 0.4162 0.4434 0.5755 14.7735 w/o Context-Preserved Generation 0.4248 0.3567 0.7217 0.2783 1.1685
+
+4.5 Hyper-parameter Analysis 
+
+We first study the sensitivity of RaMem to the temporal reinstatement window, which controls how much mismatch is allowed between event time and the time at which the event entered memory. As shown in Figure 4, a moderate buffer provides the best trade-off across GPT-4.1-mini and Qwen3-8B. Very narrow windows can miss valid memories whose mention time is slightly shifted, while overly broad windows admit more context-invalid memories and weaken contextual specificity. This supports our design intuition that temporal context should act as a calibrated episodic coordinate rather than a hard equality constraint or an unrestricted expansion window. Full results with additional diagnostics are provided in Appendix D.5. We also evaluate sensitivity to the retrieval budget in Figure 5, which controls how many memories are passed to the generator. RaMem consistently improves F1 and budget-aligned GT R@ K across budgets, and notably matches or exceeds SimpleMem with half the retrieval budget ( K = 10 vs. K = 20 ) on both GPT-4.1-mini and Qwen3-8B, indicating better evidence ordering and context efficiency; full results are provided in Appendix D.6. 
+
+4.6 Component Analysis 
+
+We analyze which components make retrieved memories contextually verifiable. Since session-level evidence conditions and validity-aware ranking are most directly exercised on temporally grounded queries, we report the temporal-triggered subset in the main text and provide full ablations in Appendix D.8. Table 4 shows that session grounding and validity-aware ranking are the main retrieval-side drivers. Without session context, GT R@10 drops from 0.8066 to 0.5708 on GPT-4.1-mini and from 0.7217 to 0.4245 on Qwen3-8B; D@1 roughly doubles and RankGap increases substantially. Removing context-aware ranking causes a similar degradation, indicating that RaMem must both retrieve session-compatible candidates and order them by recall-condition compatibility. In contrast, removing context-preserved generation leaves retrieval metrics unchanged by design, but reduces F1 from 0.5957 to 0.5626 on GPT-4.1-mini and from 0.5226 to 0.4248 on Qwen3-8B. This shows that even correctly retrieved evidence must retain its structured context for generator to use it. 94.7 Efficiency Analysis & Qualitative Case Studies 
+
+RaMem improves context efficiency without requiring a larger evidence budget. As shown in Table 13, RaMem with K = 10 matches or exceeds SimpleMem with K = 20 on both GPT-4.1-mini and Qwen3-8B, achieving better recall with roughly half the context tokens. Full online-cost measurements are provided in Appendix D.9. Case studies in Appendix D.10 further show the same mechanism: SimpleMem often retrieves related but context-invalid memories, while RaMem promotes memories whose episodic coordinates satisfy the query’s recall frame. 
+
+## 5 Conclusion 
+
+In this paper, we presented RaMem, a contextual reinstatement framework for long-term agent memory. RaMem makes retrieved memories verifiable by recovering the episodic conditions under which they should be used and by carrying this context into answer generation. Experiments across multiple backbones on LoCoMo show consistent gains in answer quality, ground-truth memory retrieval, and robustness against context-invalid distractors. These results suggest that effective long-term agent memory requires not only making past information available, but also ensuring that retrieved memories are valid under the current query context. 
+
+## References 
+
+Joon Sung Park, Joseph C. O’Brien, Carrie J. Cai, Meredith Ringel Morris, Percy Liang, and Michael S. Bernstein. Generative agents: Interactive simulacra of human behavior, 2023. URL 
+
+https://arxiv.org/abs/2304.03442 .Charles Packer, Sarah Wooders, Kevin Lin, Vivian Fang, Shishir G. Patil, Ion Stoica, and Joseph E. Gonzalez. Memgpt: Towards llms as operating systems, 2024. URL https://arxiv.org/abs/ 2310.08560 .Wanjun Zhong, Lianghong Guo, Qiqi Gao, He Ye, and Yanlin Wang. Memorybank: Enhancing large language models with long-term memory. In Proceedings of the AAAI conference on artificial intelligence , volume 38, pages 19724–19731, 2024. Prateek Chhikara, Dev Khant, Saket Aryan, Taranjeet Singh, and Deshraj Yadav. Mem0: Building production-ready ai agents with scalable long-term memory. arXiv preprint arXiv:2504.19413 ,2025. Preston Rasmussen, Pavlo Paliychuk, Travis Beauvais, Jack Ryan, and Daniel Chalef. Zep: a temporal knowledge graph architecture for agent memory. arXiv preprint arXiv:2501.13956 , 2025. Jiaqi Liu, Yaofeng Su, Peng Xia, Siwei Han, Zeyu Zheng, Cihang Xie, Mingyu Ding, and Huaxiu Yao. Simplemem: Efficient lifelong memory for llm agents. arXiv preprint arXiv:2601.02553 ,2026. Wenquan Ma, Jiayan Nan, Wenlong Wu, and Yize Chen. What deserves memory: Adaptive memory distillation for llm agents. arXiv e-prints , pages arXiv–2508, 2025. Zouying Cao, Jiaji Deng, Li Yu, Weikang Zhou, Zhaoyang Liu, Bolin Ding, and Hai Zhao. Remember me, refine me: A dynamic procedural memory framework for experience-driven agent evolution. 
+
+arXiv preprint arXiv:2512.10696 , 2025. Yi Yu, Liuyi Yao, Yuexiang Xie, Qingquan Tan, Jiaqi Feng, Yaliang Li, and Libing Wu. Agentic memory: Learning unified long-term and short-term memory management for large language model agents. arXiv preprint arXiv:2601.01885 , 2026. Xingbo Du, Loka Li, Duzhen Zhang, and Le Song. Memr 3: Memory retrieval via reflective reasoning for llm agents. arXiv preprint arXiv:2512.20237 , 2025a. Endel Tulving. Episodic memory: From mind to brain. Annual review of psychology , 53(1):1–25, 2002. 10 WenTao Liu, Ruohua Zhang, Aimin Zhou, Feng Gao, and JiaLi Liu. Echo: A large language model with temporal episodic memory, 2025. URL https://arxiv.org/abs/2502.16090 .Endel Tulving and Donald M Thomson. Encoding specificity and retrieval processes in episodic memory. Psychological review , 80(5):352, 1973. Marc W Howard and Michael J Kahana. A distributed representation of temporal context. Journal of mathematical psychology , 46(3):269–299, 2002. Christopher A Kurby and Jeffrey M Zacks. Segmentation in the perception and memory of events. 
+
+Trends in cognitive sciences , 12(2):72–79, 2008. Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao. Reflexion: Language agents with verbal reinforcement learning. Advances in neural information processing systems , 36:8634–8652, 2023. Wujiang Xu, Zujie Liang, Kai Mei, Hang Gao, Juntao Tan, and Yongfeng Zhang. A-mem: Agentic memory for llm agents. arXiv preprint arXiv:2502.12110 , 2025. Jizhan Fang, Xinle Deng, Haoming Xu, Ziyan Jiang, Yuqi Tang, Ziwen Xu, Shumin Deng, Yunzhi Yao, Mengru Wang, Shuofei Qiao, et al. Lightmem: Lightweight and efficient memory-augmented generation. arXiv preprint arXiv:2510.18866 , 2025. Jiayan Nan, Wenquan Ma, Wenlong Wu, and Yize Chen. Nemori: Self-organizing agent memory inspired by cognitive science. arXiv preprint arXiv:2508.03341 , 2025. Hongli Yu, Tinghong Chen, Jiangtao Feng, Jiangjie Chen, Weinan Dai, Qiying Yu, Ya-Qin Zhang, Wei-Ying Ma, Jingjing Liu, Mingxuan Wang, et al. Memagent: Reshaping long-context llm with multi-conv rl-based memory agent. arXiv preprint arXiv:2507.02259 , 2025. Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, et al. Retrieval-augmented genera-tion for knowledge-intensive nlp tasks. Advances in neural information processing systems , 33: 9459–9474, 2020. Nelson F Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua, Fabio Petroni, and Percy Liang. Lost in the middle: How language models use long contexts. Transactions of the association for computational linguistics , 12:157–173, 2024. Huiqiang Jiang, Qianhui Wu, Chin-Yew Lin, Yuqing Yang, and Lili Qiu. Llmlingua: Compressing prompts for accelerated inference of large language models. In Proceedings of the 2023 conference on empirical methods in natural language processing , pages 13358–13376, 2023a. Akari Asai, Zeqiu Wu, Yizhong Wang, Avirup Sil, and Hannaneh Hajishirzi. Self-rag: Learning to retrieve, generate, and critique through self-reflection. In The Twelfth International Conference on Learning Representations , 2023. Darren Edge, Ha Trinh, Newman Cheng, Joshua Bradley, Alex Chao, Apurva Mody, Steven Truitt, Dasha Metropolitansky, Robert Osazuwa Ness, and Jonathan Larson. From local to global: A graph rag approach to query-focused summarization. arXiv preprint arXiv:2404.16130 , 2024. Zirui Guo, Lianghao Xia, Yanhua Yu, Tian Ao, and Chao Huang. Lightrag: Simple and fast retrieval-augmented generation. arXiv preprint arXiv:2410.05779 , 2(3), 2024. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. React: Synergizing reasoning and acting in language models. arXiv preprint arXiv:2210.03629 ,2022. Adyasha Maharana, Dong-Ho Lee, Sergey Tulyakov, Mohit Bansal, Francesco Barbieri, and Yuwei Fang. Evaluating very long-term conversational memory of llm agents. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 13851–13870, 2024. 11 Di Wu, Hongwei Wang, Wenhao Yu, Yuwei Zhang, Kai-Wei Chang, and Dong Yu. Longmemeval: Benchmarking chat assistants on long-term interactive memory. arXiv preprint arXiv:2410.10813 ,2024. Ching Chang, Yidan Shi, Defu Cao, Wei Yang, Jeehyun Hwang, Haixin Wang, Jiacheng Pang, Wei Wang, Yan Liu, Wen-Chih Peng, et al. A survey of reasoning and agentic systems in time series with large language models. arXiv preprint arXiv:2509.11575 , 2025. Shixuan Li, Wei Yang, Peiyu Zhang, Xiongye Xiao, Defu Cao, Yuehan Qin, Xiaole Zhang, Yue Zhao, and Paul Bogdan. Climatellm: Efficient weather forecasting via frequency-aware large language models. arXiv preprint arXiv:2502.11059 , 2025a. Yiqun Chen, Jinyuan Feng, Wei Yang, Meizhi Zhong, Zhengliang Shi, Rui Li, Xiaochi Wei, Yan Gao, Yi Wu, Yao Hu, et al. Self-compression of chain-of-thought via multi-agent reinforcement learning. arXiv preprint arXiv:2601.21919 , 2026a. Yiqun Chen, Qi Liu, Yi Zhang, Weiwei Sun, Xinyu Ma, Wei Yang, Daiting Shi, Jiaxin Mao, and Dawei Yin. Tourrank: Utilizing large language models for documents ranking with a tournament-inspired strategy. In Proceedings of the ACM on Web Conference 2025 , pages 1638–1652, 2025. Yu Xia, Rui Zhong, Zeyu Song, Wei Yang, Junchen Wan, Qingpeng Cai, Chi Lu, and Peng Jiang. Trackrec: Iterative alternating feedback with chain-of-thought via preference alignment for recom-mendation. In International Conference on Database Systems for Advanced Applications , pages 388–404. Springer, 2026. Heng Ping, Peiyu Zhang, Shixuan Li, Wei Yang, Anzhe Cheng, Shukai Duan, Xiaole Zhang, and Paul Bogdan. Coevo: Co-evolutionary framework for joint functional correctness and ppa optimization in llm-based rtl generation. arXiv preprint arXiv:2604.15001 , 2026a. Heng Ping, Peiyu Zhang, Zhenkun Wang, Shixuan Li, Anzhe Cheng, Wei Yang, Paul Bogdan, and Shahin Nazarian. Poet: Power-oriented evolutionary tuning for llm-based rtl ppa optimization. 
+
+arXiv preprint arXiv:2603.19333 , 2026b. Hao Gu, Rui Zhong, Yu Xia, Wei Yang, Chi Lu, Peng Jiang, and Kun Gai. R 4ec: A reasoning, re-flection, and refinement framework for recommendation systems. In Proceedings of the Nineteenth ACM Conference on Recommender Systems , pages 411–421, 2025. Rui Zhao, Rui Zhong, Haoran Zheng, Wei Yang, Chi Lu, Beihong Jin, Peng Jiang, and Kun Gai. Hierarchical sequence id representation of large language models for large-scale recommendation systems. In Companion Proceedings of the ACM on Web Conference 2025 , pages 641–650, 2025. Heng Ping, Shixuan Li, Peiyu Zhang, Anzhe Cheng, Shukai Duan, Nikos Kanakaris, Xiongye Xiao, Wei Yang, Shahin Nazarian, Andrei Irimia, et al. Hdlcore: A training-free framework for mitigating hallucinations in llm-generated hdl. In 2025 IEEE International Conference on LLM-Aided Design (ICLAD) , pages 108–116. IEEE, 2025a. Muyan Weng, Defu Cao, Wei Yang, Yashaswi Sharma, and Yan Liu. Temporalbench: A benchmark for evaluating llm-based agents on contextual and event-informed time series tasks. arXiv preprint arXiv:2602.13272 , 2026. Wen Ye, Wei Yang, Defu Cao, Yizhou Zhang, Lumingyuan Tang, Jie Cai, and Yan Liu. Ts-reasoner: Domain-oriented time series inference agents for reasoning and automated analysis. Transactions on Machine Learning Research , 2026. Zixuan Yang, Yiqun Chen, Wei Yang, Erhan Zhang, Zihan Shen, Xiaochi Wei, Yan Gao, Yi Wu, Yao Hu, and Jiaxin Mao. Tournament-grpo: Group-wise tournament rewards for reinforcement learning in open-ended long-form generation. arXiv preprint arXiv:2605.26958 , 2026a. Yiqun Chen, Wei Yang, Erhan Zhang, Shijie Wang, Qi Liu, Zechun Niu, Bin Zhang, Haitao Li, Rui Li, Lingyong Yan, et al. Unitymas-o: A general rl optimization framework for llm-based multi-agent systems. arXiv preprint arXiv:2605.26646 , 2026b. 12 Wei Yang and Jesse Thomason. Learning to deliberate: Meta-policy collaboration for agentic llms with multi-agent reinforcement learning. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 40, pages 29820–29828, 2026. Wei Yang, Muyan Weng, Jiacheng Pang, Defu Cao, Heng Ping, Peiyu Zhang, Shixuan Li, Yue Zhao, Qiang Yang, Mengdi Wang, et al. Toward evolutionary intelligence: Llm-based agentic systems with multi-agent reinforcement learning. Available at SSRN 5819182 , 2025a. Wei Yang, Defu Cao, Jiacheng Pang, Muyan Weng, and Yan Liu. Adaptive collaboration with humans: Metacognitive policy optimization for multi-agent llms with continual learning. arXiv preprint arXiv:2603.07972 , 2026b. Wei Yang, Jiacheng Pang, Shixuan Li, Paul Bogdan, Stephen Tu, and Jesse Thomason. Maestro: Learning to collaborate via conditional listwise policy optimization for multi-agent llms. arXiv preprint arXiv:2511.06134 , 2025b. Erhan Zhang, Yiqun Chen, Zechun Niu, Wei Yang, Xiaochi Wei, Yan Gao, Yi Wu, Yao Hu, and Jiaxin Mao. Oases: Outcome-aligned search-evaluation co-training for agentic search. arXiv preprint arXiv:2604.03675 , 2026a. Wei Yang, Shixuan Li, Heng Ping, Peiyu Zhang, Paul Bogdan, and Jesse Thomason. Auditing multi-agent llm reasoning trees outperforms majority vote and llm-as-judge. arXiv preprint arXiv:2602.09341 , 2026c. Shawn Li, Chenxiao Yu, Han Wang, Wei Yang, Ryan Rossi, Franck Dernoncourt, Xiyang Hu, Philip Yu, Chaowei Xiao, Huan Zhang, et al. Fortis: Benchmarking over-privilege in agent skills. arXiv preprint arXiv:2605.09163 , 2026a. Heng Ping, Arijit Bhattacharjee, Peiyu Zhang, Shixuan Li, Wei Yang, Anzhe Cheng, Xiaole Zhang, Jesse Thomason, Ali Jannesari, Nesreen Ahmed, et al. Verimoa: A mixture-of-agents framework for spec-to-hdl generation. arXiv preprint arXiv:2510.27617 , 2025b. Wen Ye, Jinbo Liu, Defu Cao, Wei Yang, and Yan Liu. When llm meets time series: Can llms perform multi-step time series reasoning and inference. arXiv preprint arXiv:2509.01822 , 2025. Zhenheng Tang, Xin He, Tiancheng Zhao, Fanjunduo Wei, Xiang Liu, Peijie Dong, Qian Wang, Qi Li, Huacan Wang, Ronghao Chen, Sen Hu, Weidong Guo, Yu Xu, Haolan Chen, Kunfeng Lai, Kaiyong Zhao, Keyan Ding, Ivor W. Tsang, Yew-Soon Ong, Bo Li, and Xiaowen Chu. Llm agent memory: A survey from a unified representation–management perspective. Preprints , March 2026. doi: 10.20944/preprints202603.0359.v2. URL https://doi.org/10.20944/preprints202603. 0359.v2 .Zeyu Zhang, Quanyu Dai, Xiaohe Bo, Chen Ma, Rui Li, Xu Chen, Jieming Zhu, Zhenhua Dong, and Ji-Rong Wen. A survey on the memory mechanism of large language model-based agents. 
+
+ACM Trans. Inf. Syst. , 43(6), September 2025. ISSN 1046-8188. doi: 10.1145/3748302. URL 
+
+https://doi.org/10.1145/3748302 .Yuyang Hu, Shichun Liu, Yanwei Yue, Guibin Zhang, Boyang Liu, Fangyi Zhu, Jiahang Lin, Honglin Guo, Shihan Dou, Zhiheng Xi, et al. Memory in the age of ai agents. arXiv preprint arXiv:2512.13564 , 2025. Li Shawn, Jiashu Qu, Linxin Song, Yuxiao Zhou, Yuehan Qin, Tiankai Yang, and Yue Zhao. Treble counterfactual VLMs: A causal approach to hallucination. In EMNLP , pages 18423–18434, Suzhou, China, November 2025. Association for Computational Linguistics. ISBN 979-8-89176-335-7. Shawn Li, Chenxiao Yu, Zhiyu Ni, Hao Li, Charith Peris, Chaowei Xiao, and Yue Zhao. Defenses against prompt attacks learn surface heuristics. In ACL , 2026b. Pengfei Du. Memory for autonomous llm agents:mechanisms, evaluation, and emerging frontiers, 2026. URL https://arxiv.org/abs/2603.07670 .Yuehan Qin, Li Li, Linxin Song, Wei Yang, Jiate Li, Yuqing Yang, and Yue Zhao. Memory retrieval for changing preferences. arXiv preprint arXiv:2606.02976 , 2026. 13 Bing Wang, Xinnian Liang, Jian Yang, Hui Huang, Shuangzhi Wu, Peihao Wu, Lu Lu, Zejun Ma, and Zhoujun Li. Enhancing large language model with self-controlled memory framework. arXiv preprint arXiv:2304.13343 , 2023. Jiazheng Kang, Mingming Ji, Zhe Zhao, and Ting Bai. Memory os of ai agent. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , pages 25972–25981, 2025. Yiming Du, Wenyu Huang, Danna Zheng, Zhaowei Wang, Sebastien Montella, Mirella Lapata, Kam-Fai Wong, and Jeff Z. Pan. Rethinking memory in llm based agents: Representations, operations, and emerging topics, 2025b. URL https://arxiv.org/abs/2505.00675 .Chang Yang, Chuang Zhou, Yilin Xiao, Su Dong, Luyao Zhuang, Yujing Zhang, Zhu Wang, Zijin Hong, Zheng Yuan, Zhishang Xiang, Shengyuan Chen, Huachi Zhou, Qinggang Zhang, Ninghao Liu, Jinsong Su, Xinrun Wang, Yi Chang, and Xiao Huang. Graph-based agent memory: Taxonomy, techniques, and applications, 2026d. URL https://arxiv.org/abs/2602.05665 .Piaohong Wang, Motong Tian, Jiaxian Li, Yuan Liang, Yuqing Wang, Qianben Chen, Tiannan Wang, Zhicong Lu, Jiawei Ma, Yuchen Eleanor Jiang, et al. O-mem: Omni memory system for personalized, long horizon, self-evolving agents. arXiv preprint arXiv:2511.13593 , 2025a. Zhen Tan, Jun Yan, I-Hung Hsu, Rujun Han, Zifeng Wang, Long Le, Yiwen Song, Yanfei Chen, Hamid Palangi, George Lee, et al. In prospect and retrospect: Reflective memory management for long-term personalized dialogue agents. In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 8416–8439, 2025. Shawn Li and Yue Zhao. The autonomy tax: Defense training breaks llm agents, 2026. URL 
+
+https://arxiv.org/abs/2603.19423 .Guilin Zhang, Wei Jiang, Xiejiashan Wang, Aisha Behr, Kai Zhao, Jeffrey Friedman, Xu Chu, and Amine Anoun. Adaptive memory admission control for llm agents. arXiv preprint arXiv:2603.04549 , 2026b. Iz Beltagy, Matthew E Peters, and Arman Cohan. Longformer: The long-document transformer. 
+
+arXiv preprint arXiv:2004.05150 , 2020. Li Li, Wei Ji, Yiming Wu, Mengze Li, You Qin, Lina Wei, and Roger Zimmermann. Panoptic scene graph generation with semantics-prototype learning. AAAI , 38(4):3145–3153, Mar. 2024a. doi: 10.1609/aaai.v38i4.28098. Shawn Li, Huixian Gong, Hao Dong, Tiankai Yang, Zhengzhong Tu, and Yue Zhao. Dpu: Dynamic prototype updating for multimodal out-of-distribution detection. In CVPR , pages 10193–10202, June 2025b. Manzil Zaheer, Guru Guruganesh, Kumar Avinava Dubey, Joshua Ainslie, Chris Alberti, Santiago Ontanon, Philip Pham, Anirudh Ravula, Qifan Wang, Li Yang, et al. Big bird: Transformers for longer sequences. Advances in neural information processing systems , 33:17283–17297, 2020. Zhuowan Li, Cheng Li, Mingyang Zhang, Qiaozhu Mei, and Michael Bendersky. Retrieval augmented generation or long-context LLMs? a comprehensive study and hybrid approach. In Franck Dernoncourt, Daniel Preo¸ tiuc-Pietro, and Anastasia Shimorina, editors, Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing: Industry Track , pages 881–893, Miami, Florida, US, November 2024b. Association for Computational Linguistics. doi: 10.18653/ v1/2024.emnlp-industry.66. URL https://aclanthology.org/2024.emnlp-industry.66/ .Shouyuan Chen, Sherman Wong, Liangjian Chen, and Yuandong Tian. Extending context window of large language models via positional interpolation. arXiv preprint arXiv:2306.15595 , 2023. Bowen Peng, Jeffrey Quesnelle, Honglu Fan, and Enrico Shippole. Yarn: Efficient context window extension of large language models, 2026. URL https://arxiv.org/abs/2309.00071 .Rewon Child, Scott Gray, Alec Radford, and Ilya Sutskever. Generating long sequences with sparse transformers, 2019. URL https://arxiv.org/abs/1904.10509 .14 Shawn Li, Peilin Cai, Yuxiao Zhou, Zhiyu Ni, Renjie Liang, You Qin, Yi Nian, Zhengzhong Tu, Xiyang Hu, and Yue Zhao. Secure on-device video ood detection without backpropagation. In 
+
+ICCV , October 2025c. Li Li, Chenwei Wang, You Qin, Wei Ji, and Renjie Liang. Biased-predicate annotation identification via unbiased visual predicate representation. In ACM MM , page 4410–4420. Association for Computing Machinery, 2023. ISBN 9798400701085. doi: 10.1145/3581783.3611847. URL 
+
+https://doi.org/10.1145/3581783.3611847 .Zihang Dai, Zhilin Yang, Yiming Yang, Jaime Carbonell, Quoc Le, and Ruslan Salakhutdi-nov. Transformer-XL: Attentive language models beyond a fixed-length context. In Anna Korhonen, David Traum, and Lluís Màrquez, editors, Proceedings of the 57th Annual Meet-ing of the Association for Computational Linguistics , pages 2978–2988, Florence, Italy, July 2019. Association for Computational Linguistics. doi: 10.18653/v1/P19-1285. URL https: //aclanthology.org/P19-1285/ .Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces, 2024. URL https://arxiv.org/abs/2312.00752 .Zhengbao Jiang, Frank F Xu, Luyu Gao, Zhiqing Sun, Qian Liu, Jane Dwivedi-Yu, Yiming Yang, Jamie Callan, and Graham Neubig. Active retrieval augmented generation. In Proceedings of the 2023 conference on empirical methods in natural language processing , pages 7969–7992, 2023b. Alexis Huet, Zied Ben Houidi, and Dario Rossi. Episodic memories generation and evaluation benchmark for large language models, 2025. URL https://arxiv.org/abs/2501.13121 .Mathis Pink, Qinyuan Wu, Vy Ai Vo, Javier Turek, Jianing Mu, Alexander Huth, and Mariya Toneva. Position: Episodic memory is the missing piece for long-term llm agents, 2025. URL 
+
+https://arxiv.org/abs/2502.06975 .Zixi Jia, Qinghua Liu, Hexiao Li, Yuyan Chen, and Jiqiang Liu. Evaluating the long-term mem-ory of large language models. In Wanxiang Che, Joyce Nabende, Ekaterina Shutova, and Mohammad Taher Pilehvar, editors, Findings of the Association for Computational Linguis-tics: ACL 2025 , pages 19759–19777, Vienna, Austria, July 2025. Association for Computa-tional Linguistics. ISBN 979-8-89176-256-5. doi: 10.18653/v1/2025.findings-acl.1014. URL 
+
+https://aclanthology.org/2025.findings-acl.1014/ .Yiheng Shu, Saisri Padmaja Jonnalagedda, Xiang Gao, Bernal Jiménez Gutiérrez, Weijian Qi, Kamalika Das, Huan Sun, and Yu Su. Remem: Reasoning with episodic memory in language agent, 2026. URL https://arxiv.org/abs/2602.13530 .Vladimir Karpukhin, Barlas O˘ guz, Sewon Min, Patrick Lewis, Ledell Wu, Sergey Edunov, Danqi Chen, and Wen tau Yih. Dense passage retrieval for open-domain question answering, 2020. URL 
+
+https://arxiv.org/abs/2004.04906 .Stephen Robertson and Hugo Zaragoza. The probabilistic relevance framework: Bm25 and beyond. 
+
+Found. Trends Inf. Retr. , 3(4):333–389, April 2009. ISSN 1554-0669. doi: 10.1561/1500000019. URL https://doi.org/10.1561/1500000019 .Kuang-Huei Lee, Xinyun Chen, Hiroki Furuta, John Canny, and Ian Fischer. A human-inspired reading agent with gist memory of very long contexts. arXiv preprint arXiv:2402.09727 , 2024. Aditi Singh, Abul Ehtesham, Saket Kumar, Tala Talaei Khoei, and Athanasios V. Vasilakos. Agentic retrieval-augmented generation: A survey on agentic rag, 2026. URL https://arxiv.org/abs/ 2501.09136 .Bowen Jin, Hansi Zeng, Zhenrui Yue, Jinsung Yoon, Sercan Arik, Dong Wang, Hamed Zamani, and Jiawei Han. Search-r1: Training llms to reason and leverage search engines with reinforcement learning, 2025. URL https://arxiv.org/abs/2503.09516 .Mingyue Cheng, Jie Ouyang, Shuo Yu, Ruiran Yan, Yucong Luo, Zirui Liu, Daoyu Wang, Qi Liu, and Enhong Chen. Agent-r1: Training powerful llm agents with end-to-end reinforcement learning, 2025. URL https://arxiv.org/abs/2511.14460 .15 Zihan Wang, Kangrui Wang, Qineng Wang, Pingyue Zhang, Linjie Li, Zhengyuan Yang, Xing Jin, Kefan Yu, Minh Nhat Nguyen, Licheng Liu, Eli Gottlieb, Yiping Lu, Kyunghyun Cho, Jiajun Wu, Li Fei-Fei, Lijuan Wang, Yejin Choi, and Manling Li. Ragen: Understanding self-evolution in llm agents via multi-turn reinforcement learning, 2025b. URL https://arxiv.org/abs/2504. 20073 .
+
+## Appendix A Limitations and Broader Impact 
+
+A.1 Limitations 
+
+This work studies contextual reinstatement for long-term agent memory under textual interaction histories. The current instantiation primarily relies on session-level temporal grounding, participant and entity cues, and structured memory fields to determine whether retrieved memories are contextu-ally valid evidence. Richer forms of context, such as causal dependencies, affective states, evolving task goals, or implicit social relations, may require more expressive memory representations and grounding mechanisms. The framework also depends on the quality of upstream memory extraction and query analysis. Missing episodic conditions in the memory bank, or incorrectly grounded recall conditions from the query, can still limit retrieval quality. In addition, contextual verification intro-duces design choices about how strictly recall conditions should constrain retrieval and how much temporal mismatch should be tolerated. Finally, our experiments focus on established long-term memory benchmarks, and extending contextual reinstatement to multimodal memories, tool-use trajectories, and real-time deployed agents remains an important direction for future work. 
+
+A.2 Broader Impact 
+
+More reliable long-term agent memory can improve personalized assistants, long-horizon task support, and other interactive systems that depend on accurate recall of prior experiences. By emphasizing contextual validity, the proposed approach may also reduce errors caused by using memories from the wrong episode or outdated user state. At the same time, stronger memory mechanisms require careful deployment. Systems that store and retrieve long-term user information should include clear consent, retention controls, deletion mechanisms, and safeguards against exposing sensitive information or over-relying on stale memories. These considerations are especially important when memory is used to personalize decisions or support user-facing recommendations. 
+
+## B Related Work 
+
+B.1 LLM Agents and Long-Term Memory 
+
+The rapid development of large language models has been driven by advances in large-scale pretrain-ing, which have enabled strong general-purpose capabilities across understanding [Chang et al., 2025, Li et al., 2025a], reasoning [Chen et al., 2026a, 2025, Xia et al., 2026], coding [Ping et al., 2026a,b], recommendation [Gu et al., 2025, Zhao et al., 2025], and other domains [Ping et al., 2025a, Weng et al., 2026, Ye et al., 2026]. Building on these capabilities, recent work has increasingly studied LLM-based agents that can interact with external tools, environments, users, and other agents to solve complex tasks beyond single-turn text generation [Yang et al., 2026a]. In particular, multi-agent LLM systems [Chen et al., 2026b, Yang and Thomason, 2026, Yang et al., 2025a] organize multiple specialized agents into collaborative workflows [Yang et al., 2026b, 2025b], and have been widely explored in settings such as question answering [Zhang et al., 2026a], decision making [Yang et al., 2026c], and other applications [Li et al., 2026a, Ping et al., 2025b, Ye et al., 2025]. As these agentic systems move from isolated tasks to long-horizon interactions, persistent memory becomes a key mechanism for maintaining continuity, reusing prior experience, and grounding future decisions in past context. Long-term memory has become an important mechanism for extending LLM agents beyond the limits of a single context window [Tang et al., 2026, Zhang et al., 2025, Hu et al., 2025, Shawn et al., 2025, Li et al., 2026b, Du, 2026, Qin et al., 2026]. A natural early direction is to maintain external 16 memory buffers or virtual context systems, where past interactions can be paged, summarized, or retrieved when the model needs them [Park et al., 2023, Shinn et al., 2023]. MemGPT [Packer et al., 2024] frames this problem through an operating-system analogy, allowing agents to move information between active context and external storage. MemoryBank [Zhong et al., 2024] stores and updates long-term user-related memories for personalized interaction. SCM [Wang et al., 2023] and MemoryOS [Kang et al., 2025] further explore controller-style memory streams and modular memory management. These systems establish the basic architecture of non-parametric agent memory, but they often keep memory close to raw dialogue records or summaries, which can preserve redundancy and leave referential or temporal ambiguity unresolved. A second line of work introduces more structured memory representations [Du et al., 2025b, Yang et al., 2026d]. Zep [Rasmussen et al., 2025] represents evolving conversational information with a temporal knowledge graph, while A-Mem [Xu et al., 2025] organizes memory in a self-evolving, note-linking structure inspired by Zettelkasten. Mem0 [Chhikara et al., 2025] extracts compact persistent facts from conversations and further extends them with graph-based memory to model relational structure. LightMem [Fang et al., 2025] pursues a lightweight architecture inspired by classic memory models, and O-Mem [Wang et al., 2025a] studies broader omni-memory organization for long-horizon agents. These methods move beyond passive context retention by adding structure to memory storage and update. Their main focus, however, remains on how to represent, consolidate, and maintain useful information over time. More recent work has shifted from memory storage toward memory distillation and adaptive manage-ment [Xu et al., 2025, Tan et al., 2025, Li and Zhao, 2026, Zhang et al., 2026b]. SimpleMem [Liu et al., 2026] compresses dialogue into self-contained memory units, indexes them through semantic, lexical, and symbolic views, and uses intent-aware retrieval to reduce token cost. NEMORI [Nan et al., 2025] asks what deserves to be stored by relating retention to predictability and prediction error. AgeMem [Yu et al., 2026] exposes long-term and short-term memory operations as actions and optimizes memory behavior through reinforcement learning. MemAgent [Yu et al., 2025] also treats memory update as a trainable process for long-context reading. Together, these works show a clear progression from storing history, to structuring memory, to learning or adapting memory operations. Our work follows this progression but studies a different point in the memory pipeline: after memories have been stored, retrieval can still fail when semantically similar memories from different episodes become difficult to distinguish [Maharana et al., 2024]. 
+
+B.2 Context Management and Agentic Retrieval 
+
+The problem of using long histories is closely related to long-context modeling and retrieval-augmented generation [Beltagy et al., 2020, Li et al., 2024a, 2025b, Zaheer et al., 2020, Li et al., 2024b]. Long-context LLMs and position-extrapolation methods attempt to expand the amount of text that can be directly processed by the model [Chen et al., 2023, Peng et al., 2026], while sparse atten-tion, recurrent architectures, and state-space models seek more efficient sequence processing [Child et al., 2019, Li et al., 2025c, 2023, Dai et al., 2019, Gu and Dao, 2024]. Even with longer contexts, empirical work on the “lost-in-the-middle” effect shows that simply placing more information in the prompt does not guarantee reliable use of relevant evidence [Liu et al., 2024]. Prompt compres-sion methods such as LLMLingua [Jiang et al., 2023a] reduce context cost by shortening inputs, while retrieval-augmented generation decouples knowledge storage from generation by retrieving a smaller evidence set at inference time [Lewis et al., 2020]. Follow-up RAG systems, including Self-RAG [Asai et al., 2023], active retrieval methods [Jiang et al., 2023b], GraphRAG [Edge et al., 2024], and LightRAG [Guo et al., 2024], improve retrieval control, graph-structured evidence aggregation, or query-dependent evidence use. Although these techniques improve context access, long-term conversational memory introduces a distinct challenge [Huet et al., 2025, Pink et al., 2025]. Unlike static documents or knowledge bases, dialogue histories contain recurring people, places, topics, and events across multiple sessions [Maha-rana et al., 2024, Jia et al., 2025]. A retrieved memory may therefore be highly relevant in wording but still refer to the wrong episode [Liu et al., 2025, Shu et al., 2026]. This issue is only partially addressed by standard dense retrieval, lexical retrieval, or symbolic filtering[Karpukhin et al., 2020, Robertson and Zaragoza, 2009]. ReadAgent [Lee et al., 2024] compresses very long contexts into gist memories, which improves scalability but does not directly resolve episode-level ambiguity. SimpleMem [Liu et al., 2026] uses multi-view retrieval to combine semantic, lexical, and symbolic 17 access paths, but its retrieval objective is still primarily organized around retrieving compact relevant memories under a token budget. A parallel trend makes retrieval itself more agentic [Singh et al., 2026]. ReAct [Yao et al., 2022] combines reasoning and acting, Reflexion [Shinn et al., 2023] stores verbal feedback from past trials, and Self-RAG [Asai et al., 2023] lets the model decide when retrieval or critique is needed. More recent agent-training frameworks such as Search-R1 [Jin et al., 2025], Agent-R1 [Cheng et al., 2025], and RAGEN [Wang et al., 2025b] extend this idea to multi-turn retrieval or tool-use settings. For long-term conversational memory, MemR 3 [Du et al., 2025a] introduces a controller that routes among retrieve, reflect, and answer actions while maintaining an explicit evidence-gap state. These methods address when to retrieve more evidence and how to control multi-step evidence collection. Our work is complementary: instead of emphasizing retrieval depth or closed-loop control, we focus on the validity of retrieved memories under the query’s episodic context. 
+
+## C Method 
+
+This appendix provides additional details for the proposed contextual reinstatement framework. The main paper describes the method at the level of content-context binding, recall frame induction, selective reinstatement, and context-preserved evidence synthesis. Here we describe the full system pipeline, including memory construction, memory schema, indexing, retrieval, answer generation, and diagnostic logging. 
+
+C.1 End-to-End Pipeline 
+
+The system operates in two stages. The first stage is an offline memory construction stage. Given a long conversation sample, the system extracts structured memory units from the dialogue history, associates each memory with episodic context, indexes the resulting memories, and stores a frozen memory database for later evaluation. The second stage is an online question-answering stage. Given a question, the system loads the frozen memory database, induces a recall frame from the question, retrieves contextually relevant memories, generates an answer, and records both final metrics and retrieval diagnostics. The pipeline is implemented with six main components. The LLMClient provides a unified interface to OpenAI-compatible language models, including hosted models and locally served models. The 
+
+EmbeddingModel encodes memory contents and query strings for dense retrieval. The VectorStore 
+
+stores memory entries and supports semantic, lexical, and structured retrieval. The MemoryBuilder 
+
+converts dialogue windows into structured episodic memory units. The HybridRetriever performs query analysis, optional planning, semantic retrieval, lexical retrieval, structured retrieval, selective contextual reinstatement, and optional reflection. The AnswerGenerator formats retrieved memories with their context fields and produces the final answer. We separate memory construction from evaluation for reproducibility and efficiency. Once memory construction is finished, each conversation sample has an independent frozen database. All later retrieval, generation, prompt ablations, and diagnostic analyses can reuse the same memory database without rebuilding memories. This separation also avoids cross-sample contamination and makes different retrieval variants directly comparable under the same stored memory bank. 
+
+C.2 Dialogue Normalization and Episodic Memory Construction 
+
+Each raw conversation is first normalized into a sequence of dialogue turns. A dialogue turn contains the speaker, utterance content, optional timestamp, and session-level temporal boundaries. We use the following abstract structure: 
+
+dj =  id j , speaker j , text j , τ j , s start  
+
+> j
+
+, s end 
+
+> j
+
+,
+
+where τj denotes the original timestamp when available, and [sstart  
+
+> j
+
+, s end  
+
+> j
+
+] denotes the session span of the dialogue turn. The session span is later used as a stable episodic coordinate for memory retrieval. The dialogue history is processed with overlapping sliding windows. Let W denote the window size and O denote the overlap size. Consecutive windows advance by W − O turns. The overlap reduces boundary errors by allowing memories that depend on local context to be extracted even 18 when the relevant evidence lies near a window boundary. In our implementation, memory extraction is parallelized across windows when possible. This enables local model servers to batch multiple extraction requests and improves throughput. For each window, the language model is prompted to extract a set of structured memory entries. The extraction prompt asks the model to avoid producing a single coarse summary of the entire window. Instead, it should produce multiple self-contained memories, each corresponding to a distinct event, preference, fact, decision, or relation that may be useful later. The expected output is a JSON object with a list of memory entries: 
+
+Extract( w) → { m1, . . . , m R}.
+
+Each raw memory entry contains a lossless restatement, keywords, optional timestamp, location, persons, entities, and topic. The restatement is designed to be understandable without the original dialogue window. In practice, the extraction prompt enforces an upper bound on the number of memories per window to avoid over-fragmentation and excessive index size. After extraction, each memory entry is matched back to a real session span. The language model may extract a timestamp from the content, but this timestamp can be noisy or may refer to the event time rather than the conversational mention time. We therefore use the session spans from the source dialogue window as the primary encoding-time coordinate. If the extracted timestamp falls inside a known session span, the memory is assigned to that span. If it does not fall inside any span, the system assigns the closest session span. This prevents memories from being left temporally ungrounded. The resulting memory entry has the following abstract schema: 
+
+mi = ( xi, k i, e i),
+
+where xi is the lossless restatement, ki is a set of lexical keywords, and ei is an episodic context frame: 
+
+ei = {τ event  
+
+> i
+
+, τ mention  
+
+> i
+
+, [sstart  
+
+> i
+
+, s end  
+
+> i
+
+], p i, ℓ i, u i, z i}.
+
+Here τ event  
+
+> i
+
+denotes the event time inferred from the memory content when available, τ mention 
+
+> i
+
+denotes an explicitly mentioned temporal cue when available, [sstart  
+
+> i
+
+, s end  
+
+> i
+
+] denotes the session span, 
+
+pi denotes persons or participants, ℓi denotes location, ui denotes entities, and zi denotes the topic. This schema distinguishes event time from encoding context. The event time describes when the remembered event occurred. The session span describes when the information entered the conversation and was encoded into memory. This distinction is important because many long-term conversational questions refer to when something was discussed or remembered, not only when the real-world event happened. 
+
+C.3 Multi-View Indexing and Frozen Memory Stores 
+
+Each memory entry is inserted into a vector store with both content and context fields. The stored schema contains an entry identifier, the lossless restatement, keywords, event timestamp, location, persons, entities, topic, session start time, session end time, mention date when available, and dense vector representation. The dense vector is computed from the lossless restatement: 
+
+vi = femb (xi),
+
+where femb is the document encoder. At retrieval time, the query encoder maps the query or rewritten query into the same vector space. If the embedding model supports different query and document encoding modes, the system uses the query-specific encoding mode for questions and the document encoding mode for memories. The memory bank supports three retrieval views. The semantic view performs dense retrieval over memory vectors. The lexical view performs full-text or BM25-style retrieval over lossless restatements and keywords. The structured view filters or scores memories using episodic context fields such as persons, entities, locations, timestamps, and session spans. These views correspond to different access paths into the same memory bank: 
+
+Rsem , Rlex , Rctx .
+
+The semantic view provides broad paraphrase-level recall. The lexical view captures exact entity and keyword matches. The structured view enables context-aware discrimination when reliable contextual cues are available. 19 After construction, each conversation sample is copied into an independent frozen database. During evaluation, the frozen database is loaded in read-only fashion. This design ensures that all questions from the same sample use the same memory bank, while different samples remain isolated. It also allows retrieval and generation ablations to be run repeatedly without changing the underlying memories. 
+
+C.4 Contextual Recall and Selective Retrieval 
+
+At inference time, RaMem first analyzes the question to infer both the information need and the evidence conditions that a valid memory should satisfy. The analyzer extracts keywords, persons, locations, entities, topic hints, temporal expressions, and a grounded time range when possible. When the global date range of the interaction history is available, it is included in the analysis prompt so that relative expressions such as “last August”, “that summer”, or “the first weekend of May” can be resolved within the current memory timeline. We denote the analyzed query as a pair (rq , c q ), where rq is the information need and cq is the contextual recall frame: 
+
+cq = {ˆτq , ˆpq , ˆℓq , ˆuq , ˆzq }.
+
+Here ˆτq is the grounded query time range when inferable, ˆpq denotes persons, ˆℓq denotes locations, 
+
+ˆuq denotes entities, and ˆzq denotes topic or episode hints. Since induced recall conditions can still be ambiguous, RaMem does not apply them unconditionally; instead, contextual retrieval is activated only when the relevant cues can be grounded reliably. RaMem first retrieves a broad content-based candidate set. When enabled, an optional LLM-based planning step analyzes the query and generates a small set of targeted semantic search queries while retaining the original query. When this step is disabled, RaMem falls back to semantic retrieval with the original query alone. Dense retrieval ranks memories by embedding similarity between semantic queries and memory content, while lexical retrieval ranks memories by keyword or BM25-style matching. The two ranked lists are combined with reciprocal rank fusion: 
+
+Scontent (q, m i) = X
+
+> r∈{ sem ,lex }
+
+1
+
+κ + rank r (q, m i) ,
+
+where κ is a smoothing constant and rank r (q, m i) is the rank of memory mi under retrieval view r.This produces a broad set of memories that may contain relevant content, but it does not yet verify whether these memories satisfy the query’s evidence conditions. Contextual reinstatement is activated selectively. For temporal context, the system uses a two-stage activation rule. First, the raw question must contain a detectable temporal cue, such as a date, month, season, relative week, or similar expression. Second, the query analyzer must ground this cue into a valid time range. If either condition fails, RaMem does not impose temporal filtering and instead falls back to content-based retrieval. This prevents spurious or hallucinated time ranges from suppressing the correct memory. When the recall frame provides grounded conditions, RaMem constructs a context-compatible candidate list rather than directly treating all content-relevant memories as equally valid evidence. Let Ccontent (q) be the content-retrieved candidates and let Cctx (q) denote memories retrieved under grounded contextual conditions. The candidate list used for evidence synthesis is 
+
+Cq =
+
+Dedup first 
+
+ Cctx (q) ⊕ C content (q), if recall conditions are grounded ,
+
+Ccontent (q), otherwise .
+
+Here ⊕ denotes ordered concatenation, and Dedup first keeps the first occurrence of each memory according to its identifier. Thus, grounded context gives priority to memories that are applicable under the query’s evidence conditions, while content-relevant candidates are retained as fallback evidence. When the induced context is uncertain, it is not imposed as a hard constraint. For temporal conditions, contextual retrieval is instantiated with session-overlap compatibility. Given a grounded query range ˆτq = [ tstart  
+
+> q
+
+, t end  
+
+> q
+
+] and a memory session span τ session  
+
+> i
+
+= [ sstart  
+
+> i
+
+, s end  
+
+> i
+
+],memory mi is temporally compatible if 
+
+sstart  
+
+> i
+
+≤ tend  
+
+> q
+
+and send  
+
+> i
+
+≥ tstart  
+
+> q
+
+.
+
+20 A small symmetric buffer can be applied to ˆτq before filtering. This buffer tolerates mismatch between when an event happened and when it was mentioned in the interaction history. Within the compatible set, memories are ordered by content relevance and temporal proximity, where proximity prioritizes sessions that overlap the grounded query range and then favors nearby session intervals. In the current implementation, temporal/session compatibility is the most explicit context dimension. Person, entity, and location fields provide additional structured access paths when available, while topic information is preserved for generation-time grounding. The final retrieved set is obtained by prioritizing context-compatible candidates and then retaining high-ranked content candidates as fallback evidence. If optional reflection is enabled, the system can perform an additional retrieval round by checking whether the current evidence is sufficient and issuing a small number of follow-up semantic searches for missing information. 
+
+C.5 Context-Preserved Answer Generation and Diagnostics 
+
+After validity-aware retrieval, RaMem prepares the final evidence list by merging the retrieved candidates while preserving retrieval priority. Let Ccontent  
+
+> q
+
+denote candidates from content-based retrieval and let Cctx  
+
+> q
+
+denote candidates retained or promoted through contextual reinstatement. RaMem first places context-compatible candidates before general content-relevant fallback evidence and then applies stable deduplication: 
+
+Lq = Dedup first 
+
+ Cctx  
+
+> q
+
+⊕ C content 
+
+> q
+
+,
+
+where ⊕ denotes ordered concatenation, and Dedup first keeps the first occurrence of each memory according to its identifier. The final evidence list is obtained by taking the first K memories from the deduplicated list: 
+
+Cfinal  
+
+> q
+
+= Head K (Lq ).
+
+When contextual reinstatement is not activated, Cctx  
+
+> q
+
+is empty and the same operation reduces to content-based evidence selection. If optional reflection is enabled, RaMem may issue a small number of additional semantic searches for missing information before the final merge and deduplication step. Retrieved memories are not passed to the generator as plain text alone. Each memory is formatted with both its content and episodic coordinates: 
+
+Format( mi) = [ xi; τ session  
+
+> i
+
+; τ event  
+
+> i
+
+; τ mention  
+
+> i
+
+; ℓi; pi; ui; zi].
+
+In text form, each context block contains the lossless memory restatement, session range, event or mention time when available, location, persons, related entities, and topic. This preserves the evidence conditions used during retrieval and allows the generator to resolve temporal, entity, and topic constraints explicitly. The generator receives the question and a ranked list of formatted memories. To control context length, the system packs memories in retrieval order until a maximum character budget is reached. The generator is instructed to answer only from the provided evidence and to return a JSON object containing a reasoning field and an answer field: 
+
+G(q, Cfinal  
+
+> q
+
+) → { reasoning , answer }.
+
+For entity-centric questions, the prompt can request the minimal entity phrase. For yes/no questions, it can request a concise yes/no answer. After generation, the system extracts the answer field and applies light normalization before computing metrics. The pipeline records detailed diagnostics for each question. Each evaluation record stores the question, reference answer, generated answer, retrieved memory identifiers, number of retrieved memories, ground-truth memory identifier when available, ground-truth rank among retrieved memories, guard status, grounded time window, buffered time window, contextual activation status, and final metrics. The system also exports reconstructed generator contexts by mapping retrieved identifiers back to full memory rows. This makes it possible to inspect exactly what evidence the generator saw. These diagnostics support failure decomposition. If the ground-truth memory is absent from the memory bank, the error is attributed to memory construction. If it exists but is not retrieved, the error is attributed to retrieval or contextual activation. If it is retrieved but the answer is still wrong, the error is attributed to evidence synthesis or generation. This decomposition is essential because final answer quality alone does not reveal whether RaMem improves access to the correct episode or only changes generator behavior. 21 C.6 Local Model Serving and Experimental Reproducibility 
+
+The system supports both hosted models and local models served through an OpenAI-compatible API. For local Qwen-based experiments, a vLLM server provides the LLM interface, and a local embedding model provides dense representations for memory contents and queries. Each model variant is assigned a separate run namespace, so its frozen databases, evaluation files, context exports, and ground-truth verification files do not overwrite those of other variants. The build and evaluation scripts expose the main configuration options through environment variables. These include the model path, served model name, maximum model length, GPU memory utilization, embedding model path, embedding batch size, number of memory build workers, and number of evaluation workers. During memory construction, the extraction prompt requests a valid JSON object and limits output length. Since smaller local models can produce malformed JSON, the parser uses several recovery strategies, including code-block extraction, bracket balancing, trailing-comma cleanup, partial recovery from complete objects inside the memory array, and retry. These engineering details improve reproducibility across model sizes while preserving the same high-level memory schema. During evaluation, questions can be processed in parallel. Each worker runs the full retrieve-generate-evaluate pipeline, and retrieved contexts are stored in a thread-local side channel to avoid mixing evidence across questions. The same evaluation code supports both the baseline retrieval mode and the contextual reinstatement mode. In the baseline mode, temporal contextual reinstatement is disabled and the system follows the original hybrid retrieval behavior. In the contextual reinstatement mode, session-overlap retrieval, temporal proximity reranking, guard diagnostics, and context-preserved generation are enabled according to the specified configuration. 
+
+## D Experiments 
+
+D.1 Experimental Setup Dataset. We follow the SimpleMem evaluation protocol and evaluate on LoCoMo [Maharana et al., 2024], a long-term conversational memory benchmark with multi-session dialogue histories and questions that require recovering information from prior interactions. The benchmark contains recurring entities, interleaved topics, and temporal shifts across sessions, making it suitable for evaluating whether a memory system can identify the correct episode rather than only retrieve related fragments. Following our evaluation split, we use samples from the dataset, and evaluate questions from four categories: multi-hop, temporal, open-domain, and single-hop questions. For analyses that require a verified answer-supporting memory, we use the subset with a reliable single ground-truth memory entry. For LongMemEval [Wu et al., 2024], we follow the standard accuracy-style evaluation used in SimpleMem, where a judge model compares the generated answer with the reference answer and labels the response as correct or incorrect based on semantic and temporal consistency. 
+
+Baselines and Backbones. For broad comparison, we use the same representative memory base-lines reported in SimpleMem, including the full-history LoCoMo setting [Maharana et al., 2024], ReadAgent [Lee et al., 2024], MemoryBank [Zhong et al., 2024], MemGPT [Packer et al., 2024], A-Mem [Xu et al., 2025], LightMem [Fang et al., 2025], Mem0 [Chhikara et al., 2025], and Sim-pleMem [Liu et al., 2026]. We reproduced SimpleMem with its official repository and obtained comparable results, so we report baseline numbers from the SimpleMem paper to maintain consis-tency with its evaluation protocol. These methods cover full-context prompting, gist-style reading memory, persistent user memory, virtual memory, structured or graph-based memory, lightweight retrieval, and semantic-compression-based memory. Following SimpleMem, we evaluate across both closed-source and open-source backbones: GPT-4o, GPT-4.1-mini, Qwen2.5-3B, and Qwen3-8B. For diagnostic analyses that require retrieved memory traces, we compare RaMem against a SimpleMem-style baseline reproduced inside our current implementation, so that both methods share the same serving stack, memory database, and evaluation scripts. 
+
+Metrics. For answer quality, we report token-level F1 and BLEU-1, following the LoCoMo evaluation protocol. We also report category-level results for multi-hop, temporal, open-domain, and single-hop questions. To verify whether performance gains come from better memory access, we compute retrieval diagnostics using verified ground-truth memory entries, including Recall@ K,22 MRR, capped ground-truth rank, hit-only rank, and generator failure conditioned on the ground-truth memory being retrieved. For context-collapse analysis, we measure the rate of context distractors at top ranks, average distractor load in the top-5, and the rank gap between the ground-truth memory and the strongest context distractor. Unless otherwise stated, retrieval diagnostics use Kmax = 10 .
+
+Implementation Details. We match the SimpleMem [Liu et al., 2026] implementation as closely as possible. Dialogue histories are segmented into overlapping windows, and memory entries are stored in LanceDB with multi-view indexing. Dense retrieval uses Qwen3-Embedding-0.6B with 1024-dimensional embeddings, lexical retrieval uses BM25-style sparse indexing, and structured retrieval uses metadata fields such as timestamps, persons, entities, locations, and session-level context, while topic information is preserved for generation-time grounding. Retrieval budgets and windowing parameters are fixed within each compared setting so that methods are evaluated under the same memory construction and evidence-selection protocol. RaMem keeps the same memory construction and indexing backbone, but replaces the original retrieval stage with contextual reinstatement: it grounds recall conditions from the query, activates temporal retrieval only when reliable cues are available, applies a default ±5 day temporal buffer, and preserves structured fields such as session, time, location, persons, entities, and topic in the generation prompt. OpenAI models are accessed through OpenAI-compatible APIs, while Qwen models are served locally with vLLM when applicable. All reported comparisons use the same generator backbone within each setting. For LongMemEval-S, we use a benchmark-specific adapter on top of the core RaMem retrieval pipeline. The adapter preserves session-level memory construction and, when needed, applies exact-match fallback over generated memory entries and raw-haystack fallback over salient prior messages; these adapter-specific fallbacks are used only for LongMemEval-S evaluation and are separate from the core RaMem method. 
+
+Main Prompts. We provide the main prompts used in RaMem for memory construction, query-side recall condition induction, retrieval planning, and final answer generation. Runtime variables are shown in braces, e.g., {query} and {context_str} .
+
+Memory Extraction Prompt                     
+
+> System. You are a professional information extraction assistant, skilled at extracting structured, unambiguous information from conversations. You must output valid JSON format.
+> User. Extract all valuable information from the following dialogues and convert them into structured memory entries.
+> Input. {dialogue_text}
+> Requirements.
+> 1. Generate enough memory entries to capture all useful information in the dialogues. 2. Do not use pronouns or unresolved relative time expressions. 3. Each lossless_restatement must be complete, independent, and understandable. 4. Extract structured fields: keywords ,timestamp ,location ,persons ,entities , and topic .5. Create separate entries for separate facts, preferences, plans, events, locations, relationships, work details, and media references. 6. Return valid JSON only.
+> Output Format.
+> {"memory_entries": [{"lossless_restatement": "Complete unambiguous restatement.", "keywords": ["keyword1", "keyword2"], "timestamp": "YYYY-MM-DDTHH:MM:SS or null", "location": "location name or null", "persons": ["name1", "name2"], "entities": ["entity1", "entity2"], "topic": "topic phrase" }
+
+23 ]}
+
+Constraint. Return only the JSON object. 
+
+Query Analysis Prompt 
+
+System. You are a query analysis assistant. You must output valid JSON format. 
+
+Optional Temporal Context. Conversation context: This conversation took place between 
+
+{CONV_DATE_START} and {CONV_DATE_END} . If the query uses relative or implicit time references, resolve them using this date window. A temporal signal is confirmed in this query. Extract start and end dates for any time period mentioned. 
+
+User. Analyze the following query and extract key information. 
+
+Query. {query} 
+
+Fields to Extract. 
+
+1. keywords : names, places, topic words, and other useful search terms. 2. persons : person names mentioned. 3. time_expression : time expression, if any. 4. time_range_start : ISO start date if a time period is mentioned. 5. time_range_end : ISO end date if a time period is mentioned. 6. location : location, if any. 7. entities : companies, products, organizations, or other named entities. 
+
+Output Format. 
+
+{"keywords": ["keyword1", "keyword2"], "persons": ["name1", "name2"], "time_expression": "time expression or null", "time_range_start": "YYYY-MM-DD or null", "time_range_end": "YYYY-MM-DD or null", "location": "location or null", "entities": ["entity1"] }
+
+Constraint. Return only JSON. 
+
+Retrieval Planning Prompt 
+
+System. You are an intelligent information requirement analyst. You must output valid JSON format. 
+
+User. Analyze the following question and determine what information is required to answer it. 
+
+Question. {query} 
+
+Consider. 
+
+1. What type of question is this? 2. What entities, events, or concepts need to be identified? 3. What relationships need to be established? 4. What minimal information would be sufficient to answer the question? 
+
+Output Format. 
+
+{"question_type": "factual / temporal / relational / explanatory / other", "key_entities": ["entity1", "entity2"], "required_info": [{"info_type": "type of information", "description": "specific information needed", 
+
+24 "priority": "high / medium / low" }], "relationships": ["relationship1"], "minimal_queries_needed": 2} 
+
+> Constraint. Focus on the minimal essential information, not exhaustive details. Return only JSON.
+
+Answer Generation Prompt               
+
+> System. You are a professional Q&A assistant. Extract concise answers from context. You must output valid JSON format.
+> Context Format.
+> [Context {i}] Content: {entry.lossless_restatement} Session: {entry.session_date} -> {entry.session_end_date} Time: {entry.timestamp} Location: {entry.location} Persons: {entry.persons} Related Entities: {entry.entities} Topic: {entry.topic}
+> User. Answer the user’s question based on the provided context.
+> User Question. {query}
+> Relevant Context. {context_str}
+> Requirements.
+> 1. Think through the reasoning process. 2. Provide a very concise answer. 3. Answer only from the provided context. 4. Format dates as “DD Month YYYY” when dates are needed. 5. Return valid JSON.
+> Output Format.
+> {"reasoning": "Brief explanation of the reasoning.", "answer": "Concise answer in a short phrase." }
+> Constraint. Return only JSON.
+
+D.2 Analysis of Main Results 
+
+Table 1 presents the full LoCoMo results across four backbone models and four question categories. RaMem achieves the strongest average F1 on every backbone. On closed-source models, RaMem improves average F1 from 39.06 to 51.66 on GPT-4o and from 43.24 to 54.23 on GPT-4.1-mini. The improvement is also consistent on open-source models, where average F1 increases from 33.45 to 44.55 on Qwen3-8B and from 17.98 to 24.65 on Qwen2.5-3B. Average BLEU follows the same overall trend across all four backbones. These gains are meaningful because SimpleMem is already a strong structured-memory baseline that uses semantic compression, multi-view indexing, and intent-aware retrieval. RaMem therefore provides a complementary benefit: it improves the contextual validity of the retrieved evidence, rather than only making memory more compact or retrievable. The gains are especially clear on stronger backbones. On GPT-4o, RaMem improves average F1 by 12.60 points and average BLEU by 16.35 points over SimpleMem. It also achieves the best F1 in MultiHop, Temporal, and OpenDomain categories, while remaining competitive with the full-history LoCoMo setting on SingleHop questions. On GPT-4.1-mini, RaMem improves average F1 by 10.99 points and average BLEU by 8.24 points. The largest category-level improvements appear in OpenDomain and SingleHop questions, where F1 increases from 19.76 to 26.35 and from 51.12 25 Table 5: Performance comparison on LongMemEval-S. Following the SimpleMem protocol, we use 
+
+gpt-4.1-mini as the LLM judge and report accuracy across temporal, multi-session, knowledge-update, and single-session memory categories.                                         
+
+> Category Full-context Mem0 LightMem SimpleMem RaMem
+> Temporal 27.06 40.60 85.71 83.46 86.47
+> Multi-Session 30.08 50.37 47.37 60.92 65.41
+> Knowledge-Update 41.03 69.23 92.30 79.48 83.33 Single-Session-User 47.14 87.14 88.57 85.71 87.14 Single-Session-Assistant 32.14 48.21 21.43 75.00 78.57
+> Single-Session-Preference 60.00 63.33 76.67 76.67 80.00
+> Average 39.57 59.81 68.67 76.87 80.15
+
+to 58.14, respectively. This suggests that contextual reinstatement is not merely helping temporally phrased questions. It also helps the model select the correct episode or state when multiple memories share entities or topics. Open-source models show the same pattern. On Qwen3-8B, RaMem improves average F1 by 11.10 points and average BLEU by 8.33 points over SimpleMem. The method improves MultiHop F1 from 28.97 to 36.10 and SingleHop F1 from 46.62 to 50.59, showing that contextually valid retrieval benefits both compositional reasoning and direct factual lookup. On Qwen2.5-3B, RaMem improves average F1 from 17.98 to 24.65 and average BLEU from 14.89 to 19.44. Although this smaller model remains less capable overall, the consistent gain indicates that improving the evidence before generation is useful even when the generator itself is weak. The category-level results also clarify the role of temporal and episodic information. RaMem does improve the Temporal category on most backbones, but its advantage is not confined to temporal reasoning. On GPT-4o, RaMem improves MultiHop, OpenDomain, and SingleHop F1 by 11.42, 7.35, and 7.46 points, respectively. On GPT-4.1-mini, the largest gains are in OpenDomain and SingleHop questions. On Qwen3-8B and Qwen2.5-3B, RaMem again improves MultiHop and SingleHop performance by clear margins. These results support the main design motivation: temporal and session information is not used only to answer temporal questions. It helps identify which episode, state, or event instance should be used as evidence across many types of memory queries. There are also a few informative exceptions. For example, GPT-4.1-mini and Qwen3-8B show lower Temporal BLEU than SimpleMem, even though Temporal F1 improves. On Qwen2.5-3B, RaMem improves Temporal F1 over SimpleMem but has lower Temporal BLEU than SimpleMem and A-Mem. This suggests that once the correct evidence is retrieved, answer realization can still vary in wording or granularity, especially for smaller generators and temporal answers. The overall pattern nevertheless remains consistent: RaMem improves average answer quality and achieves broad gains across categories, indicating that contextual verifiability is a robust complement to existing memory compression and retrieval strategies. Table 5 further evaluates RaMem on LongMemEval-S, which stresses long-horizon memory under fine-grained temporal, update, and session-specific queries. RaMem achieves the best average accuracy, improving over SimpleMem from 76.87 to 80.15. The gains are strongest in categories that require identifying the correct memory episode or state, including Multi-Session, Single-Session-Assistant, and Single-Session-Preference. RaMem also slightly improves Temporal accuracy over the strongest prior result, while remaining competitive in Single-Session-User and Knowledge-Update categories where LightMem is especially strong. These results complement the LoCoMo findings: contextual reinstatement is useful not only for conversational QA with F1 or BLEU evaluation, but also under judge-based accuracy evaluation on a separate long-memory benchmark. 
+
+D.3 Context Collapse Analysis 
+
+We provide the complete context collapse analysis in Table 7. The analysis is conducted under two settings. The first setting uses all questions with verified ground-truth memories. The second setting focuses on the context-confusable subset, where the SimpleMem baseline retrieves at least one strict context distractor in its top-5 results. A strict context distractor is defined as a retrieved memory that is not the ground-truth memory, is content-related to the query or ground-truth memory according to person, entity, topic, or keyword overlap, and is contextually incompatible according to temporal or 26 Table 6: Context collapse analysis on the context-confusable subset. D@1 measures whether the top retrieved memory is a context distractor. RankGap is the rank of the ground-truth memory minus the rank of the best context distractor, so lower is better. 
+
+Backbone Method D@1 ↓ AvgD@5 ↓ RankGap ↓ GT R@10 ↑ F1 ↑
+
+GPT-4.1-mini SimpleMem 0.4366 3.4514 5.4135 0.6842 0.5107 Ours 0.3495 3.1336 2.1502 0.7510 0.5290 
+
+Qwen3-8B SimpleMem 0.4588 3.3909 6.1638 0.6036 0.4117 Ours 0.3846 3.0589 2.4664 0.6826 0.4489 
+
+Qwen2.5-3B SimpleMem 0.5414 3.6317 6.4248 0.5676 0.2207 Ours 0.4796 3.3554 3.5679 0.6246 0.2281 
+
+Table 7: Full context collapse analysis. The baseline is SimpleMem. D@K measures whether at least one context distractor appears in the top-K retrieved memories. AvgDTop5 is the average number of context distractors in the top-5 memories. RankGap is the rank of the ground-truth memory minus the rank of the best context distractor. Lower values are better for D@K, AvgDTop5, and RankGap.                                                                                                                                                    
+
+> Setting Backbone Method ND@1 ↓D@3 ↓D@5 ↓AvgDTop5 ↓RankGap ↓GT R@5 ↑GT R@10 ↑MRR ↑F1 ↑
+> All Verified GT Qwen3-8B SimpleMem 1499 0.4416 0.8599 0.9626 3.2642 5.6976 0.5243 0.6144 0.3991 0.4138 Ours 1499 0.3702 0.8025 0.9320 2.9533 2.1427 0.6011 0.6925 0.4502 0.4522
+> Qwen2.5-3B SimpleMem 1503 0.5223 0.8862 0.9647 3.5037 6.0253 0.4970 0.5768 0.3773 0.2250 Ours 1502 0.4627 0.8329 0.9427 3.2550 3.3185 0.5473 0.6332 0.4112 0.2315
+> GPT-4.1-mini SimpleMem 1514 0.4273 0.8943 0.9789 3.3785 5.1934 0.6156 0.6896 0.4751 0.5109 Ours 1514 0.3428 0.8309 0.9551 3.0773 2.0278 0.6737 0.7550 0.5323 0.5291
+> Context-Confusable Qwen3-8B SimpleMem 1443 0.4588 0.8933 1.0000 3.3909 6.1638 0.5100 0.6036 0.3926 0.4117 Ours 1443 0.3846 0.8337 0.9605 3.0589 2.4664 0.5925 0.6826 0.4452 0.4489
+> Qwen2.5-3B SimpleMem 1450 0.5414 0.9186 1.0000 3.6317 6.4248 0.4862 0.5676 0.3735 0.2207 Ours 1449 0.4796 0.8585 0.9655 3.3554 3.5679 0.5411 0.6246 0.4094 0.2281
+> GPT-4.1-mini SimpleMem 1482 0.4366 0.9136 1.0000 3.4514 5.4135 0.6093 0.6842 0.4740 0.5107 Ours 1482 0.3495 0.8468 0.9669 3.1336 2.1502 0.6694 0.7510 0.5330 0.5290
+
+session mismatch. This rule-based detector does not use embedding similarity in the reported results, which makes the analysis conservative and interpretable. Across all verified questions, contextual reinstatement consistently reduces distractor exposure while improving ground-truth retrieval. For GPT-4.1-mini, D@1 decreases from 0.4273 to 0.3428, AvgDTop5 decreases from 3.3785 to 3.0773, and RankGap decreases from 5.1934 to 2.0278. At the same time, GT R@10 increases from 0.6896 to 0.7550 and MRR increases from 0.4751 to 0.5323. The same pattern holds for Qwen3-8B, where D@1 decreases from 0.4416 to 0.3702, RankGap decreases from 5.6976 to 2.1427, and GT R@10 increases from 0.6144 to 0.6925. Qwen2.5-3B follows the same trend, although the final F1 gain is smaller, suggesting that weaker generators remain limited in their ability to use improved evidence. Overall, these results show that contextual reinstatement changes the composition and ordering of retrieved evidence, not only the final generation behavior. The context-confusable subset provides a more targeted test of the proposed failure mode. By construction, SimpleMem retrieves at least one strict context distractor in the top-5 results for every question in this subset, so D@5 is 1.0000 for the baseline. The key question is whether our method can reduce the dominance of these distractors and recover the correct episode more effectively. The answer is consistently positive. On GPT-4.1-mini, D@1 decreases from 0.4366 to 0.3495, RankGap decreases from 5.4135 to 2.1502, and GT R@10 increases from 0.6842 to 0.7510. On Qwen3-8B, D@1 decreases from 0.4588 to 0.3846 and RankGap decreases from 6.1638 to 2.4664, while GT R@10 increases from 0.6036 to 0.6826. On Qwen2.5-3B, D@1 decreases from 0.5414 to 0.4796 and RankGap decreases from 6.4248 to 3.5679. These results support the interpretation that contextual reinstatement is most beneficial when semantic similarity is actively misleading. It reduces the probability that a context-invalid distractor appears as the leading evidence and makes the ground-truth memory more competitive under a fixed retrieval budget. 
+
+D.4 Context Shuffle Results 
+
+We provide complete context shuffle results in Tables 8 and 9. The goal of this experiment is to test whether the proposed method depends on a meaningful binding between memory content and episodic context. All shuffle variants keep the memory content unchanged, including the lossless restatement and its dense embedding. Only the context fields are shuffled across memory entries 27 Table 8: Context shuffle test on all verified ground-truth questions. Lower is better for Cappe-dRank@10, D@1, AvgDTop5, and RankGap.                                                                                                                         
+
+> Backbone Variant NF1 ↑BLEU1 ↑GT R@5 ↑GT R@10 ↑MRR ↑CappedRank@10 ↓D@1 ↓AvgDTop5 ↓RankGap ↓
+> GPT-4.1-mini Original 1514 0.5291 0.4475 0.6737 0.7550 0.5323 5.5132 0.3428 3.0773 2.0278 Shuffle temporal 1514 0.5004 0.4230 0.6103 0.6744 0.4871 7.6149 0.5753 4.0396 5.2974 Shuffle entity 1514 0.5256 0.4444 0.6830 0.7523 0.5349 5.4465 0.3382 3.0918 1.9761 Shuffle topic 1514 0.5255 0.4441 0.6777 0.7523 0.5327 5.4815 0.3408 3.0746 1.9861 Shuffle full context 1514 0.5079 0.4296 0.6050 0.6638 0.4822 7.6876 0.5872 4.0707 5.3965 Qwen3-8B Original 1499 0.4522 0.3801 0.6011 0.6925 0.4502 6.2028 0.3702 2.9533 2.1427 Shuffle temporal 1499 0.4287 0.3606 0.5484 0.6204 0.4116 8.1134 0.6518 4.0747 5.7768 Shuffle entity 1499 0.4526 0.3801 0.5997 0.6898 0.4517 6.2141 0.3689 3.0013 2.1699 Shuffle topic 1499 0.4546 0.3828 0.6051 0.6898 0.4519 6.1654 0.3722 2.9533 2.0862 Shuffle full context 1499 0.4347 0.3642 0.5437 0.6157 0.4053 8.1161 0.6631 4.1361 5.7634
+
+Table 9: Context shuffle test on temporal-triggered questions. This subset isolates questions where temporal/session context is explicitly activated. Lower is better for CappedRank@10, D@1, AvgDTop5, and RankGap.                                                                                                                         
+
+> Backbone Variant NF1 ↑BLEU1 ↑GT R@5 ↑GT R@10 ↑MRR ↑CappedRank@10 ↓D@1 ↓AvgDTop5 ↓RankGap ↓
+> GPT-4.1-mini Original 212 0.6009 0.5396 0.6934 0.8066 0.5249 5.3113 0.2642 2.1462 1.0404 Shuffle temporal 212 0.4985 0.4396 0.1981 0.2358 0.1796 21.0802 0.8160 4.2972 21.5029 Shuffle entity 212 0.5843 0.5198 0.6887 0.7972 0.5184 5.4198 0.2830 2.2453 1.3266 Shuffle topic 212 0.5982 0.5309 0.6887 0.8019 0.5171 5.4057 0.2736 2.1462 1.2211 Shuffle full context 212 0.5180 0.4578 0.1887 0.2358 0.1762 21.3915 0.8302 4.3915 22.0116 Qwen3-8B Original 212 0.5317 0.4810 0.5708 0.7170 0.4271 6.6038 0.2736 2.0142 1.2350 Shuffle temporal 212 0.4081 0.3681 0.1651 0.1840 0.1250 20.3255 0.8726 4.3443 22.9595 Shuffle entity 212 0.5075 0.4596 0.5613 0.7170 0.4238 6.5142 0.2736 2.0802 1.1585 Shuffle topic 212 0.5195 0.4677 0.5660 0.7123 0.4286 6.4528 0.2783 2.0000 1.0546 Shuffle full context 212 0.4134 0.3694 0.1557 0.1840 0.1242 20.3491 0.8868 4.5094 23.0952
+
+within the same memory bank. Thus, the corrupted variants preserve the same amount of metadata while breaking the correspondence between each memory and its original episodic coordinates. The all-question results show that corrupting temporal/session fields harms both retrieval and answer quality across different backbones. On GPT-4.1-mini, temporal shuffling reduces GT R@10 from 0.7550 to 0.6744 and increases D@1 from 0.3428 to 0.5753. RankGap also increases from 2.0278 to 5.2974, meaning that context-invalid distractors again dominate the ground-truth memory in the ranking. Qwen3-8B shows the same trend: GT R@10 drops from 0.6925 to 0.6204, D@1 increases from 0.3702 to 0.6518, and RankGap rises from 2.1427 to 5.7768. Full-context shuffling produces similar degradation on both backbones. These results indicate that correct temporal/session binding contributes to retrieval behavior across the benchmark, not only in a narrow subset of examples. The temporal-triggered subset provides a sharper mechanism-level view. On GPT-4.1-mini, shuffling temporal fields causes GT R@10 to collapse from 0.8066 to 0.2358 and MRR from 0.5249 to 0.1796. At the same time, D@1 increases from 0.2642 to 0.8160 and RankGap rises from 1.0404 to 21.5029. Qwen3-8B exhibits the same behavior: GT R@10 drops from 0.7170 to 0.1840, MRR from 0.4271 to 0.1250, D@1 increases from 0.2736 to 0.8726, and RankGap rises from 1.2350 to 22.9595. Full-context shuffling closely matches this failure pattern, which suggests that the main source of degradation is the corrupted temporal/session coordinate. By contrast, shuffling entity or topic fields has much smaller effects. This finding clarifies the current implementation: contextual reinstatement is primarily operationalized through session-level temporal grounding, while entity and topic fields serve as auxiliary cues. The results show that structured context is useful only when it remains correctly bound to memory content, and that breaking this binding restores the context collapse that the method is designed to mitigate. 
+
+D.5 Temporal Buffer Sensitivity 
+
+Several consistent trends emerge. First, the best performance is obtained with a moderate temporal buffer rather than with the strictest or widest setting. On GPT-4.1-mini, the 5-day window gives the strongest overall performance on all verified questions, achieving an F1 of 0.5291 and a GT R@10 of 0.7550, while 3–5 days form a similarly strong region on the temporal-triggered subset. On Qwen3-8B, the optimum shifts slightly toward a narrower setting, with 3 days producing the strongest temporal-triggered performance and near-best overall performance. This pattern is infor-mative: the system benefits from some tolerance to event-time and mention-time mismatch, but the optimal tolerance is not unbounded. The results therefore support the design intuition of contextual reinstatement. Temporal context should function as a calibrated episodic coordinate, not as a hard equality constraint. 28 Table 10: Temporal buffer sensitivity on all verified questions. Lower is better for D@1, RankGap, and AvgDTop5.                                                                                                   
+
+> Backbone Buffer NF1 ↑GT R@10 ↑MRR ↑D@1 ↓RankGap ↓AvgDTop5 ↓
+> GPT-4.1-mini 01513 0.5226 0.7396 0.5279 0.3410 1.6488 3.0330 11514 0.5172 0.7490 0.5304 0.3461 1.5294 3.0297 31514 0.5270 0.7483 0.5321 0.3435 1.7790 3.0396 51514 0.5291 0.7550 0.5323 0.3428 2.0278 3.0773 71514 0.5245 0.7503 0.5340 0.3415 1.9992 3.0727 14 1514 0.5224 0.7417 0.5302 0.3428 2.1756 3.0991 Qwen3-8B 01499 0.4496 0.6905 0.4521 0.3682 1.6099 2.9333 11499 0.4558 0.6918 0.4523 0.3649 1.5397 2.9260
+> 31499 0.4557 0.6938 0.4528 0.3649 1.7316 2.9386 51499 0.4522 0.6925 0.4502 0.3702 2.1427 2.9533 71499 0.4532 0.6865 0.4465 0.3696 2.2101 2.9606 14 1499 0.4499 0.6865 0.4485 0.3769 2.2721 2.9960
+
+Table 11: Temporal buffer sensitivity on the temporal-triggered subset. Lower is better for D@1, RankGap, and AvgDTop5.                                                                                                   
+
+> Backbone Buffer NF1 ↑GT R@10 ↑MRR ↑D@1 ↓RankGap ↓AvgDTop5 ↓
+> GPT-4.1-mini 0212 0.5954 0.7358 0.4837 0.2783 -0.5663 1.9481 1212 0.5841 0.7877 0.5196 0.2594 -1.9137 1.9198
+> 3212 0.6146 0.7925 0.5126 0.2689 -0.2929 2.0236 5212 0.6009 0.8066 0.5249 0.2642 1.0404 2.1462 7212 0.5931 0.7925 0.5250 0.2830 1.7828 2.2123 14 212 0.5906 0.7547 0.5088 0.2925 2.5736 2.3821 Qwen3-8B 0212 0.4987 0.6934 0.4145 0.2736 -1.5543 1.8679 1212 0.5187 0.7217 0.4293 0.2594 -2.3118 1.8019
+> 3212 0.5329 0.7311 0.4332 0.2547 -0.6237 1.8632 5212 0.5317 0.7170 0.4271 0.2736 1.2350 2.0142 7212 0.5231 0.7028 0.4235 0.2689 1.7611 2.0708 14 212 0.4799 0.6651 0.4066 0.3066 2.9257 2.3443
+
+Second, enlarging the buffer too aggressively weakens contextual specificity and reintroduces distrac-tors. This is most visible at 14 days. On GPT-4.1-mini, all-verified GT R@10 drops from 0.7550 at 5 days to 0.7417 at 14 days, while on the temporal-triggered subset RankGap increases from 1.0404 to 2.5736 and AvgDTop5 rises from 2.1462 to 2.3821. Qwen3-8B exhibits an even clearer degradation: on temporal-triggered questions, F1 drops from 0.5329 at 3 days to 0.4799 at 14 days, while GT R@10 decreases from 0.7311 to 0.6651. These changes show that a broader temporal window does not monotonically improve recall. Instead, it eventually admits more context-invalid memories and reduces the ranking advantage of the correct episode. Taken together, the two backbones tell a consistent story: contextual reinstatement requires a moderate temporal window that absorbs small temporal mismatches while preserving contextual validity. We provide the full temporal buffer sensitivity results in Tables 10 and 11. The goal of this experiment is to understand how the temporal reinstatement window affects the balance between recall and contextual specificity. A zero-day window is maximally strict and only admits temporally aligned memories, while larger windows allow increasing tolerance for mismatch between event time and mention time. In principle, a larger buffer can help recover memories that belong to the correct episode but were mentioned slightly outside the exact query span. However, an excessively broad buffer may also admit nearby but context-invalid memories, thereby increasing distractor exposure. We therefore evaluate buffer sizes of 0, 1, 3, 5, 7, and 14 days on both GPT-4.1-mini and Qwen3-8B. The results show that the temporal reinstatement window should be neither maximally strict nor excessively broad. On all verified questions, both backbones achieve their strongest or near-strongest performance in the moderate range between 3 and 5 days. GPT-4.1-mini performs best at 5 days, where F1 reaches 0.5291 and GT R@10 reaches 0.7550. Qwen3-8B is slightly more conservative, with 1–3 days giving the strongest overall results and 3 days producing the best GT R@10. This pattern is consistent with the intended role of the buffer. Some tolerance is needed to absorb mild 29 Figure 5: Sensitivity to retrieval budget. Each subplot varies the number of retrieved memories passed to the generator and compares SimpleMem with our method. Across both backbones, contextual reinstatement consistently improves F1 and GT R@ K under all budgets, with particularly clear advantages in the low-budget regime. mismatch between event time and mention time, but once the window becomes too large, the system begins to retrieve less specific evidence. The trade-off is much clearer on the temporal-triggered subset, where temporal reinstatement is actually used to recover an episode. Here, moderate windows again dominate. GPT-4.1-mini achieves its highest F1 at 3 days and its highest GT R@10 at 5 days, while Qwen3-8B peaks at 3 days on F1, GT R@10, MRR, and D@1. In contrast, the 14-day setting consistently degrades performance. For GPT-4.1-mini, temporal-triggered RankGap increases from 1.0404 at 5 days to 2.5736 at 14 days, and AvgDTop5 increases from 2.1462 to 2.3821. For Qwen3-8B, F1 drops from 0.5329 at 3 days to 0.4799 at 14 days, while GT R@10 decreases from 0.7311 to 0.6651 and D@1 rises from 0.2547 to 0.3066. These results support a clear interpretation: a moderate temporal window offers the best balance between tolerating temporal mismatch and avoiding context-invalid distractors. In other words, contextual reinstatement benefits from calibrated flexibility, not from indiscriminately widening the search span. 
+
+D.6 Retrieval Budget Sensitivity 
+
+To evaluate whether contextual reinstatement remains effective under limited context budgets, we vary the number of retrieved memories passed to the generator and compare our method with the SimpleMem baseline. This experiment is important because the main claim of our framework is not merely that it retrieves more memories, but that it ranks better memories earlier. If this claim is correct, our advantage should already appear under small budgets, where the generator can only observe a few retrieved entries. Figure 5 reports the trends on GPT-4.1-mini and Qwen3-8B, using F1 and budget-aligned ground-truth recall (GT R@ K) to capture both final answer quality and retrieval effectiveness. Two clear patterns emerge. First, contextual reinstatement consistently outperforms the baseline across the entire budget range. On GPT-4.1-mini, our method improves F1 from 0.4575 to 0.5042 as K increases from 3 to 20, while remaining above the baseline at every budget. The same trend holds for budget-aligned ground-truth recall, where our method improves from 0.6026 to 0.7922 compared with the baseline range of 0.5390 to 0.7325. Qwen3-8B exhibits the same behavior: our method dominates the baseline on both F1 and GT R@ K for every retrieval budget. This result supports the main intuition of contextual reinstatement. The gain does not depend on retrieving a large amount of evidence. Instead, it appears already at small budgets, showing that the method improves the ordering of retrieved memories and makes the answer-supporting episode more accessible early in the ranked list. Second, the low-budget regime is especially informative. Under tight budgets, the generator must rely on only a few retrieved memories, so ranking quality matters most. Here the advantage of our method is particularly meaningful. On GPT-4.1-mini, our method at K = 10 already exceeds the baseline at K = 20 on both F1 (0.4948 vs. 0.4896) and GT R@ K (0.7422 vs. 0.7325). The same pattern appears on Qwen3-8B, where our method at K = 10 surpasses the baseline at K = 20 on both F1 (0.4031 vs. 0.3986) and GT R@ K (0.6740 vs. 0.6662). This shows that contextual reinstatement improves not only answer quality but also context efficiency : it can reach the performance of a larger retrieval budget while using fewer retrieved memories. In practical agent systems, where context budget is often constrained, this behavior is especially valuable. 30 Table 12: Sensitivity to retrieval budget. GT R@ K denotes the fraction of questions whose ground-truth memory is included within the top-K retrieved memories. Lower is better for D@1 and RankGap.                                                                                                                                                                               
+
+> Backbone Method / KF1 ↑BLEU1 ↑GT R@ K↑MRR ↑D@1 ↓RankGap ↓
+> GPT-4.1-mini SimpleMem, K= 3 0.4263 0.3530 0.5390 0.4344 0.4201 -0.5637 SimpleMem, K= 5 0.4505 0.3739 0.6052 0.4496 0.4201 -0.4452 SimpleMem, K= 10 0.4730 0.3942 0.6779 0.4593 0.4201 0.1772 SimpleMem, K= 15 0.4826 0.4033 0.7123 0.4620 0.4201 0.7028 SimpleMem, K= 20 0.4896 0.4107 0.7325 0.4632 0.4201 1.1392 Ours, K= 3 0.4575 0.3793 0.6026 0.4932 0.3370 -0.7108 Ours, K= 5 0.4751 0.3985 0.6623 0.5069 0.3370 -0.7696 Ours, K= 10 0.4948 0.4167 0.7422 0.5180 0.3370 -0.2264 Ours, K= 15 0.5035 0.4244 0.7740 0.5205 0.3370 0.1835 Ours, K= 20 0.5042 0.4228 0.7922 0.5215 0.3370 0.5321 Qwen3-8B SimpleMem, K= 3 0.3341 0.2721 0.4591 0.3564 0.4299 -0.4991 SimpleMem, K= 5 0.3521 0.2881 0.5104 0.3679 0.4299 -0.5054 SimpleMem, K= 10 0.3808 0.3144 0.5981 0.3798 0.4299 0.2013 SimpleMem, K= 15 0.3951 0.3269 0.6364 0.3828 0.4299 0.8306 SimpleMem, K= 20 0.3986 0.3311 0.6662 0.3845 0.4299 1.5361 Ours, K= 3 0.3449 0.2822 0.5110 0.4032 0.3604 -0.6649 Ours, K= 5 0.3745 0.3107 0.5851 0.4203 0.3604 -0.6400 Ours, K= 10 0.4031 0.3329 0.6740 0.4323 0.3604 -0.1169 Ours, K= 15 0.4138 0.3422 0.7065 0.4350 0.3604 0.2999 Ours, K= 20 0.4178 0.3477 0.7331 0.4364 0.3604 0.8714
+
+We provide the full retrieval-budget sensitivity results in Table 12. The purpose of this experiment is to test whether contextual reinstatement improves only the total amount of retrieved evidence, or whether it also improves the ranking quality of memories under constrained budgets. We vary the number of retrieved memories passed to the generator from K = 3 to K = 20 , and report final answer quality, budget-aligned ground-truth recall (GT R@ K), MRR, and two context-collapse diagnostics. Because D@1 measures whether the top-ranked memory is a context distractor, it is unaffected by the truncation budget and remains constant for a fixed retrieval system. RankGap is also reported for completeness, although it is most informative when comparing methods at the same budget rather than when comparing different budgets. The results show that contextual reinstatement improves performance under every tested retrieval budget. On GPT-4.1-mini, the baseline F1 rises from 0.4263 at K = 3 to 0.4896 at K = 20 , while our method rises from 0.4575 to 0.5042. The same consistent dominance appears in GT R@ K, where our method improves from 0.6026 to 0.7922 compared with the baseline range of 0.5390 to 0.7325. Qwen3-8B follows the same pattern: our method improves F1 from 0.3449 to 0.4178 and GT R@ K
+
+from 0.5110 to 0.7331, remaining above the baseline at every budget. MRR is also consistently higher for our method on both backbones, which indicates that the answer-supporting memory is ranked closer to the top of the retrieved list. D@1 remains lower for our method on both backbones, showing that the top retrieved evidence is less likely to be a context distractor. Together, these results confirm that the gains are not tied to a specific budget size. More importantly, the experiment reveals a clear efficiency advantage. On GPT-4.1-mini, our method with K = 10 already exceeds the baseline with K = 20 on both F1 (0.4948 vs. 0.4896) and GT R@ K (0.7422 vs. 0.7325). The same effect holds on Qwen3-8B, where our method at K = 10 
+
+surpasses the baseline at K = 20 on F1 (0.4031 vs. 0.3986) and GT R@ K (0.6740 vs. 0.6662). This means that contextual reinstatement does more than improve final accuracy: it allows the system to reach the same or better performance using fewer retrieved memories. Such behavior is particularly valuable in practical long-context agent systems, where retrieval budget is tightly coupled to latency and prompt cost. The results therefore support a stronger claim than backbone-level improvement alone: contextual reinstatement yields a better performance–budget trade-off because it improves the ordering and contextual validity of the retrieved evidence. 
+
+D.7 Efficiency and Cost Results 
+
+We provide additional efficiency and cost results in Tables 14, 15, and 16. All runtime numbers compare SimpleMem-style retrieval and our method under the same optimized implementation. They 31 Table 13: Context-budget efficiency. RaMem with K = 10 reaches or exceeds SimpleMem with 
+
+K = 20 while using about half the retrieved memory budget.                           
+
+> Backbone Method KF1 ↑GT R@ K↑CtxTok/Q ↓
+> GPT-4.1-mini SimpleMem 20 0.4896 0.7325 1520.71 RaMem 10 0.4948 0.7422 758.24
+> Qwen3-8B SimpleMem 20 0.3986 0.6662 1367.86 RaMem 10 0.4031 0.6740 683.50
+
+Table 14: Default online cost under the same optimized serving stack. Generation time and total time are unavailable in the historical full-evaluation logs and are therefore marked as NA.                                                    
+
+> Backbone Method F1 ↑GT R@10 ↑LLM Calls/Q ↓Retrieval Time/Q ↓Generation Time/Q ↓Total Time/Q ↓ContextChars/Q ↓Retrieved Memories/Q ↓
+> GPT-4.1-mini SimpleMem 0.5104 0.6779 4.0000 4.8346s NA NA 14692.86 48.59 Ours 0.5281 0.7422 4.0000 4.9076s NA NA 13261.07 43.86
+> Qwen3-8B SimpleMem 0.4105 0.5981 4.0000 7.2318s NA NA 12715.18 46.72 Ours 0.4459 0.6740 4.0000 6.6148s NA NA 11399.62 41.91
+
+should not be interpreted as a direct comparison against the original SimpleMem codebase, since our system uses a different serving stack with batching, parallel execution, and other engineering opti-mizations. The purpose of this analysis is to estimate the incremental cost of contextual reinstatement under a shared runtime environment. The default-cost results show that contextual reinstatement does not require additional LLM calls under our planning-on and reflection-off setting. Both SimpleMem-style retrieval and our method use approximately four LLM calls per question. The added contextual operations are mainly structured filtering, temporal/session compatibility checking, and reranking, which are lightweight compared with LLM generation. On GPT-4.1-mini, retrieval time changes only marginally, while context length and retrieved memory count decrease. On Qwen3-8B, retrieval time also decreases under the same optimized stack. Since generation and total wall-clock time were not stored in the full historical logs, those columns are marked as NA in Table 14. The budget-efficiency results provide a more robust view of cost effectiveness. On both backbones, our method at K = 10 reaches or exceeds SimpleMem at K = 20 while using approximately half the retrieved memory budget. For GPT-4.1-mini, our method at K = 10 achieves F1 of 0.4948 and GT R@ K of 0.7422, compared with 0.4896 and 0.7325 for SimpleMem at K = 20 . For Qwen3-8B, our method at K = 10 achieves F1 of 0.4031 and GT R@ K of 0.6740, compared with 0.3986 and 0.6662 for SimpleMem at K = 20 . This indicates that contextual reinstatement improves the ranking quality and contextual validity of retrieved memories, allowing the generator to receive fewer but more useful memory entries. Finally, the small-sample timing sanity check in Table 16 is consistent with the default-cost analysis. Under the same optimized stack, our method does not increase total online time and often reduces it slightly because fewer memories are passed to the generator. However, these timing numbers are based on a small sample and should be interpreted as supporting evidence rather than as a standalone runtime benchmark. The main efficiency conclusion is therefore based on controlled within-stack cost comparison and context-budget efficiency, rather than direct runtime comparison to external codebases. 
+
+D.8 Full Component Analysis 
+
+We provide the complete ablation results in Tables 17 and 18. The main text reports the most diagnostic ablations on the temporal-triggered subset, while this appendix includes both all verified questions and temporal-triggered questions, as well as the cue-guard ablation. The cue guard disables a deterministic reliability check for contextual activation. In our experiments, this ablation has relatively small effects compared with removing session-level evidence conditions or context-aware ranking, so we treat it as a safety component rather than the primary source of the observed improvements. The complete results confirm the pattern discussed in the main text. Removing session context or context-aware ranking consistently harms retrieval quality. On all verified questions, these ablations reduce GT R@10 and MRR while increasing D@1, AvgDTop5, and RankGap. The effect is 32 Table 15: Budget efficiency under different retrieval budgets. GT R@ K denotes the fraction of questions whose ground-truth memory is included within the top-K retrieved memories.                                                             
+
+> Backbone Method KF1 ↑GT R@ K↑MRR ↑ContextTokens/Q ↓Retrieved Memories/Q ↓
+> GPT-4.1-mini Ours 30.4575 0.6026 0.4932 226.48 3Ours 50.4751 0.6623 0.5069 377.29 5Ours 10 0.4948 0.7422 0.5180 758.24 10 SimpleMem 10 0.4730 0.6779 0.4593 759.49 10 SimpleMem 20 0.4896 0.7325 0.4632 1520.71 20 Qwen3-8B Ours 10 0.4031 0.6740 0.4323 683.50 10 SimpleMem 10 0.3808 0.5981 0.3798 685.16 10 SimpleMem 20 0.3986 0.6662 0.3845 1367.86 20
+
+Table 16: Small-sample timing sanity check under the optimized serving stack. These results are included for transparency and should be interpreted as within-stack timing estimates rather than definitive throughput benchmarks.                                                  
+
+> Backbone Method F1 ↑GT R@10 ↑LLM Calls/Q Retrieval Time/Q ↓Generation Time/Q ↓Total Time/Q ↓Retrieved Memories/Q ↓N
+> GPT-4.1-mini SimpleMem 0.5104 0.6779 4.0000 5.3867s 1.6344s 7.0210s 50.81 16 Ours 0.5281 0.7422 4.0000 5.2808s 1.5286s 6.8093s 44.25 16 Qwen3-8B SimpleMem 0.4105 0.5981 4.0000 3.5873s 1.3234s 4.9107s 51.88 16 Ours 0.4459 0.6740 4.0000 3.4441s 1.1860s 4.6302s 44.31 16
+
+substantially stronger on temporal-triggered questions, where session-level evidence conditions are directly used to verify whether a memory belongs to the correct episode. For example, on Qwen3-8B, removing session context reduces GT R@10 from 0.7217 to 0.4245, while removing context-aware ranking reduces it to 0.4434. This shows that session grounding and validity-aware ranking are the two most important retrieval-side components. The ablation of context-preserved generation behaves differently. It leaves retrieval metrics unchanged, because the retrieved memories are the same, but reduces final answer quality. This confirms that preserving episodic context is not only useful during retrieval; it also helps the generator interpret the selected evidence. The cue-guard ablation has smaller and less consistent effects. In some settings, final F1 is slightly higher without the guard, but retrieval diagnostics are generally similar or mildly worse. This suggests that the guard mainly serves as a lightweight reliability mechanism for avoiding false contextual constraints, while the main gains come from session-level evidence anchoring, validity-aware ranking, and context-preserved synthesis. 
+
+D.9 Efficiency and Cost Analysis 
+
+We further analyze whether contextual reinstatement improves memory quality at the cost of additional online overhead. Since our implementation uses an optimized serving stack with vLLM-style batching, parallel evaluation, and other engineering optimizations, we do not compare wall-clock runtime against the original SimpleMem codebase. Instead, we compare SimpleMem-style retrieval and our method under the same optimized implementation. This provides a fair estimate of the incremental cost introduced by contextual reinstatement. As shown in Table 19, both methods use the same number of LLM calls per question under the planning-on and reflection-off setting. Contextual reinstatement does not introduce iterative reflection or extra generation calls. On GPT-4.1-mini, retrieval time changes only marginally from 4.83s to 4.91s per question, while F1 improves from 0.5104 to 0.5281 and GT R@10 improves from 0.6779 to 0.7422. On Qwen3-8B, our method is slightly faster in the same runtime stack, with retrieval time decreasing from 7.23s to 6.61s, while F1 improves from 0.4105 to 0.4459. The retrieved context is also smaller in both settings, reducing average context characters from 14.7K to 13.3K on GPT-4.1-mini and from 12.7K to 11.4K on Qwen3-8B. The benefit is even clearer when viewed as context-budget efficiency. Table 13 compares our method with K = 10 retrieved memories against SimpleMem with K = 20 . On GPT-4.1-mini, our method with half the retrieved memory budget achieves higher F1 (0.4948 vs. 0.4896) and higher GT recall (0.7422 vs. 0.7325), while using roughly half the estimated context tokens. Qwen3-8B shows the same pattern: our method at K = 10 exceeds SimpleMem at K = 20 in both F1 (0.4031 vs. 0.3986) and GT recall (0.6740 vs. 0.6662), again with about half the context tokens. These results show that contextual reinstatement improves the ordering and contextual validity of retrieved memories, rather 33 Table 17: Full ablation results on GPT-4.1-mini. Lower is better for D@1, AvgDTop5, and RankGap.                                                                                                 
+
+> Subset Variant NF1 ↑BLEU1 ↑GT R@10 ↑MRR ↑D@1 ↓AvgDTop5 ↓RankGap ↓
+> All Verified GT Full 1514 0.5298 0.4473 0.7483 0.5335 0.3435 3.0581 2.7454
+> w/o Session Context 1514 0.5253 0.4442 0.6909 0.4857 0.4069 3.3963 5.5944 w/o Cue Guard 1514 0.5289 0.4472 0.7351 0.5191 0.3567 3.0859 3.2846 w/o Context-Aware Ranking 1514 0.5262 0.4459 0.6915 0.4781 0.4128 3.3943 5.9129 w/o Context-Preserved Generation 1514 0.5133 0.4346 0.7483 0.5335 0.3435 3.0581 2.7454
+> Temporal-triggered Full 212 0.5957 0.5319 0.8066 0.5205 0.2736 2.1509 1.0354 w/o Session Context 212 0.5596 0.4922 0.5708 0.3512 0.5189 3.6132 10.0492 w/o Cue Guard 212 0.5970 0.5319 0.8019 0.5203 0.2783 2.1462 0.9848
+> w/o Context-Aware Ranking 212 0.5693 0.5018 0.5708 0.3468 0.5283 3.5896 12.6332 w/o Context-Preserved Generation 212 0.5626 0.4968 0.8066 0.5205 0.2736 2.1509 1.0354
+
+Table 18: Full ablation results on Qwen3-8B. Lower is better for D@1, AvgDTop5, and RankGap.                                                                                                 
+
+> Subset Variant NF1 ↑BLEU1 ↑GT R@10 ↑MRR ↑D@1 ↓AvgDTop5 ↓RankGap ↓
+> All Verified GT Full 1499 0.4521 0.3807 0.6938 0.4519 0.3716 2.9460 2.0695
+> w/o Session Context 1499 0.4423 0.3705 0.6071 0.4008 0.4396 3.2602 5.8922 w/o Cue Guard 1499 0.4546 0.3831 0.6838 0.4467 0.3769 2.9740 2.6675 w/o Context-Aware Ranking 1499 0.4448 0.3745 0.6177 0.4062 0.4336 3.2548 6.2023 w/o Context-Preserved Generation 1499 0.4077 0.3391 0.6938 0.4519 0.3716 2.9460 2.0695
+> Temporal-triggered Full 212 0.5226 0.4695 0.7217 0.4253 0.2783 2.0142 1.1685 w/o Session Context 212 0.4578 0.4097 0.4245 0.2482 0.5849 3.4906 11.9565 w/o Cue Guard 212 0.5292 0.4781 0.7170 0.4270 0.2736 2.0094 1.0489
+> w/o Context-Aware Ranking 212 0.4642 0.4162 0.4434 0.2578 0.5755 3.5472 14.7735 w/o Context-Preserved Generation 212 0.4248 0.3567 0.7217 0.4253 0.2783 2.0142 1.1685
+
+than relying on larger prompts or additional LLM reasoning. In practical long-term agent systems, this means the agent can reach the same or better performance while passing fewer memories to the generator. 
+
+D.10 Qualitative Case Studies 
+
+We provide additional qualitative examples with the actual top retrieved memories from SimpleMem and RaMem. These cases show that context collapse is not caused by completely irrelevant retrieval. The baseline often retrieves memories that share entities or topics with the query, but they fail the query’s evidence conditions because they belong to the wrong session or situation. 
+
+Case A: New Hobby on July 9 
+
+Query: What new hobby did James become interested in on 9 July, 2022? 
+
+Reference: Extreme sports. 
+
+SimpleMem answer: surfing RaMem answer: extreme sports. 
+
+SimpleMem Top-3: 
+
+1. Invalid: 2022-03-20–2022-03-27 , gaming platform participation. James created a game avatar and joined a new gaming platform. 2. Invalid: 2022-09-20–2022-10-03 , game streaming feedback. James streamed a game and received encouraging comments. 3. Invalid: 2022-09-18–2022-09-20 , game streaming plans. James started streaming games. 
+
+GT rank: 44. 
+
+RaMem Top-3: 
+
+1. GT / valid: 2022-07-09–2022-07-22 , extreme sports interest. James became interested in extreme sports and did rope jumping. 2. Invalid: 2022-06-19–2022-07-09 , surfing experience. James went surfing. 3. Related but topic-conflicting: 2022-07-09–2022-07-22 , gaming tournament victory. James won an online gaming tournament. 
+
+GT rank: 1. 
+
+Observation. SimpleMem retrieves memories that are related to James and activities, but all top-ranked evidence violates the query’s recall conditions. RaMem reinstates the July 9 34 Table 19: Online efficiency under the same optimized serving stack. We compare SimpleMem-style retrieval and our method within the same implementation, rather than against the original SimpleMem runtime. Contextual reinstatement improves answer quality and retrieval quality without increasing LLM calls.                                        
+
+> Backbone Method F1 ↑GT R@10 ↑LLM Calls/Q ↓Retrieval Time/Q ↓ContextChars/Q ↓Retrieved Memories/Q ↓
+> GPT-4.1-mini SimpleMem 0.5104 0.6779 4.0000 4.8346s 14692.86 48.59 Ours 0.5281 0.7422 4.0000 4.9076s 13261.07 43.86
+> Qwen3-8B SimpleMem 0.4105 0.5981 4.0000 7.2318s 12715.18 46.72 Ours 0.4459 0.6740 4.0000 6.6148s 11399.62 41.91
+
+session context and places the verified memory at rank 1, turning retrieved memory from related fragments into contextually verifiable evidence. 
+
+Case B: Vacation Episode vs. Later Partner-Related Memories 
+
+Query: When did Evan get back from a vacation with his SO? 
+
+Reference: August 13, 2023. 
+
+SimpleMem answer: The context does not specify when Evan returned. 
+
+RaMem answer: August 13, 2023. 
+
+SimpleMem Top-3: 
+
+1. Invalid: 2023-12-31–2024-01-06 , accident and marriage news. Evan confirmed that he and his friends were fine after an accident. 2. Invalid: 2024-01-06–2024-01-10 , family and partner support. Sam discussed Evan’s partner and family support. 3. Invalid: 2024-01-06–2024-01-10 , family support after marriage announcement. Evan mentioned support from extended family. 
+
+GT rank: 18. 
+
+RaMem Top-3: 
+
+1. GT / valid: 2023-08-13–2023-08-15 , vacation details. Evan shared details about a recent vacation in Canada with his new partner. 2. Invalid: 2023-12-31–2024-01-06 , accident and marriage news. Evan confirmed that he and his friends were fine after an accident. 3. Invalid: 2023-11-21–2023-12-05 , mutual support. Evan thanked Sam for being there. 
+
+GT rank: 1. 
+
+Observation. The baseline retrieves partner-related memories, but they belong to later sessions. RaMem identifies the vacation episode that satisfies the query’s temporal and participant conditions. 
+
+Case C: Gaming Topic vs. Correct Game Preference Episode 
+
+Query: What game has Nate been playing nonstop with a futuristic setting and gameplay on October 9, 2022? 
+
+Reference: Cyberpunk 2077. 
+
+SimpleMem answer: Catan RaMem answer: Cyberpunk 2077. 
+
+SimpleMem Top-3: 
+
+1. Invalid: 2022-06-03–2022-06-05 , regional video game tournament. Nate shared a recent victory in a regional video game tournament. 2. Invalid: 2022-08-22–2022-09-05 , gaming tournament and career. Nate won an inter-national tournament and mentioned gaming as a career. 3. Invalid: 2022-04-21–2022-05-02 , gaming tournament mention. Nate mentioned an upcoming gaming tournament. 35 GT rank: 32. 
+
+RaMem Top-3: 
+
+1. Same session / related: 2022-10-09–2022-10-21 , board game meeting. Nate met people playing the same board game. 2. Same session / related: 2022-10-09–2022-10-21 , game convention attendance. Nate attended a game convention and met new people. 3. GT / valid: 2022-10-09–2022-10-21 , recent movie and game preferences. Nate men-tioned playing Cyberpunk 2077 .
+
+GT rank: 3. 
+
+Observation. The baseline retrieves memories from the broad gaming topic, but they belong to earlier episodes. RaMem first narrows retrieval to the correct October 9 session, then includes the verified game-preference memory in the top retrieved evidence. 
+
+36
