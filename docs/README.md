@@ -6,8 +6,8 @@
 </div>
 
 ## Daily Report
-- Latest run date: 2026-08-01
-- Run time: 2026-08-01 21:32:59 UTC
+- Latest run date: 2026-08-02
+- Run time: 2026-08-02 21:11:25 UTC
 - Run status: success
 - Total papers: 0
 - Deep reads: 0
@@ -15,7 +15,7 @@
 
 ### Daily Brief (AI)
 > No new recommendations today; the system did not produce papers to display.
-- Details: [/202608/01/README](/202608/01/README)
+- Details: [/202608/02/README](/202608/02/README)
 
 ### Deep-Read Paper Tags
 - No deep-read recommendations this run.
